@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "gen3-integration-tests"
+version = "0.1.0"
+description = "Gen3 Integration Tests"
+authors = ["CTDS UChicago <cdis@uchicago.edu>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/uc-cdis/gen3-code-vigil"
+include = [
+  "NOTICE",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pytest = "^7.4.0"
+requests = "^2.31.0"
+python-dotenv = "^1.0.0"
+pyyaml = "5.3.1"
+gen3 = "^4.20.4"
+cdislogging = "^1.1.1"
+pytest-env = "^1.0.0"
+pytest-html = "^3.2.0"
+pytest-xdist = "^3.3.1"
+pytest-parallel = "^0.1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+# Set environment variables for pytest tests
+env = [
+    "NAMESPACE=jenkins-brain",
+    "HOSTNAME=https://jenkins-brain.planx-pla.net",
+    "LOG_LEVEL=info",
+    "log_cli=1"
+]
+pythonpath = "."
