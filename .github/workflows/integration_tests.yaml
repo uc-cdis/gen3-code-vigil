@@ -9,6 +9,10 @@ jobs:
     run_integration_tests:
         runs-on: ubuntu-latest
 
+        defaults:
+          run:
+            working-directory: gen3-integration-tests
+
         env:
           JENKINS_USERNAME: PlanXCyborg
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
