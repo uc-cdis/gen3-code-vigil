@@ -50,9 +50,6 @@ class TestAggregateMDS:
         # Create metadata record
         logger.info("# Create metadata records")
         gen3auth = Gen3Auth(refresh_file="jenkins-brain")
-        # metadata = Gen3Auth(gen3auth)
-        # metadata.create(study_id, study_json)
-        # response = gen3auth.curl(f'/mds/metadata/{study_id}', request='POST', data=json.dumps(study_json))
         auth_header = {
             "Accept": "application/json",
             "Authorization": f"bearer {gen3auth.get_access_token()}",
