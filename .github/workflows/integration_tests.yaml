@@ -12,8 +12,8 @@ jobs:
           JENKINS_USERNAME: PlanXCyborg
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
-          BRANCH: ${{ github.head_ref }}
-          PR_NUM: ${{ github.event.number }}
+          BRANCH: ${{ github.ref_name }}
+          PR_NUM: ${{ github.event }}
         steps:
             # - name: Checkout code
             #   uses: actions/checkout@v2
