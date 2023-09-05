@@ -35,4 +35,5 @@ def release_ci_environment(namespace):
 
 if __name__ == "__main__":
     namespace = os.getenv("NAMESPACE")
-    print(release_ci_environment(namespace))
+    result = release_ci_environment(namespace)
+    logger.info(f"RESULT: {result}")

@@ -18,7 +18,7 @@ def select_ci_environment(namespaces):
     params = {
         "AVAILABLE_NAMESPACES": namespaces,
         "REPO": os.getenv("REPO"),
-        "branch": os.getenv("BRANCH"),
+        "BRANCH": os.getenv("BRANCH"),
     }
     build_num = job.build_job(params)
     if build_num:
@@ -38,4 +38,9 @@ if __name__ == "__main__":
         "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs.txt"
     )
     namespaces = ",".join(res.text.strip().split("\n"))
-    print(select_ci_environment(namespaces))
+    selected_ns = select_ci_environment(namespaces)
+    logger.info(f" Selected namespace: {selected_ns}")
+
+    env_file = os.getenv("GITHUB_ENV")
+    with open(env_file, "a") as myfile:
+        myfile.write(f"NAMESPACE={selected_ns}")
