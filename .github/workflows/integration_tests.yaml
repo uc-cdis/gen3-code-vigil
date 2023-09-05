@@ -8,30 +8,39 @@ on:
 jobs:
     run_integration_tests:
         runs-on: ubuntu-latest
+
         env:
           JENKINS_USERNAME: PlanXCyborg
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
           BRANCH: ${{ github.ref_name }}
+          PR_NUM: ${{ github.event.number }}
+
         steps:
-            # - name: Checkout code
-            #   uses: actions/checkout@v2
-            # - name: Set up Python
-            #   uses: actions/setup-python@v2
-            #   with:
-            #     python-version: 3.9
-            # - name: Install dependencies
-            #   run: |
-            #     python -m pip install --upgrade pip
-            #     pip install poetry
-            #     poetry install -vv
-            # - name: Select CI environment
-            #   run: poetry run
-            # - name: Run tests
-            #   run:
-            #     poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
-            - name: Debug
+            - name: Checkout code
+              uses: actions/checkout@v2
+
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                python-version: 3.9
+
+            - name: Install dependencies
               run: |
-                echo $REPO
-                echo $BRANCH
-                echo $PR_NUM
+                python -m pip install --upgrade pip
+                pip install poetry
+                poetry install -vv
+
+            - name: Select CI environment
+              run: |
+                output=$(poetry run python -m utils.gen3_ci.select_ci_environment)
+                echo "NAMESPACE=$output" >> "$GITHUB_ENV"
+                echo "HOSTNAME=$output.planx-pla.net" >> "$GITHUB_ENV"
+
+            - name: Run tests
+              run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
+
+            - name: Release CI environment
+              run: |
+                output=$(poetry run python -m utils.gen3_ci.release_ci_environment)
+                echo "$output"

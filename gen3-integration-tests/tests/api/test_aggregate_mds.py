@@ -20,7 +20,6 @@ class TestAggregateMDS:
     )
     study_json_files = ["study1.json", "study2.json", "study3.json"]
 
-    @pytest.mark.wip
     def test_create_edit_delete_study_1(self):
         """Create, edit and delete study from aggregate metadata"""
         # Identify UID field name from gitops.json
@@ -61,7 +60,7 @@ class TestAggregateMDS:
         }
         for i in range(len(study_ids)):
             response = requests.post(
-                f'{os.getenv("HOSTNAME")}/mds/metadata/{study_ids[i]}',
+                f"{os.getenv('HOSTNAME')}/mds/metadata/{study_ids[i]}",
                 data=json.dumps(study_jsons[i]),
                 headers=auth_header,
             )
