@@ -40,6 +40,12 @@ jobs:
                 poetry run python -m utils.gen3_ci.select_ci_environment
                 echo $NAMESPACE
 
+            - name: Set Gen3 API keys
+              run: |
+                mkdir -p $HOME/.gen3
+                NS=$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]' | tr '-' '_')
+                echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NAMESPACE)] }} > $HOME/.gen3/$NAMESPACE.json
+
             - name: Run tests
               run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
 
