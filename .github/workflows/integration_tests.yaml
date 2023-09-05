@@ -13,7 +13,6 @@ jobs:
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
           BRANCH: ${{ github.ref_name }}
-          PR_NUM: ${{ github.event.ref }}
         steps:
             # - name: Checkout code
             #   uses: actions/checkout@v2

@@ -1,3 +1,3 @@
 def select_ci_environment():
-    print("Nothing")
+    print("Nothing.")
     pass
