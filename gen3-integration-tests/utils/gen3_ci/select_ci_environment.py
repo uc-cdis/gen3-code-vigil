@@ -34,6 +34,8 @@ def select_ci_environment(namespaces):
 
 
 if __name__ == "__main__":
-    res = requests.get("cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs.txt")
+    res = requests.get(
+        "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs.txt"
+    )
     namespaces = ",".join(res.text.strip().split("\n"))
     print(select_ci_environment(namespaces))
