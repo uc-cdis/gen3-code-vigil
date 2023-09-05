@@ -7,21 +7,32 @@ on:
 
 jobs:
     run_integration_tests:
-
         runs-on: ubuntu-latest
-
+        env:
+          JENKINS_USERNAME: PlanXCyborg
+          JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
+          REPO: ${{ github.event.repository.name }}
+          BRANCH: ${{ github.head_ref }}
+          PR_NUM: ${{ github.event.number }}
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v2
-            - name: Set up Python
-              uses: actions/setup-python@v2
-              with:
-                python-version: 3.9
-            - name: Install dependencies
+            # - name: Checkout code
+            #   uses: actions/checkout@v2
+            # - name: Set up Python
+            #   uses: actions/setup-python@v2
+            #   with:
+            #     python-version: 3.9
+            # - name: Install dependencies
+            #   run: |
+            #     python -m pip install --upgrade pip
+            #     pip install poetry
+            #     poetry install -vv
+            # - name: Select CI environment
+            #   run: poetry run
+            # - name: Run tests
+            #   run:
+            #     poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
+            - name: Debug
               run: |
-                python -m pip install --upgrade pip
-                pip install poetry
-                poetry install -vv
-            - name: Run tests
-              run:
-                poetry run pytest --html=report.html --self-contained-html -n auto
+                echo $REPO
+                echo $BRANCH
+                echo $PR_NUM

@@ -5,7 +5,7 @@
         e.g., metadata-aggregate-sync
     Boolean parameter GEN3_ROLL_ALL
         Default value - false
-        e.g., true 
+        e.g., true
 
     Artifact archived - log.txt
 */
