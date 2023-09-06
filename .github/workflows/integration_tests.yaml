@@ -47,10 +47,10 @@ jobs:
               run: |
                 mkdir -p $HOME/.gen3
                 export NS=$(echo "$NAMESPACE" | tr [:lower:] [:upper:] | tr '-' '_')
-                echo $NS
                 echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', '$NS')] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
-                ls $HOME/.gen3
-                cat $HOME/.gen3/jenkins-brain.json | jq
+                ls -al $HOME/.gen3
+                chmod 777 $HOME/.gen3/$NAMESPACE.json
+                cat $HOME/.gen3/$NAMESPACE.json | jq
 
             - name: Run tests
               run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
