@@ -8,7 +8,7 @@ JENKINS_PASSWORD=<Jenkins API Token>
 ```
 At this point in time we use Jenkins hosted in the same host as the test environment to perform administration tasks. The JENKINS_* variables are not needed once this mechanism changes.
 
-Save API key for the environment in `~/.gen3`
+Save API key for the environment in `~/.gen3` with the namespace as the file name.
 
 # Running Tests
 
