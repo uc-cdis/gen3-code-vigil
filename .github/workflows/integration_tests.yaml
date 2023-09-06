@@ -43,8 +43,9 @@ jobs:
             - name: Set Gen3 API keys
               run: |
                 mkdir -p $HOME/.gen3
-                export NS=$(echo "$NAMESPACE" | tr [:lower:] [:upper:] | tr '-' '_')
-                echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', '$NS')] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
+                NS=$(echo "$NAMESPACE" | tr [:lower:] [:upper:] | tr '-' '_')
+                echo "NS=$NS" >> $GITHUB_ENV
+                echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NS)] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
                 ls -al $HOME/.gen3
                 chmod 777 $HOME/.gen3/$NAMESPACE.json
                 echo $(cat $HOME/.gen3/$NAMESPACE.json)
@@ -54,5 +55,5 @@ jobs:
               run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
 
             - name: Release CI environment
-              run: |
-                poetry run python -m utils.gen3_ci.release_ci_environment
+              if: always()
+              run: poetry run python -m utils.gen3_ci.release_ci_environment
