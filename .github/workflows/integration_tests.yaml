@@ -44,7 +44,7 @@ jobs:
               run: |
                 mkdir -p $HOME/.gen3
                 NS=$(echo "$NAMESPACE" | tr '[:upper:]' '[:lower:]' | tr '-' '_')
-                echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NAMESPACE)] }} > $HOME/.gen3/$NAMESPACE.json
+                echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NAMESPACE)] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
 
             - name: Run tests
               run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
