@@ -21,9 +21,6 @@ jobs:
           PR_NUM: ${{ github.event.number }}
 
         steps:
-            - name: Setup tmate session
-              uses: mxschmitt/action-tmate@v3
-
             - name: Checkout code
               uses: actions/checkout@v2
 
