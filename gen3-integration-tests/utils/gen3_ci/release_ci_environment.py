@@ -18,7 +18,7 @@ def release_ci_environment(namespace):
     params = {
         "NAMESPACE": namespace,
         "REPO": os.getenv("REPO"),
-        "branch": os.getenv("BRANCH"),
+        "BRANCH": os.getenv("BRANCH"),
     }
     build_num = job.build_job(params)
     if build_num:

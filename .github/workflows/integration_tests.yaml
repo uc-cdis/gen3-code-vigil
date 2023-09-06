@@ -45,11 +45,12 @@ jobs:
                 mkdir -p $HOME/.gen3
                 NS=$(echo "$NAMESPACE" | tr [:lower:] [:upper:] | tr '-' '_')
                 echo "NS=$NS" >> $GITHUB_ENV
-                echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NS)] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
+                # echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NS)] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
+                echo ${{ secrets['GEN3_API_KEY_JENKINS_BRAIN_USER1'] }} | jq '.' > $HOME/.gen3/$NAMESPACE.json
                 ls -al $HOME/.gen3
                 chmod 777 $HOME/.gen3/$NAMESPACE.json
-                echo $(cat $HOME/.gen3/$NAMESPACE.json)
-                echo $(cat $HOME/.gen3/$NAMESPACE.json | jq)
+                # echo $(cat $HOME/.gen3/$NAMESPACE.json)
+                # echo $(cat $HOME/.gen3/$NAMESPACE.json | jq)
 
             - name: Run tests
               run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
