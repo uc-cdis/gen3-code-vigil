@@ -46,7 +46,7 @@ jobs:
                 # NS=$(echo "$NAMESPACE" | tr [:lower:] [:upper:] | tr '-' '_')
                 # echo "NS=$NS" >> $GITHUB_ENV
                 # echo ${{ secrets[format('GEN3_API_KEY_{0}_USER1', env.NS)] }} | jq '.' > ./$NAMESPACE.json
-                echo ${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }} > ./$NAMESPACE.json
+                echo "${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}" > ./$NAMESPACE.json
                 ls -al .
 
             - name: Run tests
