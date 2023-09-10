@@ -47,7 +47,9 @@ jobs:
             - name: Save PR number to env var
               run: |
                 echo "PR_NUM=${{steps.get_issue_number.outputs.result}}" >> $GITHUB_ENV
-                echo "$PR_NUM"
+
+            - name: Print env
+              run: echo $PR_NUM
 
             # - name: Set up Python
             #   uses: actions/setup-python@v2
