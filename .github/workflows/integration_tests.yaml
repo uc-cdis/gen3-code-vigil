@@ -4,8 +4,6 @@ on:
     push:
         paths:
             - gen3-integration-tests/**
-    pull_request:
-        types: [opened, reopened]
 
 jobs:
     run_integration_tests:
@@ -16,22 +14,40 @@ jobs:
             working-directory: gen3-integration-tests
 
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JENKINS_USERNAME: PlanXCyborg
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
           BRANCH: ${{ github.ref_name }}
-          PR_NUM: ${{ github.event.number }}
 
         steps:
             - name: Checkout code
               uses: actions/checkout@v2
 
-            - name: Dump GitHub context
-              env:
-                GITHUB_CONTEXT: ${{ toJson(github) }}
+            - name: Get PR number
+              uses: actions/github-script@v6
+              id: get_issue_number
+              with:
+                script: |
+                  if (context.issue.number) {
+                    // Return issue number if present
+                    return context.issue.number;
+                  } else {
+                    // Otherwise return issue number from commit
+                    return (
+                      await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                        commit_sha: context.sha,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                      })
+                    ).data[0].number;
+                  }
+                result-encoding: string
+
+            - name: Save PR number to env var
               run: |
-                echo "$GITHUB_CONTEXT"
-                echo "$GITHUB_REF"
+                echo "PR_NUM=${{steps.get_issue_number.outputs.result}}" >> $GITHUB_ENV
+                echo "$PR_NUM"
 
             # - name: Set up Python
             #   uses: actions/setup-python@v2
