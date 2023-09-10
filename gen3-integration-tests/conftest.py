@@ -2,8 +2,10 @@ import os
 
 
 def pytest_configure(config):
+    # Hostname and namespace
     hostname = os.getenv("HOSTNAME")
     namespace = os.getenv("NAMESPACE")
+    assert hostname is not None and namespace is not None
     # Compute namespace from hostname provided
     if not namespace:
         os.environ["NAMESPACE"] = hostname.split(".")[0]
