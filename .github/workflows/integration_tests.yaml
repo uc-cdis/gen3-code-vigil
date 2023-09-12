@@ -58,7 +58,7 @@ jobs:
             run: |
               mkdir -p $HOME/.gen3
               API_KEY="${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}"
-              echo $API_KEY > $HOME/.gen3/$NAMESPACE.json
+              echo "$API_KEY" > $HOME/.gen3/$NAMESPACE.json
 
           - name: Run tests
             run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
