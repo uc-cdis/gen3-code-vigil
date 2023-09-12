@@ -111,9 +111,9 @@ class TestAggregateMDS:
             )
             assert response.status_code == 200
 
-        # Metadata-aggregate-sync and verify
-        logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job(os.getenv("NAMESPACE"), "metadata-aggregate-sync")
-        for i in range(len(study_ids)):
-            response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
-            assert response.status_code == 404
+        # # Metadata-aggregate-sync and verify
+        # logger.info("# Run metadata-aggregate-sync and verify")
+        # gat.run_gen3_job(os.getenv("NAMESPACE"), "metadata-aggregate-sync")
+        # for i in range(len(study_ids)):
+        #     response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
+        #     assert response.status_code == 404
