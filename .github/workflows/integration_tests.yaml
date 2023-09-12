@@ -17,7 +17,7 @@ jobs:
           REPO: ${{ github.event.repository.name }}
           BRANCH: ${{ github.ref_name }}
           PR_NUM: ${{ github.event.pull_request.number }}
-          LABELS: ${{ github.event.pull_request.labels }}
+          # LABELS: ${{ github.event.pull_request.labels }}
 
         steps:
             - name: Checkout code
