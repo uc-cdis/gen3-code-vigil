@@ -15,13 +15,13 @@ jobs:
           JENKINS_USERNAME: PlanXCyborg
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
-          BRANCH: ${{ github.ref_name }}
+          BRANCH: ${{ github.event.pull_request.head }}
           PR_NUM: ${{ github.event.pull_request.number }}
           # LABELS: ${{ github.event.pull_request.labels }}
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v2
+              uses: actions/checkout@v4
 
             # - name: Get PR number
             #   uses: actions/github-script@v6
