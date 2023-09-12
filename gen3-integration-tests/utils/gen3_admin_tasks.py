@@ -12,7 +12,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_portal_config(test_env_namespace):
-    auth = Gen3Auth(refresh_file=f"./{os.getenv('NAMESPACE')}.json")
+    auth = Gen3Auth(refresh_file=os.getenv("NAMESPACE"))
     respone = auth.curl("/data/config/gitops.json")
     if respone.status_code == 200:
         return respone.json()
