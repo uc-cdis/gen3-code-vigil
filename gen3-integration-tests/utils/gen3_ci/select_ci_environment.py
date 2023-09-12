@@ -37,7 +37,6 @@ def select_ci_environment(namespaces):
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         namespace = sys.argv[1]
-    if namespace:
         logger.info(f"Namespace {namespace} was set as a PR label")
         namespaces = namespace
     else:
