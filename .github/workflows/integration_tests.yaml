@@ -50,12 +50,20 @@ jobs:
                 echo "PR_NUM=${{steps.get_issue_number.outputs.result}}" >> $GITHUB_ENV
 
             - name: Get PR labels
+              uses: actions/github-script@v6
               id: get_pr_labels
-              uses: joerick/pr-labels-action@v1.0.8
-
-            - name: Print PR labels
-              run: |
-                  echo ${{ steps.get_pr_labels.outputs.labels }}
+              with:
+                script: |
+                  // Otherwise return issue number from commit
+                  return (
+                    await github.rest.
+                    await github.rest.repos.listLabelsOnIssue({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: env.PR_NUM,
+                    })
+                  ).data[0].number;
+                result-encoding: string
 
             # - name: Select CI environment
             #   run: |
