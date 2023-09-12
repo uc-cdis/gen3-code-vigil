@@ -57,7 +57,8 @@ jobs:
           - name: Set Gen3 API keys
             run: |
               mkdir -p $HOME/.gen3
-              echo "${{ toJson(secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1) }}" | jq > ./$NAMESPACE.json
+              API_KEY="${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}"
+              echo "$API_KEY" | jq > ./$NAMESPACE.json
 
           - name: Run tests
             run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
