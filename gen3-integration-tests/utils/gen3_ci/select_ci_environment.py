@@ -47,7 +47,7 @@ if __name__ == "__main__":
         namespaces = ",".join(res.text.strip().split("\n"))
 
     selected_ns = select_ci_environment(namespaces)
-    logger.info(f" Selected namespace: {selected_ns}")
+    logger.info(f"Selected namespace: {selected_ns}")
 
     env_file = os.getenv("GITHUB_ENV")
     with open(env_file, "a") as myfile:
