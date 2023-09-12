@@ -18,7 +18,7 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-          NAMESPACE: "Not Selected"
+          NAMESPACE: ""
 
         steps:
           - name: Checkout code
