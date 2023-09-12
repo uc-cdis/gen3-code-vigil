@@ -1,7 +1,7 @@
 /*
   String parameter TARGET_ENVIRONMENT
     e.g., qa-anvil
-  
+
   Archived artifact - gitops.json
 */
 pipeline {

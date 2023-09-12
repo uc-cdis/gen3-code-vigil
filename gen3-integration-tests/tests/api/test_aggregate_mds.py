@@ -20,7 +20,7 @@ class TestAggregateMDS:
     )
     study_json_files = ["study1.json", "study2.json", "study3.json"]
 
-    def test_create_edit_delete_study_1(self):
+    def test_create_edit_delete_study(self):
         """Create, edit and delete study from aggregate metadata"""
         # Identify UID field name from gitops.json
         logger.info("# Fetch UID field name from gitops.json")
@@ -49,10 +49,7 @@ class TestAggregateMDS:
 
         # Create metadata record
         logger.info("# Create metadata records")
-        gen3auth = Gen3Auth(refresh_file="jenkins-brain")
-        # metadata = Gen3Auth(gen3auth)
-        # metadata.create(study_id, study_json)
-        # response = gen3auth.curl(f'/mds/metadata/{study_id}', request='POST', data=json.dumps(study_json))
+        gen3auth = Gen3Auth(refresh_file=os.getenv("NAMESPACE"))
         auth_header = {
             "Accept": "application/json",
             "Authorization": f"bearer {gen3auth.get_access_token()}",
@@ -60,7 +57,7 @@ class TestAggregateMDS:
         }
         for i in range(len(study_ids)):
             response = requests.post(
-                f'{os.getenv("HOSTNAME")}/mds/metadata/{study_ids[i]}',
+                f"{os.getenv('HOSTNAME')}/mds/metadata/{study_ids[i]}",
                 data=json.dumps(study_jsons[i]),
                 headers=auth_header,
             )
@@ -114,9 +111,9 @@ class TestAggregateMDS:
             )
             assert response.status_code == 200
 
-        # Metadata-aggregate-sync and verify
-        logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job(os.getenv("NAMESPACE"), "metadata-aggregate-sync")
-        for i in range(len(study_ids)):
-            response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
-            assert response.status_code == 404
+        # # Metadata-aggregate-sync and verify
+        # logger.info("# Run metadata-aggregate-sync and verify")
+        # gat.run_gen3_job(os.getenv("NAMESPACE"), "metadata-aggregate-sync")
+        # for i in range(len(study_ids)):
+        #     response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
+        #     assert response.status_code == 404

@@ -21,7 +21,6 @@ cdislogging = "^1.1.1"
 pytest-env = "^1.0.0"
 pytest-html = "^3.2.0"
 pytest-xdist = "^3.3.1"
-pytest-parallel = "^0.1.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -30,9 +29,10 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 # Set environment variables for pytest tests
 env = [
-    "NAMESPACE=jenkins-brain",
-    "HOSTNAME=https://jenkins-brain.planx-pla.net",
-    "LOG_LEVEL=info",
-    "log_cli=1"
+  "LOG_LEVEL=info",
+  "log_cli=1"
+]
+markers = [
+  "wip: marks tests as `Work In Progress` and skips them in CI pipeline"
 ]
 pythonpath = "."

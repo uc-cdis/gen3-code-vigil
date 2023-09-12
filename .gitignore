@@ -3,4 +3,4 @@ __pycache__
 *.pyc
 .env
 .pytest_cache
-report.html
+output/
