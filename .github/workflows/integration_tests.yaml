@@ -44,7 +44,9 @@ jobs:
               if [ -n "$env_label" ]; then
                 echo "NAMESPACE=$env_label" >> $GITHUB_ENV
               fi
-
+          # Print value of selected namespace
+          - run: |
+              echo "Selected namespace: $NAMESPACE"
           # From the pool if no PR label is set
           - if: ${{ env.NAMESPACE == 'UNSELECTED' }}
             run: |
