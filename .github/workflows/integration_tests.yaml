@@ -50,8 +50,8 @@ jobs:
           #   run: |
           #     poetry run python -m utils.gen3_ci.prepare_ci_environment
 
-          # - run: |
-          #     mkdir -p $HOME/.gen3
+          - run: |
+              mkdir -p $HOME/.gen3
 
           - name: Create API key file
             uses: jsdaniell/create-json@v1.2.2
