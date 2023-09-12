@@ -57,7 +57,7 @@ jobs:
               json: ${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}
 
           - run: |
-              find / -name "jenkins-brain.json" -type f
+              find . -name "jenkins-brain.json" -type f
 
           # - name: Run tests
           #   run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
