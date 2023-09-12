@@ -18,7 +18,7 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-          NAMESPACE: ""
+          NAMESPACE: "UNSELECTED"
 
         steps:
           - name: Checkout code
@@ -37,15 +37,16 @@ jobs:
 
           # Select CI environment
           # From PR label starting with `jenkins-`
-          - if: ${{ env.NAMESPACE == '' }}
+          - if: ${{ env.NAMESPACE == 'UNSELECTED' }}
             run: |
               labels="${PR_LABELS//\\n/ }"
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               if [ -n "$env_label" ]; then
                 echo "NAMESPACE=$env_label" >> $GITHUB_ENV
               fi
+
           # From the pool if no PR label is set
-          - if: ${{ env.NAMESPACE == '' }}
+          - if: ${{ env.NAMESPACE == 'UNSELECTED' }}
             run: |
               poetry run python -m utils.gen3_ci.select_ci_environment
           # Print value of selected namespace
