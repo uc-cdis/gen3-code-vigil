@@ -26,13 +26,16 @@ jobs:
           - name: Select CI environment
             run: |
               labels="${PR_LABELS//\\n/ }"
-              # labels=$(echo "$labels" | jq -c '.')
+              # labels=$(echo "${PR_LABELS//\\n/ }" | jq -c '.')
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               if [ -n "$env_label" ]; then
                 echo "NAMESPACE=$env_label" >> $GITHUB_ENV
               else
                 poetry run python -m utils.gen3_ci.select_ci_environment
               fi
+
+          - name: Selected CI environment
+            run: |
               echo "Selected namespace: $NAMESPACE"
 
             # - name: Set up Python
