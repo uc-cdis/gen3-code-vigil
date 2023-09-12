@@ -49,6 +49,8 @@ class TestAggregateMDS:
 
         # Create metadata record
         logger.info("# Create metadata records")
+        with open("/home/runner/.gen3/jenkins-brain.json", "r") as f:
+            print(f.readall())
         gen3auth = Gen3Auth(refresh_file=os.getenv["NAMESPACE"])
         auth_header = {
             "Accept": "application/json",
