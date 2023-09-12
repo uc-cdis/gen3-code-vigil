@@ -26,7 +26,6 @@ jobs:
           - name: Select CI environment
             run: |
               labels="${PR_LABELS//\\n/ }"
-              # labels=$(echo "${PR_LABELS//\\n/ }" | jq -c '.')
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               if [ -n "$env_label" ]; then
                 echo "NAMESPACE=$env_label" >> $GITHUB_ENV
