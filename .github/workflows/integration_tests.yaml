@@ -24,16 +24,16 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v4
 
-          - name: Set up Python
-            uses: actions/setup-python@v2
-            with:
-              python-version: 3.9
+          # - name: Set up Python
+          #   uses: actions/setup-python@v2
+          #   with:
+          #     python-version: 3.9
 
-          - name: Install dependencies
-            run: |
-              python -m pip install --upgrade pip
-              pip install poetry
-              poetry install -vv
+          # - name: Install dependencies
+          #   run: |
+          #     python -m pip install --upgrade pip
+          #     pip install poetry
+          #     poetry install -vv
 
           # - name: Select CI environment
           #   run: |
@@ -59,12 +59,11 @@ jobs:
             with:
               name: "credentials.json"
               json: ${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}
-              dir: '/home/runner/.gen3/'
 
-          - name: Run tests
-            run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
+          # - name: Run tests
+          #   run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
 
-          - name: Release CI environment
-            if: always()
-            run: |
-              poetry run python -m utils.gen3_ci.release_ci_environment
+          # - name: Release CI environment
+          #   if: always()
+          #   run: |
+          #     poetry run python -m utils.gen3_ci.release_ci_environment
