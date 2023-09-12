@@ -24,36 +24,35 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v4
 
-          - name: Set up Python
-            uses: actions/setup-python@v2
-            with:
-              python-version: 3.9
+          # - name: Set up Python
+          #   uses: actions/setup-python@v2
+          #   with:
+          #     python-version: 3.9
 
-          - name: Install dependencies
-            run: |
-              python -m pip install --upgrade pip
-              pip install poetry
-              poetry install -vv
+          # - name: Install dependencies
+          #   run: |
+          #     python -m pip install --upgrade pip
+          #     pip install poetry
+          #     poetry install -vv
 
-          # Select CI environment
-          # From PR label starting with `jenkins-`
-          - if: ${{ env.NAMESPACE == null }}
+          - name: Select CI environment
+            if: ${{ env.NAMESPACE == null }}
             run: |
               labels="${PR_LABELS//\\n/ }"
               echo labels is $labels
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               echo env_label is $env_label
-              if [ $env_label == "" ]; then
+              if [ $env_label != "" && $env_label != null ]; then
                 echo "found PR label"
-                echo "NAMESPACE=$env_label" >> $GITHUB_ENV
+                # echo "NAMESPACE=$env_label" >> $GITHUB_ENV
+              else
+                echo "PR label not found"
               fi
-          # Print value of selected namespace
-          - run: |
-              echo "Selected namespace: $NAMESPACE"
-          # From the pool if no PR label is set
-          - if: ${{ env.NAMESPACE == null }}
-            run: |
-              poetry run python -m utils.gen3_ci.select_ci_environment
+
+          # # From the pool if no PR label is set
+          # - if: ${{ env.NAMESPACE == null }}
+          #   run: |
+          #     poetry run python -m utils.gen3_ci.select_ci_environment
           # Print value of selected namespace
           - run: |
               echo "Selected namespace: $NAMESPACE"
