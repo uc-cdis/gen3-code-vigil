@@ -53,7 +53,7 @@ jobs:
           - name: Create API key file
             uses: jsdaniell/create-json@v1.2.2
             with:
-              name: "credentials.json"
+              name: "$NAMESPACE.json"
               json: ${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}
 
           - run: |
