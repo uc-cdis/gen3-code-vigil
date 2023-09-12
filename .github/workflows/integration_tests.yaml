@@ -5,7 +5,6 @@ on:
         paths:
             - gen3-integration-tests/**
     pull_request:
-      types: [opened, reopened]
 
 jobs:
     run_integration_tests:
