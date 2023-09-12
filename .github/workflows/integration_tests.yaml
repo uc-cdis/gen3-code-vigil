@@ -53,8 +53,6 @@ jobs:
           - name: Set Gen3 API keys
             run: |
               mkdir -p $HOME/.gen3
-              NS=$(echo "$NAMESPACE" | tr [:lower:] [:upper:] | tr '-' '_')
-              echo "NS=$NS" >> $GITHUB_ENV
               echo "${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}" | jq > ./$NAMESPACE.json
 
           - name: Run tests
