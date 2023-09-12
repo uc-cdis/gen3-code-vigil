@@ -14,7 +14,7 @@ def prepare_ci_environment(namespace):
         "https://jenkins.planx-pla.net",
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "ci-only-run-admin-command",
+        "ci-only-run-gen3-command",
     )
     params = {
         "TARGET_ENVIRONMENT": namespace,
