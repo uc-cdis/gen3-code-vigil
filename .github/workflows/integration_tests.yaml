@@ -15,7 +15,7 @@ jobs:
           JENKINS_USERNAME: PlanXCyborg
           JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
-          BRANCH: ${{ github.event.pull_request.head }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           # LABELS: ${{ github.event.pull_request.labels }}
 
