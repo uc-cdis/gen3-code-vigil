@@ -43,7 +43,7 @@ jobs:
               echo labels is $labels
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               echo env_label is $env_label
-              if [ -n "$env_label" ]; then
+              if [ $env_label == "" ]; then
                 echo "found PR label"
                 echo "NAMESPACE=$env_label" >> $GITHUB_ENV
               fi
