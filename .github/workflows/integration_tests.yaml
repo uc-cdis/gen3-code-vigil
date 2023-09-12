@@ -18,7 +18,6 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-          NAMESPACE: ""
 
         steps:
           - name: Checkout code
@@ -36,7 +35,6 @@ jobs:
               poetry install -vv
 
           - name: Select CI environment
-            if: ${{ env.NAMESPACE == null }}
             run: |
               labels="${PR_LABELS//\\n/ }"
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
