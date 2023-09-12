@@ -53,11 +53,13 @@ jobs:
           - name: Create API key file
             uses: jsdaniell/create-json@v1.2.2
             with:
-              name: "$NAMESPACE.json"
+              name: "credentials.json"
               json: ${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}
 
           - run: |
-              ls ..
+              mkdir -p $HOME/.gen3
+              mv ../credentials.json $HOME/.gen3/$NAMESPACE.json
+              ls $HOME/.gen3
 
           # - name: Run tests
           #   run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
