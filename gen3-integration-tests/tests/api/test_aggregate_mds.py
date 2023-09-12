@@ -49,7 +49,7 @@ class TestAggregateMDS:
 
         # Create metadata record
         logger.info("# Create metadata records")
-        gen3auth = Gen3Auth(refresh_file=f"./{os.getenv['NAMESPACE']}.json")
+        gen3auth = Gen3Auth(refresh_file=os.getenv["NAMESPACE"])
         auth_header = {
             "Accept": "application/json",
             "Authorization": f"bearer {gen3auth.get_access_token()}",
