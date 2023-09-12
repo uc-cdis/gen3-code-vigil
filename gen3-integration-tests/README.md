@@ -24,4 +24,4 @@ HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pyt
 
 `-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). To use this feature it is imperative that the tests are designed to be independent and idempotent.
 
-Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`. Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/markers.html).
+Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`. Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/markers.html)
