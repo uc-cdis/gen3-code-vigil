@@ -23,6 +23,17 @@ jobs:
           - name: Checkout code
             uses: actions/checkout@v4
 
+          - name: Set up Python
+            uses: actions/setup-python@v2
+            with:
+              python-version: 3.9
+
+          - name: Install dependencies
+            run: |
+              python -m pip install --upgrade pip
+              pip install poetry
+              poetry install -vv
+
           - name: Select CI environment
             run: |
               labels="${PR_LABELS//\\n/ }"
@@ -36,17 +47,6 @@ jobs:
           - name: Selected CI environment
             run: |
               echo "Selected namespace: $NAMESPACE"
-
-            # - name: Set up Python
-            #   uses: actions/setup-python@v2
-            #   with:
-            #     python-version: 3.9
-
-            # - name: Install dependencies
-            #   run: |
-            #     python -m pip install --upgrade pip
-            #     pip install poetry
-            #     poetry install -vv
 
             # - name: Set Gen3 API keys
             #   run: |
