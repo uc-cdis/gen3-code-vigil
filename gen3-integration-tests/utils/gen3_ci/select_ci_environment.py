@@ -39,13 +39,14 @@ if __name__ == "__main__":
         namespace = sys.argv[1]
     if namespace:
         logger.info(f"Namespace {namespace} was set as a PR label")
-        res = requests.get(
-            "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-services.txt"
-        )
-        namespaces = ",".join(res.text.strip().split("\n"))
+        namespaces = namespace
     else:
         logger.info(f"Namespace was not set as a PR labels")
-        namespaces = namespace
+        res = requests.get(
+            "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-releases.txt"
+        )
+        namespaces = ",".join(res.text.strip().split("\n"))
+
     selected_ns = select_ci_environment(namespaces)
     logger.info(f" Selected namespace: {selected_ns}")
 
