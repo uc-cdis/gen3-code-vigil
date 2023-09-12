@@ -18,7 +18,7 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-          NAMESPACE: ""
+          NAMESPACE: "Not Selected"
 
         steps:
           - name: Checkout code
@@ -40,7 +40,9 @@ jobs:
           - if: ${{ env.NAMESPACE == null }}
             run: |
               labels="${PR_LABELS//\\n/ }"
+              echo labels is $labels
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
+              echo env_label is $env_label
               if [ -n "$env_label" ]; then
                 echo "found PR label"
                 echo "NAMESPACE=$env_label" >> $GITHUB_ENV
