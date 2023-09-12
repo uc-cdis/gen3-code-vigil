@@ -59,7 +59,7 @@ jobs:
             with:
               name: "credentials.json"
               json: ${{ secrets.GEN3_API_KEY_JENKINS_BRAIN_USER1 }}
-              dir: '$HOME/.gen3/'
+              dir: '/home/runner/.gen3/'
 
           - name: Run tests
             run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
