@@ -1,5 +1,6 @@
 import os
 import requests
+import sys
 
 from cdislogging import get_logger
 
@@ -22,7 +23,7 @@ def select_ci_environment(namespaces):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=1800)
         if status == "Completed":
             return job.get_artifact_content(build_num, "namespace.txt")
         else:
@@ -34,10 +35,17 @@ def select_ci_environment(namespaces):
 
 
 if __name__ == "__main__":
-    res = requests.get(
-        "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs.txt"
-    )
-    namespaces = ",".join(res.text.strip().split("\n"))
+    if len(sys.argv) > 1:
+        namespace = sys.argv[1]
+    if namespace:
+        logger.info(f"Namespace {namespace} was set as a PR label")
+        res = requests.get(
+            "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-services.txt"
+        )
+        namespaces = ",".join(res.text.strip().split("\n"))
+    else:
+        logger.info(f"Namespace was not set as a PR labels")
+        namespaces = namespace
     selected_ns = select_ci_environment(namespaces)
     logger.info(f" Selected namespace: {selected_ns}")
 
