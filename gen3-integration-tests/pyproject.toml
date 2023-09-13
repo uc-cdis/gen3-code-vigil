@@ -15,12 +15,11 @@ python = "^3.9"
 pytest = "^7.4.0"
 requests = "^2.31.0"
 python-dotenv = "^1.0.0"
-pyyaml = "5.4"
-gen3 = "^4.20.4"
 cdislogging = "^1.1.1"
 pytest-env = "^1.0.0"
 pytest-html = "^3.2.0"
 pytest-xdist = "^3.3.1"
+pytest-datadir = "^1.4.1"
 
 [build-system]
 requires = ["poetry-core"]

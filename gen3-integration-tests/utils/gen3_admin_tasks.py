@@ -1,8 +1,10 @@
-from dotenv import load_dotenv
 import json
 import os
+import pytest
+import requests
+
+from dotenv import load_dotenv
 from cdislogging import get_logger
-from gen3.auth import Gen3Auth
 
 from utils.jenkins import JenkinsJob
 
@@ -12,10 +14,9 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_portal_config(test_env_namespace):
-    auth = Gen3Auth(refresh_file=os.getenv("NAMESPACE"))
-    respone = auth.curl("/data/config/gitops.json")
-    if respone.status_code == 200:
-        return respone.json()
+    res = requests.get(f"{pytest.root_url}/data/config/gitops.json")
+    if res.status_code == 200:
+        return res.json()
     else:
         return None
 
