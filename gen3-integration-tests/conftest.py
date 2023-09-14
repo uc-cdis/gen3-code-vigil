@@ -8,16 +8,15 @@ from services.fence import Fence
 
 
 def pytest_configure(config):
-    # Compute hostname
+    # Compute hostname and namespace
     hostname = os.getenv("HOSTNAME")
-    assert hostname
-
-    # Compute namespace
     namespace = os.getenv("NAMESPACE")
-    if namespace:
-        pytest.namespace = namespace
-    else:
-        pytest.namespace = hostname.split(".")[0]
+    assert hostname or namespace
+    if hostname and not namespace:
+        namespace = hostname.split(".")[0]
+    if namespace and not hostname:
+        hostname = f"{namespace}.planx-pla.net"
+    pytest.namespace = namespace
 
     # Compute root_url
     pytest.root_url = f"https://{hostname}"
