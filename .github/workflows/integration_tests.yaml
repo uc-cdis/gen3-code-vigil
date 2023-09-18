@@ -31,12 +31,9 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           COMMIT: ${{ github.event.pull_request.head.sha }}
-          COMMITTED_AT: ${{ github.event.pull_request.head.pushed_at }}
+          COMMITTED_AT: ${{ toJson(github.event.pull_request.head) }}
 
         steps:
-          # DEBUG: print context
-          - run: echo "$CONTEXT"
-
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
             if: github.event.repository.name == 'gen3-code-vigil'
