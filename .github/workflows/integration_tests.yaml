@@ -31,7 +31,7 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           COMMIT: ${{ github.event.pull_request.head.sha }}
-          CONTEXT: ${{ toJson(github.event.pull_request) }}
+          CONTEXT: ${{ toJson(github.event.pull_request.head) }}
 
         steps:
           # DEBUG: print context
