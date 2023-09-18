@@ -33,6 +33,10 @@ jobs:
           COMMIT: ${{ github.event.pull_request.head.sha }}
 
         steps:
+          # DEBUG: print context
+          - run: |
+            echo ${{ toJson(github.event.pull_request) }}
+
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
             if: github.event.repository.name == 'gen3-code-vigil'

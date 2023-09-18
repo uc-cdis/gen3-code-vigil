@@ -10,7 +10,9 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def wait_for_image_build(repo, branch):
-    pass
+    branch = branch.replace("(", "_").replace(")", "_").replace("/", "_")
+    if os.getenv("QUAY_REPO"):
+        repo = os.getenv("QUAY_REPO")
 
 
 def prepare_ci_environment(namespace):
