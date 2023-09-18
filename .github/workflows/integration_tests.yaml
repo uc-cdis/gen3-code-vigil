@@ -28,12 +28,12 @@ jobs:
         steps:
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout test code from dev branch
-            if: ${{ github.event.repository.name == "gen3-code-vigil" }}
+            if: github.event.repository.name == 'gen3-code-vigil'
             uses: actions/checkout@v4
 
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout test code from master branch
-            if: ${{ github.event.repository.name  != "gen3-code-vigil" }}
+            if: github.event.repository.name  != 'gen3-code-vigil'
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
