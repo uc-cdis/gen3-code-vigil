@@ -10,7 +10,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 def release_ci_environment(namespace):
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-unlock-namespace",

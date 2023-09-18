@@ -23,7 +23,7 @@ def get_portal_config(test_env_namespace):
 
 def get_portal_config_from_kube_secrets(test_env_namespace):
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-fetch-portal-config",
@@ -44,7 +44,7 @@ def get_portal_config_from_kube_secrets(test_env_namespace):
 
 def run_gen3_job(test_env_namespace, job_name, roll_all=False):
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-run-gen3-job",

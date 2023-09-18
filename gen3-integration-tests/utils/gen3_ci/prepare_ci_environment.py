@@ -12,14 +12,14 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 def prepare_ci_environment(namespace):
     # Roll all pods
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-run-gen3-command",
     )
     params = {
         "TARGET_ENVIRONMENT": namespace,
-        "COMMAND": "gen3 roll all",
+        "COMMAND": "gen3 reset",
     }
     build_num = job.build_job(params)
     if build_num:
@@ -35,7 +35,7 @@ def prepare_ci_environment(namespace):
 
     # Run usersync
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-run-gen3-job",
@@ -46,7 +46,7 @@ def prepare_ci_environment(namespace):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=1800)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:

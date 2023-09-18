@@ -122,7 +122,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-fetch-portal-config",

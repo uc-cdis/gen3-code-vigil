@@ -11,7 +11,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 def select_ci_environment(namespaces):
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-select-and-lock-namespace",
