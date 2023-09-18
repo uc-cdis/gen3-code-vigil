@@ -35,7 +35,7 @@ jobs:
         steps:
           # DEBUG: print context
           - run: |
-            echo ${{ toJson(github.event.pull_request) }}
+            echo ${{ toJson(github.event) }}
 
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
