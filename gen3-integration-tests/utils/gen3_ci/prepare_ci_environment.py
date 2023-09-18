@@ -9,7 +9,20 @@ from utils.jenkins import JenkinsJob
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+def wait_for_image_build(repo, branch):
+    pass
+
+
 def prepare_ci_environment(namespace):
+    repo = os.getenv("REPO")
+
+    if repo in ("gen3-code-vigl", "gen3-qa"):  # Test repos
+        pass
+    elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
+        pass
+    else:  # Service repos
+        pass
+
     # Roll all pods
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
