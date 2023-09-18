@@ -9,4 +9,4 @@ concurrency:
 jobs:
   run_integration_tests:
     name: Run integration tests
-    uses: uc-cdis/gen3-code-vigil/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/gen3-code-vigil/.github/.github/workflows/integration_tests.yaml@chore/generalize_ci_workflow
