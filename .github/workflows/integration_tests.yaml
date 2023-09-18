@@ -31,11 +31,11 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           COMMIT: ${{ github.event.pull_request.head.sha }}
+          CONTEXT: ${{ toJson(github.event.pull_request) }}
 
         steps:
           # DEBUG: print context
-          - run: |
-            echo ${{ toJson(github.event) }}
+          - run: echo $CONTEXT
 
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
