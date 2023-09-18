@@ -9,4 +9,4 @@ concurrency:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: .github/workflows/integration_tests.yaml@chore/generalize_ci_workflow
+    uses: ./.github/workflows/integration_tests.yaml@chore/generalize_ci_workflow
