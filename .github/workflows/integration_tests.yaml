@@ -37,6 +37,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
+              ref: master
 
           # gen3-code-vigil runs with python 3.9
           - name: Set up Python
