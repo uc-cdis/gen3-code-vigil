@@ -56,7 +56,7 @@ pipeline {
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            gen3 reset
+                            yes | gen3 reset
                             gen3 job run usersync
                             g3kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
