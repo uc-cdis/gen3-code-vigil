@@ -51,7 +51,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
