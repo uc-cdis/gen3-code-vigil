@@ -44,7 +44,7 @@ pipeline {
         }
         stage('Change service version and roll env') {
             steps {
-                dir("cdis-manifest/$TARGET_ENVIRONMENT") {
+                dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
                     script {
                         currentBranch = "${serviceName}:[a-zA-Z0-9._-]*"
                         targetBranch = "${serviceName}:${quayBranchName}"
