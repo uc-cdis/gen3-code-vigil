@@ -46,8 +46,8 @@ pipeline {
             steps {
                 dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
                     script {
-                        currentBranch = "${serviceName}:[a-zA-Z0-9._-]*"
-                        targetBranch = "${serviceName}:${quayBranchName}"
+                        currentBranch = "${SERVICE}:[a-zA-Z0-9._-]*"
+                        targetBranch = "${SERVICE}:${VERSION}"
                         echo "Editing cdis-manifest/${TARGET_ENVIRONMENT} service ${SERVICE} to version ${VERSION}"
                         sh 'sed -i -e "s,'+"${currentBranch},${targetBranch}"+',g" manifest.json'
                         sh 'cat manifest.json'
