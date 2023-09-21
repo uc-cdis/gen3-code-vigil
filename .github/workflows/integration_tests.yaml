@@ -30,8 +30,8 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
-          COMMIT: ${{ github.event.pull_request.head.sha }}
-          COMMITTED_AT: ${{ toJson(github.event.pull_request) }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
 
         steps:
           # Checkout current branch of gen3-code-vigil if it is the repo under test
