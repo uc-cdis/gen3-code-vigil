@@ -42,7 +42,7 @@ pipeline {
                 ])
             }
         }
-        stage('Change service version and roll env') {
+        stage('Change service version') {
             steps {
                 dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
                     script {
@@ -51,12 +51,34 @@ pipeline {
                         echo "Editing cdis-manifest/${TARGET_ENVIRONMENT} service ${SERVICE} to version ${VERSION}"
                         sh 'sed -i -e "s,'+"${currentBranch},${targetBranch}"+',g" manifest.json'
                         sh 'cat manifest.json'
+                    }
+                }
+            }
+        }
+        stage('Roll the environment') {
+            steps {
+                dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
+                    script {
                         sh '''#!/bin/bash +x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
                             source $GEN3_HOME/gen3/gen3setup.sh
                             yes | gen3 reset
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Run usersync') {
+            steps {
+                dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
+                    script {
+                        sh '''#!/bin/bash +x
+                            set -e
+                            export GEN3_HOME=\$WORKSPACE/cloud-automation
+                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            source $GEN3_HOME/gen3/gen3setup.sh
                             gen3 job run usersync
                             g3kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
