@@ -11,7 +11,7 @@
 pipeline {
     agent {
       node {
-        label 'gen3-qa-worker'
+        label 'gen3-ci-worker'
       }
     }
     stages {
