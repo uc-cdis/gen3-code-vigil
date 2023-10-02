@@ -141,7 +141,7 @@ def prepare_ci_environment(namespace):
         pass
     else:  # Service repos
         quay_tag = (
-            os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
+            os.getenv("BRANCH").replace("(", "_").replace(")", "_").replace("/", "_")
         )
         result = wait_for_quay_build(quay_repo, quay_tag)
         assert result.lower() == "success"
