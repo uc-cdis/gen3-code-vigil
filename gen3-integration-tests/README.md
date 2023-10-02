@@ -3,6 +3,7 @@
 Create a .env file containing in `gen3-code-vigil/gen3-integration-tests` with the values:
 
 ```
+JENKINS_URL="https://jenkins.planx-pla.net"
 JENKINS_USERNAME=PlanXCyborg
 JENKINS_PASSWORD=<Jenkins API Token>
 ```

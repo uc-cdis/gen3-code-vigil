@@ -21,6 +21,7 @@ def select_ci_environment(namespaces):
         "REPO": os.getenv("REPO"),
         "BRANCH": os.getenv("BRANCH"),
     }
+    logger.info(os.getenv("JENKINS_PASSWORD")[:5])
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num, max_duration=1800)

@@ -1,5 +1,4 @@
 import os
-import requests
 
 from cdislogging import get_logger
 
