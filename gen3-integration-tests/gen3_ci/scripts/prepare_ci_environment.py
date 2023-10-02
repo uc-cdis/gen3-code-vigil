@@ -115,7 +115,7 @@ def prepare_ci_environment(namespace):
         quay_repo = repo
     # quay image tag
     quay_tag = os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
-    if repo in ("gen3-code-vigl", "gen3-qa"):  # Test repos
+    if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
         pass
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
         pass
