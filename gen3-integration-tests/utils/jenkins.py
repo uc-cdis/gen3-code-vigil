@@ -36,7 +36,7 @@ class JenkinsJob(object):
             running = self.get_build_info(build_number)["building"]
             if running:
                 return True
-        except:
+        except Exception:
             return False
 
     def get_build_result(self, build_number):
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     job = JenkinsJob(
-        "https://jenkins.planx-pla.net",
+        os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-fetch-portal-config",

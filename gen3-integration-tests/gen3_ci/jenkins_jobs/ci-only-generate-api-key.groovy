@@ -1,15 +1,16 @@
 /*
     String parameter TARGET_ENVIRONMENT
         e.g., qa-anvil
-    String parameter COMMAND
-        e.g., gen3 secrets decode portal-config gitops.json | jq '.discoveryConfig.minimalFieldMapping.uid'
+    String parameter USERNAME
+        Username
+        e.g., cdis.autotest@gmail.com
 
-    Artifact archived - result.txt
+    Artifact archived - api_key.json
 */
 pipeline {
     agent {
       node {
-        label 'gen3-qa-worker'
+        label 'gen3-ci-worker'
       }
     }
     stages {
@@ -31,16 +32,16 @@ pipeline {
                 ])
             }
         }
-        stage('Run command on adminvm') {
+        stage('Generate API Key') {
             steps {
-                dir("run-command") {
+                dir("generate-api-key") {
                     script {
                         sh '''#!/bin/bash +x
+                            set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
-                            source \$GEN3_HOME/gen3/gen3setup.sh
-                            RESULT=`\$COMMAND`
-                            echo "\$RESULT" > result.txt
+                            source $GEN3_HOME/gen3/gen3setup.sh
+                            gen3 api api-key $USERNAME > api_key.json
                         '''
                     }
                 }
@@ -49,7 +50,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'run-command/result.txt'
+            archiveArtifacts artifacts: 'generate-api-key/api_key.json'
         }
     }
 }

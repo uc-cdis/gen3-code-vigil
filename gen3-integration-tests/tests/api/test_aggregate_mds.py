@@ -2,10 +2,8 @@ import json
 import os
 import uuid
 import pytest
-import requests
 
 from cdislogging import get_logger
-from pathlib import Path
 
 import utils.gen3_admin_tasks as gat
 

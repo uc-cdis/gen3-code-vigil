@@ -3,6 +3,7 @@
 Create a .env file containing in `gen3-code-vigil/gen3-integration-tests` with the values:
 
 ```
+JENKINS_URL="https://jenkins.planx-pla.net"
 JENKINS_USERNAME=PlanXCyborg
 JENKINS_PASSWORD=<Jenkins API Token>
 ```
@@ -12,12 +13,12 @@ Save API key for the environment in `~/.gen3` with the namespace as the file nam
 
 # Running Tests
 
-Switch `gen3-code-vigil/gen3-integration-tests` to run the command:
+Switch to `gen3-code-vigil/gen3-integration-tests` and run the command:
 ```
 HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto
 ```
 The kubernetes namespace is required for Gen3 admin tasks. It is assumed to be the first part of the hostname (`jenkins-brain` in the example above).
-If it is different specify it explicitly, like
+If it is different it must be explicitly defined, like
 ```
 HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --html=output/report.html --self-contained-html -n auto
 ```
