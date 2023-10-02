@@ -36,7 +36,7 @@ class JenkinsJob(object):
             running = self.get_build_info(build_number)["building"]
             if running:
                 return True
-        except:
+        except Exception:
             return False
 
     def get_build_result(self, build_number):

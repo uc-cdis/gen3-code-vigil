@@ -21,13 +21,32 @@ def pytest_configure(config):
     # Compute root_url
     pytest.root_url = f"https://{hostname}"
 
-    # Compute auth header for default user - cdis.autotest@gmail.com
+    # Accounts used for testing
+    pytest.users = {}
+    pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user
+    pytest.users["indexing_account"] = "ctds.indexing.test@gmail.com"  # indexing admin
+
+    # Compute auth headers
+    pytest.auth_header = {}
     fence = Fence()
+    # Default user - cdis.autotest@gmail.com
     api_key = json.loads(
-        (Path.home() / ".gen3" / f"{pytest.namespace}.json").read_text()
+        (Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json").read_text()
     )["api_key"]
     access_token = fence.get_access_token(api_key)
-    pytest.auth_header = {
+    pytest.auth_header["cdis.autotest@gmail.com"] = {
+        "Accept": "application/json",
+        "Authorization": f"bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+    # Indexing admin - ctds.indexing.test@gmail.com
+    api_key = json.loads(
+        (
+            Path.home() / ".gen3" / f"{pytest.namespace}_indexing_account.json"
+        ).read_text()
+    )["api_key"]
+    access_token = fence.get_access_token(api_key)
+    pytest.auth_header["cdis.autotest@gmail.com"] = {
         "Accept": "application/json",
         "Authorization": f"bearer {access_token}",
         "Content-Type": "application/json",
