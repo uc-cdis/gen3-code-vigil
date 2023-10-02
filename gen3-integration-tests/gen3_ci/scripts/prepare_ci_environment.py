@@ -1,4 +1,7 @@
+import json
 import os
+from pathlib import Path
+import pytest
 import requests
 import time
 
@@ -6,6 +9,10 @@ from cdislogging import get_logger
 from datetime import datetime
 
 from utils.jenkins import JenkinsJob
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -62,21 +69,63 @@ def modify_env_for_service_pr(namespace, service, tag):
         return "failure"
 
 
+def generate_api_keys_for_test_users(namespace):
+    # Accounts used for testing
+    test_users = {
+        "main_account": "cdis.autotest@gmail.com",  # default user
+        "indexing_account": "ctds.indexing.test@gmail.com",  # indexing admin
+    }
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-generate-api-key",
+    )
+    for user in test_users:
+        params = {
+            "TARGET_ENVIRONMENT": namespace,
+            "USERNAME": test_users[user],
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                res = job.get_build_result(build_num)
+                if res.lower() == "success":
+                    api_key = json.loads(
+                        job.get_artifact_content(build_num, "api_key.json")
+                    )
+                    json.dump(
+                        api_key,
+                        Path.home() / ".gen3" / f"{pytest.namespace}_{user}.json",
+                    )
+                return res
+            else:
+                logger.error("Build timed out. Consider increasing max_duration")
+                return "failure"
+        else:
+            logger.error("Build number not found")
+            return "failure"
+
+
 def prepare_ci_environment(namespace):
-    repo = os.getenv("REPO")
-    # if quay repo name is different from github repo name
-    if os.getenv("QUAY_REPO"):
-        quay_repo = os.getenv("QUAY_REPO")
-    # quay image tag
-    quay_tag = os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
-    if repo in ("gen3-code-vigl", "gen3-qa"):  # Test repos
-        pass
-    elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-        pass
-    else:  # Service repos
-        result = wait_for_quay_build(quay_repo, quay_tag)
-        assert result.lower() == "success"
-        result = modify_env_for_service_pr(quay_repo, quay_tag, namespace)
+    # repo = os.getenv("REPO")
+    # # if quay repo name is different from github repo name
+    # if os.getenv("QUAY_REPO"):
+    #     quay_repo = os.getenv("QUAY_REPO")
+    # # quay image tag
+    # quay_tag = os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
+    # if repo in ("gen3-code-vigl", "gen3-qa"):  # Test repos
+    #     pass
+    # elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
+    #     pass
+    # else:  # Service repos
+    #     result = wait_for_quay_build(quay_repo, quay_tag)
+    #     assert result.lower() == "success"
+    #     result = modify_env_for_service_pr(quay_repo, quay_tag, namespace)
+    # generate api keys for test users for the ci env
+    result = generate_api_keys_for_test_users(namespace)
+    assert result.lower() == "success"
 
 
 if __name__ == "__main__":

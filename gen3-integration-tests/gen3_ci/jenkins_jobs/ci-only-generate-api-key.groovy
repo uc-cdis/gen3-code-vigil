@@ -1,7 +1,7 @@
 /*
     String parameter TARGET_ENVIRONMENT
         e.g., qa-anvil
-    String parameter USER
+    String parameter USERNAME
         Username
         e.g., cdis.autotest@gmail.com
 
@@ -41,7 +41,7 @@ pipeline {
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            gen3 api api-key $USER > api_key.json
+                            gen3 api api-key $USERNAME > api_key.json
                         '''
                     }
                 }
