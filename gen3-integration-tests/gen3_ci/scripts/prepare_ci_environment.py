@@ -53,7 +53,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     params = {
         "TARGET_ENVIRONMENT": namespace,
         "SERVICE": service,
-        "TAG": tag,
+        "VERSION": tag,
     }
     build_num = job.build_job(params)
     if build_num:
