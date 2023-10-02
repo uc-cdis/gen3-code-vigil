@@ -18,7 +18,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 def wait_for_quay_build(repo, tag):
     quay_url_org = "https://quay.io/api/v1/repository/cdis"
-    commit_time = datetime.strptime("os.getenv('COMMIT_TIME')", "%Y-%m-%dT%H:%M:%SZ")
+    commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
     max_tries = 30  # Minutes to wait for image
     found = False
     i = 0
