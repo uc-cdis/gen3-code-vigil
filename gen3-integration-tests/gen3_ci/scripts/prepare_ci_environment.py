@@ -68,6 +68,27 @@ def modify_env_for_service_pr(namespace, service, tag):
         return "failure"
 
 
+def modify_env_for_test_repo_pr(namespace):
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-modify-env-for-test-repo-pr",
+    )
+    params = {"TARGET_ENVIRONMENT": namespace}
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=3600)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            logger.error("Build timed out. Consider increasing max_duration")
+            return "failure"
+    else:
+        logger.error("Build number not found")
+        return "failure"
+
+
 def generate_api_keys_for_test_users(namespace):
     # Accounts used for testing
     test_users = {
@@ -96,7 +117,7 @@ def generate_api_keys_for_test_users(namespace):
                         job.get_artifact_content(build_num, "api_key.json")
                     )
                     with open(
-                        Path.home() / ".gen3" / f"{namespace}_{user}.json", "w"
+                        Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
                     ) as key_file:
                         json.dump(api_key, key_file)
             else:
@@ -113,18 +134,22 @@ def prepare_ci_environment(namespace):
         quay_repo = os.getenv("QUAY_REPO")
     else:
         quay_repo = repo
-    # quay image tag
-    quay_tag = os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
     if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
-        pass
+        result = modify_env_for_test_repo_pr(namespace)
+        assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
         pass
     else:  # Service repos
+        quay_tag = (
+            os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
+        )
         result = wait_for_quay_build(quay_repo, quay_tag)
         assert result.lower() == "success"
-        result = modify_env_for_service_pr(quay_repo, quay_tag, namespace)
+        result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
+        assert result.lower() == "success"
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
+    assert result.lower() == "success"
 
 
 if __name__ == "__main__":
