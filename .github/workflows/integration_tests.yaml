@@ -9,5 +9,5 @@ concurrency:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: ./.github/workflows/integration_tests.yaml
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/add_wf_integration_tests
     secrets: inherit  #pragma: allowlist secret
