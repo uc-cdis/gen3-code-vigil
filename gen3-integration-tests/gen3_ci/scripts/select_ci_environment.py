@@ -40,7 +40,7 @@ if __name__ == "__main__":
         logger.info(f"Namespace {namespace} was set as a PR label")
         namespaces = namespace
     else:
-        logger.info(f"Namespace was not set as a PR labels")
+        logger.info("Namespace was not set as a PR labels")
         res = requests.get(
             "https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs.txt"
         )
