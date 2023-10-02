@@ -69,9 +69,9 @@ jobs:
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               if [[ $env_label != "" && $env_label != null ]]; then
                 echo "Found PR label $env_label"
-                poetry run python -m utils.gen3_ci.select_ci_environment $env_label
+                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
               else
-                poetry run python -m utils.gen3_ci.select_ci_environment
+                poetry run python -m gen3_ci.scripts.select_ci_environment
               fi
 
           # TODO: Improve the logic to do differential updates to the env, not roll all services
@@ -79,7 +79,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             run: |
-              poetry run python -m utils.gen3_ci.prepare_ci_environment
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
           - name: Run tests
             run: poetry run pytest --html=report.html --self-contained-html -n auto -m "not wip"
@@ -87,4 +87,4 @@ jobs:
           - name: Release CI environment
             if: always()
             run: |
-              poetry run python -m utils.gen3_ci.release_ci_environment
+              poetry run python -m gen3_ci.scripts.release_ci_environment
