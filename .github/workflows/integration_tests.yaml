@@ -62,7 +62,12 @@ jobs:
 
         - name: Run tests
           run: |
-            poetry run pytest --md-report --md-report-verbose=1
+            poetry run pytest --md-report --md-report-verbose=1 --md-report-output report.md
+
+        - name: Render reports to the PR
+          if: failure()
+          run:
+            gh pr comment $PR_NUM --body-file md_report.md
 
         - name: Archive test report
           uses: actions/upload-artifact@v3
