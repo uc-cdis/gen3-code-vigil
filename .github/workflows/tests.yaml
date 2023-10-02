@@ -10,3 +10,4 @@ jobs:
   integration_tests:
     name: Integration tests
     uses: ./.github/workflows/integration_tests.yaml
+    secrets: inherit  #pragma: allowlist secret
