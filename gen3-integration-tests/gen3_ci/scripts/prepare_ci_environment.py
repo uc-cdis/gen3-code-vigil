@@ -82,6 +82,7 @@ def generate_api_keys_for_test_users(namespace):
         "ci-only-generate-api-key",
     )
     for user in test_users:
+        logger.info(f"Generating API key for {test_users[user]}")
         params = {
             "TARGET_ENVIRONMENT": namespace,
             "USERNAME": test_users[user],
@@ -95,37 +96,34 @@ def generate_api_keys_for_test_users(namespace):
                     api_key = json.loads(
                         job.get_artifact_content(build_num, "api_key.json")
                     )
-                    json.dump(
-                        api_key,
-                        Path.home() / ".gen3" / f"{pytest.namespace}_{user}.json",
-                    )
-                return res
+                    with open(
+                        Path.home() / ".gen3" / f"{namespace}_{user}.json", "w"
+                    ) as key_file:
+                        json.dump(api_key, key_file)
             else:
-                logger.error("Build timed out. Consider increasing max_duration")
-                return "failure"
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            logger.error("Build number not found")
-            return "failure"
+            raise Exception("Build number not found")
+    return "SUCCESS"
 
 
 def prepare_ci_environment(namespace):
-    # repo = os.getenv("REPO")
-    # # if quay repo name is different from github repo name
-    # if os.getenv("QUAY_REPO"):
-    #     quay_repo = os.getenv("QUAY_REPO")
-    # # quay image tag
-    # quay_tag = os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
-    # if repo in ("gen3-code-vigl", "gen3-qa"):  # Test repos
-    #     pass
-    # elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-    #     pass
-    # else:  # Service repos
-    #     result = wait_for_quay_build(quay_repo, quay_tag)
-    #     assert result.lower() == "success"
-    #     result = modify_env_for_service_pr(quay_repo, quay_tag, namespace)
+    repo = os.getenv("REPO")
+    # if quay repo name is different from github repo name
+    if os.getenv("QUAY_REPO"):
+        quay_repo = os.getenv("QUAY_REPO")
+    # quay image tag
+    quay_tag = os.getenv("REPO").replace("(", "_").replace(")", "_").replace("/", "_")
+    if repo in ("gen3-code-vigl", "gen3-qa"):  # Test repos
+        pass
+    elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
+        pass
+    else:  # Service repos
+        result = wait_for_quay_build(quay_repo, quay_tag)
+        assert result.lower() == "success"
+        result = modify_env_for_service_pr(quay_repo, quay_tag, namespace)
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
-    assert result.lower() == "success"
 
 
 if __name__ == "__main__":
