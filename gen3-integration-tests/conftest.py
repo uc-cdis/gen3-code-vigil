@@ -26,11 +26,21 @@ def pytest_configure(config):
     pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user
     pytest.users["indexing_account"] = "ctds.indexing.test@gmail.com"  # indexing admin
 
-    # Compute auth headers
+    # Initialize auth headers
     pytest.auth_headers = {}
-    fence = Fence()
+
     # Save API key id's for cleanup
     pytest.api_key_ids = []
+
+
+@pytest.fixture
+def test_data_path():
+    return Path(__file__).parent / "test_data"
+
+
+# @pytest.fixture(autouse=True)
+def compute_access_token_headers():
+    fence = Fence()
     # Default user - main_account - cdis.autotest@gmail.com
     api_key_json = json.loads(
         (Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json").read_text()
@@ -57,8 +67,3 @@ def pytest_configure(config):
         "Authorization": f"bearer {access_token}",
         "Content-Type": "application/json",
     }
-
-
-@pytest.fixture
-def test_data_path():
-    return Path(__file__).parent / "test_data"

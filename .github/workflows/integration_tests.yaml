@@ -7,7 +7,61 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # integration_tests:
+  #   name: Integration tests
+  #   uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+  #   secrets: inherit  #pragma: allowlist secret
+
   integration_tests:
-    name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/add_wf_integration_tests
-    secrets: inherit  #pragma: allowlist secret
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        # the test directory in gen3-code-vigil
+        working-directory: gen3-integration-tests
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      JENKINS_URL: "https://jenkins.planx-pla.net"
+      JENKINS_USERNAME: "PlanXCyborg"
+      JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
+      REPO: ${{ github.event.repository.name }}
+      BRANCH: ${{ github.event.pull_request.head.ref }}
+      PR_NUM: ${{ github.event.pull_request.number }}
+      PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+      COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
+
+    steps:
+      # Checkout current branch of gen3-code-vigil if it is the repo under test
+      - name: Checkout integration test code from dev branch
+        if: github.event.repository.name == 'gen3-code-vigil'
+        uses: actions/checkout@v4
+
+      # Checkout master branch of gen3-code-vigil when another repo is under test
+      - name: Checkout integration test code from master branch
+        if: github.event.repository.name  != 'gen3-code-vigil'
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/gen3-code-vigil
+          ref: master
+
+      # gen3-integration-tests run with python 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+
+      # Install gen3-integration-tests dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install -vv
+          poetry show
+
+      - name: Run tests
+        run: poetry run pytest -vv -n auto -m "not wip"
+
+      - name: Publish results as PR comment
+        run: gh pr comment $PR_NUM --body-file output/report.md
