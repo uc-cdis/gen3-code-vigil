@@ -62,7 +62,7 @@ jobs:
           poetry show
 
       - name: Run tests
-        run: poetry run pytest -vv -n auto -m "not wip"
+        run: poetry run pytest -vv -n auto -m "not wip" --md-report-output output/report.md
 
       - name: Publish results as PR comment
         if: failure()
