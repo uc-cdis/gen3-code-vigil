@@ -31,6 +31,7 @@ jobs:
       PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
       COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
       COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
+      HOSTNAME: "jenkins-brain.planx-pla.net"
 
     steps:
       # Checkout current branch of gen3-code-vigil if it is the repo under test
