@@ -65,4 +65,5 @@ jobs:
         run: poetry run pytest -vv -n auto -m "not wip"
 
       - name: Publish results as PR comment
+        if: failure()
         run: gh pr comment $PR_NUM --body-file output/report.md
