@@ -64,8 +64,8 @@ jobs:
       - name: Run tests
         run: |
           mkdir output
-          poetry run pytest -vv -n auto -m "not wip" --md-report-output output/report.md
+          poetry run pytest -vv -n auto -m "not wip" --html=output/report.html --self-contained-html
 
       - name: Publish results as PR comment
         if: failure()
-        run: gh pr comment $PR_NUM --body-file output/report.md
+        run: gh pr comment $PR_NUM --body-file output/report.html
