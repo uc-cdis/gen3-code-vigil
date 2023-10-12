@@ -90,7 +90,7 @@ jobs:
           - name: Render reports to the PR
             if: always()
             run: |
-              if [ f "output/md_report.md" ]; then
+              if [ -f "output/md_report.md" ]; then
                 gh pr comment $PR_NUM --body-file output/md_report.md
               fi
 
