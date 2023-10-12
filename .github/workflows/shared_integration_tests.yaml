@@ -115,7 +115,7 @@ jobs:
           - name: Publish allure report link to the PR
             if: always()
             run: |
-              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/gen3-ci-reports/$REPO/$PR_NUM"
+              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/$REPO/$PR_NUM/"
 
           # - name: Archive allure report
           #   if: always()
