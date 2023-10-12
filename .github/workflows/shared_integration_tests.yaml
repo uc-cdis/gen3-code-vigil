@@ -85,21 +85,22 @@ jobs:
           - name: Run tests
             run: |
                 mkdir output
-                poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html
+                poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results
+
+          - name: Generate Allure report
+            run: allure generate allure-results -o allure-report --clean
 
           - name: Render reports to the PR
             if: always()
             run: |
-              report=$(cat output/report.html)
-              echo $report
-              gh pr comment $PR_NUM --body "<details><summary>Test Report</summary>$report</details>"
+              gh pr comment $PR_NUM --body --body "<details><summary>Allure Test Report</summary>$(cat allure-report/index.html)</details>"
 
           - name: Archive test report
             if: always()
             uses: actions/upload-artifact@v3
             with:
               name: test-report
-              path: ~/**/output/report.html
+              path: ~/**/allure-report/*
 
         #   - name: Release CI environment
         #     if: always()
