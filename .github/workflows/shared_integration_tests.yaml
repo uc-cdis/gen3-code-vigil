@@ -87,18 +87,15 @@ jobs:
                 mkdir output
                 poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html --self-contained-html
 
-          - name: Check report existence
-            id: check_files
-            uses: andstor/file-existence-action@v2
-            with:
-              files: "output/report.html, output/report.md"
-
           - name: Render reports to the PR
-            if: steps.check_files.outputs.files_exists == 'true'
-            run: gh pr comment $PR_NUM --body-file output/report.md
+            if: always()
+            run: |
+              if [ -f "output/report.md" ]; then
+                gh pr comment $PR_NUM --body-file output/report.md
+              fi
 
           - name: Archive test report
-            if: steps.check_files.outputs.files_exists == 'true'
+            if: always()
             uses: actions/upload-artifact@v3
             with:
               name: test-report
