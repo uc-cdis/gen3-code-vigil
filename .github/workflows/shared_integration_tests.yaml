@@ -105,21 +105,17 @@ jobs:
 
           - name: Upload allure report to S3
             if: always()
-            uses: shallwefootball/s3-upload-action@master
-            id: S3
-            with:
-              aws_key_id: ${{ secrets.CI_AWS_KEY_ID }}
-              aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY}}
-              aws_bucket: 'gen3-ci-reports'
-              source_dir: 'allure-report'
-              destination_dir: '$REPO/$PR_NUM'
+            run: |
+              aws s3 sync ./allure-report s3://gen3-ci-reports/$REPO/$PR_NUM
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+              AWS_DEFAULT_REGION: 'us-east-1'
 
           - name: Publish allure report link to the PR
             if: always()
             run: |
-              echo ${{ steps.S3.outputs.object_key }}
-              echo ${{ steps.S3.outputs.object_locations }}
-              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/gen3-ci-reports/${{ steps.S3.outputs.object_key }}"
+              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/gen3-ci-reports/$REPO/$PR_NUM"
 
           # - name: Archive allure report
           #   if: always()
