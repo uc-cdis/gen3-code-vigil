@@ -87,15 +87,21 @@ jobs:
                 mkdir output
                 poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html --self-contained-html
 
-          - name: Render reports to the PR
-            if: always()
+          - name: Check if reports exist
+            id: check_reports_exist
             run: |
-              if [ -f "output/report.md" ]; then
-                gh pr comment $PR_NUM --body-file output/report.md
+              if [ -f output/report.html && -f output/report.md ]; then
+                echo "reports_exist=true" >> $GITHUB_OUTPUT
+              else
+                echo "reports_exist=false" >> $GITHUB_OUTPUT
               fi
 
+          - name: Render reports to the PR
+            if: steps.check_reports_exist.outputs.reports_exist == 'true'
+            run: gh pr comment $PR_NUM --body-file output/report.md
+
           - name: Archive test report
-            if: always()
+            if: steps.check_reports_exist.outputs.reports_exist == 'true'
             uses: actions/upload-artifact@v3
             with:
               name: test-report
