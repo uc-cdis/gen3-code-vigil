@@ -92,7 +92,7 @@ jobs:
             run: |
               report=$(cat output/report.html)
               echo $report
-              gh pr comment $PR_NUM --body $report
+              gh pr comment $PR_NUM --body "<details><summary>Test Report</summary>$report</details>"
 
           - name: Archive test report
             if: always()
