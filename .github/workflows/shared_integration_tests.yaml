@@ -97,11 +97,11 @@ jobs:
               fi
 
           - name: Render reports to the PR
-            if: steps.check_reports_exist.outputs.reports_exist == 'true'
+            if: ${{ failure() || steps.check_reports_exist.outputs.reports_exist == 'true' }}
             run: gh pr comment $PR_NUM --body-file output/report.md
 
           - name: Archive test report
-            if: steps.check_reports_exist.outputs.reports_exist == 'true'
+            if: ${{ failure() || steps.check_reports_exist.outputs.reports_exist == 'true' }}
             uses: actions/upload-artifact@v3
             with:
               name: test-report
