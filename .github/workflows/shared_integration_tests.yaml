@@ -88,6 +88,7 @@ jobs:
                 poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results
 
           - name: Generate Allure report
+            if: always()
             run: allure generate allure-results -o allure-report --clean
 
           - name: Render reports to the PR
