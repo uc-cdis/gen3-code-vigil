@@ -53,6 +53,10 @@ jobs:
             with:
               python-version: 3.9
 
+          # allure report generation needs node
+          - name: Set up node
+            uses: actions/setup-node@v3
+
           # Install gen3-integration-tests dependencies
           - name: Install dependencies
             run: |
@@ -89,7 +93,9 @@ jobs:
 
           - name: Generate Allure report
             if: always()
-            run: allure generate allure-results -o allure-report --clean
+            run: |
+              npm install --save-dev allure-commandline
+              allure generate allure-results -o allure-report --clean
 
           - name: Render reports to the PR
             if: always()
