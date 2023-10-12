@@ -103,12 +103,30 @@ jobs:
             run: |
               gh pr comment $PR_NUM --body-file output/report.md
 
-          - name: Archive allure report
+          - name: Upload allure report to S3
             if: always()
-            uses: actions/upload-artifact@v3
+            uses: shallwefootball/s3-upload-action@master
+            id: S3
             with:
-              name: allure-report
-              path: /home/runner/work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/allure-report/
+              aws_key_id: ${{ secrets.CI_AWS_KEY_ID }}
+              aws_secret_access_key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY}}
+              aws_bucket: 'gen3-ci-reports'
+              source_dir: 'allure-report'
+              destination_dir: '$REPO/$PR_NUM'
+
+          - name: Publish allure report link to the PR
+            if: always()
+            run: |
+              echo ${{ steps.S3.outputs.object_key }}
+              echo ${{ steps.S3.outputs.object_locations }}
+              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/gen3-ci-reports/${{ steps.S3.outputs.object_key }}"
+
+          # - name: Archive allure report
+          #   if: always()
+          #   uses: actions/upload-artifact@v3
+          #   with:
+          #     name: allure-report
+          #     path: /home/runner/work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/allure-report/
 
         #   - name: Release CI environment
         #     if: always()
