@@ -62,7 +62,8 @@ jobs:
             run: |
               python -m pip install --upgrade pip
               pip install poetry
-              poetry install -vv
+              poetry install
+              poetry show
 
         #   # TODO: Rely on a database in AWS to make this faster
         #   # Select an unlocked environment
@@ -91,23 +92,23 @@ jobs:
                 mkdir output
                 poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results
 
-          - name: Generate Allure report
+          - name: Generate allure report
             if: always()
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
 
-          - name: Render reports to the PR
+          - name: Render md report to the PR
             if: always()
             run: |
-              gh pr comment $PR_NUM --body "<details><summary>Allure Test Report</summary>$(cat allure-report/index.html)</details>"
+              gh pr comment $PR_NUM --body-file output/report.md
 
-          - name: Archive test report
+          - name: Archive allure report
             if: always()
             uses: actions/upload-artifact@v3
             with:
-              name: test-report
-              path: ~/**/allure-report/*
+              name: allure-report
+              path: /home/runner/work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/allure-report/
 
         #   - name: Release CI environment
         #     if: always()
