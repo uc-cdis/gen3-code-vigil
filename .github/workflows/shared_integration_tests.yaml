@@ -85,7 +85,7 @@ jobs:
           - name: Run tests
             run: |
                 mkdir output
-                poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html --self-contained-html --md-report
+                poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html
 
           - name: Render reports to the PR
             if: always()
