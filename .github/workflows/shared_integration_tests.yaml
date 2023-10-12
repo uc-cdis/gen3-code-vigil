@@ -89,7 +89,10 @@ jobs:
 
           - name: Render reports to the PR
             if: always()
-            run: gh pr comment $PR_NUM --body $(cat output/report.html)
+            run: |
+              report=$(cat output/report.html)
+              echo $report
+              gh pr comment $PR_NUM --body $report
 
           - name: Archive test report
             if: always()
