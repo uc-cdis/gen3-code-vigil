@@ -88,7 +88,11 @@ jobs:
                 poetry run pytest -vv -n auto -m "not wip" --no-header
 
           - name: Render reports to the PR
-            run: gh pr comment $PR_NUM --body-file output/md_report.md
+            if: always()
+            run: |
+              if [ f "output/md_report.md" ]; then
+                gh pr comment $PR_NUM --body-file output/md_report.md
+              fi
 
         #   - name: Release CI environment
         #     if: always()
