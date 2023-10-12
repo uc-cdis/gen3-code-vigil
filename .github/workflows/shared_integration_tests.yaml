@@ -94,7 +94,7 @@ jobs:
           - name: Generate Allure report
             if: always()
             run: |
-              npm install --save-dev allure-commandline
+              npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
 
           - name: Render reports to the PR
