@@ -100,7 +100,7 @@ jobs:
           - name: Render reports to the PR
             if: always()
             run: |
-              gh pr comment $PR_NUM --body --body "<details><summary>Allure Test Report</summary>$(cat allure-report/index.html)</details>"
+              gh pr comment $PR_NUM --body "<details><summary>Allure Test Report</summary>$(cat allure-report/index.html)</details>"
 
           - name: Archive test report
             if: always()
