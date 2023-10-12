@@ -85,9 +85,10 @@ jobs:
           - name: Run tests
             run: |
                 mkdir output
-                poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html --self-contained-html
+                poetry run pytest -vv -n auto -m "not wip" --no-header --html=output/report.html --self-contained-html --md-report
 
           - name: Check if reports exist
+            if: always()
             id: check_reports_exist
             run: |
               if [ -f output/report.html && -f output/report.md ]; then
