@@ -32,6 +32,7 @@ jobs:
           PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
+          RUN_NUM: ${{ github.run_number }}
 
         steps:
           # Checkout current branch of gen3-code-vigil if it is the repo under test
@@ -106,7 +107,7 @@ jobs:
           - name: Upload allure report to S3
             if: always()
             run: |
-              aws s3 sync ./allure-report s3://gen3-ci-reports/$REPO/$PR_NUM
+              aws s3 sync ./allure-report s3://gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
@@ -115,7 +116,7 @@ jobs:
           - name: Publish allure report link to the PR
             if: always()
             run: |
-              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/$REPO/$PR_NUM/"
+              gh pr comment $PR_NUM --body "Allure report link - http://gen3-ci-reports.s3-website-us-east-1.amazonaws.com/$REPO/$PR_NUM/$RUN_NUM"
 
           # - name: Archive allure report
           #   if: always()
