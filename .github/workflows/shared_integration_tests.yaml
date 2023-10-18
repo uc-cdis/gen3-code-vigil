@@ -92,7 +92,7 @@ jobs:
           - name: Run tests
             run: |
                 mkdir output
-                poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results
+                poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
 
           - name: Generate allure report
             if: always()
