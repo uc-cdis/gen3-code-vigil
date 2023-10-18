@@ -14,6 +14,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class TestAggregateMDS:
     def test_expect_pass(self):
+        print(os.getenv("DUMMY_SECRET"))
+        logger.info(f"Dummy secret - {os.getenv('DUMMY_SECRET')}")
         assert 1 == 1
 
     def test_expect_pass_again(self):

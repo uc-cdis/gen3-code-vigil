@@ -33,6 +33,7 @@ jobs:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
           RUN_NUM: ${{ github.run_number }}
+          DUMMY_SECRET: ${{ secrets.NOT_A_REAL_SECRET }}
 
         steps:
           # Checkout current branch of gen3-code-vigil if it is the repo under test
