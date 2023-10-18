@@ -19,9 +19,11 @@ class TestAggregateMDS:
         assert 1 == 1
 
     def test_expect_pass_again(self):
+        logger.info(f"Dummy secret - {os.getenv('DUMMY_SECRET')}")
         assert 2 == 2
 
     def test_expect_fail(self):
+        logger.info(f"Dummy secret - {os.getenv('DUMMY_SECRET')}")
         assert 1 == 2
 
     @pytest.mark.skip()
