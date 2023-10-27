@@ -107,7 +107,7 @@ jobs:
           - name: Upload allure report to S3
             if: always()
             run: |
-              aws s3 sync ./allure-report s3://dashboard-707767160287-qaplanetv1-gen3/qa.planx-pla.net/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM
+              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
@@ -116,7 +116,7 @@ jobs:
           - name: Publish allure report link to the PR
             if: always()
             run: |
-              gh pr comment $PR_NUM --body "Allure report link - https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM"
+              gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)"
 
           # - name: Archive allure report
           #   if: always()
