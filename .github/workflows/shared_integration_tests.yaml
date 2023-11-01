@@ -66,27 +66,27 @@ jobs:
               poetry install
               poetry show
 
-        #   # TODO: Rely on a database in AWS to make this faster
-        #   # Select an unlocked environment
-        #   # If an env is specified in a PR label use it, else pick one from the pool
-        #   - name: Select CI environment
-        #     run: |
-        #       labels="${PR_LABELS//\\n/ }"
-        #       env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
-        #       if [[ $env_label != "" && $env_label != null ]]; then
-        #         echo "Found PR label $env_label"
-        #         poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
-        #       else
-        #         poetry run python -m gen3_ci.scripts.select_ci_environment
-        #       fi
+          # TODO: Rely on a database in AWS to make this faster
+          # Select an unlocked environment
+          # If an env is specified in a PR label use it, else pick one from the pool
+          - name: Select CI environment
+            run: |
+              labels="${PR_LABELS//\\n/ }"
+              env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
+              if [[ $env_label != "" && $env_label != null ]]; then
+                echo "Found PR label $env_label"
+                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
+              else
+                poetry run python -m gen3_ci.scripts.select_ci_environment
+              fi
 
-        #   # TODO: Improve the logic to do differential updates to the env, not roll all services
-        #   # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
-        #   # Generate API keys for test users for the environment
-        #   - name: Prepare CI environment
-        #     run: |
-        #       mkdir $HOME/.gen3
-        #       poetry run python -m gen3_ci.scripts.prepare_ci_environment
+          # TODO: Improve the logic to do differential updates to the env, not roll all services
+          # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
+          # Generate API keys for test users for the environment
+          - name: Prepare CI environment
+            run: |
+              mkdir $HOME/.gen3
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
           - name: Run tests
             run: |

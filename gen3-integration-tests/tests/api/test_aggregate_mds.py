@@ -13,16 +13,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class TestAggregateMDS:
-    def test_expect_pass(self):
-        assert 1 == 1
-
-    def test_expect_pass_again(self):
-        assert 2 == 2
-
-    def test_expect_fail(self):
-        assert 1 == 2
-
-    @pytest.mark.skip()
     def test_create_edit_delete_study(self, test_data_path):
         mds = MetadataService()
         study_json_files = ["study1.json", "study2.json", "study3.json"]
