@@ -118,14 +118,7 @@ jobs:
             run: |
               gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)"
 
-          # - name: Archive allure report
-          #   if: always()
-          #   uses: actions/upload-artifact@v3
-          #   with:
-          #     name: allure-report
-          #     path: /home/runner/work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/allure-report/
-
-        #   - name: Release CI environment
-        #     if: always()
-        #     run: |
-        #       poetry run python -m gen3_ci.scripts.release_ci_environment
+          - name: Release CI environment
+            if: always()
+            run: |
+              poetry run python -m gen3_ci.scripts.release_ci_environment
