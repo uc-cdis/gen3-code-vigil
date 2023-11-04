@@ -123,9 +123,10 @@ jobs:
             run: |
               poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
-          - name: Publish pod logs url link to the PR
+          - name: Publish pod logs url to the PR
             if: always()
             run: |
+              echo $POD_LOGS_URL
               gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URLartifact/save-pod-logs/)"
 
           - name: Release CI environment
