@@ -50,6 +50,7 @@ class JenkinsJob(object):
         return response.text
 
     def build_job(self, parameters=None):
+        logger.info(f"Triggering build for job {self.job_url}")
         url = f"{self.job_url}/build"
         if parameters:
             url += "WithParameters?%s" % "&".join(
@@ -73,6 +74,7 @@ class JenkinsJob(object):
                 if "executable" in res:
                     build_started = True
             build_number = res["executable"]["number"]
+            logger.info(f"Build number {build_number} triggered successfully")
             return build_number
         else:
             logger.error("Failed to start build")
