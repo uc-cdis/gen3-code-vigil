@@ -1,13 +1,13 @@
 # name: Integration Tests
 
-# on: pull_request
+on: pull_request
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
-# jobs:
-#   integration_tests:
-#     name: Integration tests
-#     uses: ./.github/workflows/shared_integration_tests.yaml
-#     secrets: inherit  #pragma: allowlist secret
+jobs:
+  integration_tests:
+    name: Integration tests
+    uses: ./.github/workflows/shared_integration_tests.yaml
+    secrets: inherit  #pragma: allowlist secret

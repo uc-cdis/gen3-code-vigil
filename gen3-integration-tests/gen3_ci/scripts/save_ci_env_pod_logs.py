@@ -1,10 +1,11 @@
 import os
-import requests
-import sys
 
 from cdislogging import get_logger
+from dotenv import load_dotenv
 
 from utils.jenkins import JenkinsJob
+
+load_dotenv()
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -34,4 +35,7 @@ def save_pod_logs(namespace):
 
 if __name__ == "__main__":
     job_info = save_pod_logs(os.getenv("NAMESPACE"))
-    logger.info(job_info)
+    if job_info:
+        env_file = os.getenv("GITHUB_ENV")
+        with open(env_file, "a") as myfile:
+            myfile.write(f"POD_LOGS_URL={job_info.get('url', '')}")
