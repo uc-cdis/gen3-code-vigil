@@ -96,7 +96,7 @@ class JenkinsJob(object):
                 break
             else:
                 logger.info("Waiting for job completion ...")
-                time.sleep(30)
+                time.sleep(60)
         return status
 
     def get_artifact_content(self, build_number, artifact_name):
