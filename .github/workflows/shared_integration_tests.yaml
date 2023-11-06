@@ -118,6 +118,17 @@ jobs:
             run: |
               gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)"
 
+          - name: Archive pod logs from CI environment
+            if: always()
+            run: |
+              poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+
+          - name: Publish pod logs url to the PR
+            if: always()
+            run: |
+              echo $POD_LOGS_URL
+              gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)"
+
           - name: Release CI environment
             if: always()
             run: |

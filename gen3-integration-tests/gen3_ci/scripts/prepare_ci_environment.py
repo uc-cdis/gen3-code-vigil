@@ -80,7 +80,12 @@ def modify_env_for_test_repo_pr(namespace):
     if build_num:
         status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
-            return job.get_build_result(build_num)
+            res = job.get_build_result(build_num)
+            logger.info(
+                f"ci-only-modify-env-for-test-repo-pr job's build {build_num} completed \
+                with status {res}"
+            )
+            return res
         else:
             logger.error("Build timed out. Consider increasing max_duration")
             return "failure"
@@ -150,6 +155,7 @@ def prepare_ci_environment(namespace):
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
     assert result.lower() == "success"
+    return result
 
 
 if __name__ == "__main__":
