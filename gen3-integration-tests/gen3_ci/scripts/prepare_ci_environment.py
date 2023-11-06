@@ -155,6 +155,7 @@ def prepare_ci_environment(namespace):
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
     assert result.lower() == "success"
+    return result
 
 
 if __name__ == "__main__":

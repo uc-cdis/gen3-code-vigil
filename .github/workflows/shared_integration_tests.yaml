@@ -127,7 +127,7 @@ jobs:
             if: always()
             run: |
               echo $POD_LOGS_URL
-              gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URLartifact/save-pod-logs/)"
+              gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)"
 
           - name: Release CI environment
             if: always()
