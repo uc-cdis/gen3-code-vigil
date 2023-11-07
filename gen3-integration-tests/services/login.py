@@ -5,6 +5,10 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
+from cdislogging import get_logger
+
+logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+
 
 class Login(object):
     def __init__(self):
@@ -27,6 +31,7 @@ class Login(object):
         )
         expect(login_button).to_be_visible()
         login_button.click()
+        page.screenshot(path="Afterlogin.png")
         username = page.wait_for_selector("//div[@class='top-bar']//a[3]")
         assert (username.text) == pytest.users[user]
         cookies = page.context.cookies()
@@ -38,8 +43,18 @@ class Login(object):
         """Logs out and wait for Login button on nav bar"""
         page.get_by_role("button", name="Logout").click()
         nav_bar_login_button = page.get_by_role("button", name="Login")
+        page.screenshot(path="Afterlogout.png")
         expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login
-    # def handle_popup(self, page: Page):
-    #     """Handling popups after login"""
+    def handle_popup(self, page: Page):
+        """Handling popups after login"""
+        popup_message = page.query_selector(".popup__box")
+        if popup_message:
+            page.screenshot(path="popupBox.png", full_page=True)
+            logger.info("Popup message found")
+            accept_button = page.get_by_role("button", name="Accept")
+            if accept_button:
+                accept_button.click()
+        else:
+            logger.info("Popup message not found")

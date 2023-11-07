@@ -22,6 +22,7 @@ class TestHatchery:
         logger.info("# Logging in with mainAcct")
         login.go_to_login_page()
         login.user_login()
+        login.handle_popup()
 
         hatchery.go_to_workspace_page()
         hatchery.open_jupyter_workspace()

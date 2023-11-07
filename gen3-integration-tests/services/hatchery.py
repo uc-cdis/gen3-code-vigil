@@ -1,6 +1,10 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+from cdislogging import get_logger
+
+logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+
 
 class Hatchery(object):
     def __init__(self):
@@ -48,7 +52,7 @@ class Hatchery(object):
         fill_command.click()
         page.frame_locator('iframe[title="Workspace"]').get_by_label(
             "notebook content"
-        ).get_by_role("textbox").fill("!gen3 drs-pull manifest <>manifest-name")
+        ).get_by_role("textbox").fill("!gen3 drs-pull manifest <manifest-name>")
         page.frame_locator('iframe[title="Workspace"]').get_by_role(
             "button", name="Run the selected cells and advance"
         ).click()
