@@ -94,7 +94,14 @@ jobs:
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
+          - name: Run tests for pertaining to specific service
+            if: ${{ inputs.SERVICE_TO_TEST }}
+            run: |
+                mkdir output
+                poetry run pytest -vv -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
+
           - name: Run tests
+            if: ${{ !inputs.SERVICE_TO_TEST }}
             run: |
                 mkdir output
                 poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
