@@ -8,6 +8,11 @@ on:
       QUAY_REPO:
         required: false
         type: string
+      # set this for service PRs to select tests pertaining to the service under test
+      # must match the marker used for the service, please look at the `markers` section of pyproject.toml
+      SERVICE_TO_TEST:
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

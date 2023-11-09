@@ -34,7 +34,8 @@ env = [
   "log_cli=0"
 ]
 markers = [
-  "wip: marks tests as `Work In Progress` and skips them in CI pipeline"
+  "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
+  "mds: tests for metadata-service"
 ]
 pythonpath = "."
 md_report = "true"

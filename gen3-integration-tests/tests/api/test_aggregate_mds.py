@@ -12,6 +12,7 @@ from services.metadataservice import MetadataService
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+@pytest.mark.mds
 class TestAggregateMDS:
     def test_create_edit_delete_study(self, test_data_path):
         """
