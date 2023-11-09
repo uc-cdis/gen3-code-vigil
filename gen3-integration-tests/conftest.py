@@ -61,4 +61,5 @@ def pytest_configure(config):
 
 @pytest.fixture
 def test_data_path():
+    """Fixture to be used when a test needs test data"""
     return Path(__file__).parent / "test_data"

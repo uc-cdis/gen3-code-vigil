@@ -9,6 +9,7 @@ class Fence(object):
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
 
     def get_access_token(self, api_key):
+        """Generate access token from api key"""
         res = requests.post(
             f"{self.API_CREDENTIALS_ENDPOINT}/access_token",
             data=json.dumps({"api_key": api_key}),

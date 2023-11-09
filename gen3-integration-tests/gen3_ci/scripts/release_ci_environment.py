@@ -8,6 +8,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def release_ci_environment(namespace):
+    """Remove the lock from the test environment and make it available for other PRs"""
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),

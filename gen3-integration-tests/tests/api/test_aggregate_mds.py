@@ -14,6 +14,15 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class TestAggregateMDS:
     def test_create_edit_delete_study(self, test_data_path):
+        """
+        Steps:
+        1. Create a metadata record, run metadata-aggregate-sync job and verify creation.
+        2. Update the metadata record, run metadata-aggregate-sync job and verify updation.
+        3. Delete the metadata record.
+
+        We are not verifying successful deletion right now because metadata-aggregate-sync job
+        fails when there are no records. The test must be updated once this changes.
+        """
         mds = MetadataService()
         study_json_files = ["study1.json", "study2.json", "study3.json"]
         """Create, edit and delete study from aggregate metadata"""
