@@ -1,4 +1,3 @@
-import json
 import os
 import pytest
 import requests
@@ -14,6 +13,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_portal_config(test_env_namespace):
+    """Fetch portal config from the GUI"""
     res = requests.get(f"{pytest.root_url}/data/config/gitops.json")
     if res.status_code == 200:
         return res.json()
@@ -22,6 +22,10 @@ def get_portal_config(test_env_namespace):
 
 
 def get_portal_config_from_kube_secrets(test_env_namespace):
+    """
+    Fetch portal config from kubernetes secrets.
+    Since this requires adminvm interaction we use jenkins.
+    """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
@@ -43,6 +47,10 @@ def get_portal_config_from_kube_secrets(test_env_namespace):
 
 
 def run_gen3_job(test_env_namespace, job_name, roll_all=False):
+    """
+    Run gen3 job (e.g., metadata-aggregate-sync).
+    Since this requires adminvm interaction we use jenkins.
+    """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),

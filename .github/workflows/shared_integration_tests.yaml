@@ -1,3 +1,4 @@
+# Any change here must be copied over to https://github.com/uc-cdis/.github/blob/master/.github/workflows/integration_tests.yaml
 name: Integration Tests
 
 on:

@@ -11,6 +11,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def save_pod_logs(namespace):
+    """Save logs from all pods at the end of the test run to help with debugging"""
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),

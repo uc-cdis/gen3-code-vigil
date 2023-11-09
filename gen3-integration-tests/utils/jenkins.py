@@ -16,6 +16,10 @@ class JenkinsJob(object):
         self.job_name = job_name
 
     def get_job_info(self):
+        """
+        Get jenkins job details (not a single run).
+        Job is the job configured in jenkins.
+        """
         response = requests.get(f"{self.job_url}/api/json", auth=self.auth)
         if response.status_code == 404:
             logger.error("Job not found")
@@ -23,6 +27,10 @@ class JenkinsJob(object):
         return response.json()
 
     def get_build_info(self, build_number):
+        """
+        Get build details.
+        A build is a single run of the job configured in jenkins.
+        """
         response = requests.get(
             f"{self.job_url}/{build_number}/api/json", auth=self.auth
         )
@@ -32,6 +40,7 @@ class JenkinsJob(object):
         return response.json()
 
     def is_build_running(self, build_number):
+        """Check if there is an active run for the job"""
         try:
             running = self.get_build_info(build_number)["building"]
             if running:
@@ -40,16 +49,22 @@ class JenkinsJob(object):
             return False
 
     def get_build_result(self, build_number):
+        """Get result of a run"""
         info = self.get_build_info(build_number)
         return info["result"]
 
     def get_console_output(self, build_number):
+        """Get the console logs of a run"""
         response = requests.get(
             f"{self.job_url}/{build_number}/consoleText", auth=self.auth
         )
         return response.text
 
     def build_job(self, parameters=None):
+        """
+        Trigger a run / build of the job.
+        Returns the build number if triggered successfully.
+        """
         logger.info(f"Triggering build for job {self.job_url}")
         url = f"{self.job_url}/build"
         if parameters:
@@ -81,6 +96,11 @@ class JenkinsJob(object):
             return None
 
     def wait_for_build_completion(self, build_number, max_duration=300):
+        """
+        Wait for a run to complete.
+        Default maximum wait time is 5 minutes, and can be configured.
+        If the run is not complete within the max set, this function errors out.
+        """
         start = time.time()
         status = None
 
@@ -100,6 +120,7 @@ class JenkinsJob(object):
         return status
 
     def get_artifact_content(self, build_number, artifact_name):
+        """Get the contents of an artifact archived for the specific run"""
         try:
             artifacts = requests.get(
                 f"{self.job_url}/{build_number}/api/json", auth=self.auth
@@ -118,6 +139,7 @@ class JenkinsJob(object):
 
 
 if __name__ == "__main__":
+    # The code below is to help with debugging changes to the above
     import os
     from dotenv import load_dotenv
 
