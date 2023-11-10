@@ -5,6 +5,7 @@
 ### Test user credentials
 The code supports running different steps as different users. Please see pytest_configure method in conftest.py for details.
 The default user is called `main_account`. Save API key for that user as `<namespace>_main_account.json` in `~/.gen3` directory. For example, `qa-dcp_main_account.json`
+You can use the following jenkins job to create the api_keys and also keys.json artifacts- based on where the `TARGET_ENVIRONMENT` is. If `TARGET_ENVIRONMENT` is on `devplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/create_api_key/) and if on `devplanetv2` use [jenkins2-job](https://jenkins2.planx-pla.net/job/create_api_key/)
 
 ### Running gen3 admin tasks
 We use jenkins for running tasks like metadata-aggregate-sync, etl etc.
