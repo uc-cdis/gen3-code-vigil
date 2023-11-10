@@ -94,7 +94,7 @@ jobs:
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
-          - name: Run tests for pertaining to specific service
+          - name: Run tests pertaining to specific service
             if: ${{ inputs.SERVICE_TO_TEST }}
             run: |
                 mkdir output
