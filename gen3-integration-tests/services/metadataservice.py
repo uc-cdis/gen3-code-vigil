@@ -20,7 +20,7 @@ class MetadataService(object):
             f"{self.AGG_MDS_ENDPOINT}/guid/{study_id}",
             headers=pytest.auth_headers[user],
         )
-        assert res.status_code == 200
+        assert res.status_code == 200, f"Response status code was {res.status_code}"
         return res.json()["gen3_discovery"]
 
     def create_metadata(self, study_id, study_json, user="main_account"):
@@ -35,7 +35,7 @@ class MetadataService(object):
             headers=pytest.auth_headers[user],
         )
         logger.info(f"Creation request status code - {res.status_code}")
-        assert res.status_code == 201
+        assert res.status_code == 201, f"Response status code was {res.status_code}"
 
     def update_metadata(self, study_id, study_json, user="main_account"):
         """
@@ -49,7 +49,7 @@ class MetadataService(object):
             headers=pytest.auth_headers[user],
         )
         logger.info(f"Update request status code - {res.status_code}")
-        assert res.status_code == 200
+        assert res.status_code == 200, f"Response status code was {res.status_code}"
 
     def delete_metadata(self, study_id, user="main_account"):
         """
@@ -62,4 +62,4 @@ class MetadataService(object):
             headers=pytest.auth_headers[user],
         )
         logger.info(f"Deletion request status code - {res.status_code}")
-        assert res.status_code == 200
+        assert res.status_code == 200, f"Response status code was {res.status_code}"
