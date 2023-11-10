@@ -13,6 +13,15 @@ on:
       SERVICE_TO_TEST:
         required: false
         type: string
+    secrets:
+      CI_AWS_ACCESS_KEY_ID:
+        required: true
+      CI_AWS_SECRET_ACCESS_KEY:
+        required: true
+      JENKINS_API_TOKEN:
+        required: true
+      QA_DASHBOARD_S3_PATH:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
