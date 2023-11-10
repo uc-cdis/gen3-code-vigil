@@ -64,7 +64,9 @@ class TestAggregateMDS:
         gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         for i in range(len(study_ids)):
             study_metadata = mds.get_aggregate_metadata(study_ids[i])
-            assert study_metadata["commons_name"] == "HEAL"
+            assert (
+                study_metadata["commons_name"] == "HEAL"
+            ), f"commons_name was set to {study_metadata['commons_name']}"
             assert (
                 study_metadata["project_title"]
                 == study_jsons[i]["gen3_discovery"]["project_title"]
@@ -102,4 +104,4 @@ class TestAggregateMDS:
         # gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         # for i in range(len(study_ids)):
         #     response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
-        #     assert response.status_code == 404
+        #     assert response.status_code == 404, f"Response status code was {res.status_code}"

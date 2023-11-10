@@ -1,6 +1,11 @@
 import json
+import os
 import pytest
 import requests
+
+from cdislogging import get_logger
+
+logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class Fence(object):
@@ -14,6 +19,7 @@ class Fence(object):
             f"{self.API_CREDENTIALS_ENDPOINT}/access_token",
             data=json.dumps({"api_key": api_key}),
         )
+        logger.info(f"########### - Status code - {res.status_code}")
         if res.status_code == 200:
             return res.json()["access_token"]
         else:
