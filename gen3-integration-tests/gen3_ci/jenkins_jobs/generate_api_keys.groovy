@@ -54,7 +54,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'generate-api-key/\${TARGET_ENVIRONMENT}_main_account.json, generate-api-key/\${TARGET_ENVIRONMENT}_indexing_account.json'
+            archiveArtifacts artifacts: 'generate-api-key/*.json'
         }
     }
 }
