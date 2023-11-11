@@ -32,10 +32,9 @@ HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pyt
 Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`. Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/markers.html)
 
 # Running tests in continuous integration pipeline
-All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`.
-Jenkins is used for setting up the test environments and interacting with them.
-`jenkins-jobs` directory contains the groovy scripts used by the jenkins jobs.
-`scripts` directory contains python scripts used in the github actions workflow.
+All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`. Jenkins is used for setting up the test environments and interacting with them.
+- `jenkins-jobs` directory contains the groovy scripts used by the jenkins jobs.
+- `scripts` directory contains python scripts used in the github actions workflow.
 
 # Designing tests
 
@@ -51,7 +50,7 @@ Jenkins is used for setting up the test environments and interacting with them.
 
 ## Code organization
 Test code is organized into 4 directories:  `services`, `tests`, `test-data` and `utils`.
-`services` contains the endpoints and methods specific to each service. There is a separate module for each service.
-`tests` contains the tests written in pytest. Tests are further separated into api tests and gui tests.
-`test-data` contains the test data
-`utils` contains utility and helper functions
+- `services` contains the endpoints and methods specific to each service. There is a separate module for each service.
+- `tests` contains the tests written in pytest. Tests are further separated into api tests and gui tests.
+- `test-data` contains the test data.
+- `utils` contains utility and helper functions.
