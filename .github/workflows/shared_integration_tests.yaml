@@ -171,7 +171,7 @@ jobs:
 
           - name: Release CI environment
             id: release_ci_env
-            if: ${{ steps.select_ci_env.outcome == 'success' }}
+            if: env.NAMESPACE != 'None'
             run: |
               poetry run python -m gen3_ci.scripts.release_ci_environment
 
