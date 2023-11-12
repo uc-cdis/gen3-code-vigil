@@ -112,14 +112,14 @@ jobs:
             if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success'}}
             run: |
               mkdir output
-              poetry run pytest -vv -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
 
           - name: Run tests
             id: run_tests
             if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success'}}
             run: |
               mkdir output
-              poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
+              poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
 
           - name: Generate allure report
             id: generate_allure_report
