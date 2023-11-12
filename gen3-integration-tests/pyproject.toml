@@ -30,9 +30,9 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 # Set environment variables for pytest tests
 env = [
-  "LOG_LEVEL=info",
-  "log_cli=0"
+  "LOG_LEVEL=info"
 ]
+log_cli = "0"
 markers = [
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
   "mds: tests for metadata-service"
