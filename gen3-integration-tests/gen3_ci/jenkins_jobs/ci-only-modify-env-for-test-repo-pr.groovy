@@ -46,7 +46,6 @@ spec:
   serviceAccount: jenkins-service
   serviceAccountName: jenkins-service
 '''
-            defaultContainer 'shell'
         }
     }
     stages {
