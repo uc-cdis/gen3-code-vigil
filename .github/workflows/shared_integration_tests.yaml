@@ -110,37 +110,28 @@ jobs:
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: |
-              steps.prep_ci_env.outcome == 'success' &&
-              ${{ inputs.SERVICE_TO_TEST }}
+              ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success'}}
             run: |
               mkdir output
               poetry run pytest -vv -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
 
           - name: Run tests
             id: run_tests
-            if: |
-              steps.prep_ci_env.outcome == 'success' &&
-              ${{ !inputs.SERVICE_TO_TEST }}
+            if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success'}}
             run: |
               mkdir output
               poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
 
           - name: Generate allure report
             id: generate_allure_report
-            if: |
-              steps.run_service_tests.outcome == 'success' ||
-              steps.run_service_tests.outcome == 'failure' ||
-              steps.run_tests.outcome == 'success' ||
-              steps.run_tests.outcome == 'failure'
+            if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'success' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure'}}
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
 
           - name: Render md report to the PR
             id: generate_md_report
-            if: |
-              steps.run_tests.outcome == 'success' ||
-              steps.run_tests.outcome == 'failure'
+            if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'success' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure'}}
             run: |
               gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
@@ -148,7 +139,7 @@ jobs:
 
           - name: Upload allure report to S3
             id: upload_allure_report
-            if: steps.generate_allure_report.outcome == 'success'
+            if: ${{ steps.generate_allure_report.outcome == 'success' }}
             run: |
               aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
             env:
@@ -158,7 +149,7 @@ jobs:
 
           - name: Publish allure report link to the PR
             id: gh_comment_allure_link
-            if: steps.upload_allure_report.outcome == 'success'
+            if: ${{ steps.upload_allure_report.outcome == 'success' }}
             run: |
               gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
             env:
@@ -166,15 +157,13 @@ jobs:
 
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
-            if: |
-              steps.prep_ci_env.outcome == 'success' ||
-              steps.prep_ci_env.outcome == 'failure'
+            if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
             run: |
               poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
           - name: Publish pod logs url to the PR
             id: gh_comment_pod_logs_link
-            if: steps.archive_pod_logs.outcome == 'success'
+            if: ${{ steps.archive_pod_logs.outcome == 'success' }}
             run: |
               echo $POD_LOGS_URL
               gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
@@ -183,6 +172,6 @@ jobs:
 
           - name: Release CI environment
             id: release_ci_env
-            if: steps.select_ci_env.outcome == 'success'
+            if: ${{ steps.select_ci_env.outcome == 'success' }}
             run: |
               poetry run python -m gen3_ci.scripts.release_ci_environment
