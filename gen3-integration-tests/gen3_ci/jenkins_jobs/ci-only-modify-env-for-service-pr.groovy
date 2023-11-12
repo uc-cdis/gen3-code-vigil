@@ -49,6 +49,38 @@ spec:
         cpu: 500m
         memory: 500Mi
         ephemeral-storage: 500Mi
+  - name: shell
+    image: quay.io/cdis/gen3-ci-worker:master
+    imagePullPolicy: Always
+    command:
+    - sleep
+    args:
+    - infinity
+    resources:
+      requests:
+        cpu: 0.2
+        memory: 200Mi
+        ephemeral-storage: 200Mi
+    env:
+    - name: AWS_DEFAULT_REGION
+      value: us-east-1
+    - name: JAVA_OPTS
+      value: "-Xmx3072m"
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: jenkins-secret
+          key: aws_access_key_id
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: jenkins-secret
+          key: aws_secret_access_key
+    - name: GOOGLE_APP_CREDS_JSON
+      valueFrom:
+        secretKeyRef:
+          name: jenkins-g3auto
+          key: google_app_creds.json
   serviceAccount: jenkins-service
   serviceAccountName: jenkins-service
 '''
