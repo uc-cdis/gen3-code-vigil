@@ -102,7 +102,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
-            if: steps.select_ci_env.outcome == 'success'
+            if: env.NAMESPACE != 'None'
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
