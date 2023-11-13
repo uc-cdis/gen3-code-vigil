@@ -21,6 +21,8 @@ pytest-html = "^3.2.0"
 pytest-xdist = "^3.3.1"
 pytest-datadir = "^1.4.1"
 pytest-playwright = "^0.4.2"
+pytest-md-report = "^0.5.0"
+allure-pytest = "^2.13.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -30,9 +32,14 @@ build-backend = "poetry.core.masonry.api"
 # Set environment variables for pytest tests
 env = [
   "LOG_LEVEL=info",
-  "log_cli=1"
+  "log_cli=0"
 ]
 markers = [
-  "wip: marks tests as `Work In Progress` and skips them in CI pipeline"
+  "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
+  "mds: tests for metadata-service"
 ]
 pythonpath = "."
+md_report = "true"
+md_report_verbose = 0
+md_report_flavor = "gfm"
+md_report_output = "output/report.md"

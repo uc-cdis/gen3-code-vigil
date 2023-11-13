@@ -1,3 +1,4 @@
+# Uses the shared workflow from this repo for ease of maintenance
 name: Integration Tests
 
 on: pull_request
@@ -9,5 +10,9 @@ concurrency:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/add_wf_integration_tests
-    secrets: inherit  #pragma: allowlist secret
+    uses: ./.github/workflows/shared_integration_tests.yaml
+    secrets:
+      CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+      CI_AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+      JENKINS_API_TOKEN: ${{ secrets.JENKINS_API_TOKEN }}
+      QA_DASHBOARD_S3_PATH: ${{ secrets.QA_DASHBOARD_S3_PATH }}

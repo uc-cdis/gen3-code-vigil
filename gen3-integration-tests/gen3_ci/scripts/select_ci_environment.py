@@ -10,6 +10,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def select_ci_environment(namespaces):
+    """
+    Select available test environment.
+    Lock it to prevent being used by other PRs.
+    """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),

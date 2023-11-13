@@ -12,8 +12,18 @@ from services.metadataservice import MetadataService
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+@pytest.mark.mds
 class TestAggregateMDS:
     def test_create_edit_delete_study(self, test_data_path):
+        """
+        Steps:
+        1. Create a metadata record, run metadata-aggregate-sync job and verify creation.
+        2. Update the metadata record, run metadata-aggregate-sync job and verify updation.
+        3. Delete the metadata record.
+
+        We are not verifying successful deletion right now because metadata-aggregate-sync job
+        fails when there are no records. The test must be updated once this changes.
+        """
         mds = MetadataService()
         study_json_files = ["study1.json", "study2.json", "study3.json"]
         """Create, edit and delete study from aggregate metadata"""
@@ -54,7 +64,9 @@ class TestAggregateMDS:
         gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         for i in range(len(study_ids)):
             study_metadata = mds.get_aggregate_metadata(study_ids[i])
-            assert study_metadata["commons_name"] == "HEAL"
+            assert (
+                study_metadata["commons_name"] == "HEAL"
+            ), f"commons_name was set to {study_metadata['commons_name']}"
             assert (
                 study_metadata["project_title"]
                 == study_jsons[i]["gen3_discovery"]["project_title"]
@@ -92,4 +104,4 @@ class TestAggregateMDS:
         # gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         # for i in range(len(study_ids)):
         #     response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
-        #     assert response.status_code == 404
+        #     assert response.status_code == 404, f"Response status code was {res.status_code}"

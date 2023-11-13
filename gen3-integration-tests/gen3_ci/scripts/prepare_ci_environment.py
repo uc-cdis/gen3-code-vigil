@@ -17,6 +17,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def wait_for_quay_build(repo, tag):
+    """
+    Wait for the branch image to be ready for testing.
+    Used in service PRs.
+    """
     quay_url_org = "https://quay.io/api/v1/repository/cdis"
     commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
     max_tries = 30  # Minutes to wait for image
@@ -44,6 +48,11 @@ def wait_for_quay_build(repo, tag):
 
 
 def modify_env_for_service_pr(namespace, service, tag):
+    """
+    Change the image tag for the service under test in the test env's manifest
+    Roll the environment
+    Run usersync
+    """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
@@ -69,6 +78,11 @@ def modify_env_for_service_pr(namespace, service, tag):
 
 
 def modify_env_for_test_repo_pr(namespace):
+    """
+    We can use the test env's manifest as-is (all services point to master branch)
+    Roll the environment
+    Run usersync
+    """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
@@ -80,7 +94,12 @@ def modify_env_for_test_repo_pr(namespace):
     if build_num:
         status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
-            return job.get_build_result(build_num)
+            res = job.get_build_result(build_num)
+            logger.info(
+                f"ci-only-modify-env-for-test-repo-pr job's build {build_num} completed \
+                with status {res}"
+            )
+            return res
         else:
             logger.error("Build timed out. Consider increasing max_duration")
             return "failure"
@@ -128,6 +147,7 @@ def generate_api_keys_for_test_users(namespace):
 
 
 def prepare_ci_environment(namespace):
+    """Calls other functions in this module depending on the type of repo under test"""
     repo = os.getenv("REPO")
     # if quay repo name is different from github repo name
     if os.getenv("QUAY_REPO"):
@@ -150,6 +170,7 @@ def prepare_ci_environment(namespace):
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
     assert result.lower() == "success"
+    return result
 
 
 if __name__ == "__main__":

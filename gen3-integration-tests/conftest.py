@@ -11,7 +11,7 @@ def pytest_configure(config):
     # Compute hostname and namespace
     hostname = os.getenv("HOSTNAME")
     namespace = os.getenv("NAMESPACE")
-    assert hostname or namespace
+    assert hostname or namespace, "Hostname and namespace undefined"
     if hostname and not namespace:
         namespace = hostname.split(".")[0]
     if namespace and not hostname:
@@ -61,4 +61,5 @@ def pytest_configure(config):
 
 @pytest.fixture
 def test_data_path():
+    """Fixture to be used when a test needs test data"""
     return Path(__file__).parent / "test_data"
