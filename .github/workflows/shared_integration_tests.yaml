@@ -53,12 +53,12 @@ jobs:
         steps:
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
-            if: github.event.repository.name == 'gen3-code-vigil'
+            if: ${{ github.event.repository.name == 'gen3-code-vigil' }}
             uses: actions/checkout@v4
 
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code from master branch
-            if: github.event.repository.name  != 'gen3-code-vigil'
+            if: ${{ github.event.repository.name  != 'gen3-code-vigil' }}
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
@@ -86,6 +86,7 @@ jobs:
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
           - name: Select CI environment
+            id: select_ci_env
             run: |
               labels="${PR_LABELS//\\n/ }"
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
@@ -100,37 +101,44 @@ jobs:
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
+            id: prep_ci_env
+            if: env.NAMESPACE != 'None'
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
           - name: Run tests pertaining to specific service
-            if: ${{ inputs.SERVICE_TO_TEST }}
+            id: run_service_tests
+            if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success'}}
             run: |
-                mkdir output
-                poetry run pytest -vv -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
+              mkdir output
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
 
           - name: Run tests
-            if: ${{ !inputs.SERVICE_TO_TEST }}
+            id: run_tests
+            if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success'}}
             run: |
-                mkdir output
-                poetry run pytest -vv -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
+              mkdir output
+              poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
 
           - name: Generate allure report
-            if: always()
+            id: generate_allure_report
+            if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'success' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure'}}
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
 
           - name: Render md report to the PR
-            if: always()
+            id: generate_md_report
+            if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'success' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure'}}
             run: |
               gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Upload allure report to S3
-            if: always()
+            id: upload_allure_report
+            if: ${{ steps.generate_allure_report.outcome == 'success' }}
             run: |
               aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
             env:
@@ -139,19 +147,22 @@ jobs:
               AWS_DEFAULT_REGION: 'us-east-1'
 
           - name: Publish allure report link to the PR
-            if: always()
+            id: gh_comment_allure_link
+            if: ${{ steps.upload_allure_report.outcome == 'success' }}
             run: |
               gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Archive pod logs from CI environment
-            if: always()
+            id: archive_pod_logs
+            if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
             run: |
               poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
           - name: Publish pod logs url to the PR
-            if: always()
+            id: gh_comment_pod_logs_link
+            if: ${{ steps.archive_pod_logs.outcome == 'success' }}
             run: |
               echo $POD_LOGS_URL
               gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
@@ -159,6 +170,11 @@ jobs:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Release CI environment
-            if: always()
+            id: release_ci_env
+            if: env.NAMESPACE != 'None'
             run: |
               poetry run python -m gen3_ci.scripts.release_ci_environment
+
+          - name: Mark workflow as failed for unsuccessful test runs
+            if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
