@@ -95,10 +95,10 @@ class JenkinsJob(object):
             logger.error("Failed to start build")
             return None
 
-    def wait_for_build_completion(self, build_number, max_duration=300):
+    def wait_for_build_completion(self, build_number, max_duration=600):
         """
         Wait for a run to complete.
-        Default maximum wait time is 5 minutes, and can be configured.
+        Default maximum wait time is 10 minutes, and can be configured.
         If the run is not complete within the max set, this function errors out.
         """
         start = time.time()
