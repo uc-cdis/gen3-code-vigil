@@ -189,8 +189,8 @@ jobs:
           #     poetry run python -m gen3_ci.scripts.release_ci_environment
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: always()
-          #   if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+          #  if: always()
+            if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
             run: |
               echo ${{ steps.run_service_tests.outcome }}
               echo $${{ steps.run_tests.outcome }}
