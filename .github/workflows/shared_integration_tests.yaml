@@ -188,9 +188,9 @@ jobs:
           #   run: |
           #     poetry run python -m gen3_ci.scripts.release_ci_environment
 
-          # - name: Mark workflow as failed for unsuccessful test runs
-          #   if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
-          #   run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
+          - name: Mark workflow as failed for unsuccessful test runs
+            if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           # - name: Stop pending jenkins jobs for cancelled run
           #   if: ${{ cancelled() }}
