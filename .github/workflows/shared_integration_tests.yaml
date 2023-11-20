@@ -51,10 +51,10 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
 
         steps:
-          # # Checkout current branch of gen3-code-vigil if it is the repo under test
-          # - name: Checkout integration test code from dev branch
-          #   if: ${{ github.event.repository.name == 'gen3-code-vigil' }}
-          #   uses: actions/checkout@v4
+          # Checkout current branch of gen3-code-vigil if it is the repo under test
+          - name: Checkout integration test code from dev branch
+            if: ${{ github.event.repository.name == 'gen3-code-vigil' }}
+            uses: actions/checkout@v4
 
           # # Checkout master branch of gen3-code-vigil when another repo is under test
           # - name: Checkout integration test code from master branch
