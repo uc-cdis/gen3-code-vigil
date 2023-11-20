@@ -190,7 +190,7 @@ jobs:
 
           - name: Mark workflow as failed for unsuccessful test runs
           #  if: always()
-            if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            if: ${{ steps.run_service_tests.outcome != success() && steps.run_tests.outcome != success() }}
             run: |
               echo ${{ steps.run_service_tests.outcome }}
               echo $${{ steps.run_tests.outcome }}
