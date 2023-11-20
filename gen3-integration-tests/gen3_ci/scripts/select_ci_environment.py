@@ -29,7 +29,7 @@ def select_ci_environment(namespaces):
     if build_num:
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
-            myfile.write(f"SELECT_CI_ENV_JOB_INFO={job.job_name}|{build_num}")
+            myfile.write(f"SELECT_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
         status = job.wait_for_build_completion(build_num, max_duration=1800)
         if status == "Completed":
             return job.get_artifact_content(build_num, "namespace.txt")
@@ -63,4 +63,4 @@ if __name__ == "__main__":
 
     env_file = os.getenv("GITHUB_ENV")
     with open(env_file, "a") as myfile:
-        myfile.write(f"NAMESPACE={selected_ns}")
+        myfile.write(f"NAMESPACE={selected_ns}\n")

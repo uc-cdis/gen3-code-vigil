@@ -41,5 +41,5 @@ if __name__ == "__main__":
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
             myfile.write(
-                f"POD_LOGS_URL={job_info.get('url', '')}artifact/save-pod-logs/"
+                f"POD_LOGS_URL={job_info.get('url', '')}artifact/save-pod-logs/\n"
             )

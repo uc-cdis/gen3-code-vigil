@@ -68,7 +68,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     if build_num:
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
-            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}")
+            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
         status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
             return job.get_build_result(build_num)
@@ -98,7 +98,7 @@ def modify_env_for_test_repo_pr(namespace):
     if build_num:
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
-            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}")
+            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
         status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
             res = job.get_build_result(build_num)
