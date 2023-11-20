@@ -32,6 +32,11 @@ def select_ci_environment(namespaces):
             return job.get_artifact_content(build_num, "namespace.txt")
         else:
             logger.error("Build timed out. Consider increasing max_duration")
+            res = job.terminate_build(build_num)
+            if res == "SUCCESS":
+                logger.info(f"Terminated {build_num} of job {job.job_name}")
+            else:
+                logger.error(f"Failed to terminate {build_num} of job {job.job_name}")
             return None
     else:
         logger.error("Build number not found")
