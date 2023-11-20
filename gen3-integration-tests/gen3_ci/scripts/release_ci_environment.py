@@ -44,11 +44,7 @@ def release_ci_environment(namespace):
             return job.get_build_result(build_num)
         else:
             logger.error("Build timed out. Consider increasing max_duration")
-            res = job.terminate_build(build_num)
-            if res == "SUCCESS":
-                logger.info(f"Terminated {build_num} of job {job.job_name}")
-            else:
-                logger.error(f"Failed to terminate {build_num} of job {job.job_name}")
+            job.terminate_build(build_num)
             return None
     else:
         logger.error("Build number not found")

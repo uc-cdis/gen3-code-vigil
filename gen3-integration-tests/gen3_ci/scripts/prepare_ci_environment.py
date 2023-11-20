@@ -71,11 +71,7 @@ def modify_env_for_service_pr(namespace, service, tag):
             return job.get_build_result(build_num)
         else:
             logger.error("Build timed out. Consider increasing max_duration")
-            res = job.terminate_build(build_num)
-            if res == "SUCCESS":
-                logger.info(f"Terminated {build_num} of job {job.job_name}")
-            else:
-                logger.error(f"Failed to terminate {build_num} of job {job.job_name}")
+            job.terminate_build(build_num)
             return "failure"
     else:
         logger.error("Build number not found")
@@ -110,11 +106,7 @@ def modify_env_for_test_repo_pr(namespace):
             return res
         else:
             logger.error("Build timed out. Consider increasing max_duration")
-            res = job.terminate_build(build_num)
-            if res == "SUCCESS":
-                logger.info(f"Terminated {build_num} of job {job.job_name}")
-            else:
-                logger.error(f"Failed to terminate {build_num} of job {job.job_name}")
+            job.terminate_build(build_num)
             return "failure"
     else:
         logger.error("Build number not found")
