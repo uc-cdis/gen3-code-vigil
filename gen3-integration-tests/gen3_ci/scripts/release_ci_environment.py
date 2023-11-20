@@ -8,24 +8,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def release_ci_environment(namespace):
-    """
-    Stop pending job for prepping the test environment.
-    Remove the lock from the test environment and make it available for other PRs.
-    """
-    #
-    # Stop running job to prep CI env
-    #
-    job_name, build_num = os.getenv("PREP_CI_ENV_JOB_INFO").split("|")
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        job_name,
-    )
-    if job.is_build_running(build_num):
-        logger.info("CI environment is being prepped ...")
-        res = job.terminate_build(build_num)
-    # Unlock namespace
+    """Remove the lock from the test environment and make it available for other PRs"""
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),

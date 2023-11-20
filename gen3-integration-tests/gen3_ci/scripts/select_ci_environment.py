@@ -27,6 +27,9 @@ def select_ci_environment(namespaces):
     }
     build_num = job.build_job(params)
     if build_num:
+        env_file = os.getenv("GITHUB_ENV")
+        with open(env_file, "a") as myfile:
+            myfile.write(f"SELECT_CI_ENV_JOB_INFO={job.job_name}|{build_num}")
         status = job.wait_for_build_completion(build_num, max_duration=1800)
         if status == "Completed":
             return job.get_artifact_content(build_num, "namespace.txt")
