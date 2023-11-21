@@ -132,16 +132,14 @@ jobs:
           - name: Render md report to the PR
             id: generate_md_report
             if: ${{ steps.run_service_tests.outcome == success() || steps.run_service_tests.outcome == success() || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure'}}
-            run: |
-              gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
+            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Upload allure report to S3
             id: upload_allure_report
             if: ${{ steps.generate_allure_report.outcome == success() }}
-            run: |
-              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+            run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
@@ -150,31 +148,26 @@ jobs:
           - name: Publish allure report link to the PR
             id: gh_comment_allure_link
             if: ${{ steps.upload_allure_report.outcome == success() }}
-            run: |
-              gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
+            run: gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
             if: ${{ steps.prep_ci_env.outcome == success() || steps.prep_ci_env.outcome == failure() }}
-            run: |
-              poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+            run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
           - name: Publish pod logs url to the PR
             id: gh_comment_pod_logs_link
             if: ${{ steps.archive_pod_logs.outcome == success() }}
-            run: |
-              echo $POD_LOGS_URL
-              gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
+            run: gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Release CI environment
             id: release_ci_env
             if: ${{ env.NAMESPACE != 'None' }}
-            run: |
-              poetry run python -m gen3_ci.scripts.release_ci_environment
+            run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
           - name: Mark workflow as failed for unsuccessful test runs
           #  if: always()
@@ -186,5 +179,4 @@ jobs:
 
           - name: Stop pending jenkins jobs for cancelled run
             if: ${{ cancelled() }}
-            run: |
-              poetry run python -m gen3_ci.scripts.clean_up_jenkins
+            run: poetry run python -m gen3_ci.scripts.clean_up_jenkins
