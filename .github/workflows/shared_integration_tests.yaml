@@ -51,6 +51,10 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
 
         steps:
+          # # Enable step debugging. Uncomment this to debug pipeline issues
+          # - name: Enable Step Debugging
+          #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
+
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
             if: ${{ github.event.repository.name == 'gen3-code-vigil' }}
