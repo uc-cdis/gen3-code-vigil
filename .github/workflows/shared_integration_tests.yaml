@@ -112,18 +112,18 @@ jobs:
               echo ${{ steps.prep_ci_env.outcome }}
               echo ${{ steps.prep_ci_env.outcome == 'success' }}
 
-          # - name: Run tests pertaining to specific service
-          #   id: run_service_tests
-          #   if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == success() }}
-          #   run: |
-          #     mkdir output
+          - name: Run tests pertaining to specific service
+            id: run_service_tests
+            if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == success() }}
+            run: |
+              mkdir output
           #     poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
 
-          # - name: Run tests
-          #   id: run_tests
-          #   if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == success() }}
-          #   run: |
-          #     mkdir output
+          - name: Run tests
+            id: run_tests
+            if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == success() }}
+            run: |
+              mkdir output
           #     poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
 
           # - name: Generate allure report
