@@ -40,6 +40,7 @@ def get_portal_config_from_kube_secrets(test_env_namespace):
             return job.get_artifact_content(build_num, "gitops.json")
         else:
             logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
             return None
     else:
         logger.error("Build number not found")
@@ -69,6 +70,7 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
             return job.get_build_result(build_num)
         else:
             logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
             return None
     else:
         logger.error("Build number not found")
