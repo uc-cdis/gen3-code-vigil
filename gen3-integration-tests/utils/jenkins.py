@@ -95,10 +95,10 @@ class JenkinsJob(object):
             logger.error("Failed to start build")
             return None
 
-    def wait_for_build_completion(self, build_number, max_duration=300):
+    def wait_for_build_completion(self, build_number, max_duration=600):
         """
         Wait for a run to complete.
-        Default maximum wait time is 5 minutes, and can be configured.
+        Default maximum wait time is 10 minutes, and can be configured.
         If the run is not complete within the max set, this function errors out.
         """
         start = time.time()
@@ -137,6 +137,38 @@ class JenkinsJob(object):
             logger.error(e)
             logger.error(traceback.format_exc())
 
+    def terminate_build(self, build_num):
+        """
+        Terminate a build / run of the job.
+        """
+        logger.info(f"Terminating build {build_num} for job {self.job_url}")
+        try:
+            response = requests.post(f"{self.job_url}/{build_num}/stop", auth=self.auth)
+            if response.status_code == 200:
+                return "SUCCESS"
+            else:
+                response = requests.post(
+                    f"{self.job_url}/{build_num}/term", auth=self.auth
+                )
+                if response.status_code == 200:
+                    return "SUCCESS"
+                else:
+                    response = requests.post(
+                        f"{self.job_url}/{build_num}/kill", auth=self.auth
+                    )
+                    if response.status_code == 200:
+                        return "SUCCESS"
+                    else:
+                        logger.error(
+                            f"Failed to terminate build {build_num}. Stop manually at {self.job_url}/{build_num}"
+                        )
+                        return "FAILURE"
+        except Exception:
+            logger.error(
+                f"Failed to terminate build {build_num}. Stop manually at {self.job_url}/{build_num}"
+            )
+            return "FAILURE"
+
 
 if __name__ == "__main__":
     # The code below is to help with debugging changes to the above
@@ -149,17 +181,11 @@ if __name__ == "__main__":
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "ci-only-fetch-portal-config",
+        "ci-only-modify-env-for-test-repo-pr",
     )
     params = {
-        "TARGET_ENVIRONMENT": "qa-heal",
-        "COMMAND": "gen3 secrets decode portal-config gitops.json | jq '.discoveryConfig.minimalFieldMapping.uid'",
+        "TARGET_ENVIRONMENT": "jenkins-blood",
     }
-    # print(job.get_job_info())
-    # build_num = job.build_job(params)
-    # if build_num:
-    #     status = job.wait_for_build_completion(build_num)
-    #     if status == 'Completed':
-    #         print(job.get_build_result(build_num))
-
-    print(job.get_artifact_content(3, "gitops.txt"))
+    print(job.get_job_info())
+    build_num = job.build_job(params)
+    print(job.terminate_build(build_num))

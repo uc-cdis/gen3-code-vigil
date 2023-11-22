@@ -66,11 +66,15 @@ def modify_env_for_service_pr(namespace, service, tag):
     }
     build_num = job.build_job(params)
     if build_num:
+        env_file = os.getenv("GITHUB_ENV")
+        with open(env_file, "a") as myfile:
+            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
         status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
             logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
             return "failure"
     else:
         logger.error("Build number not found")
@@ -92,6 +96,9 @@ def modify_env_for_test_repo_pr(namespace):
     params = {"TARGET_ENVIRONMENT": namespace}
     build_num = job.build_job(params)
     if build_num:
+        env_file = os.getenv("GITHUB_ENV")
+        with open(env_file, "a") as myfile:
+            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
         status = job.wait_for_build_completion(build_num, max_duration=3600)
         if status == "Completed":
             res = job.get_build_result(build_num)
@@ -102,6 +109,7 @@ def modify_env_for_test_repo_pr(namespace):
             return res
         else:
             logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
             return "failure"
     else:
         logger.error("Build number not found")

@@ -28,6 +28,7 @@ def save_pod_logs(namespace):
             return job.get_build_info(build_num)
         else:
             logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
             return None
     else:
         logger.error("Build number not found")
@@ -40,5 +41,5 @@ if __name__ == "__main__":
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
             myfile.write(
-                f"POD_LOGS_URL={job_info.get('url', '')}artifact/save-pod-logs/"
+                f"POD_LOGS_URL={job_info.get('url', '')}artifact/save-pod-logs/\n"
             )
