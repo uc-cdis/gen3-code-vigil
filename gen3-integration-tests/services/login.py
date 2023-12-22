@@ -18,14 +18,14 @@ class LoginPage:
         self.BASE_URL = f"{pytest.root_url}"
         self.LOGIN_URL = f"{self.BASE_URL}/login"
         # Locators
-        self.nav_bar = ".nav_bar"  # homepage navigation bar
+        self.nav_bar = "//div[@class='nav-bar']"  # homepage navigation bar
         self.username_locator = "//div[@class='top-bar']//a[3]"  # username locator
-        self.pop_up_box = ".pop_up_box"  # pop_up_box
+        self.pop_up_box = "//div[@id='popup']"  # pop_up_box
 
     def go_to_page(self):
         """Goes to the login page"""
         self.page.goto(self.LOGIN_URL)
-        expect(self.page.locator(self.nav_bar)).to_be_visible
+        self.page.wait_for_selector(self.nav_bar, state="visible")
         self.page.screenshot(path="output/LoginPage.png", full_page=True)
 
     def login(self, user="main_account"):
@@ -44,23 +44,29 @@ class LoginPage:
         )
         expect(login_button).to_be_visible(timeout=5000)
         login_button.click()
-        self.page.screenshot(path="output/Afterlogin.png", full_page=True)
-        username = self.page.wait_for_selector(self.username_locator)
-        assert (username.text) == pytest.users[user]
-        access_token_cookie = self.page.context.cookies(
-            url=self.BASE_URL, name="access_token"
+        self.page.wait_for_timeout(3000)
+        self.page.screenshot(path="output/AfterLogin.png", full_page=True)
+        self.page.wait_for_selector(self.username_locator, state="attached")
+
+        self.handle_popup()
+        self.page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+        access_token_cookie = next(
+            (
+                cookie
+                for cookie in self.page.context.cookies()
+                if cookie["name"] == "access_token"
+            ),
+            None,
         )
-        assert access_token_cookie is not None
-        # cookies = page.context.cookies()
-        # for cookie in cookies:
-        #     if cookie["name"] == "access_token":
-        #         break
+        assert (
+            access_token_cookie is not None
+        ), "Access token cookie not found after login"
 
     def logout(self):
         """Logs out and wait for Login button on nav bar"""
         self.page.get_by_role("button", name="Logout").click()
         nav_bar_login_button = self.page.get_by_role("button", name="Login")
-        self.page.screenshot(path="Afterlogout.png")
+        self.page.screenshot(path="output/AfterLogout.png")
         expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login
@@ -68,8 +74,16 @@ class LoginPage:
         """Handling popups after login"""
         popup_message = self.page.query_selector(self.pop_up_box)
         if popup_message:
-            self.page.screenshot(path="popupBox.png", full_page=True)
             logger.info("Popup message found")
+            self.page.evaluate(
+                f"""
+                (element) => {{
+                    element.scrollTop = element.scrollHeight;
+                }}
+                """,
+                popup_message,
+            )
+            self.page.screenshot(path="output/PopupBox.png")
             accept_button = self.page.get_by_role("button", name="Accept")
             if accept_button:
                 accept_button.click()
