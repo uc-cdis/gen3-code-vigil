@@ -70,7 +70,7 @@ def test_data_path():
 
 # Synchronous fixture for Playwright
 @pytest.fixture
-def browser(self):
+def browser():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()  # Create a new page
@@ -80,7 +80,7 @@ def browser(self):
 
 # Asynchronous fixture for Playwright
 @pytest.fixture
-async def async_browser(self):
+async def async_browser():
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         page = await browser.new_page()  # Create a new page asynchronously
