@@ -18,6 +18,16 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 @pytest.mark.hatchery
 class TestHatchery:
     def test_workspace_drs_pull(self, browser: Page):
+        """
+        Steps:
+        1. Login with cdis.autotest user
+        2. Launch workspace
+        3. Launch Generic notebook and execute gen3 command
+
+        We are verifying successful launch of workspace service by launching generic notebook
+        and execute gen3 command. We need would need to update the test to export the manifest from
+        exploration page and execute the manifest gen3 commands.
+        """
         hatchery = Hatchery(browser)
         login_page = LoginPage(browser)
         logger.info("# Logging in with mainAcct")

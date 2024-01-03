@@ -32,7 +32,8 @@ build-backend = "poetry.core.masonry.api"
 addopts = "--log-cli-level=ERROR"
 markers = [
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
-  "mds: tests for metadata-service"
+  "mds: tests for metadata-service",
+  "hatchery: tests for hatchery workspace"
 ]
 pythonpath = "."
 md_report = "true"

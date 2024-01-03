@@ -38,10 +38,13 @@ class LoginPage:
         )
         login_button = self.page.get_by_role(
             "button",
-            name=re.compile(
+            name=re.compile(r"Login from Google", re.IGNORECASE),
+        )
+        """
+        name=re.compile(
                 r"Dev login - set username in 'dev_login' cookie", re.IGNORECASE
             ),
-        )
+        """
         expect(login_button).to_be_visible(timeout=5000)
         login_button.click()
         self.page.wait_for_timeout(3000)
