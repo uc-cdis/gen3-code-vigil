@@ -5,9 +5,13 @@
 ### Test user credentials
 The code supports running different steps as different users. Please see pytest_configure method in conftest.py for details.
 
-The default user is called `main_account`. Save API key for that user as `<namespace>_main_account.json` in `~/.gen3` directory. For example, `qa-dcp_main_account.json`
+The users required to run the tests are:
+- `main_account` is the default user. Save API key for that user as `<namespace>_main_account.json` in `~/.gen3` directory. For example, `qa-dcp_main_account.json`
+- `indexing_account` is the indexing_admin user. Save the API key as `<namespace>_indexing_account.json` in `~/.gen3` directory.
 
-You can use the following jenkins job to create the api_keys (the keys are saved as build artifacts). If `TARGET_ENVIRONMENT` is on `qaplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/create_api_key/) and if on `devplanetv2` use [jenkins2-job](https://jenkins2.planx-pla.net/job/create_api_key/)
+You can use the following jenkins job to generate the api_keys (the keys are saved as build artifacts):
+- If `TARGET_ENVIRONMENT` is on `qaplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/create_api_key/)
+- If it is on `devplanetv2` use [jenkins2-job](https://jenkins2.planx-pla.net/job/create_api_key/)
 
 ### Running gen3 admin tasks
 We use jenkins for running tasks like metadata-aggregate-sync, etl etc.
@@ -53,6 +57,7 @@ All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-inte
 
 ## Code organization
 Test code is organized into 4 directories:  `services`, `tests`, `test-data` and `utils`.
+- `pages` contains endpoints, locators and methods specific to each page in the portal. There is a separate module for each page.
 - `services` contains the endpoints and methods specific to each service. There is a separate module for each service.
 - `tests` contains the tests written in pytest. Tests are further separated into api tests and gui tests.
 - `test-data` contains the test data.

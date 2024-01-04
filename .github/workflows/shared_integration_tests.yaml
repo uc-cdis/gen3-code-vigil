@@ -85,6 +85,7 @@ jobs:
               pip install poetry
               poetry install
               poetry show
+              poetry run playwright install
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
