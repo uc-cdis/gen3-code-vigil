@@ -9,6 +9,11 @@ from pathlib import Path
 
 from services.fence import Fence
 
+# Using dotenv to simplify setting up env vars locally
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def pytest_configure(config):
     # Compute hostname and namespace
@@ -20,6 +25,8 @@ def pytest_configure(config):
     if namespace and not hostname:
         hostname = f"{namespace}.planx-pla.net"
     pytest.namespace = namespace
+    # TODO: tested_env will differ from namespace for manifest PRs
+    pytest.tested_env = namespace
 
     # Compute root_url
     pytest.root_url = f"https://{hostname}"

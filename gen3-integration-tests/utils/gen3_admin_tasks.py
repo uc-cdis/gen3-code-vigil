@@ -14,7 +14,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 def get_portal_config(test_env_namespace):
     """Fetch portal config from the GUI"""
-    res = requests.get(f"{pytest.root_url}/data/config/gitops.json")
+    if "heal" in pytest.tested_env:
+        res = requests.get(f"{pytest.root_url}/portal/data/config/gitops.json")
+    else:
+        res = requests.get(f"{pytest.root_url}/data/config/gitops.json")
     if res.status_code == 200:
         return res.json()
     else:

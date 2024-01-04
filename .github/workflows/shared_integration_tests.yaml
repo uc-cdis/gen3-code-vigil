@@ -85,7 +85,7 @@ jobs:
               pip install poetry
               poetry install
               poetry show
-              poetry run npx playwright install
+              poetry run playwright install
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
@@ -130,9 +130,6 @@ jobs:
             run: |
               echo ${{ steps.run_service_tests.outcome }}
               echo ${{ steps.run_tests.outcome }}
-              echo "Current directory: $(pwd)"
-              ls -la
-              ls -la /home/runner/.cache/ms-playwright
 
           - name: Generate allure report
             id: generate_allure_report
