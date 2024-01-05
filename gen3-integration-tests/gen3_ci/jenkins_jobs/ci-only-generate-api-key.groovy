@@ -38,7 +38,7 @@ spec:
   - name: wait-for-jenkins-connection
     image: quay.io/cdis/gen3-ci-worker:master
     command: ["/bin/sh","-c"]
-    args: ["while [ $(curl -sw '%{http_code}' http://jenkins-master-service:8080/tcpSlaveAgentListener/ -o /dev/null) -ne 200 ]; do sleep 5; echo 'Waiting for jenkins connection ...'; done"]
+    args: ["while [ $(curl -sw '%{http_code}' http://jenkins-master-service:8080/tcpSlaveAgentListener/ -o /dev/null) -ne 200 ]; do sleep 5; echo 'Waiting for jenkins connection...'; done"]
   containers:
   - name: jnlp
     command: ["/bin/sh","-c"]

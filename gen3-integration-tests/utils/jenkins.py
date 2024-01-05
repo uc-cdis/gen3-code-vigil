@@ -89,7 +89,7 @@ class JenkinsJob(object):
             queue_item_url = response.headers["Location"]
             build_started = False
             while build_started is False:
-                logger.info("Waiting for build to start ...")
+                logger.info("Waiting for build to start...")
                 time.sleep(10)
                 res = requests.get(queue_item_url + "api/json", auth=self.auth).json()
                 if "executable" in res:
@@ -121,7 +121,9 @@ class JenkinsJob(object):
                 status = "Timed Out"
                 break
             else:
-                logger.info("Waiting for job completion ...")
+                logger.info(
+                    f"Waiting for job '{self.job_url}' #{build_number} completion..."
+                )
                 time.sleep(60)
         return status
 
