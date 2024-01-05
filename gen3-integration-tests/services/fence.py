@@ -23,4 +23,6 @@ class Fence(object):
         if res.status_code == 200:
             return res.json()["access_token"]
         else:
-            raise Exception("Failed to get access token")
+            raise Exception(
+                f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
+            )

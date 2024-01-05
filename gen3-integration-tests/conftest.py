@@ -48,7 +48,11 @@ def pytest_configure(config):
         raise
     pytest.api_key_ids.append(api_key_json["key_id"])
     api_key = api_key_json["api_key"]
-    access_token = fence.get_access_token(api_key)
+    try:
+        access_token = fence.get_access_token(api_key)
+    except Exception as exc:
+        print(f"Failed to get access token using API Key: {file_path}")
+        raise
     pytest.auth_headers["main_account"] = {
         "Accept": "application/json",
         "Authorization": f"bearer {access_token}",
@@ -63,7 +67,11 @@ def pytest_configure(config):
         raise
     pytest.api_key_ids.append(api_key_json["key_id"])
     api_key = api_key_json["api_key"]
-    access_token = fence.get_access_token(api_key)
+    try:
+        access_token = fence.get_access_token(api_key)
+    except Exception as exc:
+        print(f"Failed to get access token using API Key: {file_path}")
+        raise
     pytest.auth_headers["indexing_account"] = {
         "Accept": "application/json",
         "Authorization": f"bearer {access_token}",
