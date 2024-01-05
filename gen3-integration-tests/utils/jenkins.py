@@ -72,12 +72,6 @@ class JenkinsJob(object):
                 f"{k}={v}" for k, v in parameters.items()
             )
         response = requests.post(url, auth=self.auth)
-        if response.status_code != 201:
-            logger.error(
-                f"Failed to start jenkins job at '{url}': {response.status_code}"
-            )
-            return None
-
         max_retries = 6
         current_retry = 0
         while response.status_code != 201 and current_retry < max_retries:
@@ -86,7 +80,9 @@ class JenkinsJob(object):
             time.sleep(10)
             response = requests.post(url, auth=self.auth)
         if current_retry == max_retries:
-            logger.error(f"Failed to get jenkins job output: {response.status_code}")
+            logger.error(
+                f"Failed to start jenkins job at '{url}': {response.status_code}"
+            )
             return None
 
         if response.status_code == 201:
@@ -102,7 +98,7 @@ class JenkinsJob(object):
             logger.info(f"Build number {build_number} triggered successfully")
             return build_number
         else:
-            logger.error("Failed to start build")
+            logger.error(f"Failed to get jenkins job output: {response.status_code}")
             return None
 
     def wait_for_build_completion(self, build_number, max_duration=600):
