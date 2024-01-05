@@ -3,7 +3,6 @@
     e.g., qa-anvil
 
   Archived artifacts - gitops.json, manifest.json
-  TODO: point `ci-only-fetch-configs` jenkins job at `master` branch once this is merged
 */
 pipeline {
     agent {
