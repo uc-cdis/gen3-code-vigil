@@ -72,15 +72,25 @@ class JenkinsJob(object):
                 f"{k}={v}" for k, v in parameters.items()
             )
         response = requests.post(url, auth=self.auth)
+        if response.status_code != 201:
+            logger.error(
+                f"Failed to start jenkins job at '{url}': {response.status_code}"
+            )
+            return None
+
         max_retries = 6
         current_retry = 0
-        while response.status_code == 404 and current_retry < max_retries:
+        while response.status_code != 201 and current_retry < max_retries:
             current_retry += 1
             logger.info(f"Retrying - attempt {current_retry}")
             time.sleep(10)
             response = requests.post(url, auth=self.auth)
-        queue_item_url = response.headers["Location"]
+        if current_retry == max_retries:
+            logger.error(f"Failed to get jenkins job output: {response.status_code}")
+            return None
+
         if response.status_code == 201:
+            queue_item_url = response.headers["Location"]
             build_started = False
             while build_started is False:
                 logger.info("Waiting for build to start ...")
@@ -121,21 +131,24 @@ class JenkinsJob(object):
 
     def get_artifact_content(self, build_number, artifact_name):
         """Get the contents of an artifact archived for the specific run"""
-        try:
-            artifacts = requests.get(
-                f"{self.job_url}/{build_number}/api/json", auth=self.auth
-            ).json()["artifacts"]
-            artifact_rel_path = [
-                d for d in artifacts if d["fileName"] == artifact_name
-            ][0]["relativePath"]
-            response = requests.get(
-                f"{self.job_url}/{build_number}/artifact/{artifact_rel_path}",
-                auth=self.auth,
-            )
-            return response.text
-        except Exception as e:
-            logger.error(e)
-            logger.error(traceback.format_exc())
+        url = f"{self.job_url}/{build_number}/api/json"
+        response = requests.get(url, auth=self.auth)
+        assert response.status_code == 200, f"Unable to get artifacts at '{url}'"
+
+        artifacts = response.json()["artifacts"]
+        matching_artifacts = [d for d in artifacts if d["fileName"] == artifact_name]
+        assert (
+            len(matching_artifacts) > 0
+        ), f"No artifacts found with name '{artifact_name}'"
+        artifact_rel_path = matching_artifacts[0]["relativePath"]
+
+        url = f"{self.job_url}/{build_number}/artifact/{artifact_rel_path}"
+        response = requests.get(
+            url,
+            auth=self.auth,
+        )
+        assert response.status_code == 200, f"Unable to get artifacts at '{url}'"
+        return response.text
 
     def terminate_build(self, build_num):
         """
@@ -188,4 +201,7 @@ if __name__ == "__main__":
     }
     print(job.get_job_info())
     build_num = job.build_job(params)
+    if not build_num:
+        logger.error("Build number not found")
+        exit(1)
     print(job.terminate_build(build_num))

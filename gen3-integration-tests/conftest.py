@@ -5,6 +5,7 @@ import pytest
 from pathlib import Path
 
 from services.fence import Fence
+from utils import gen3_admin_tasks
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
@@ -68,6 +69,20 @@ def pytest_configure(config):
         "Authorization": f"bearer {access_token}",
         "Content-Type": "application/json",
     }
+
+
+@pytest.fixture(autouse=True, scope="session")
+def get_configuration_files():
+    """
+    Get configuration files from the admin VM and save them at `test_data/configuration`
+    """
+    print("Creating configuration files")
+    configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
+    path = Path(__file__).parent / "test_data/configuration"
+    path.mkdir(parents=True, exist_ok=True)
+    for file_name, contents in configs.items():
+        with (path / file_name).open("w", encoding="utf-8") as f:
+            f.write(contents)
 
 
 @pytest.fixture

@@ -2,7 +2,8 @@
   String parameter TARGET_ENVIRONMENT
     e.g., qa-anvil
 
-  Archived artifact - gitops.json
+  Archived artifacts - gitops.json, manifest.json
+  TODO: point `ci-only-fetch-configs` jenkins job at `master` branch once this is merged
 */
 pipeline {
     agent {
@@ -34,6 +35,7 @@ pipeline {
                 dir("fetch-portal-config") {
                     script {
                         sh '''#!/bin/bash +x
+                            set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
                             source \$GEN3_HOME/gen3/gen3setup.sh
@@ -44,10 +46,27 @@ pipeline {
                 }
             }
         }
+        stage('Fetch manifest') {
+            steps {
+                dir("fetch-manifest") {
+                    script {
+                        sh '''#!/bin/bash +x
+                            set -e
+                            export GEN3_HOME=\$WORKSPACE/cloud-automation
+                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            source \$GEN3_HOME/gen3/gen3setup.sh
+                            RESULT=`g3kubectl get configmaps manifest-global -o json`
+                            echo "\$RESULT" > manifest.json
+                        '''
+                    }
+                }
+            }
+        }
     }
     post {
         always {
             archiveArtifacts artifacts: 'fetch-portal-config/gitops.json'
+            archiveArtifacts artifacts: 'fetch-manifest/manifest.json'
         }
     }
 }
