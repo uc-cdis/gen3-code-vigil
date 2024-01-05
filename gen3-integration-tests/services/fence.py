@@ -19,8 +19,11 @@ class Fence(object):
             f"{self.API_CREDENTIALS_ENDPOINT}/access_token",
             data=json.dumps({"api_key": api_key}),
         )
-        logger.info(f"Status code - {res.status_code}")
+        logger.info(f"Status code: {res.status_code}")
         if res.status_code == 200:
             return res.json()["access_token"]
         else:
-            raise Exception("Failed to get access token")
+            logger.info(f"Response: {res.text}")
+            raise Exception(
+                f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
+            )

@@ -20,7 +20,7 @@ def clean_up_jenkins():
         job_name,
     )
     if job.is_build_running(build_num):
-        logger.info("CI environment is being selected ...")
+        logger.info("CI environment is being selected...")
         job.terminate_build(build_num)
     #
     # Stop running job to prepare CI env
@@ -33,7 +33,7 @@ def clean_up_jenkins():
         job_name,
     )
     if job.is_build_running(build_num):
-        logger.info("CI environment is being prepped ...")
+        logger.info("CI environment is being prepped...")
         job.terminate_build(build_num)
 
 
