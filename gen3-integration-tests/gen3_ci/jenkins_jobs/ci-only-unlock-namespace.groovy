@@ -105,6 +105,7 @@ spec:
                 dir("unlock-namespace") {
                     script {
                         sh '''#!/bin/bash +x
+                            set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             source \$GEN3_HOME/gen3/gen3setup.sh
                             lockName=jenkins

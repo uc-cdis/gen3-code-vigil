@@ -101,6 +101,7 @@ spec:
                 dir("save-pod-logs") {
                     script {
                         sh '''#!/bin/bash +x
+                            set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\$NAMESPACE
                             source \$GEN3_HOME/gen3/gen3setup.sh

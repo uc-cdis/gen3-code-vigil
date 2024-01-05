@@ -90,6 +90,12 @@ spec:
         }
         stage('Initial setup') {
             steps {
+                script {
+                    sh '''#!/bin/bash +x
+                        set -e
+                        echo TARGET_ENVIRONMENT: $TARGET_ENVIRONMENT
+                    '''
+                }
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',

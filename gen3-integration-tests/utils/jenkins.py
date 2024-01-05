@@ -121,6 +121,7 @@ class JenkinsJob(object):
                 status = "Timed Out"
                 break
             else:
+                # TODO log the link to the blue ocean console instead
                 logger.info(
                     f"Waiting for job '{self.job_url}' #{build_number} completion..."
                 )

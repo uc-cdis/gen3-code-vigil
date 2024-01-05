@@ -36,6 +36,7 @@ pipeline {
                 dir("run-command") {
                     script {
                         sh '''#!/bin/bash +x
+                            set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
                             source \$GEN3_HOME/gen3/gen3setup.sh

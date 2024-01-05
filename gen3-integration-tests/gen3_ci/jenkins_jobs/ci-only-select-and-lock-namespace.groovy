@@ -106,6 +106,7 @@ spec:
                 dir("select-and-lock-namespace") {
                     script {
                         sh '''#!/bin/bash +x
+                            set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             source \$GEN3_HOME/gen3/gen3setup.sh
                             times=0
