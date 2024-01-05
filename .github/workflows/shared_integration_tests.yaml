@@ -163,7 +163,8 @@ jobs:
 
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
-            if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
+            # if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
+            if: ${{ always() }}
             run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
           - name: Publish pod logs url to the PR
@@ -175,7 +176,8 @@ jobs:
 
           - name: Release CI environment
             id: release_ci_env
-            if: ${{ env.NAMESPACE != 'None' }}
+            # if: ${{ env.NAMESPACE != 'None' }}
+            if: ${{ always() }}
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
           - name: Mark workflow as failed for unsuccessful test runs
