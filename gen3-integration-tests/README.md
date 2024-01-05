@@ -27,6 +27,10 @@ The Jenkins API token can be obtained from Keeper.
 ## Running tests
 Switch to `gen3-code-vigil/gen3-integration-tests` and run the command:
 ```
+poetry install
+```
+Then:
+```
 HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto
 ```
 The kubernetes namespace is required for Gen3 admin tasks. It is assumed to be the first part of the hostname (`jenkins-brain` in the example above).

@@ -39,9 +39,12 @@ def pytest_configure(config):
     # Save API key id's for cleanup
     pytest.api_key_ids = []
     # Default user - main_account - cdis.autotest@gmail.com
-    api_key_json = json.loads(
-        (Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json").read_text()
-    )
+    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json"
+    try:
+        api_key_json = json.loads(file_path.read_text())
+    except FileNotFoundError:
+        print(f"API key file not found: '{file_path}'")
+        raise
     pytest.api_key_ids.append(api_key_json["key_id"])
     api_key = api_key_json["api_key"]
     access_token = fence.get_access_token(api_key)
@@ -51,11 +54,12 @@ def pytest_configure(config):
         "Content-Type": "application/json",
     }
     # Indexing admin - indexing_account - ctds.indexing.test@gmail.com
-    api_key_json = json.loads(
-        (
-            Path.home() / ".gen3" / f"{pytest.namespace}_indexing_account.json"
-        ).read_text()
-    )
+    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_indexing_account.json"
+    try:
+        api_key_json = json.loads(file_path.read_text())
+    except FileNotFoundError:
+        print(f"API key file not found: '{file_path}'")
+        raise
     pytest.api_key_ids.append(api_key_json["key_id"])
     api_key = api_key_json["api_key"]
     access_token = fence.get_access_token(api_key)
