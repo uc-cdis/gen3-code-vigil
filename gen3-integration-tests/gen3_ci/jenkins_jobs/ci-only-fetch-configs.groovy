@@ -3,6 +3,8 @@
     e.g., qa-anvil
 
   Archived artifacts - gitops.json, manifest.json
+
+  NOTE: Getting gitops.json may be unnecessary since it's accessible at hostname/data/config/gitops.json
 */
 pipeline {
     agent {

@@ -5,6 +5,7 @@ import pytest
 
 from cdislogging import get_logger
 
+from utils import TEST_DATA_PATH
 import utils.gen3_admin_tasks as gat
 
 from services.metadataservice import MetadataService
@@ -14,7 +15,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.mds
 class TestAggregateMDS:
-    def test_create_edit_delete_study(self, test_data_path):
+    def test_create_edit_delete_study(self):
         """
         Steps:
         1. Create a metadata record, run metadata-aggregate-sync job and verify creation.
@@ -45,7 +46,7 @@ class TestAggregateMDS:
             logger.info(f"# Create study json from {file_name}")
             study_id = uuid.uuid4().hex
             study_ids.append(study_id)
-            study = (test_data_path / "aggregate_mds" / file_name).read_text(
+            study = (TEST_DATA_PATH / "aggregate_mds" / file_name).read_text(
                 encoding="UTF-8"
             )
             study_json = json.loads(study)

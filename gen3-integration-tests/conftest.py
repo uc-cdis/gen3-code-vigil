@@ -2,15 +2,20 @@ import json
 import os
 import pytest
 
+from cdislogging import get_logger
+from datasimulator.graph import Graph as DataSimGraph
+from dictionaryutils import DataDictionary, dictionary
 from pathlib import Path
 
 from services.fence import Fence
-from utils import gen3_admin_tasks
+from utils import TEST_DATA_PATH, gen3_admin_tasks
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def pytest_configure(config):
@@ -80,20 +85,79 @@ def pytest_configure(config):
 
 
 @pytest.fixture(autouse=True, scope="session")
+def setup_tests():
+    get_configuration_files()
+    generate_test_data()
+
+
 def get_configuration_files():
     """
     Get configuration files from the admin VM and save them at `test_data/configuration`
     """
     print("Creating configuration files")
     configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
-    path = Path(__file__).parent / "test_data/configuration"
+    path = TEST_DATA_PATH / "configuration"
     path.mkdir(parents=True, exist_ok=True)
     for file_name, contents in configs.items():
         with (path / file_name).open("w", encoding="utf-8") as f:
             f.write(contents)
 
 
-@pytest.fixture
-def test_data_path():
-    """Fixture to be used when a test needs test data"""
-    return Path(__file__).parent / "test_data"
+def generate_test_data():
+    try:
+        manifest = json.loads(
+            (TEST_DATA_PATH / "configuration/manifest.json").read_text()
+        )
+    except FileNotFoundError:
+        print(
+            "manifest.json not found. It should have been fetched by `get_configuration_files`..."
+        )
+        raise
+
+    dictionary_url = manifest.get("data", {}).get("dictionary_url")
+    assert dictionary_url, "No dictionary URL in manifest.json"
+
+    path = TEST_DATA_PATH / "graph_data"
+    path.mkdir(parents=True, exist_ok=True)
+
+    program = "jnkns"
+    project = "jenkins"
+    max_samples = 1
+    # TODO we should try setting `required_only` to False so the test data is more representative of real data
+    required_only = True
+
+    # The logic below is copied from data-simulator's `simulate` and `submission_order` commands.
+    # TODO: Move the logic to functions in `data-simulator` so we can import them instead of duplicating.
+    logger.info("Data simulator initialization...")
+    logger.info("Loading dictionary from url {}".format(dictionary_url))
+    dictionary.init(DataDictionary(url=dictionary_url))
+
+    # Generate test data. Equivalent to running this command:
+    # data-simulator simulate --url <dictionary_url> --path <test_data_path> --program jnkns --project jenkins
+    logger.info("Initializing graph...")
+    graph = DataSimGraph(dictionary, program=program, project=project)
+    graph.generate_nodes_from_dictionary(consent_codes=True)
+    graph.construct_graph_edges()
+
+    # just print error messages
+    graph.graph_validation(required_only=required_only)
+
+    # simulate data whether the graph passes validation or not
+    logger.info("Generating data...")
+    graph.simulate_graph_data(
+        path=path,
+        n_samples=max_samples,
+        node_num_instances_file=None,
+        random=True,
+        required_only=required_only,
+        skip=True,
+    )
+
+    # Generate test data submission order. Equivalent to running this command:
+    # data-simulator submission_order --url <dictionary_url> --path <test_data_path>
+    # NOTE: not using `leaf_node` like in old gen3-qa tests... just generating everything.
+    logger.info("Generating data submission order...")
+    submission_order = graph.generate_submission_order()
+    with open(os.path.join(path, "DataImportOrderPath.txt"), "w") as outfile:
+        for node in submission_order:
+            outfile.write(node.name + "\t" + node.category + "\n")
