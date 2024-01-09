@@ -196,7 +196,7 @@ if __name__ == "__main__":
         "ci-only-modify-env-for-test-repo-pr",
     )
     params = {
-        "TARGET_ENVIRONMENT": "jenkins-blood",
+        "NAMESPACE": "jenkins-blood",
     }
     print(job.get_job_info())
     build_num = job.build_job(params)
