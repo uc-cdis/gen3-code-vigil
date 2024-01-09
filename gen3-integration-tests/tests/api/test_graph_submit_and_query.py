@@ -2,6 +2,7 @@ import os
 import pytest
 
 from cdislogging import get_logger
+from gen3.submission import Gen3SubmissionQueryError
 
 from services.peregrine import Peregrine
 from services.sheepdog import Sheepdog
@@ -9,6 +10,7 @@ from services.sheepdog import Sheepdog
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
+# TODO make these globals
 sheepdog = Sheepdog()
 peregrine = Peregrine()
 project_id = f"{sheepdog.program_name}-{sheepdog.project_code}"
@@ -17,18 +19,6 @@ project_id = f"{sheepdog.program_name}-{sheepdog.project_code}"
 @pytest.mark.sheepdog
 @pytest.mark.peregrine
 class TestGraphSubmitAndQuery:
-    def test_delete_all_record_in_test_project(self):
-        # clean up before starting the test suite
-        # TODO probably shouldn't be a test but a setup or fixture
-        for node_name in reversed(sheepdog.submission_order):
-            query = f'query {{ {node_name} (project_id: "{project_id}") {{ id }} }}'
-            result = peregrine.query(query).get("data", {}).get(node_name, [])
-            for record in result:
-                logger.info(
-                    f"Pre-test clean up: deleting '{node_name}' record '{record['id']}'"
-                )
-                sheepdog.delete_record(record["id"])
-
     def test_submit_query_and_delete_records(self):
         """
         TODO
@@ -36,6 +26,7 @@ class TestGraphSubmitAndQuery:
         logger.info("Submitting test records")
         sheepdog.submit_all_test_records()
 
+        new_records = []
         try:
             logger.info(
                 "For each node, query all the properties and check that the response matches"
@@ -57,7 +48,34 @@ class TestGraphSubmitAndQuery:
                 for prop in primitive_props:
                     assert received_data[0][prop] == record.props[prop]
 
-            # logger.info("Query an invalid field")
-            # logger.info("Query with filter on a string attribute")
+            # use a node at the bottom of the tree to it's easier to delete nodes in the right order
+            node_name = sheepdog.submission_order[-1]
+
+            logger.info("Query an invalid field")
+            query = f'query {{ {node_name} (project_id: "{project_id}") {{ field_does_not_exist }} }}'
+            with pytest.raises(
+                Gen3SubmissionQueryError,
+                match=f'Cannot query field "field_does_not_exist" on type "{node_name}".',
+            ):
+                peregrine.query(query)
+
+            logger.info("Query with filter on a string property")
+            string_prop = [
+                prop for prop in record.props.keys() if type(record.props[prop]) == str
+            ][0]
+            string_prop_value = record.props[string_prop]
+            query = f'query {{ {node_name} (project_id: "{project_id}", {string_prop}: "{string_prop_value}") {{ {string_prop} }} }}'
+            received_data = peregrine.query(query).get("data", {}).get(node_name, [])
+            assert len(received_data) == 1
+            assert received_data[0][string_prop] == string_prop_value
+
+            logger.info("Query node count")
+            result = peregrine.query_node_count(node_name)
+            assert result.get("data", {}).get(f"_{node_name}_count") == 1
+            new_records.append(sheepdog.submit_new_record(node_name))
+            result = peregrine.query_node_count(node_name)
+            assert result.get("data", {}).get(f"_{node_name}_count") == 2
         finally:
+            for record in new_records:
+                sheepdog.delete_record(new_records.node_id)
             sheepdog.delete_all_test_records()

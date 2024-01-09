@@ -20,3 +20,7 @@ class Peregrine:
     def query(self, query_text, variables=None):
         logger.info(f"Peregrine query: '{query_text}'. Variables: '{variables}'")
         return self.sdk.query(query_text, variables)
+
+    def query_node_count(self, node_name):
+        query = f"{{ _{node_name}_count }}"
+        return self.query(query)
