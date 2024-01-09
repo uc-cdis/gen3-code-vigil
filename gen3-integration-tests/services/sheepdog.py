@@ -16,16 +16,16 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class GraphRecord:
     # TODO comment prop descriptions
-    def __init__(self, name, category, submission_order, props):
-        self.name = name
+    def __init__(self, node_name, category, submission_order, props):
+        self.node_name = node_name
         self.category = category
         self.submission_order = submission_order
         self.props = props
-        self.node_id = None
+        self.sheepdog_id = None
         self.indexd_guid = None
 
     def __str__(self):
-        return f"GraphRecord '{self.name}': {self.props}"
+        return f"GraphRecord '{self.node_name}': {self.props}"
 
 
 class Sheepdog:
@@ -44,7 +44,27 @@ class Sheepdog:
         self.test_records = {}
 
         self.load_test_records()
-        self.delete_all_records_in_test_project()
+
+    def create_program_and_project(self):
+        logger.info(
+            f"Creating program '{self.program_name}' and project '{self.project_code}'"
+        )
+        program_record = {
+            "type": "program",
+            "name": self.program_name,
+            "dbgap_accession_number": self.program_name,
+        }
+        self.sdk.create_program(program_record)
+
+        project_record = {
+            "type": "project",
+            "code": self.project_code,
+            "name": self.project_code,
+            "dbgap_accession_number": self.project_code,
+            # "state": 'open',
+            # "releasable": true,
+        }
+        self.sdk.create_project(self.program_name, project_record)
 
     def delete_all_records_in_test_project(self):
         # clean up before starting the test suite (useful when running tests locally)
@@ -95,7 +115,7 @@ class Sheepdog:
             if e.response.status_code != expected_status_code:
                 logger.error(f"Error while submitting record: {e.response.text}")
                 raise
-        record.node_id = result["entities"][0]["id"]
+        record.sheepdog_id = result["entities"][0]["id"]
         return result
 
     def submit_all_test_records(self):
@@ -112,12 +132,15 @@ class Sheepdog:
         self.submit_record(record)
         return record
 
-    def delete_record(self, record_node_id, expected_status_code=200):
-        if not record_node_id:
-            raise Exception("Unable to delete record that has no node_id")
+    def delete_record(self, record_sheepdog_id, expected_status_code=200):
+        if not record_sheepdog_id:
+            raise Exception("Unable to delete record that has no sheepdog_id")
+        return self.delete_records([record_sheepdog_id])
+
+    def delete_records(self, record_sheepdog_ids, expected_status_code=200):
         try:
-            result = self.sdk.delete_record(
-                self.program_name, self.project_code, record_node_id
+            result = self.sdk.delete_records(
+                self.program_name, self.project_code, record_sheepdog_ids
             )
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != expected_status_code:
@@ -126,8 +149,10 @@ class Sheepdog:
         return result
 
     def delete_all_test_records(self):
+        to_delete = []
         for node_name in reversed(self.submission_order):
             record = self.test_records[node_name]
-            if not record.node_id:
+            if not record.sheepdog_id:
                 continue  # this record was never submitted
-            self.delete_record(record.node_id)
+            to_delete.append(record.sheepdog_id)
+        self.delete_records(to_delete)

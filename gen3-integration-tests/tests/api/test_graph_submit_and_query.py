@@ -23,7 +23,10 @@ class TestGraphSubmitAndQuery:
         """
         TODO
         """
+        sheepdog.delete_all_records_in_test_project()
+
         logger.info("Submitting test records")
+        sheepdog.create_program_and_project()
         sheepdog.submit_all_test_records()
 
         new_records = []
@@ -69,13 +72,12 @@ class TestGraphSubmitAndQuery:
             assert len(received_data) == 1
             assert received_data[0][string_prop] == string_prop_value
 
-            logger.info("Query node count")
+            logger.info("Query node count before and after submitting a new record")
             result = peregrine.query_node_count(node_name)
-            assert result.get("data", {}).get(f"_{node_name}_count") == 1
+            count = result.get("data", {}).get(f"_{node_name}_count")
             new_records.append(sheepdog.submit_new_record(node_name))
             result = peregrine.query_node_count(node_name)
-            assert result.get("data", {}).get(f"_{node_name}_count") == 2
+            assert result.get("data", {}).get(f"_{node_name}_count") == count + 1
         finally:
-            for record in new_records:
-                sheepdog.delete_record(new_records.node_id)
+            sheepdog.delete_records([record.sheepdog_id for record in new_records])
             sheepdog.delete_all_test_records()

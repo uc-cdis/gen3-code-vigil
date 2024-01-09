@@ -89,7 +89,6 @@ def setup_tests():
 
     # TODO maybe the setup below should only run for test suites that need it
     generate_test_data()
-    # TODO create_program_and_project()
 
 
 def get_configuration_files():
