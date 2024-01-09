@@ -1,9 +1,6 @@
 import json
 import os
 import pytest
-from playwright.sync_api import sync_playwright
-from playwright.async_api import async_playwright
-
 
 from pathlib import Path
 
@@ -73,23 +70,3 @@ def pytest_configure(config):
 def test_data_path():
     """Fixture to be used when a test needs test data"""
     return Path(__file__).parent / "test_data"
-
-
-# Synchronous fixture for Playwright
-@pytest.fixture
-def browser():
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()  # Create a new page
-        yield page
-        browser.close()
-
-
-# Asynchronous fixture for Playwright
-@pytest.fixture
-async def async_browser():
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()  # Create a new page asynchronously
-        yield page
-        await browser.close()

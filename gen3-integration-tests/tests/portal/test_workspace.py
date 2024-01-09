@@ -5,19 +5,16 @@ import os
 import pytest
 
 from cdislogging import get_logger
-import utils.gen3_admin_tasks as gat
 
-from playwright.sync_api import Page
-
-from services.login import LoginPage
-from services.hatchery import Hatchery
+from pages.login import LoginPage
+from pages.workspace import WorkspacePage
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-@pytest.mark.hatchery
-class TestHatchery:
-    def test_workspace_drs_pull(self, browser: Page):
+@pytest.mark.workspace
+class TestWorkspacePage:
+    def test_workspace_drs_pull(self, page):
         """
         Steps:
         1. Login with cdis.autotest user
@@ -28,19 +25,19 @@ class TestHatchery:
         and execute gen3 command. We need would need to update the test to export the manifest from
         exploration page and execute the manifest gen3 commands.
         """
-        hatchery = Hatchery(browser)
-        login_page = LoginPage(browser)
+        workspace_page = WorkspacePage()
+        login_page = LoginPage()
         logger.info("# Logging in with mainAcct")
-        login_page.go_to_page()
+        login_page.go_to(page)
         """login with mainAcct user"""
-        login_page.login()
+        login_page.login(page)
         """navigates to workspace page and sees workspace_options"""
-        hatchery.go_to_workspace_page()
-        """launches the workspace Generic notebook"""
-        # hatchery.open_jupyter_workspace()
+        workspace_page.go_to(page)
+        # """launches the workspace Generic notebook"""
+        # workspace_page.open_jupyter_workspace(page)
         """opens python kernel in notebook"""
-        hatchery.open_python_kernel()
+        workspace_page.open_python_kernel(page)
         """executes gen3 --help command"""
-        hatchery.run_command_notebook()
+        workspace_page.run_command_notebook(page)
         """terminates the workspace after executing the command"""
-        hatchery.terminate_workspace()
+        workspace_page.terminate_workspace(page)
