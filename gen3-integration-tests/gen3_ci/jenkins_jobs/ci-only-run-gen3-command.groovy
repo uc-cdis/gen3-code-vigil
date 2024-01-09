@@ -1,5 +1,5 @@
 /*
-    String parameter TARGET_ENVIRONMENT
+    String parameter NAMESPACE
         e.g., qa-anvil
     String parameter COMMAND
         e.g., gen3 secrets decode portal-config gitops.json | jq '.discoveryConfig.minimalFieldMapping.uid'
@@ -38,7 +38,7 @@ pipeline {
                         sh '''#!/bin/bash +x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source \$GEN3_HOME/gen3/gen3setup.sh
                             RESULT=`\$COMMAND`
                             echo "\$RESULT" > result.txt
