@@ -14,6 +14,7 @@ include = [
 python = "^3.9"
 allure-pytest = "^2.13.2"
 cdislogging = "^1.1.1"
+gen3 = "*"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
 pytest-env = "^1.0.0"
@@ -34,7 +35,9 @@ addopts = "--log-cli-level=ERROR"
 markers = [
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
   "mds: tests for metadata-service",
-  "portal: tests for data-portal"
+  "portal: tests for data-portal",
+  "sheepdog: tests for sheepdog",
+  "peregrine: tests for peregrine"
 ]
 pythonpath = "."
 md_report = "true"

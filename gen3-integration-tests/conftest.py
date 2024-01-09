@@ -42,8 +42,7 @@ def pytest_configure(config):
     # Compute auth headers
     pytest.auth_headers = {}
     fence = Fence()
-    # Save API key id's for cleanup
-    pytest.api_key_ids = []
+    pytest.api_keys = {}
     # Default user - main_account - cdis.autotest@gmail.com
     file_path = Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json"
     try:
@@ -51,7 +50,7 @@ def pytest_configure(config):
     except FileNotFoundError:
         print(f"API key file not found: '{file_path}'")
         raise
-    pytest.api_key_ids.append(api_key_json["key_id"])
+    pytest.api_keys["main_account"] = api_key_json
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
@@ -70,7 +69,7 @@ def pytest_configure(config):
     except FileNotFoundError:
         print(f"API key file not found: '{file_path}'")
         raise
-    pytest.api_key_ids.append(api_key_json["key_id"])
+    pytest.api_keys["indexing_account"] = api_key_json
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
@@ -87,7 +86,10 @@ def pytest_configure(config):
 @pytest.fixture(autouse=True, scope="session")
 def setup_tests():
     get_configuration_files()
+
+    # TODO maybe the setup below should only run for test suites that need it
     generate_test_data()
+    # TODO create_program_and_project()
 
 
 def get_configuration_files():
@@ -122,7 +124,7 @@ def generate_test_data():
 
     program = "jnkns"
     project = "jenkins"
-    max_samples = 1
+    max_samples = 1  # the submission functions in services/sheepdog.py assume there is only 1 record per node
     # TODO we should try setting `required_only` to False so the test data is more representative of real data
     required_only = True
 
