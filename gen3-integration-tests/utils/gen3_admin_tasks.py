@@ -43,7 +43,6 @@ def get_admin_vm_configurations(test_env_namespace):
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return {
-                "gitops.json": job.get_artifact_content(build_num, "gitops.json"),
                 "manifest.json": job.get_artifact_content(build_num, "manifest.json"),
             }
         else:

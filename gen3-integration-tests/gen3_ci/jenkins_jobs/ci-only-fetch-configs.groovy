@@ -2,9 +2,7 @@
   String parameter TARGET_ENVIRONMENT
     e.g., qa-anvil
 
-  Archived artifacts - gitops.json, manifest.json
-
-  NOTE: Getting gitops.json may be unnecessary since it's accessible at hostname/data/config/gitops.json
+  Archived artifacts - manifest.json
 */
 pipeline {
     agent {
@@ -31,22 +29,6 @@ pipeline {
                 ])
             }
         }
-        stage('Fetch portal config') {
-            steps {
-                dir("fetch-portal-config") {
-                    script {
-                        sh '''#!/bin/bash +x
-                            set -e
-                            export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
-                            source \$GEN3_HOME/gen3/gen3setup.sh
-                            RESULT=`gen3 secrets decode portal-config gitops.json`
-                            echo "\$RESULT" > gitops.json
-                        '''
-                    }
-                }
-            }
-        }
         stage('Fetch manifest') {
             steps {
                 dir("fetch-manifest") {
@@ -66,7 +48,6 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'fetch-portal-config/gitops.json'
             archiveArtifacts artifacts: 'fetch-manifest/manifest.json'
         }
     }
