@@ -86,9 +86,7 @@ def pytest_configure(config):
 @pytest.fixture(autouse=True, scope="session")
 def setup_tests():
     get_configuration_files()
-
-    # TODO maybe the setup below should only run for test suites that need it
-    generate_test_data()
+    generate_graph_data()
 
 
 def get_configuration_files():
@@ -104,7 +102,11 @@ def get_configuration_files():
             f.write(contents)
 
 
-def generate_test_data():
+def generate_graph_data():
+    """
+    Most of the logic below is copied from data-simulator's `simulate` and `submission_order` commands.
+    TODO: Move the logic to functions in `data-simulator` so we can import instead of duplicating code.
+    """
     try:
         manifest = json.loads(
             (TEST_DATA_PATH / "configuration/manifest.json").read_text()
@@ -127,8 +129,6 @@ def generate_test_data():
     # TODO we should try setting `required_only` to False so the test data is more representative of real data
     required_only = True
 
-    # The logic below is copied from data-simulator's `simulate` and `submission_order` commands.
-    # TODO: Move the logic to functions in `data-simulator` so we can import them instead of duplicating.
     logger.info("Data simulator initialization...")
     logger.info("Loading dictionary from url {}".format(dictionary_url))
     dictionary.init(DataDictionary(url=dictionary_url))

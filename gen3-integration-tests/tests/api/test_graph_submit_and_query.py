@@ -2,6 +2,7 @@ import os
 import pytest
 
 from cdislogging import get_logger
+from gen3.auth import Gen3Auth
 from gen3.submission import Gen3SubmissionQueryError
 
 from services.peregrine import Peregrine
@@ -10,23 +11,30 @@ from services.sheepdog import Sheepdog
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
-# TODO make these globals
-sheepdog = Sheepdog()
-peregrine = Peregrine()
-project_id = f"{sheepdog.program_name}-{sheepdog.project_code}"
-
 
 @pytest.mark.sheepdog
 @pytest.mark.peregrine
 class TestGraphSubmitAndQuery:
     def test_submit_query_and_delete_records(self):
         """
-        TODO
+        Submit graph data and perform various queries.
+
+        Steps:
+        - Submit graph data
+        - Check that querying the records return the submitted data
+        - Check that querying an invalid property errors
+        - Check that filtering on string properties works
+        - Check that node count queries work
+        - Delete the graph data
         """
-        sheepdog.delete_all_records_in_test_project()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sheepdog = Sheepdog(auth=auth)
+        peregrine = Peregrine(auth=auth)
+        project_id = f"{sheepdog.program_name}-{sheepdog.project_code}"
+        sheepdog.create_program_and_project()
+        sheepdog.delete_all_records_in_test_project(peregrine)
 
         logger.info("Submitting test records")
-        sheepdog.create_program_and_project()
         sheepdog.submit_all_test_records()
 
         new_records = []
@@ -54,11 +62,11 @@ class TestGraphSubmitAndQuery:
             # use a node at the bottom of the tree to it's easier to delete nodes in the right order
             node_name = sheepdog.submission_order[-1]
 
-            logger.info("Query an invalid field")
-            query = f'query {{ {node_name} (project_id: "{project_id}") {{ field_does_not_exist }} }}'
+            logger.info("Query an invalid properyu")
+            query = f'query {{ {node_name} (project_id: "{project_id}") {{ prop_does_not_exist }} }}'
             with pytest.raises(
                 Gen3SubmissionQueryError,
-                match=f'Cannot query field "field_does_not_exist" on type "{node_name}".',
+                match=f'Cannot query field "prop_does_not_exist" on type "{node_name}".',
             ):
                 peregrine.query(query)
 
@@ -81,3 +89,10 @@ class TestGraphSubmitAndQuery:
         finally:
             sheepdog.delete_records([record.sheepdog_id for record in new_records])
             sheepdog.delete_all_test_records()
+
+    # TODO add tests:
+    # submit node unauthenticated
+    # submit node without parent
+    # test with_path_to - first to last node
+    # test with_path_to - last to first node
+    # submit data node with consent codes
