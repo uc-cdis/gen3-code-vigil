@@ -74,16 +74,22 @@ class JenkinsJob(object):
         response = requests.post(url, auth=self.auth)
         max_retries = 6
         current_retry = 0
-        while response.status_code == 404 and current_retry < max_retries:
+        while response.status_code != 201 and current_retry < max_retries:
             current_retry += 1
             logger.info(f"Retrying - attempt {current_retry}")
             time.sleep(10)
             response = requests.post(url, auth=self.auth)
-        queue_item_url = response.headers["Location"]
+        if current_retry == max_retries:
+            logger.error(
+                f"Failed to start jenkins job at '{url}': {response.status_code}"
+            )
+            return None
+
         if response.status_code == 201:
+            queue_item_url = response.headers["Location"]
             build_started = False
             while build_started is False:
-                logger.info("Waiting for build to start ...")
+                logger.info("Waiting for build to start...")
                 time.sleep(10)
                 res = requests.get(queue_item_url + "api/json", auth=self.auth).json()
                 if "executable" in res:
@@ -92,7 +98,7 @@ class JenkinsJob(object):
             logger.info(f"Build number {build_number} triggered successfully")
             return build_number
         else:
-            logger.error("Failed to start build")
+            logger.error(f"Failed to get jenkins job output: {response.status_code}")
             return None
 
     def wait_for_build_completion(self, build_number, max_duration=600):
@@ -115,27 +121,33 @@ class JenkinsJob(object):
                 status = "Timed Out"
                 break
             else:
-                logger.info("Waiting for job completion ...")
+                # TODO log the link to the blue ocean console instead
+                logger.info(
+                    f"Waiting for job '{self.job_url}' #{build_number} completion..."
+                )
                 time.sleep(60)
         return status
 
     def get_artifact_content(self, build_number, artifact_name):
         """Get the contents of an artifact archived for the specific run"""
-        try:
-            artifacts = requests.get(
-                f"{self.job_url}/{build_number}/api/json", auth=self.auth
-            ).json()["artifacts"]
-            artifact_rel_path = [
-                d for d in artifacts if d["fileName"] == artifact_name
-            ][0]["relativePath"]
-            response = requests.get(
-                f"{self.job_url}/{build_number}/artifact/{artifact_rel_path}",
-                auth=self.auth,
-            )
-            return response.text
-        except Exception as e:
-            logger.error(e)
-            logger.error(traceback.format_exc())
+        url = f"{self.job_url}/{build_number}/api/json"
+        response = requests.get(url, auth=self.auth)
+        assert response.status_code == 200, f"Unable to get artifacts at '{url}'"
+
+        artifacts = response.json()["artifacts"]
+        matching_artifacts = [d for d in artifacts if d["fileName"] == artifact_name]
+        assert (
+            len(matching_artifacts) > 0
+        ), f"No artifacts found with name '{artifact_name}'"
+        artifact_rel_path = matching_artifacts[0]["relativePath"]
+
+        url = f"{self.job_url}/{build_number}/artifact/{artifact_rel_path}"
+        response = requests.get(
+            url,
+            auth=self.auth,
+        )
+        assert response.status_code == 200, f"Unable to get artifacts at '{url}'"
+        return response.text
 
     def terminate_build(self, build_num):
         """
@@ -184,8 +196,11 @@ if __name__ == "__main__":
         "ci-only-modify-env-for-test-repo-pr",
     )
     params = {
-        "TARGET_ENVIRONMENT": "jenkins-blood",
+        "NAMESPACE": "jenkins-blood",
     }
     print(job.get_job_info())
     build_num = job.build_job(params)
+    if not build_num:
+        logger.error("Build number not found")
+        exit(1)
     print(job.terminate_build(build_num))

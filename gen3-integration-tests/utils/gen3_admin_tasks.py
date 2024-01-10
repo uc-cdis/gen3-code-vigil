@@ -24,23 +24,26 @@ def get_portal_config(test_env_namespace):
         return None
 
 
-def get_portal_config_from_kube_secrets(test_env_namespace):
+def get_admin_vm_configurations(test_env_namespace):
     """
-    Fetch portal config from kubernetes secrets.
-    Since this requires adminvm interaction we use jenkins.
+    Fetch configs that require adminvm interaction using jenkins.
+    Returns dict { file name: file contents }
     """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "ci-only-fetch-portal-config",
+        "ci-only-fetch-configs",
     )
-    params = {"TARGET_ENVIRONMENT": test_env_namespace}
+    params = {"NAMESPACE": test_env_namespace}
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            return job.get_artifact_content(build_num, "gitops.json")
+            return {
+                "gitops.json": job.get_artifact_content(build_num, "gitops.json"),
+                "manifest.json": job.get_artifact_content(build_num, "manifest.json"),
+            }
         else:
             logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
@@ -62,7 +65,7 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
         "ci-only-run-gen3-job",
     )
     params = {
-        "TARGET_ENVIRONMENT": test_env_namespace,
+        "NAMESPACE": test_env_namespace,
         "JOB_NAME": job_name,
         "GEN3_ROLL_ALL": roll_all,
     }

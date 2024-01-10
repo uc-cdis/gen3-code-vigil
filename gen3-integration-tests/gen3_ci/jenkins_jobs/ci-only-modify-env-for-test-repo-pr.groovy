@@ -1,5 +1,5 @@
 /*
-    String parameter TARGET_ENVIRONMENT
+    String parameter NAMESPACE
         e.g., qa-anvil
 */
 pipeline {
@@ -33,7 +33,7 @@ spec:
   - name: wait-for-jenkins-connection
     image: quay.io/cdis/gen3-ci-worker:master
     command: ["/bin/sh","-c"]
-    args: ["while [ $(curl -sw '%{http_code}' http://jenkins-master-service:8080/tcpSlaveAgentListener/ -o /dev/null) -ne 200 ]; do sleep 5; echo 'Waiting for jenkins connection ...'; done"]
+    args: ["while [ $(curl -sw '%{http_code}' http://jenkins-master-service:8080/tcpSlaveAgentListener/ -o /dev/null) -ne 200 ]; do sleep 5; echo 'Waiting for jenkins connection...'; done"]
   containers:
   - name: jnlp
     command: ["/bin/sh","-c"]
@@ -84,6 +84,12 @@ spec:
         }
         stage('Initial setup') {
             steps {
+                script {
+                    sh '''#!/bin/bash +x
+                        set -e
+                        echo NAMESPACE: $NAMESPACE
+                    '''
+                }
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
@@ -106,12 +112,12 @@ spec:
         }
         stage('Roll the environment') {
             steps {
-                dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
+                dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
                             yes | gen3 reset
                         '''
@@ -121,12 +127,12 @@ spec:
         }
         stage('Run usersync') {
             steps {
-                dir("cdis-manifest/${TARGET_ENVIRONMENT}.planx-pla.net") {
+                dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
                             gen3 job run usersync
                             g3kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
