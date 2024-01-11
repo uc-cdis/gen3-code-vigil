@@ -17,9 +17,9 @@ class TestWorkspacePage:
     def test_workspace_drs_pull(self, page):
         """
         Steps:
-        1. Login with cdis.autotest user
+        1. Login with main_acct (cdis.autotest) user
         2. Launch workspace
-        3. Launch Generic notebook and execute gen3 command
+        3. Launch Jupyter notebook and execute gen3 command
 
         We are verifying successful launch of workspace service by launching generic notebook
         and execute gen3 command. We need would need to update the test to export the manifest from
@@ -33,7 +33,7 @@ class TestWorkspacePage:
         login_page.login(page)
         """navigates to workspace page and sees workspace_options"""
         workspace_page.go_to(page)
-        """launches the workspace Generic notebook"""
+        """launches the workspace jupyter notebook"""
         workspace_page.open_jupyter_workspace(page)
         """opens python kernel in notebook"""
         workspace_page.open_python_kernel(page)

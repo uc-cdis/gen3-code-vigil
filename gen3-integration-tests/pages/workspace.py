@@ -76,12 +76,11 @@ class WorkspacePage(object):
             self.PYTHON_NB
         )
         python_kernel_nb.click()
-        page.wait_for_timeout(3000)
-        page.screenshot(path="output/pythonKernel.png")
         commandPrompt = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.PYTHON_COMMAND_FIELD
         )
-        expect(commandPrompt).to_be_visible
+        commandPrompt.wait_for(timeout=3000, state="visible")
+        page.screenshot(path="output/pythonKernel.png")
 
     def run_command_notebook(self, page: Page):
         page.screenshot(path="output/gen3CommandOutput1.png")
@@ -93,11 +92,11 @@ class WorkspacePage(object):
         page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.RUN_COMMAND_BUTTON
         ).click()
-        page.wait_for_timeout(3000)
+        page.screenshot(path="output/gen3CommandOutput1.png")
         output = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.RUN_COMMAND_OUTPUT
         )
-        expect(output).to_be_visible
+        output.wait_for(timeout=6000, state="visible")
         page.screenshot(path="output/gen3CommandOutput.png")
 
     def terminate_workspace(self, page: Page):
