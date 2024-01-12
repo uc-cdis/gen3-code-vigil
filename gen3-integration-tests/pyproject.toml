@@ -33,7 +33,8 @@ addopts = "--log-cli-level=ERROR"
 markers = [
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
   "mds: tests for metadata-service",
-  "portal: tests for data-portal"
+  "portal: tests for data-portal",
+  "workspace: tests for workspace page",
 ]
 pythonpath = "."
 md_report = "true"
