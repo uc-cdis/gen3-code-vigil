@@ -28,7 +28,6 @@ class TestGraphSubmitAndQuery:
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         sd_tools = StructuredDataTools(auth=auth)
-        project_id = f"{sd_tools.program_name}-{sd_tools.project_code}"
         sd_tools.create_program_and_project()
         sd_tools.delete_all_records_in_test_project()
 
@@ -47,8 +46,10 @@ class TestGraphSubmitAndQuery:
                     if type(record.props[prop]) != dict
                 ]
                 props_str = " ".join(primitive_props)
-                query = f'query {{ {node_name} (project_id: "{project_id}") {{ {props_str} }} }}'
-                received_data = sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
+                query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}") {{ {props_str} }} }}'
+                received_data = (
+                    sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
+                )
                 assert (
                     len(received_data) == 1
                 ), "Submitted 1 record so expected query to return 1 record"
@@ -59,7 +60,7 @@ class TestGraphSubmitAndQuery:
             node_name = sd_tools.submission_order[-1]
 
             logger.info("Query an invalid property")
-            query = f'query {{ {node_name} (project_id: "{project_id}") {{ prop_does_not_exist }} }}'
+            query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}") {{ prop_does_not_exist }} }}'
             with pytest.raises(
                 Gen3SubmissionQueryError,
                 match=f'Cannot query field "prop_does_not_exist" on type "{node_name}".',
@@ -71,8 +72,10 @@ class TestGraphSubmitAndQuery:
                 prop for prop in record.props.keys() if type(record.props[prop]) == str
             ][0]
             string_prop_value = record.props[string_prop]
-            query = f'query {{ {node_name} (project_id: "{project_id}", {string_prop}: "{string_prop_value}") {{ {string_prop} }} }}'
-            received_data = sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
+            query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}", {string_prop}: "{string_prop_value}") {{ {string_prop} }} }}'
+            received_data = (
+                sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
+            )
             assert len(received_data) == 1
             assert received_data[0][string_prop] == string_prop_value
 
