@@ -62,7 +62,7 @@ class TestGraphSubmitAndQuery:
             # use a node at the bottom of the tree to it's easier to delete nodes in the right order
             node_name = sheepdog.submission_order[-1]
 
-            logger.info("Query an invalid properyu")
+            logger.info("Query an invalid property")
             query = f'query {{ {node_name} (project_id: "{project_id}") {{ prop_does_not_exist }} }}'
             with pytest.raises(
                 Gen3SubmissionQueryError,
