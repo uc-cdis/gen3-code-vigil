@@ -37,8 +37,8 @@ markers = [
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
   "workspace: tests for workspace page",
-  "sheepdog: tests for sheepdog",
-  "peregrine: tests for peregrine"
+  "structured_data_submission: tests for submitting structured data",
+  "structured_data_query: tests for querying structured data",
 ]
 pythonpath = "."
 md_report = "true"

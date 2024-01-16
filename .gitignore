@@ -6,4 +6,4 @@ __pycache__
 
 output/
 gen3-integration-tests/test_data/configuration
-gen3-integration-tests/test_data/graph_data
+gen3-integration-tests/test_data/structured_data
