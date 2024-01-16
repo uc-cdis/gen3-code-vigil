@@ -48,8 +48,16 @@ class JenkinsJob(object):
 
     def get_build_result(self, build_number):
         """Get result of a run"""
-        info = self.get_build_info(build_number)
-        return info["result"]
+        retry = 0
+        while retry < 3:
+            time.sleep(10)
+            info = self.get_build_info(build_number)
+            result = info["result"]
+            if result:
+                return result
+            else:
+                retry += 1
+        return result
 
     def get_console_output(self, build_number):
         """Get the console logs of a run"""
@@ -192,7 +200,7 @@ if __name__ == "__main__":
         "ci-only-modify-env-for-test-repo-pr",
     )
     params = {
-        "TARGET_ENVIRONMENT": "jenkins-blood",
+        "NAMESPACE": "jenkins-blood",
     }
     print(job.get_job_info())
     build_num = job.build_job(params)

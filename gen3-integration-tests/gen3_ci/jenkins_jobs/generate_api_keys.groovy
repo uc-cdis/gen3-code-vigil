@@ -1,10 +1,10 @@
 /*
     This Jenkins job will help generate api keys for test users on given Target environment
 
-    String parameter TARGET_ENVIRONMENT
+    String parameter NAMESPACE
         e.g., qa-anvil
 
-    Artifact archived - {TARGET_ENVIRONMENT}_main_account.json, {TARGET_ENVIRONMENT}_indexing_account.json
+    Artifact archived - {NAMESPACE}_main_account.json, {NAMESPACE}_indexing_account.json
 */
 
 pipeline {
@@ -39,13 +39,13 @@ pipeline {
                         sh '''#!/bin/bash +x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            echo "creating main_account api key for \$TARGET_ENVIRONMENT"
-                            gen3 api api-key cdis.autotest@gmail.com > \${TARGET_ENVIRONMENT}_main_account.json
+                            echo "creating main_account api key for \$NAMESPACE"
+                            gen3 api api-key cdis.autotest@gmail.com > \${NAMESPACE}_main_account.json
 
-                            echo "creating indexing_account for \$TARGET_ENVIRONMENT"
-                            gen3 api api-key ctds.indexing.test@gmail.com > \${TARGET_ENVIRONMENT}_indexing_account.json
+                            echo "creating indexing_account for \$NAMESPACE"
+                            gen3 api api-key ctds.indexing.test@gmail.com > \${NAMESPACE}_indexing_account.json
                         '''
                     }
                 }

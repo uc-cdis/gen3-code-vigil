@@ -60,7 +60,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         "ci-only-modify-env-for-service-pr",
     )
     params = {
-        "TARGET_ENVIRONMENT": namespace,
+        "NAMESPACE": namespace,
         "SERVICE": service,
         "VERSION": tag,
     }
@@ -69,7 +69,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
             myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-        status = job.wait_for_build_completion(build_num, max_duration=3600)
+        status = job.wait_for_build_completion(build_num, max_duration=5400)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -93,7 +93,7 @@ def modify_env_for_test_repo_pr(namespace):
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-modify-env-for-test-repo-pr",
     )
-    params = {"TARGET_ENVIRONMENT": namespace}
+    params = {"NAMESPACE": namespace}
     build_num = job.build_job(params)
     if build_num:
         env_file = os.getenv("GITHUB_ENV")
@@ -131,7 +131,7 @@ def generate_api_keys_for_test_users(namespace):
     for user in test_users:
         logger.info(f"Generating API key for {test_users[user]}")
         params = {
-            "TARGET_ENVIRONMENT": namespace,
+            "NAMESPACE": namespace,
             "USERNAME": test_users[user],
         }
         build_num = job.build_job(params)

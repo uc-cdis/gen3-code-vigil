@@ -37,7 +37,7 @@ def get_admin_vm_configurations(test_env_namespace):
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-fetch-configs",
     )
-    params = {"TARGET_ENVIRONMENT": test_env_namespace}
+    params = {"NAMESPACE": test_env_namespace}
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num)
@@ -64,7 +64,7 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
         "ci-only-run-gen3-job",
     )
     params = {
-        "TARGET_ENVIRONMENT": test_env_namespace,
+        "NAMESPACE": test_env_namespace,
         "JOB_NAME": job_name,
         "GEN3_ROLL_ALL": roll_all,
     }

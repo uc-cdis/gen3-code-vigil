@@ -1,5 +1,5 @@
 /*
-    String parameter TARGET_ENVIRONMENT
+    String parameter NAMESPACE
         e.g., qa-anvil
     String parameter JOB_NAME
         e.g., metadata-aggregate-sync
@@ -41,7 +41,7 @@ pipeline {
                         sh '''#!/bin/bash +x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${TARGET_ENVIRONMENT}
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
                             gen3 kube-setup-secrets
                             if [ $GEN3_ROLL_ALL == "true" ]; then
