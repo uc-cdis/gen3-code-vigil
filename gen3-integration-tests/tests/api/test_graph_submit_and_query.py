@@ -48,7 +48,7 @@ class TestGraphSubmitAndQuery:
                 ]
                 props_str = " ".join(primitive_props)
                 query = f'query {{ {node_name} (project_id: "{project_id}") {{ {props_str} }} }}'
-                received_data = sd_tools.query(query).get("data", {}).get(node_name, [])
+                received_data = sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
                 assert (
                     len(received_data) == 1
                 ), "Submitted 1 record so expected query to return 1 record"
@@ -64,7 +64,7 @@ class TestGraphSubmitAndQuery:
                 Gen3SubmissionQueryError,
                 match=f'Cannot query field "prop_does_not_exist" on type "{node_name}".',
             ):
-                sd_tools.query(query)
+                sd_tools.graphql_query(query)
 
             logger.info("Query with filter on a string property")
             string_prop = [
@@ -72,7 +72,7 @@ class TestGraphSubmitAndQuery:
             ][0]
             string_prop_value = record.props[string_prop]
             query = f'query {{ {node_name} (project_id: "{project_id}", {string_prop}: "{string_prop_value}") {{ {string_prop} }} }}'
-            received_data = sd_tools.query(query).get("data", {}).get(node_name, [])
+            received_data = sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
             assert len(received_data) == 1
             assert received_data[0][string_prop] == string_prop_value
 
