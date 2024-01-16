@@ -26,10 +26,12 @@ def release_ci_environment(namespace):
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
+            logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
+            return None
     else:
-        raise Exception("Build number not found")
+        logger.error("Build number not found")
+        return None
 
 
 if __name__ == "__main__":

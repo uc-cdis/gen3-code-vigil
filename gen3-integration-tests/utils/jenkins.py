@@ -22,7 +22,8 @@ class JenkinsJob(object):
         """
         response = requests.get(f"{self.job_url}/api/json", auth=self.auth)
         if response.status_code == 404:
-            raise Exception("Job not found")
+            logger.error("Job not found")
+            return None
         return response.json()
 
     def get_build_info(self, build_number):
@@ -34,7 +35,8 @@ class JenkinsJob(object):
             f"{self.job_url}/{build_number}/api/json", auth=self.auth
         )
         if response.status_code == 404:
-            raise Exception("Build not found")
+            logger.error("Build not found")
+            return None
         return response.json()
 
     def is_build_running(self, build_number):
@@ -86,9 +88,10 @@ class JenkinsJob(object):
             time.sleep(10)
             response = requests.post(url, auth=self.auth)
         if current_retry == max_retries:
-            raise Exception(
+            logger.error(
                 f"Failed to start jenkins job at '{url}': {response.status_code}"
             )
+            return None
 
         if response.status_code == 201:
             queue_item_url = response.headers["Location"]
@@ -103,7 +106,8 @@ class JenkinsJob(object):
             logger.info(f"Build number {build_number} triggered successfully")
             return build_number
         else:
-            raise Exception(f"Failed to get jenkins job output: {response.status_code}")
+            logger.error(f"Failed to get jenkins job output: {response.status_code}")
+            return None
 
     def wait_for_build_completion(self, build_number, max_duration=600):
         """

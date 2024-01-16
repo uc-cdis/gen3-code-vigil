@@ -21,9 +21,7 @@ def get_portal_config(test_env_namespace):
     if res.status_code == 200:
         return res.json()
     else:
-        raise Exception(
-            f"Unable to get portal config: status code {res.status_cod} - response {res.text}"
-        )
+        return None
 
 
 def get_admin_vm_configurations(test_env_namespace):
@@ -46,10 +44,12 @@ def get_admin_vm_configurations(test_env_namespace):
                 "manifest.json": job.get_artifact_content(build_num, "manifest.json"),
             }
         else:
+            logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
+            return None
     else:
-        raise Exception("Build number not found")
+        logger.error("Build number not found")
+        return None
 
 
 def run_gen3_job(test_env_namespace, job_name, roll_all=False):
@@ -74,7 +74,9 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
+            logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
+            return None
     else:
-        raise Exception("Build number not found")
+        logger.error("Build number not found")
+        return None
