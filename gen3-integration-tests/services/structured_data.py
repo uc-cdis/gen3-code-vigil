@@ -4,6 +4,7 @@ import os
 import uuid
 
 from cdislogging import get_logger
+from gen3.auth import Gen3Auth
 from gen3.submission import Gen3Submission
 import requests
 
@@ -14,7 +15,9 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class GraphRecord:
-    def __init__(self, node_name, category, submission_order, props):
+    def __init__(
+        self, node_name: str, category: str, submission_order: int, props: dict
+    ) -> None:
         """
         node_name: id of the node in the dictionary (example: "case")
         category: category of the node in the dictionary (example: "administrative")
@@ -30,12 +33,14 @@ class GraphRecord:
         self.unique_id = None
         # self.indexd_guid = None  # not used yet
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"GraphRecord '{self.node_name}': {self.props}"
 
 
 class StructuredDataTools:
-    def __init__(self, auth, program_name="jnkns", project_code="jenkins"):
+    def __init__(
+        self, auth: Gen3Auth, program_name: str = "jnkns", project_code: str = "jenkins"
+    ) -> None:
         self.sdk = Gen3Submission(auth_provider=auth)
         self.program_name = program_name
         self.project_code = project_code
@@ -46,7 +51,7 @@ class StructuredDataTools:
         self.test_records = {}
         self._load_test_records()
 
-    def create_program_and_project(self):
+    def create_program_and_project(self) -> None:
         """
         Creates a program record and a project record. Uses the `program_name` and `project_code`
         set during the initialization of the `StructuredDataTools` instance.
@@ -69,7 +74,7 @@ class StructuredDataTools:
         }
         self.sdk.create_project(self.program_name, project_record)
 
-    def delete_all_records_in_test_project(self):
+    def delete_all_records_in_test_project(self) -> None:
         """
         Clean up before starting the test suite (useful when running tests locally)
         """
@@ -82,7 +87,7 @@ class StructuredDataTools:
                 )
                 self._delete_record(record["id"])
 
-    def _load_test_records(self):
+    def _load_test_records(self) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at
         `test_data/structured_data` by `generate_structured_data()`.
@@ -112,7 +117,9 @@ class StructuredDataTools:
                 node_name, node_category, order, props
             )
 
-    def _submit_record(self, record, expected_status_code=200):
+    def _submit_record(
+        self, record: GraphRecord, expected_status_code: int = 200
+    ) -> dict:
         """
         Submit a record to the structured data database.
 
@@ -131,7 +138,7 @@ class StructuredDataTools:
         record.unique_id = result["entities"][0]["id"]
         return result
 
-    def submit_all_test_records(self):
+    def submit_all_test_records(self) -> None:
         """
         Following the order set by `self.submission_order`, submit all the records in `self.test_records`,
         in the right order.
@@ -139,7 +146,7 @@ class StructuredDataTools:
         for node_name in self.submission_order:
             self._submit_record(self.test_records[node_name])
 
-    def submit_new_record(self, node_name):
+    def submit_new_record(self, node_name: str) -> GraphRecord:
         """
         Starting from a generated test data record, submit a new record with a
         new unique submitter_id.
@@ -152,7 +159,9 @@ class StructuredDataTools:
         self._submit_record(record)
         return record
 
-    def _delete_record(self, unique_id, expected_status_code=200):
+    def _delete_record(
+        self, unique_id: str, expected_status_code: int = 200
+    ) -> requests.Response:
         """
         Delete one record from the structured data database.
 
@@ -164,7 +173,9 @@ class StructuredDataTools:
             raise Exception("Unable to delete record that has no unique_id")
         return self.delete_records([unique_id], expected_status_code)
 
-    def delete_records(self, unique_ids, expected_status_code=200):
+    def delete_records(
+        self, unique_ids: [str], expected_status_code: int = 200
+    ) -> requests.Response:
         """
         Delete a list of records from the structured data database.
 
@@ -182,7 +193,7 @@ class StructuredDataTools:
                 raise
         return result
 
-    def delete_all_test_records(self):
+    def delete_all_test_records(self) -> None:
         """
         Following the order set by `self.submission_order`, delete all the records in `self.test_records`,
         in the right order.
@@ -195,7 +206,7 @@ class StructuredDataTools:
             to_delete.append(record.unique_id)
         self.delete_records(to_delete)
 
-    def graphql_query(self, query_text, variables=None):
+    def graphql_query(self, query_text: str, variables: dict = None) -> dict:
         """
         Query the structured data database through a GraphQL query.
 
@@ -206,7 +217,7 @@ class StructuredDataTools:
         logger.info(f"Structured data query: '{query_text}'. Variables: '{variables}'")
         return self.sdk.query(query_text, variables)
 
-    def query_node_count(self, node_name):
+    def query_node_count(self, node_name: str) -> dict:
         """
         Query the structured data database for the number of records in a node.
 
