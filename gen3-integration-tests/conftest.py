@@ -3,8 +3,11 @@ import os
 import pytest
 
 from cdislogging import get_logger
-from datasimulator.graph import Graph as DataSimGraph
-from dictionaryutils import DataDictionary, dictionary
+from datasimulator.main import (
+    initialize_graph,
+    run_simulation,
+    run_submission_order_generation,
+)
 from pathlib import Path
 
 from services.fence import Fence
@@ -120,8 +123,8 @@ def generate_structured_data():
     dictionary_url = manifest.get("data", {}).get("dictionary_url")
     assert dictionary_url, "No dictionary URL in manifest.json"
 
-    path = TEST_DATA_PATH / "structured_data"
-    path.mkdir(parents=True, exist_ok=True)
+    data_path = TEST_DATA_PATH / "structured_data"
+    data_path.mkdir(parents=True, exist_ok=True)
 
     program = "jnkns"
     project = "jenkins"
@@ -129,36 +132,20 @@ def generate_structured_data():
     # TODO we should try setting `required_only` to False so the test data is more representative of real data
     required_only = True
 
-    logger.info("Data simulator initialization...")
-    logger.info("Loading dictionary from url {}".format(dictionary_url))
-    dictionary.init(DataDictionary(url=dictionary_url))
-
-    # Generate test data. Equivalent to running this command:
-    # data-simulator simulate --url <dictionary_url> --path <test_data_path> --program jnkns --project jenkins
-    logger.info("Initializing graph...")
-    graph = DataSimGraph(dictionary, program=program, project=project)
-    graph.generate_nodes_from_dictionary(consent_codes=True)
-    graph.construct_graph_edges()
-
-    # just print error messages
-    graph.graph_validation(required_only=required_only)
-
-    # simulate data whether the graph passes validation or not
-    logger.info("Generating data...")
-    graph.simulate_graph_data(
-        path=path,
-        n_samples=max_samples,
+    graph = initialize_graph(
+        dictionary_url=dictionary_url,
+        program=program,
+        project=project,
+        consent_codes=True,
+    )
+    run_simulation(
+        graph=graph,
+        data_path=data_path,
+        max_samples=max_samples,
         node_num_instances_file=None,
         random=True,
         required_only=required_only,
         skip=True,
     )
-
-    # Generate test data submission order. Equivalent to running this command:
-    # data-simulator submission_order --url <dictionary_url> --path <test_data_path>
-    # NOTE: not using `leaf_node` like in old gen3-qa tests... just generating everything.
-    logger.info("Generating data submission order...")
-    submission_order = graph.generate_submission_order()
-    with open(os.path.join(path, "DataImportOrderPath.txt"), "w") as outfile:
-        for node in submission_order:
-            outfile.write(node.name + "\t" + node.category + "\n")
+    # NOTE: not using a "leaf node" like in old gen3-qa tests... just generating everything
+    run_submission_order_generation(graph=graph, data_path=data_path, node_name=None)
