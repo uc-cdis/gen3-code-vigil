@@ -74,9 +74,7 @@ class StructuredDataTools:
         Clean up before starting the test suite (useful when running tests locally)
         """
         for node_name in reversed(self.submission_order):
-            query = (
-                f'query {{ {node_name} (project_id: "{self.project_id}") {{ id }} }}'
-            )
+            query = f'query {{ {node_name} (project_id: "{self.project_id}", first: 0) {{ id }} }}'
             result = self.graphql_query(query).get("data", {}).get(node_name, [])
             for record in result:
                 logger.info(

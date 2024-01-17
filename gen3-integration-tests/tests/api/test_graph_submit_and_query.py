@@ -56,8 +56,12 @@ class TestGraphSubmitAndQuery:
                 for prop in primitive_props:
                     assert received_data[0][prop] == record.props[prop]
 
-            # use a node at the bottom of the tree to it's easier to delete nodes in the right order
-            node_name = sd_tools.submission_order[-1]
+            # We use core_metadata_collection because we know links will not be an issue when submitting a new
+            # record. We could also use a node at the bottom of the tree so it's easier to delete records in the
+            # right node order, but the new record should not have any "1 to 1" links, or new linked records
+            # should be submitted as well. For now this is easier.
+            node_name = "core_metadata_collection"
+            record = sd_tools.test_records[node_name]
 
             logger.info("Query an invalid property")
             query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}") {{ prop_does_not_exist }} }}'
@@ -86,7 +90,8 @@ class TestGraphSubmitAndQuery:
             result = sd_tools.query_node_count(node_name)
             assert result.get("data", {}).get(f"_{node_name}_count") == count + 1
         finally:
-            sd_tools.delete_records([record.unique_id for record in new_records])
+            if new_records:
+                sd_tools.delete_records([record.unique_id for record in new_records])
             sd_tools.delete_all_test_records()
 
     # TODO add tests:
