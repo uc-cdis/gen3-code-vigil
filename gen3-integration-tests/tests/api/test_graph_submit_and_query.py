@@ -5,14 +5,14 @@ from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from gen3.submission import Gen3SubmissionQueryError
 
-from services.structured_data import StructuredDataTools
+from services.graph import GraphDataTools
 
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-@pytest.mark.structured_data_submission
-@pytest.mark.structured_data_query
+@pytest.mark.graph_submission
+@pytest.mark.graph_query
 class TestGraphSubmitAndQuery:
     def test_submit_query_and_delete_records(self):
         """
@@ -27,7 +27,7 @@ class TestGraphSubmitAndQuery:
         - Delete the graph data
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = StructuredDataTools(auth=auth)
+        sd_tools = GraphDataTools(auth=auth)
         sd_tools.create_program_and_project()
         sd_tools.delete_all_records_in_test_project()
 

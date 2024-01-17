@@ -105,7 +105,7 @@ def get_configuration_files():
             f.write(contents)
 
 
-def generate_structured_data():
+def generate_graph_data():
     """
     Most of the logic below is copied from data-simulator's `simulate` and `submission_order` commands.
     TODO: Move the logic to functions in `data-simulator` so we can import instead of duplicating code.
@@ -123,12 +123,12 @@ def generate_structured_data():
     dictionary_url = manifest.get("data", {}).get("dictionary_url")
     assert dictionary_url, "No dictionary URL in manifest.json"
 
-    data_path = TEST_DATA_PATH / "structured_data"
+    data_path = TEST_DATA_PATH / "graph_data"
     data_path.mkdir(parents=True, exist_ok=True)
 
     program = "jnkns"
     project = "jenkins"
-    max_samples = 1  # the submission functions in services/structured_data.py assume there is only 1 record per node
+    max_samples = 1  # the submission functions in services/graph.py assume there is only 1 record per node
     # TODO we should try setting `required_only` to False so the test data is more representative of real data
     required_only = True
 

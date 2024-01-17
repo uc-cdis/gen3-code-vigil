@@ -556,7 +556,7 @@ rstr = ">=3,<4"
 type = "git"
 url = "https://github.com/uc-cdis/data-simulator"
 reference = "feat/functions"
-resolved_reference = "033975dd2a4755af9be0ddda41314152bde9cbe5"
+resolved_reference = "5b319111deccd4b15fe92d55bd38ac35917e38bc"
 
 [[package]]
 name = "dataclasses-json"
