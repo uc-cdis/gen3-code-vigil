@@ -11,7 +11,7 @@ from datasimulator.main import (
 from pathlib import Path
 
 from services.fence import Fence
-from utils import TEST_DATA_PATH, gen3_admin_tasks
+from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
@@ -98,7 +98,7 @@ def get_configuration_files():
     """
     print("Creating configuration files")
     configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
-    path = TEST_DATA_PATH / "configuration"
+    path = TEST_DATA_PATH_OBJECT / "configuration"
     path.mkdir(parents=True, exist_ok=True)
     for file_name, contents in configs.items():
         with (path / file_name).open("w", encoding="utf-8") as f:
@@ -112,7 +112,7 @@ def generate_graph_data():
     """
     try:
         manifest = json.loads(
-            (TEST_DATA_PATH / "configuration/manifest.json").read_text()
+            (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
         )
     except FileNotFoundError:
         print(
@@ -123,7 +123,7 @@ def generate_graph_data():
     dictionary_url = manifest.get("data", {}).get("dictionary_url")
     assert dictionary_url, "No dictionary URL in manifest.json"
 
-    data_path = TEST_DATA_PATH / "graph_data"
+    data_path = TEST_DATA_PATH_OBJECT / "graph_data"
     data_path.mkdir(parents=True, exist_ok=True)
 
     program = "jnkns"
