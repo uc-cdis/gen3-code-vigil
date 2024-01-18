@@ -107,8 +107,8 @@ def get_configuration_files():
 
 def generate_graph_data():
     """
-    Most of the logic below is copied from data-simulator's `simulate` and `submission_order` commands.
-    TODO: Move the logic to functions in `data-simulator` so we can import instead of duplicating code.
+    Call data-simulator functions to generate graph data for each node in the dictionary and to generate
+    the submission order.
     """
     try:
         manifest = json.loads(
@@ -147,5 +147,6 @@ def generate_graph_data():
         required_only=required_only,
         skip=True,
     )
-    # NOTE: not using a "leaf node" like in old gen3-qa tests... just generating everything
+    # NOTE: not using a "leaf node" like in old gen3-qa tests... just generating everything.
+    # Submission takes more time, but data is more representative of real data.
     run_submission_order_generation(graph=graph, data_path=data_path, node_name=None)
