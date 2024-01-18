@@ -52,7 +52,7 @@ if __name__ == "__main__":
             env_pool = "releases"
         else:
             env_pool = "services"
-        logger.info("Namespace was not set as a PR labels")
+        logger.info("Namespace was not set as a PR label")
         res = requests.get(
             f"https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-{env_pool}.txt"
         )

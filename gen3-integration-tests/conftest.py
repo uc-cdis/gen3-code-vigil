@@ -89,7 +89,7 @@ def pytest_configure(config):
 @pytest.fixture(autouse=True, scope="session")
 def setup_tests():
     get_configuration_files()
-    generate_structured_data()
+    generate_graph_data()
 
 
 def get_configuration_files():
