@@ -2,15 +2,23 @@ import json
 import os
 import pytest
 
+from cdislogging import get_logger
+from datasimulator.main import (
+    initialize_graph,
+    run_simulation,
+    run_submission_order_generation,
+)
 from pathlib import Path
 
 from services.fence import Fence
-from utils import gen3_admin_tasks
+from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def pytest_configure(config):
@@ -37,8 +45,7 @@ def pytest_configure(config):
     # Compute auth headers
     pytest.auth_headers = {}
     fence = Fence()
-    # Save API key id's for cleanup
-    pytest.api_key_ids = []
+    pytest.api_keys = {}
     # Default user - main_account - cdis.autotest@gmail.com
     file_path = Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json"
     try:
@@ -46,7 +53,7 @@ def pytest_configure(config):
     except FileNotFoundError:
         print(f"API key file not found: '{file_path}'")
         raise
-    pytest.api_key_ids.append(api_key_json["key_id"])
+    pytest.api_keys["main_account"] = api_key_json
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
@@ -65,7 +72,7 @@ def pytest_configure(config):
     except FileNotFoundError:
         print(f"API key file not found: '{file_path}'")
         raise
-    pytest.api_key_ids.append(api_key_json["key_id"])
+    pytest.api_keys["indexing_account"] = api_key_json
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
@@ -80,20 +87,66 @@ def pytest_configure(config):
 
 
 @pytest.fixture(autouse=True, scope="session")
+def setup_tests():
+    get_configuration_files()
+    generate_graph_data()
+
+
 def get_configuration_files():
     """
     Get configuration files from the admin VM and save them at `test_data/configuration`
     """
     print("Creating configuration files")
     configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
-    path = Path(__file__).parent / "test_data/configuration"
+    path = TEST_DATA_PATH_OBJECT / "configuration"
     path.mkdir(parents=True, exist_ok=True)
     for file_name, contents in configs.items():
         with (path / file_name).open("w", encoding="utf-8") as f:
             f.write(contents)
 
 
-@pytest.fixture
-def test_data_path():
-    """Fixture to be used when a test needs test data"""
-    return Path(__file__).parent / "test_data"
+def generate_graph_data():
+    """
+    Call data-simulator functions to generate graph data for each node in the dictionary and to generate
+    the submission order.
+    """
+    try:
+        manifest = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
+        )
+    except FileNotFoundError:
+        print(
+            "manifest.json not found. It should have been fetched by `get_configuration_files`..."
+        )
+        raise
+
+    dictionary_url = manifest.get("data", {}).get("dictionary_url")
+    assert dictionary_url, "No dictionary URL in manifest.json"
+
+    data_path = TEST_DATA_PATH_OBJECT / "graph_data"
+    data_path.mkdir(parents=True, exist_ok=True)
+
+    program = "jnkns"
+    project = "jenkins"
+    max_samples = 1  # the submission functions in services/graph.py assume there is only 1 record per node
+    # TODO we should try setting `required_only` to False so the test data is more representative of real data
+    required_only = True
+
+    graph = initialize_graph(
+        dictionary_url=dictionary_url,
+        program=program,
+        project=project,
+        consent_codes=True,
+    )
+    run_simulation(
+        graph=graph,
+        data_path=data_path,
+        max_samples=max_samples,
+        node_num_instances_file=None,
+        random=True,
+        required_only=required_only,
+        skip=True,
+    )
+    # NOTE: not using a "leaf node" like in old gen3-qa tests... just generating everything.
+    # Submission takes more time, but data is more representative of real data.
+    run_submission_order_generation(graph=graph, data_path=data_path, node_name=None)
