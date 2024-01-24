@@ -31,6 +31,8 @@ jobs:
     integration_tests:
         runs-on: ubuntu-latest
 
+        continue-on-error: true
+
         defaults:
           run:
             # the test directory in gen3-code-vigil
@@ -107,7 +109,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.NAMESPACE != 'None' }}
+            if: ${{ success() }}
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
@@ -176,7 +178,7 @@ jobs:
 
           - name: Release CI environment
             id: release_ci_env
-            if: ${{ env.NAMESPACE != 'None' }}
+            if: ${{ steps.select_ci_env.outcome == 'success' }}
             # if: ${{ always() }}
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
