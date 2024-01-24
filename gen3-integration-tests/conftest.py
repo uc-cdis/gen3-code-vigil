@@ -150,3 +150,8 @@ def generate_graph_data():
     # NOTE: not using a "leaf node" like in old gen3-qa tests... just generating everything.
     # Submission takes more time, but data is more representative of real data.
     run_submission_order_generation(graph=graph, data_path=data_path, node_name=None)
+
+    logger.info("Done generating data:")
+    for f_path in sorted(os.listdir(data_path)):
+        with open(os.path.join(data_path, f_path), "r") as f:
+            logger.info(f"{f_path}:\n{f.read()}")
