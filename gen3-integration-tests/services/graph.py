@@ -109,7 +109,12 @@ class GraphDataTools:
             if node_name in ["program", "project"]:
                 continue  # program and project are created separately
             self.submission_order.append(node_name)
-            props = json.loads((self.test_data_path / f"{node_name}.json").read_text())
+            file_path = self.test_data_path / f"{node_name}.json"
+            try:
+                props = json.loads(file_path.read_text())
+            except Exception:
+                logger.error(f"Unable to load file '{node_name}.json'")
+                raise
             if type(props) == list:
                 if len(props) == 1:
                     props = props[0]

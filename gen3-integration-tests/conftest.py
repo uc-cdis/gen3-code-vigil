@@ -153,5 +153,5 @@ def generate_graph_data():
 
     logger.info("Done generating data:")
     for f_path in sorted(os.listdir(data_path)):
-        with open(os.path.join(data_path, f_path), "r") as f:
+        with open(data_path / f_path, "r") as f:
             logger.info(f"{f_path}:\n{f.read()}")
