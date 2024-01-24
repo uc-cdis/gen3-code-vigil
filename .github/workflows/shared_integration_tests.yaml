@@ -82,12 +82,12 @@ jobs:
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
           - name: Install dependencies
             run: |
+              sudo apt-get install -y --reinstall wamerican
               python -m pip install --upgrade pip
               pip install poetry
               poetry install
               poetry show
               poetry run playwright install
-              apt-get install -y --reinstall wamerican
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
