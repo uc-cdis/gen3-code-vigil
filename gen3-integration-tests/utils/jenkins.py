@@ -57,7 +57,7 @@ class JenkinsJob(object):
                 return result
             else:
                 retry += 1
-        return result
+        raise Exception("Unable to get build results")
 
     def get_console_output(self, build_number):
         """Get the console logs of a run"""
