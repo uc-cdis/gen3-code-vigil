@@ -110,7 +110,6 @@ jobs:
             if: ${{ env.NAMESPACE != 'None' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              trigger-a-failure
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
@@ -133,8 +132,8 @@ jobs:
           - name: Debug logging
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo ${{ steps.run_service_tests.outcome }}
-              echo ${{ steps.run_tests.outcome }}
+              echo steps.run_service_tests.outcome = ${{ steps.run_service_tests.outcome }}
+              echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
           - name: Generate allure report
             id: generate_allure_report
