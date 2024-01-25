@@ -1,7 +1,10 @@
 # Uses the shared workflow from this repo for ease of maintenance
 name: Integration Tests
 
-on: pull_request
+on:
+  pull_request:
+    paths-ignore:
+      - '**/README.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
