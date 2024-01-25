@@ -31,7 +31,7 @@ class TestClientCredentials:
         client_creds = gat.create_fence_client(
             pytest.namespace,
             "jenkinsClientTester1",
-            "dcf-integration-test-0@planx-pla.net",
+            username,
             "client_credentials",
         )
 
@@ -63,7 +63,7 @@ class TestClientCredentials:
         )
 
         # Creating data for request
-        data = {"username": self.username, "policy_id": self.policy}
+        data = {"username": username, "policy_id": policy}
 
         # Create new request with access_token from newly created client in previous stage
         create_req = requests.post(
