@@ -35,6 +35,7 @@ markers = [
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
   "workspace: tests for workspace page",
+  "client_credentials: tests for client credentials"
 ]
 pythonpath = "."
 md_report = "true"
