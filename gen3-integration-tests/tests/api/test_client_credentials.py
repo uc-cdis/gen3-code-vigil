@@ -16,7 +16,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestClientCredentials:
     client_access_token = None
     request_id = None
-    username = py
+    username = pytest.users["dcf_integration_user"]
+    policy = "requestor_client_credentials_test"
 
     def test_client_credentials(self):
         fence = Fence()
@@ -24,7 +25,7 @@ class TestClientCredentials:
         # Creating new OIDC client for test
         client_grant = Client(
             client_name="jenkinsClientTester",
-            user_name=pytest.users["dcf_integration_user"],
+            user_name=self.username,
             client_type="client_credentials",
             arborist_policies=None,
         )
@@ -42,8 +43,7 @@ class TestClientCredentials:
         )
 
         # Creating data for request
-        username = pytest.users["dcf_integration_user"]
-        data = {"username": username, "policy_id": "requestor_client_credentials_test"}
+        data = {"username": self.username, "policy_id": self.policy}
 
         # Create new request with access_token from newly created client in previous stage
         create_req = requests.post(
@@ -81,7 +81,7 @@ class TestClientCredentials:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def delete_request_id():
+def delete_and_revoke():
     yield  # Run the tests
 
     # Delete request_id after all tests are executed
@@ -97,7 +97,7 @@ def delete_request_id():
         ), f"Expected status code 200, but got {delete_req.status_code}"
 
     revoke_policy_response = requests.delete(
-        f"arborist-service/user/dcf-integration-test-0@planx-pla.net/policy/requestor_client_credentials_test"
+        f"arborist-service/user/{TestClientCredentials.username}/policy/{TestClientCredentials.policy}"
     )
     assert (
         revoke_policy_response.status_code == 200
