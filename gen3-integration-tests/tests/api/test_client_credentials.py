@@ -28,6 +28,7 @@ class TestClientCredentials:
             user_name=self.username,
             client_type="client_credentials",
             arborist_policies=None,
+            expires_in=None,
         )
         client_id = client_grant.id
         client_secret = client_grant.secret
@@ -97,7 +98,7 @@ def delete_and_revoke():
         ), f"Expected status code 200, but got {delete_req.status_code}"
 
     revoke_policy_response = requests.delete(
-        f"arborist-service/user/{TestClientCredentials.username}/policy/{TestClientCredentials.policy}"
+        f"http://arborist-service/user/{TestClientCredentials.username}/policy/{TestClientCredentials.policy}"
     )
     assert (
         revoke_policy_response.status_code == 200
