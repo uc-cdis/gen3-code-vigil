@@ -80,3 +80,72 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
     else:
         logger.error("Build number not found")
         return None
+
+
+def create_client(
+    client_name,
+    user_name,
+    client_type,
+    arborist_policies,
+    expires_in,
+    test_env_namespace,
+):
+    """
+    Runs jenkins job to create a fence client
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "fence-create-client",
+    )
+    params = {
+        "CLIENT_NAME": client_name,
+        "USER_NAME": user_name,
+        "CLIENT_TYPE": client_type,
+        "ARBORIST_POLICIES": arborist_policies,
+        "EXPIRES_IN": expires_in,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=600)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
+            return None
+    else:
+        logger.error("Build number not found")
+        return None
+
+
+def delete_client(client_name, test_env_namespace):
+    """
+    Runs jenkins job to delete client
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "fence-delete-client",
+    )
+    params = {
+        "CLIENT_NAME": client_name,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=600)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
+            return None
+    else:
+        logger.error("Build number not found")
+        return None

@@ -2,9 +2,9 @@ import pytest
 import requests
 import os
 
-from services.fence import Fence
-from services.client import Client
+from gen3.auth import Gen3Auth
 from services.requestor import Requestor
+from services.fence import Fence
 import utils.gen3_admin_tasks as gat
 
 from cdislogging import get_logger
@@ -20,27 +20,25 @@ class TestClientCredentials:
     policy = "requestor_client_credentials_test"
 
     def test_client_credentials(self):
-        fence = Fence()
+        """
+        1. Create a client in Fence Db with grant_type=client_credential and run usersync
+        2. Create a client_access_token from the client_id and client_secret
+        3. Create a new Requestor request with client_access_token
+        4. Update the request to SIGNED status
+        """
         requestor = Requestor()
-        # Creating new OIDC client for test
-        client_grant = Client(
-            client_name="jenkinsClientTester",
-            user_name=self.username,
-            client_type="client_credentials",
-            arborist_policies=None,
-            expires_in=None,
-        )
-        client_id = client_grant.id
-        client_secret = client_grant.secret
+        fence = Fence()
 
-        print(f"Client ID: {client_id}")
-        print(f"Client Secret: {client_secret}")
+        # creating a new client for the test
+        client = gat.create_client("")
 
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")
         # TODO : wait for usersync pod to finish and completed
-        client_access_token = fence.client_credentials_access_token(
-            client_id, client_secret
+        client_access_token = Gen3Auth(
+            endpoint=pytest.root_url,
+            client_credentials=(client_id, client_secret),
+            scope="openid user",
         )
 
         # Creating data for request
@@ -50,7 +48,7 @@ class TestClientCredentials:
         create_req = requests.post(
             f"{requestor.self.BASE_URL}",
             data,
-            fence.get_access_token_header(client_access_token),
+            header={"Authorization": f"bearer {client_access_token}"},
         )
         assert (
             create_req.status_code == 201
@@ -71,7 +69,7 @@ class TestClientCredentials:
         print(f"Status of the request is:{req_status_signed}")
 
         # Get the list of the user access request
-        req_list = requestor.get_request_list(client_access_token)
+        req_list = requestor.get_request_list(auth)
         client_list = req_list.json()
 
         if len(client_list) > 0:
@@ -87,19 +85,25 @@ def delete_and_revoke():
 
     # Delete request_id after all tests are executed
     if TestClientCredentials.request_id:
-        delete_req = requests.delete(
-            f"{TestClientCredentials.requestor.self.BASE_URL}/{TestClientCredentials.request_id}",
-            headers=TestClientCredentials.fence.get_access_token_header(
-                TestClientCredentials.client_access_token
+        delete_req = (
+            requests.delete(
+                f"{TestClientCredentials.requestor.self.BASE_URL}/{TestClientCredentials.request_id}",
+                headers={
+                    "Authorization": f"bearer {TestClientCredentials.client_access_token}"
+                },
             ),
         )
         assert (
             delete_req.status_code == 200
         ), f"Expected status code 200, but got {delete_req.status_code}"
 
+    # Revoke arborist policy for the user
     revoke_policy_response = requests.delete(
         f"http://arborist-service/user/{TestClientCredentials.username}/policy/{TestClientCredentials.policy}"
     )
     assert (
         revoke_policy_response.status_code == 200
     ), f"Expected status code 200, but got {revoke_policy_response.status_code}"
+
+    # Delete the client from the fence db
+    delete_client = gat.delete_client

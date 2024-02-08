@@ -87,6 +87,25 @@ def pytest_configure(config):
         "Authorization": f"bearer {access_token}",
         "Content-Type": "application/json",
     }
+    # user0 dcf_integration_test - test user
+    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_user0_account.json"
+    try:
+        api_key_json = json.loads(file_path.read_text())
+    except FileNotFoundError:
+        print(f"API key file not found: '{file_path}'")
+        raise
+    pytest.api_keys["dcf_integration_user"] = api_key_json
+    api_key = api_key_json["api_key"]
+    try:
+        access_token = fence.get_access_token(api_key)
+    except Exception as exc:
+        print(f"Failed to get access token using API Key: {file_path}")
+        raise
+    pytest.auth_headers["dcf_integration_user"] = {
+        "Accept": "application/json",
+        "Authorization": f"bearer {access_token}",
+        "Content-Type": "application/json",
+    }
 
 
 @pytest.fixture(autouse=True, scope="session")
