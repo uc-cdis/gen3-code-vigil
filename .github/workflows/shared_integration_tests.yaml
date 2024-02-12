@@ -123,6 +123,7 @@ jobs:
               mkdir output
               poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
 
+          # dummy comment
           - name: Run tests
             id: run_tests
             if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
