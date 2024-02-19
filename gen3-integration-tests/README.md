@@ -10,8 +10,8 @@ The users required to run the tests are:
 - `indexing_account` is the indexing_admin user. Save the API key as `<namespace>_indexing_account.json` in `~/.gen3` directory.
 
 You can use the following jenkins job to generate the api_keys (the keys are saved as build artifacts):
-- If `NAMESPACE` is on `qaplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/create_api_key/)
-- If it is on `devplanetv2` use [jenkins2-job](https://jenkins2.planx-pla.net/job/create_api_key/)
+- If `NAMESPACE` is on `qaplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/generate-api-keys/)
+- If it is on `devplanetv2` use [jenkins2-job](https://jenkins2.planx-pla.net/job/generate-api-keys/)
 
 ### Running gen3 admin tasks
 We use jenkins for running tasks like metadata-aggregate-sync, etl etc.
