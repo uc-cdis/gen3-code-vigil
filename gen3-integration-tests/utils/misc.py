@@ -1,8 +1,8 @@
-import fcntl
 import os
 import time
 
 from cdislogging import get_logger
+from filelock import Timeout, FileLock
 
 from utils import TEST_DATA_PATH_OBJECT
 
@@ -27,21 +27,20 @@ def one_worker_only(func):
         worker_id = os.environ["PYTEST_XDIST_WORKER"]
         lock_path = TEST_DATA_PATH_OBJECT / "lock"
 
+        lock = FileLock(lock_path, timeout=0)
         try:  # attempt to get a lock on the lock file
-            with open(lock_path, "w") as lock_file:  # open and create lock file
-                fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lock.acquire()
+            try:
                 logger.info(f"Worker '{worker_id}' running '{func.__name__}'")
-
+                result = func()
                 # if `func` completes quickly, this worker may release the lock before other workers
                 # attempt to lock, and `func` could run more than once. Wait 1 sec to avoid this
                 time.sleep(1)
-
-                result = func()
-
                 logger.info(f"Worker '{worker_id}' is done running '{func.__name__}'")
-                fcntl.flock(lock_file, fcntl.LOCK_UN)  # release lock
-                return result
-        except IOError:  # unable to lock: another worker already locked; wait
+            finally:
+                lock.release()
+            return result
+        except Timeout:  # unable to lock: another worker already locked; wait
             logger.info(
                 f"Worker '{worker_id}' waiting for '{func.__name__}' to be done running"
             )
@@ -49,8 +48,11 @@ def one_worker_only(func):
                 max_it = 10
                 for i in range(max_it):
                     try:
-                        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                        break  # the worker obtained the lock, so the function is done running => exit
+                        lock.acquire()
+                        # the worker obtained the lock, so `func` is done running => exit
+                        lock.release()
+                        logger.info(f"Worker '{worker_id}' is done waiting")
+                        break
                     except IOError:
                         wait_secs = 3
                         logger.info(f"Worker '{worker_id}' waiting {wait_secs}s...")
@@ -59,8 +61,5 @@ def one_worker_only(func):
                     logger.warn(
                         f"Worker '{worker_id}' waited the max time, '{func.__name__}' is not done running, proceeding anyway"
                     )
-                else:
-                    logger.info(f"Worker '{worker_id}' is done waiting")
-                    fcntl.flock(lock_file, fcntl.LOCK_UN)  # release lock
 
     return run_with_lock
