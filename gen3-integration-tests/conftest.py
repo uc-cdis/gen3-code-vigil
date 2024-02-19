@@ -89,7 +89,7 @@ def pytest_configure(config):
 
 
 @pytest.fixture(autouse=True, scope="session")
-@one_worker_only
+@one_worker_only(wait_secs=10, max_wait_minutes=15)
 def setup_tests():
     get_configuration_files()
     generate_graph_data()
