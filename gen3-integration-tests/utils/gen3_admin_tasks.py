@@ -21,6 +21,7 @@ def get_portal_config(test_env_namespace):
     if res.status_code == 200:
         return res.json()
     else:
+        logger.error("Unable to get portal config:", res.status_code, res.text)
         return None
 
 
