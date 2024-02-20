@@ -56,7 +56,11 @@ if __name__ == "__main__":
         )
         namespaces = ",".join(res.text.strip().split("\n"))
 
-    selected_ns = select_ci_environment(namespaces)
+    try:
+        selected_ns = select_ci_environment(namespaces)
+    except Exception:
+        logger.error("Unable to select namespace!")
+        raise
     logger.info(f"Selected namespace: {selected_ns}")
 
     env_file = os.getenv("GITHUB_ENV")

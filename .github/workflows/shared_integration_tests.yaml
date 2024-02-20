@@ -109,7 +109,6 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.NAMESPACE != 'None' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
