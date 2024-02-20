@@ -109,6 +109,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
+            if: ${{ steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
@@ -185,8 +186,8 @@ jobs:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Release CI environment
-            if: ${{ cancelled() || !cancelled() }}  # always run ("if always()" doesn't work)
             id: release_ci_env
+            if: ${{ steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
