@@ -14,6 +14,7 @@ def select_ci_environment(namespaces):
     Select available test environment.
     Lock it to prevent being used by other PRs.
     """
+    raise Exception("trigger a failure")
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
