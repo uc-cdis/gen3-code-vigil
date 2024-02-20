@@ -79,8 +79,10 @@ jobs:
             uses: actions/setup-node@v3
 
           # Install gen3-integration-tests dependencies
+          # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
           - name: Install dependencies
             run: |
+              sudo apt-get install -y --reinstall wamerican
               python -m pip install --upgrade pip
               pip install poetry
               poetry install
@@ -108,32 +110,37 @@ jobs:
           - name: Prepare CI environment
             id: prep_ci_env
             if: ${{ env.NAMESPACE != 'None' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
           - name: Run tests pertaining to specific service
             id: run_service_tests
-            if: ${{ inputs.SERVICE_TO_TEST && success() }}
+            if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
               poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
 
           - name: Run tests
             id: run_tests
-            if: ${{ !inputs.SERVICE_TO_TEST && success() }}
+            if: ${{ !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
               poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
 
           - name: Debug logging
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo ${{ steps.run_service_tests.outcome }}
-              echo ${{ steps.run_tests.outcome }}
+              echo steps.run_service_tests.outcome = ${{ steps.run_service_tests.outcome }}
+              echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
           - name: Generate allure report
             id: generate_allure_report
             if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
@@ -141,6 +148,7 @@ jobs:
           - name: Render md report to the PR
             id: generate_md_report
             if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -148,6 +156,7 @@ jobs:
           - name: Upload allure report to S3
             id: upload_allure_report
             if: ${{ steps.generate_allure_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
@@ -157,6 +166,7 @@ jobs:
           - name: Publish allure report link to the PR
             id: gh_comment_allure_link
             if: ${{ steps.upload_allure_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -164,20 +174,20 @@ jobs:
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
             if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
-            # if: ${{ always() }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
           - name: Publish pod logs url to the PR
             id: gh_comment_pod_logs_link
             if: ${{ steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Release CI environment
             id: release_ci_env
-            if: ${{ env.NAMESPACE != 'None' }}
-            # if: ${{ always() }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
           - name: Mark workflow as failed for unsuccessful test runs

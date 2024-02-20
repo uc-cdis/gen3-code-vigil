@@ -5,5 +5,6 @@ __pycache__
 .pytest_cache
 
 output/
+gen3-integration-tests/test_data/lock
 gen3-integration-tests/test_data/configuration
 gen3-integration-tests/test_data/graph_data

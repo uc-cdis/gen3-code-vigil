@@ -22,7 +22,7 @@ def get_portal_config(test_env_namespace):
         return res.json()
     else:
         raise Exception(
-            f"Unable to get portal config: status code {res.status_cod} - response {res.text}"
+            f"Unable to get portal config: status code {res.status_code} - response {res.text}"
         )
 
 
