@@ -185,6 +185,7 @@ jobs:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           - name: Release CI environment
+            if: ${{ cancelled() || !cancelled() }}  # always run ("if always()" doesn't work)
             id: release_ci_env
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
