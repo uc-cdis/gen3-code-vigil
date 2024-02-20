@@ -182,6 +182,5 @@ def prepare_ci_environment(namespace):
 
 
 if __name__ == "__main__":
-    raise Exception("trigger a failure")
     result = prepare_ci_environment(os.getenv("NAMESPACE"))
     logger.info(f"Result: {result}")
