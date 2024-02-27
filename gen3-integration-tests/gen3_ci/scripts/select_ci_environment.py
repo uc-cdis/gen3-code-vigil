@@ -34,12 +34,10 @@ def select_ci_environment(namespaces):
         if status == "Completed":
             return job.get_artifact_content(build_num, "namespace.txt")
         else:
-            logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
-            return None
+            raise Exception("Build timed out. Consider increasing max_duration")
     else:
-        logger.error("Build number not found")
-        return None
+        raise Exception("Build number not found")
 
 
 if __name__ == "__main__":
@@ -58,7 +56,11 @@ if __name__ == "__main__":
         )
         namespaces = ",".join(res.text.strip().split("\n"))
 
-    selected_ns = select_ci_environment(namespaces)
+    try:
+        selected_ns = select_ci_environment(namespaces)
+    except Exception:
+        logger.error("Unable to select namespace!")
+        raise
     logger.info(f"Selected namespace: {selected_ns}")
 
     env_file = os.getenv("GITHUB_ENV")

@@ -12,9 +12,11 @@ from pathlib import Path
 
 from services.fence import Fence
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
+from utils.misc import one_worker_only
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -54,14 +56,14 @@ def pytest_configure(config):
     try:
         api_key_json = json.loads(file_path.read_text())
     except FileNotFoundError:
-        print(f"API key file not found: '{file_path}'")
+        logger.error(f"API key file not found: '{file_path}'")
         raise
     pytest.api_keys["main_account"] = api_key_json
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
     except Exception as exc:
-        print(f"Failed to get access token using API Key: {file_path}")
+        logger.error(f"Failed to get access token using API Key: {file_path}")
         raise
     pytest.auth_headers["main_account"] = {
         "Accept": "application/json",
@@ -73,14 +75,14 @@ def pytest_configure(config):
     try:
         api_key_json = json.loads(file_path.read_text())
     except FileNotFoundError:
-        print(f"API key file not found: '{file_path}'")
+        logger.error(f"API key file not found: '{file_path}'")
         raise
     pytest.api_keys["indexing_account"] = api_key_json
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
     except Exception as exc:
-        print(f"Failed to get access token using API Key: {file_path}")
+        logger.error(f"Failed to get access token using API Key: {file_path}")
         raise
     pytest.auth_headers["indexing_account"] = {
         "Accept": "application/json",
@@ -109,6 +111,7 @@ def pytest_configure(config):
 
 
 @pytest.fixture(autouse=True, scope="session")
+@one_worker_only(wait_secs=5, max_wait_minutes=15)
 def setup_tests():
     get_configuration_files()
     generate_graph_data()
@@ -118,7 +121,7 @@ def get_configuration_files():
     """
     Get configuration files from the admin VM and save them at `test_data/configuration`
     """
-    print("Creating configuration files")
+    logger.info("Creating configuration files")
     configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
     path = TEST_DATA_PATH_OBJECT / "configuration"
     path.mkdir(parents=True, exist_ok=True)
@@ -137,7 +140,7 @@ def generate_graph_data():
             (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
         )
     except FileNotFoundError:
-        print(
+        logger.error(
             "manifest.json not found. It should have been fetched by `get_configuration_files`..."
         )
         raise

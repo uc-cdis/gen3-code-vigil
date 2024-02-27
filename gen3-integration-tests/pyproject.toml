@@ -13,9 +13,10 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.9"
 allure-pytest = "^2.13.2"
-cdislogging = "^1.1.1"
+cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.1"}
-gen3 = "*"
+filelock = "<4"
+gen3 = "<5"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
 pytest-env = "^1.0.0"
