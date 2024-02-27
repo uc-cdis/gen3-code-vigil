@@ -122,6 +122,10 @@ def create_fence_client(
         raise Exception("Build number not found")
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 57ddb26 (fix the code)
 def create_fence_client(
     test_env_namespace,
     client_name,
@@ -153,8 +157,13 @@ def create_fence_client(
         status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return {
+<<<<<<< HEAD
                 "client_creds.txt": job.get_artifact_content(
                     build_num, "client_creds.txt"
+=======
+                "client_creds.json": job.get_artifact_content(
+                    build_num, "client_creds.json"
+>>>>>>> 57ddb26 (fix the code)
                 ),
             }
         else:

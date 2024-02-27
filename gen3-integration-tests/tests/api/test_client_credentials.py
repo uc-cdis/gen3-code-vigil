@@ -28,6 +28,7 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
+<<<<<<< HEAD
         client_creds = gat.create_fence_client(
             pytest.namespace,
             "jenkinsClientTester1",
@@ -52,6 +53,14 @@ class TestClientCredentials:
             print(f"Client Secret: {client_secret}")
         except Exception as e:
             print(f"Error extracting client credentials, {e}")
+=======
+        client = gat.create_fence_client(
+            pytest.namespace,
+            "jenkinsClientTester1",
+            "dcf-integration-test-0@planx-pla.net",
+            "client_credentials",
+        )
+>>>>>>> 876a846 (fix the code)
 
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")
@@ -119,4 +128,8 @@ class TestClientCredentials:
         ), f"Expected status code 200, but got {revoke_policy_response.status_code}"
 
         # Delete the client from the fence db
+<<<<<<< HEAD
         gat.delete_fence_client(pytest.namespace, "jenkinsClientTester1")
+=======
+        gat.delete_fence_client(pytest.namespace, "jenkinsClientTester1")
+>>>>>>> 876a846 (fix the code)
