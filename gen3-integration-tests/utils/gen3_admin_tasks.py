@@ -79,6 +79,7 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
     else:
       raise Exception("Build number not found")
 
+
 def create_fence_client(
     test_env_namespace,
     client_name,
