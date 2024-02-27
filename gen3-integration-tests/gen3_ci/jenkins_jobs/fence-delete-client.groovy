@@ -38,8 +38,9 @@ pipeline {
                         export GEN3_HOME=\$WORKSPACE/cloud-automation
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
-                        delete_fence_client="kubectl exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
-                        eval ${delete_fence_client}
+
+                        delete_fence_client="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
+                        bash -c ${delete_fence_client}
                         if [ $? -eq 0 ]; then
                             echo "Command executed successfully."
                         else

@@ -14,11 +14,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.client_credentials
 class TestClientCredentials:
-    client_access_token = None
-    request_id = None
-    username = pytest.users["dcf_integration_user"]
-    policy = "requestor_client_credentials_test"
-
     def test_client_credentials(self):
         """
         1. Create a client in Fence Db with grant_type=client_credential and run usersync
@@ -26,11 +21,19 @@ class TestClientCredentials:
         3. Create a new Requestor request with client_access_token
         4. Update the request to SIGNED status
         """
+        client_access_token = None
+        request_id = None
+        username = pytest.users["dcf_integration_user"]
+        policy = "requestor_client_credentials_test"
         requestor = Requestor()
-        fence = Fence()
 
         # creating a new client for the test
-        client = gat.create_client("")
+        client = gat.create_fence_client(
+            pytest.namespace,
+            "jenkinsClientTester1",
+            "dcf-integration-test-0@planx-pla.net",
+            "client_credentials",
+        )
 
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")
@@ -69,7 +72,7 @@ class TestClientCredentials:
         print(f"Status of the request is:{req_status_signed}")
 
         # Get the list of the user access request
-        req_list = requestor.get_request_list(auth)
+        req_list = requestor.get_request_list(client_access_token)
         client_list = req_list.json()
 
         if len(client_list) > 0:
@@ -78,32 +81,24 @@ class TestClientCredentials:
             ]
             assert len(req_data) == 1
 
+        if request_id:
+            delete_req = (
+                requests.delete(
+                    f"{requestor.self.BASE_URL}/{request_id}",
+                    headers={"Authorization": f"bearer {client_access_token}"},
+                ),
+            )
+            assert (
+                delete_req.status_code == 200
+            ), f"Expected status code 200, but got {delete_req.status_code}"
 
-@pytest.fixture(scope="session", autouse=True)
-def delete_and_revoke():
-    yield  # Run the tests
-
-    # Delete request_id after all tests are executed
-    if TestClientCredentials.request_id:
-        delete_req = (
-            requests.delete(
-                f"{TestClientCredentials.requestor.self.BASE_URL}/{TestClientCredentials.request_id}",
-                headers={
-                    "Authorization": f"bearer {TestClientCredentials.client_access_token}"
-                },
-            ),
+        # Revoke arborist policy for the user
+        revoke_policy_response = requests.delete(
+            f"http://arborist-service/user/{username}/policy/{policy}"
         )
         assert (
-            delete_req.status_code == 200
-        ), f"Expected status code 200, but got {delete_req.status_code}"
+            revoke_policy_response.status_code == 200
+        ), f"Expected status code 200, but got {revoke_policy_response.status_code}"
 
-    # Revoke arborist policy for the user
-    revoke_policy_response = requests.delete(
-        f"http://arborist-service/user/{TestClientCredentials.username}/policy/{TestClientCredentials.policy}"
-    )
-    assert (
-        revoke_policy_response.status_code == 200
-    ), f"Expected status code 200, but got {revoke_policy_response.status_code}"
-
-    # Delete the client from the fence db
-    delete_client = gat.delete_client
+        # Delete the client from the fence db
+        gat.delete_fence_client(pytest.namespace, "jenkinsClientTester1")

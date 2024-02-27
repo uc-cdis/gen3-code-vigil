@@ -82,13 +82,13 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
         return None
 
 
-def create_client(
+def create_fence_client(
+    test_env_namespace,
     client_name,
     user_name,
     client_type,
     arborist_policies,
     expires_in,
-    test_env_namespace,
 ):
     """
     Runs jenkins job to create a fence client
@@ -112,7 +112,11 @@ def create_client(
     if build_num:
         status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
-            return job.get_build_result(build_num)
+            return {
+                "client_creds.json": job.get_artifact_content(
+                    build_num, "client_creds.json"
+                ),
+            }
         else:
             logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
@@ -122,7 +126,7 @@ def create_client(
         return None
 
 
-def delete_client(client_name, test_env_namespace):
+def delete_fence_client(test_env_namespace, client_name):
     """
     Runs jenkins job to delete client
     Since this requires adminvm interaction we use jenkins.

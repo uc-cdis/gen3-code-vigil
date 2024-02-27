@@ -47,12 +47,8 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
 
-                         # Get the fence pod name
-                        FENCE_POD=$(gen3 pod fence)
-                        echo "${FENCE_POD}"
-
                         # construct fence-create command depending on the parameters provided by the run
-                        FENCE_CMD="kubectl exec $(FENCE_POD) -- fence-create client-create"
+                        FENCE_CMD="kubectl exec $(gen3 pod fence) -- fence-create client-create"
                         echo "${FENCE_CMD}"
 
                         if [ -n "$ARBORIST_POLICIES" ] && [ -n "${ARBORIST_CLIENT_POLICIES}" ]; then
@@ -75,7 +71,24 @@ pipeline {
                         fi
 
                         echo "Running: ${FENCE_CMD}"
-                        ENCE_CMD_RES=$(bash -c "${FENCE_CMD}")
+                        FENCE_CMD_RES=$(bash -c "${FENCE_CMD}")
+
+                        client_id=$(echo "$FENCE_CMD_RES" | grep -oP "'([^']*)'" | head -n 1 | cut -c 2- | rev | cut -c 2- | rev)
+                        client_secret=$(echo "$FENCE_CMD_RES" | grep -oP "'([^']*)'" | tail -n 1 | cut -c 2- | rev | cut -c 2- | rev)
+
+                        # Extract client ID and secret (consider error handling and security)
+                        CLIENT_ID=$(echo "$FENCE_CMD_RES" | grep -oP "'([^']*)'" | head -n 1 | cut -c 2- | rev | cut -c 2- | rev)
+                        CLIENT_SECRET=$(echo "$FENCE_CMD_RES" | grep -oP "'([^']*)'" | tail -n 1 | cut -c 2- | rev | cut -c 2- | rev)
+
+                        # Convert (ID, secret) to a list or custom JSON format (modify below)
+                        client_data = ["${CLIENT_ID}", "${CLIENT_SECRET}"]  # Alternative: {"id": CLIENT_ID, "secret": CLIENT_SECRET}
+
+                        # Store data in JSON file
+                        echo "Storing client data in client_data.json..."
+                        with open('client_data.json', 'w') as json_file:
+                            json.dump(client_data, json_file, indent=4)
+
+                        echo "Client data stored!"
                         '''
                     }
                 }
