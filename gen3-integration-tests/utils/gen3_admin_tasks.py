@@ -111,8 +111,8 @@ def create_fence_client(
         status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return {
-                "client_creds.json": job.get_artifact_content(
-                    build_num, "client_creds.json"
+                "client_creds.txt": job.get_artifact_content(
+                    build_num, "client_creds.txt"
                 ),
             }
         else:
