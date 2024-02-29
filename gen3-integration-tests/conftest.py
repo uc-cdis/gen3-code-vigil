@@ -12,7 +12,6 @@ from pathlib import Path
 
 from services.fence import Fence
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
-from utils.misc import one_worker_only
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
@@ -59,7 +58,7 @@ def pytest_configure(config):
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
-    except Exception as exc:
+    except Exception:
         logger.error(f"Failed to get access token using API Key: {file_path}")
         raise
     pytest.auth_headers["main_account"] = {
@@ -78,7 +77,7 @@ def pytest_configure(config):
     api_key = api_key_json["api_key"]
     try:
         access_token = fence.get_access_token(api_key)
-    except Exception as exc:
+    except Exception:
         logger.error(f"Failed to get access token using API Key: {file_path}")
         raise
     pytest.auth_headers["indexing_account"] = {
@@ -87,11 +86,10 @@ def pytest_configure(config):
         "Content-Type": "application/json",
     }
 
-
-@pytest.fixture(autouse=True, scope="session")
-@one_worker_only(wait_secs=5, max_wait_minutes=15)
-def setup_tests():
+    # Get configuration files
     get_configuration_files()
+
+    # Generate test data
     generate_graph_data()
 
 
