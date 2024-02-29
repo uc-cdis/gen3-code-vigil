@@ -2,15 +2,9 @@ import pytest
 import requests
 import os
 
-<<<<<<< HEAD
 from gen3.auth import Gen3Auth
 from services.requestor import Requestor
 from services.fence import Fence
-=======
-from services.fence import Fence
-from services.client import Client
-from services.requestor import Requestor
->>>>>>> 1c5ba6b (migrating Client Credential test)
 import utils.gen3_admin_tasks as gat
 
 from cdislogging import get_logger
