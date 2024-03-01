@@ -27,12 +27,10 @@ def save_pod_logs(namespace):
         if status == "Completed":
             return job.get_build_info(build_num)
         else:
-            logger.error("Build timed out. Consider increasing max_duration")
             job.terminate_build(build_num)
-            return None
+            raise Exception("Build timed out. Consider increasing max_duration")
     else:
-        logger.error("Build number not found")
-        return None
+        raise Exception("Build number not found")
 
 
 if __name__ == "__main__":
