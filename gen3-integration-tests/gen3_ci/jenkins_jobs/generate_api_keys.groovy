@@ -46,6 +46,12 @@ pipeline {
 
                             echo "creating indexing_account for \$NAMESPACE"
                             gen3 api api-key ctds.indexing.test@gmail.com > \${NAMESPACE}_indexing_account.json
+
+                            echo "creating auxAcct1 for \$NAMESPACE"
+                            gen3 api api-key dummy-one@planx-pla.net > \${NAMESPACE}_auxAcct1_account.json
+
+                            echo "creating auxAcct2 for \$NAMESPACE"
+                            gen3 api api-key smarty-two@planx-pla.net > \${NAMESPACE}_auxAcct2_account.json
                         '''
                     }
                 }
