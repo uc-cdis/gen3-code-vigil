@@ -1,0 +1,40 @@
+{
+  "exact_match": {
+    "get_dbgap_input": {
+      "phsid_list": "phs123",
+      "indexing_manifest_url": "https://cdis-presigned-url-test.s3.amazonaws.com/test-dbgap-mock-study.csv",
+      "manifests_mapping_config": {
+        "guid_column_name": "guid",
+        "row_column_name": "submitted_sample_id",
+        "indexing_manifest_column_name": "submitted_sample_id"
+      },
+      "partial_match_or_exact_match": "exact_match"
+    },
+    "expected": {
+      "test_guid": "ad3bf4ad-1063-4e1b-97b0-4a31b777bea7",
+      "submitted_sample_id": "D253504_63@1097065801"
+    }
+  },
+  "partial_match": {
+    "get_dbgap_input" : {
+        "phsid_list": "phs123",
+        "indexing_manifest_url": "https://cdis-presigned-url-test.s3.amazonaws.com/test-dbgap-mock-study.csv",
+        "manifests_mapping_config": {
+          "guid_column_name": "guid",
+          "row_column_name": "submitted_sample_id",
+          "indexing_manifest_column_name": "aws_uri"
+        },
+        "partial_match_or_exact_match": "partial_match"
+      },
+      "expected": {
+        "test_guid": "5f5682f8-be38-45bb-9390-294e2678336e",
+        "submitted_sample_id": 824703
+      }
+
+  },
+  "fake_xml_url": "https://cdis-presigned-url-test.s3.amazonaws.com/test-dbgap-mock-study.xml",
+  "metadata_source": "dbgap",
+  "test_guid_exact_match": "ad3bf4ad-1063-4e1b-97b0-4a31b777bea7",
+  "test_guid_partial_match": "5f5682f8-be38-45bb-9390-294e2678336e",
+  "study_subject_id": "phs000956.v3_DBG00391"
+}
