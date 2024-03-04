@@ -77,55 +77,9 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
-      raise Exception("Build number not found")
-
-
-def create_fence_client(
-    test_env_namespace,
-    client_name,
-    user_name,
-    client_type,
-    arborist_policies,
-    expires_in,
-):
-    """
-    Runs jenkins job to create a fence client
-    Since this requires adminvm interaction we use jenkins.
-    """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "fence-create-client",
-    )
-    params = {
-        "CLIENT_NAME": client_name,
-        "USER_NAME": user_name,
-        "CLIENT_TYPE": client_type,
-        "ARBORIST_POLICIES": arborist_policies,
-        "EXPIRES_IN": expires_in,
-        "NAMESPACE": test_env_namespace,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
-        if status == "Completed":
-            return {
-                "client_creds.txt": job.get_artifact_content(
-                    build_num, "client_creds.txt"
-                ),
-            }
-        else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
         raise Exception("Build number not found")
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 57ddb26 (fix the code)
 def create_fence_client(
     test_env_namespace,
     client_name,
@@ -157,13 +111,8 @@ def create_fence_client(
         status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return {
-<<<<<<< HEAD
                 "client_creds.txt": job.get_artifact_content(
                     build_num, "client_creds.txt"
-=======
-                "client_creds.json": job.get_artifact_content(
-                    build_num, "client_creds.json"
->>>>>>> 57ddb26 (fix the code)
                 ),
             }
         else:
