@@ -35,72 +35,12 @@ def pytest_configure(config):
 
     # Generate api key and auth headers
     pytest.api_keys = {}
-<<<<<<< HEAD
     pytest.auth_headers = {}
     for user in pytest.users:
         (
             pytest.api_keys[user],
             pytest.auth_headers[user],
         ) = setup.get_api_key_and_auth_header(user)
-=======
-    # Default user - main_account - cdis.autotest@gmail.com
-    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_main_account.json"
-    try:
-        api_key_json = json.loads(file_path.read_text())
-    except FileNotFoundError:
-        print(f"API key file not found: '{file_path}'")
-        raise
-    pytest.api_keys["main_account"] = api_key_json
-    api_key = api_key_json["api_key"]
-    try:
-        access_token = fence.get_access_token(api_key)
-    except Exception as exc:
-        print(f"Failed to get access token using API Key: {file_path}")
-        raise
-    pytest.auth_headers["main_account"] = {
-        "Accept": "application/json",
-        "Authorization": f"bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-    # Indexing admin - indexing_account - ctds.indexing.test@gmail.com
-    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_indexing_account.json"
-    try:
-        api_key_json = json.loads(file_path.read_text())
-    except FileNotFoundError:
-        print(f"API key file not found: '{file_path}'")
-        raise
-    pytest.api_keys["indexing_account"] = api_key_json
-    api_key = api_key_json["api_key"]
-    try:
-        access_token = fence.get_access_token(api_key)
-    except Exception as exc:
-        print(f"Failed to get access token using API Key: {file_path}")
-        raise
-    pytest.auth_headers["indexing_account"] = {
-        "Accept": "application/json",
-        "Authorization": f"bearer {access_token}",
-        "Content-Type": "application/json",
-    }
-    # user0 dcf_integration_test - test user
-    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_user0_account.json"
-    try:
-        api_key_json = json.loads(file_path.read_text())
-    except FileNotFoundError:
-        print(f"API key file not found: '{file_path}'")
-        raise
-    pytest.api_keys["dcf_integration_user"] = api_key_json
-    api_key = api_key_json["api_key"]
-    try:
-        access_token = fence.get_access_token(api_key)
-    except Exception as exc:
-        print(f"Failed to get access token using API Key: {file_path}")
-        raise
-    pytest.auth_headers["dcf_integration_user"] = {
-        "Accept": "application/json",
-        "Authorization": f"bearer {access_token}",
-        "Content-Type": "application/json",
-    }
->>>>>>> c14a693 (add jenkins jobs to run fence-create command)
 
     # Get configuration files
     setup.get_configuration_files()
