@@ -35,23 +35,23 @@ class TestClientCredentials:
             "client_credentials",
         )
 
-        try:
-            # access the client_creds.txt and retrieving the client_creds
-            credsFile = client_creds["client_creds.txt"].splitlines()
-            if len(credsFile) < 2:
-                raise Exception(
-                    "Client credentials file does not contain expected data format (2 lines)"
-                )
+        # access the client_creds.txt and retrieving the client_creds
+        credsFile = client_creds["client_creds.txt"].splitlines()
+        if len(credsFile) < 2:
+            raise Exception(
+                "Client credentials file does not contain expected data format (2 lines)"
+            )
 
-            # assigning first line to client_id
-            # and assigning second line to client_secret
-            client_id = credsFile[0]
-            client_secret = credsFile[1]
+        # assigning first line to client_id
+        # and assigning second line to client_secret
+        client_id = credsFile[0]
+        client_secret = credsFile[1]
 
+        if client_id:
             print(f"Client ID: {client_id}")
             print(f"Client Secret: {client_secret}")
-        except Exception as e:
-            print(f"Error extracting client credentials, {e}")
+        else:
+            print("Error extracting client credentials.")
 
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")
