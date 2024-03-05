@@ -86,7 +86,7 @@ def create_fence_client(
     user_name,
     client_type,
     arborist_policies=None,
-    expires_in=None,
+    expires_in="",
 ):
     """
     Runs jenkins job to create a fence client

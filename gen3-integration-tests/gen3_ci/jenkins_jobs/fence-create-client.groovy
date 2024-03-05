@@ -50,9 +50,8 @@ pipeline {
                         # construct fence-create command depending on the parameters provided by the run
                         FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-create"
                         echo "${FENCE_CMD}"
-                        echo "$ARBORIST_POLICIES"
-                        echo "$EXPIRES_IN"
-                        if [ -n "$ARBORIST_POLICIES" ] && [ -n "${ARBORIST_CLIENT_POLICIES}" ]; then
+
+                        if [ -n "$ARBORIST_POLICIES" ]; then
                             FENCE_CMD="${FENCE_CMD} --arborist http://arborist-service/ --policies ${ARBORIST_POLICIES}"
                         fi
 
