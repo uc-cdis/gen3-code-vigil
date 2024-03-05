@@ -3,6 +3,8 @@ import pytest
 
 from utils import test_setup as setup
 
+from utils.misc import one_worker_only
+
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
 
@@ -42,8 +44,11 @@ def pytest_configure(config):
             pytest.auth_headers[user],
         ) = setup.get_api_key_and_auth_header(user)
 
+
+@pytest.fixture(autouse=True, scope="session")
+@one_worker_only(wait_secs=5, max_wait_minutes=15)
+def setup_tests():
     # Get configuration files
     setup.get_configuration_files()
-
     # Generate test data
     setup.generate_graph_data()
