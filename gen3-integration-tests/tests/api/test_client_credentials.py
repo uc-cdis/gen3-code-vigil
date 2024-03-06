@@ -59,7 +59,6 @@ class TestClientCredentials:
         client_access_token = Gen3Auth(
             endpoint=pytest.root_url,
             client_credentials=(client_id, client_secret),
-            scope="openid user",
         )
 
         # Creating data for request
