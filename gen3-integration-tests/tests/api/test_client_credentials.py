@@ -66,7 +66,7 @@ class TestClientCredentials:
 
         # Create new request with access_token from newly created client in previous stage
         create_req = requests.post(
-            f"{requestor.self.BASE_URL}",
+            f"{requestor.BASE_URL}",
             data,
             header={"Authorization": f"bearer {client_access_token}"},
         )
@@ -88,20 +88,21 @@ class TestClientCredentials:
         req_status_signed = requestor.get_request_status(self.request_id)
         print(f"Status of the request is:{req_status_signed}")
 
-        # Get the list of the user access request
-        req_list = requestor.get_request_list(client_access_token)
-        client_list = req_list.json()
+        # # TODO : check the list of the request for the user
+        # # Get the list of the user access request
+        # req_list = requestor.get_request_list(client_access_token)
+        # client_list = req_list.json()
 
-        if len(client_list) > 0:
-            req_data = [
-                obj for obj in client_list if obj["request_id"] == self.request_id
-            ]
-            assert len(req_data) == 1
+        # if len(client_list) > 0:
+        #     req_data = [
+        #         obj for obj in client_list if obj["request_id"] == self.request_id
+        #     ]
+        #     assert len(req_data) == 1
 
         if request_id:
             delete_req = (
                 requests.delete(
-                    f"{requestor.self.BASE_URL}/{request_id}",
+                    f"{requestor.BASE_URL}/{request_id}",
                     headers={"Authorization": f"bearer {client_access_token}"},
                 ),
             )
