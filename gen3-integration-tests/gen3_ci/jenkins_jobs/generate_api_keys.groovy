@@ -54,7 +54,7 @@ pipeline {
                             gen3 api api-key smarty-two@planx-pla.net > \${NAMESPACE}_auxAcct2_account.json
 
                             echo "creating user0 for \$NAMESPACE"
-                            gen3 api api-key dcf-integration-test-0@planx-pla.net > \${NAMESPACE}_user0_account.json
+                            gen3 api api-key dcf-integration-test-0@planx-pla.net > \${NAMESPACE}_dcf_integration_account.json
                         '''
                     }
                 }
