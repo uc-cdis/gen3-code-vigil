@@ -48,7 +48,7 @@ spec:
       requests:
         cpu: 500m
         memory: 500Mi
-        ephemeral-storage: 500Mi
+        ephemeral-storage: 1Gi
   - name: shell
     image: quay.io/cdis/gen3-ci-worker:master
     imagePullPolicy: Always
@@ -58,9 +58,9 @@ spec:
     - infinity
     resources:
       requests:
-        cpu: 0.2
-        memory: 200Mi
-        ephemeral-storage: 200Mi
+        cpu: 500m
+        memory: 500Mi
+        ephemeral-storage: 1Gi
     env:
     - name: AWS_DEFAULT_REGION
       value: us-east-1
