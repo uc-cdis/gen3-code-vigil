@@ -1,8 +1,6 @@
 /*
     String parameter CLIENT_NAME
         e.g. jenkinsClientTester
-
-    Artifact archived -
 */
 pipeline {
     agent {
@@ -37,16 +35,11 @@ pipeline {
                         set -e
                         export GEN3_HOME=\$WORKSPACE/cloud-automation
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
-                        source $GEN3_HOME/gen3/gen3setup.sh
+                        source \$GEN3_HOME/gen3/gen3setup.sh
 
                         DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
                         echo "Running: ${DELETE_CMD}"
-                        bash -c ${DELETE_CMD}
-                        if [ $? -eq 0 ]; then
-                            echo "Command executed successfully."
-                        else
-                            echo "Command failed with an exit code $?."
-                        fi
+                        bash -c "${DELETE_CMD}"
                         '''
                     }
                 }
