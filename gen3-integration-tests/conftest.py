@@ -31,6 +31,8 @@ def pytest_configure(config):
     pytest.users = {}
     pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user
     pytest.users["indexing_account"] = "ctds.indexing.test@gmail.com"  # indexing admin
+    pytest.users["auxAcct1_account"] = "dummy-one@planx-pla.net"  # auxAcct1 user
+    pytest.users["auxAcct2_account"] = "smarty-two@planx-pla.net"  # auxAcct2 user
 
     # Generate api key and auth headers
     pytest.api_keys = {}

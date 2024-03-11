@@ -121,6 +121,8 @@ def generate_api_keys_for_test_users(namespace):
     test_users = {
         "main_account": "cdis.autotest@gmail.com",  # default user
         "indexing_account": "ctds.indexing.test@gmail.com",  # indexing admin
+        "auxAcct1_account": "dummy-one@planx-pla.net",  # auxAcct1 user
+        "auxAcct2_account": "smarty-two@planx-pla.net",  # auxAcct2 user
     }
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),

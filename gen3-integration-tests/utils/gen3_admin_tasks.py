@@ -78,3 +78,29 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+
+
+def update_audit_service_logging(test_env_namespace, audit_logging):
+    """
+    Runs jenkins job to cenable/disable audit logging
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "audit-service-logging",
+    )
+    params = {
+        "AUDIT_LOGGING": audit_logging,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=600)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
