@@ -147,3 +147,31 @@ def delete_fence_client(test_env_namespace, client_name):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+
+
+def revoke_arborist_policy(test_env_namespace, username, policy):
+    """
+    Runs jenkins job to revoke arborist policy
+    Since jenkins job is faster way without too much configuration changes
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "revoke-arborist-policy",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+        "USERNAME": username,
+        "POLICY": policy,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=600)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")

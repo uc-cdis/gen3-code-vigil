@@ -99,16 +99,13 @@ class TestClientCredentials:
         print(f"Status of the request is {req_status_signed}")
 
         print("Starting the cleanup after the test ...")
+        print(f"Deleting the request id {request_id} from requestor db ...")
         if request_id:
             requestor.request_delete(request_id)
 
         # Delete the client from the fence db
+        print("Deleting client from the fence db ...")
         gat.delete_fence_client(pytest.namespace, "jenkinsClientTester")
 
-        # # Revoke arborist policy for the user
-        # revoke_policy_response = requests.delete(
-        #     f"http://arborist-service/user/{username}/policy/{policy}"
-        # )
-        # assert (
-        #     revoke_policy_response.status_code == 204
-        # ), f"Expected status code 200, but got {revoke_policy_response.status_code}"
+        print("Revoking arborist policy for the user ...")
+        gat.revoke_arborist_policy(pytest.namespace, username, policy)
