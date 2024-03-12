@@ -121,7 +121,7 @@ def generate_api_keys_for_test_users(namespace):
     test_users = {
         "main_account": "cdis.autotest@gmail.com",  # default user
         "indexing_account": "ctds.indexing.test@gmail.com",  # indexing admin
-        "dcf_integration_user": "dcf-integration-test-0@planx-pla.net",  # user0 dcf_integration_test
+        "user0_account": "dcf-integration-test-0@planx-pla.net",  # user0 dcf_integration_test
     }
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
