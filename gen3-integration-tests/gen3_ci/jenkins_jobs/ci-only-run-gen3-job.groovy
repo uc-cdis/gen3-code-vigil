@@ -11,6 +11,9 @@
 */
 pipeline {
     agent {
+      node {
+        label 'gen3-ci-worker'
+      }
       kubernetes {
             yaml '''
 apiVersion: v1
