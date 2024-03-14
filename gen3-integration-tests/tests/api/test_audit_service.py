@@ -19,10 +19,12 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.audit
 class TestAuditService:
-    def setup_module():
+    @classmethod
+    def setup_class(cls):
         assert update_audit_service_logging(pytest.namespace, "true")
 
-    def teardown_module():
+    @classmethod
+    def teardown_class(cls):
         assert update_audit_service_logging(pytest.namespace, "false")
 
     def test_audit_unauthorized_log_query(self):

@@ -82,7 +82,7 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
 
 def update_audit_service_logging(test_env_namespace, audit_logging):
     """
-    Runs jenkins job to cenable/disable audit logging
+    Runs jenkins job to enable/disable audit logging
     """
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
