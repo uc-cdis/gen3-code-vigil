@@ -8,12 +8,9 @@ import math
 import datetime
 
 from gen3.auth import Gen3Auth
-from gen3.index import Gen3Index
 from cdislogging import get_logger
 
 from services.audit import Audit
-
-# from services.indexd import Indexd
 from pages.login import LoginPage
 from utils.gen3_admin_tasks import update_audit_service_logging
 
@@ -22,17 +19,15 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.audit
 class TestAuditService:
-    def setup_method():
+    def setup_module():
         assert update_audit_service_logging(pytest.namespace, "true")
 
-    def teardown_method():
+    def teardown_module():
         assert update_audit_service_logging(pytest.namespace, "false")
 
-    def test_audit_service(self, page):
+    def test_audit_unauthorized_log_query(self):
         audit = Audit()
-        login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        logger.info(timestamp)
         params = ["start={}".format(timestamp)]
 
         # `mainAcct` does not have access to query any audit logs
@@ -51,6 +46,13 @@ class TestAuditService:
         auth = Gen3Auth(refresh_token=pytest.api_keys["auxAcct2_account"])
         audit.audit_query("presigned_url", auth, params, 403, "auxAcct2 Presigned-URL")
         audit.audit_query("login", auth, params, 200, "auxAcct2 Login")
+
+    def test_audit_homepage_login_events(self, page):
+        audit = Audit()
+        login_page = LoginPage()
+        timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
+        logger.info(timestamp)
+        params = ["start={}".format(timestamp)]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("Logging in with mainAcct")
