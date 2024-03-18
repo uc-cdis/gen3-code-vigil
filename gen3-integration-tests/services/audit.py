@@ -23,7 +23,9 @@ class Audit(object):
         assert expectedStatus == response.status_code
         return True
 
-    def checkQueryResults(self, logCategory, userTokenHeader, params, expectedResults):
+    def checkQueryResults(
+        self, logCategory, userTokenHeader, params, expectedResults, repeat=False
+    ):
         url = self.API_AUDIT_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
         counter = 0
@@ -42,5 +44,5 @@ class Audit(object):
                 return True
             counter += 1
 
-        logger.info("Waited for 300 seconds but data was not recieved")
+        logger.error("Waited for 300 seconds but data was not recieved")
         return False

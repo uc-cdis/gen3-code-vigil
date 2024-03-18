@@ -3,7 +3,8 @@
     e.g., qa-anvil
 
   String parameter AUDIT_LOGGING
-    e.g., true, false
+    e.g., true - Enabled the audit logging onto the target environment
+          false - Disables the audit logging onto the target environment
 
   Archived artifacts -
 */
@@ -49,7 +50,7 @@ pipeline {
                             # Dumping the current secret in a temp file
                             gen3 secrets decode fence-config > fence_config_tmp.yaml; sed -i '1d;$d' fence_config_tmp.yaml
 
-                            # Add entry into fence_confog_tmp.yaml to enable audit service logging
+                            # Add entry into fence_config_tmp.yaml to enable audit service logging
                             shopt -s xpg_echo; echo "ENABLE_AUDIT_LOGS:\n  presigned_url: \${AUDIT_LOGGING}\n  login: \${AUDIT_LOGGING}" >> fence_config_tmp.yaml
 
                             # Update the Secret

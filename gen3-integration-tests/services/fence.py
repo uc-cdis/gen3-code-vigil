@@ -27,3 +27,13 @@ class Fence(object):
             raise Exception(
                 f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
             )
+
+    def createSignedUrl(self, id, useHeader, expectedStatus, file_type, params=[]):
+        API_GET_FILE = f"{self.BASE_URL}/data/download"
+        url = API_GET_FILE + "/" + str(id)
+        if len(params) > 0:
+            url = url + "?" + "&".join(params)
+        response = requests.get(url=url, auth=useHeader)
+        logger.info(str(file_type) + " status code : " + str(response.status_code))
+        assert expectedStatus == response.status_code
+        return True
