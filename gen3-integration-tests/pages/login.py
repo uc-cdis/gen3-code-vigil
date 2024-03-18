@@ -11,7 +11,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class LoginPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}/login"
+        self.BASE_URL = f"{pytest.root_url_portal}/login"
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
@@ -33,7 +33,7 @@ class LoginPage(object):
         )
         login_button = page.get_by_role(
             "button",
-            name=re.compile(r"Login from Google", re.IGNORECASE),
+            name=re.compile(r"Dev login", re.IGNORECASE),
         )
         """
         // for manifest PRs
@@ -75,11 +75,7 @@ class LoginPage(object):
         if popup_message:
             logger.info("Popup message found")
             page.evaluate(
-                f"""
-                (element) => {{
-                    element.scrollTop = element.scrollHeight;
-                }}
-                """,
+                "(element) => {{element.scrollTop = element.scrollHeight;}}",
                 popup_message,
             )
             page.screenshot(path="output/PopupBox.png")

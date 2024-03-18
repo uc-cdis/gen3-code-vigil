@@ -11,7 +11,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class WorkspacePage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url}/workspace"
+        self.BASE_URL = f"{pytest.root_url_portal}/workspace"
         # Locators
         self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
         self.WORKSPACE_OPTION = (
