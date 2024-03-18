@@ -33,7 +33,7 @@ class LoginPage(object):
         )
         login_button = page.get_by_role(
             "button",
-            name=re.compile(r"Dev login", re.IGNORECASE),
+            name=re.compile(r"Login from Google", re.IGNORECASE),
         )
         """
         // for manifest PRs
