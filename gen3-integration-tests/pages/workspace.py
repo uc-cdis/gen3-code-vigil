@@ -79,7 +79,7 @@ class WorkspacePage(object):
         commandPrompt = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.PYTHON_COMMAND_FIELD
         )
-        commandPrompt.wait_for(timeout=3000, state="visible")
+        commandPrompt.wait_for(timeout=6000, state="visible")
         page.screenshot(path="output/pythonKernel.png")
 
     def run_command_notebook(self, page: Page):
