@@ -15,8 +15,7 @@ class Indexd(object):
         self.BASE_URL = f"{pytest.root_url}/index"
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
 
-    def create_files(self, files):
-        user = "indexing_account"
+    def create_files(self, files, user="indexing_account"):
         auth = Gen3Auth(refresh_file=f"{pytest.namespace}_{user}.json")
         index = Gen3Index(auth_provider=auth)
         indexed_files = []

@@ -6,8 +6,8 @@ import time
 import pytest
 import math
 import datetime
+import re
 
-from gen3.auth import Gen3Auth
 from cdislogging import get_logger
 
 from services.audit import Audit
@@ -15,6 +15,7 @@ from services.indexd import Indexd
 from services.fence import Fence
 from pages.login import LoginPage
 from utils.gen3_admin_tasks import update_audit_service_logging
+from playwright.sync_api import Page, expect
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -30,30 +31,33 @@ class TestAuditService:
         assert update_audit_service_logging(pytest.namespace, "false")
 
     def test_audit_unauthorized_log_query(self):
-        """Audit: unauthorized log query"""
+        """Audit: unauthorized log query
+        Perform audit query using various users having different roles"""
         audit = Audit()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = ["start={}".format(timestamp)]
 
         # `mainAcct` does not have access to query any audit logs
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         audit.audit_query(
-            "presigned_url", auth, params, 403, "Main-Account Presigned-URL"
+            "presigned_url", "main_account", params, 403, "Main-Account Presigned-URL"
         )
-        audit.audit_query("login", auth, params, 403, "Main-Account Login")
+        audit.audit_query("login", "main_account", params, 403, "Main-Account Login")
 
         # `auxAcct1` has access to query presigned_url audit logs, not login
-        auth = Gen3Auth(refresh_token=pytest.api_keys["auxAcct1_account"])
-        audit.audit_query("presigned_url", auth, params, 200, "auxAcct1 Presigned-URL")
-        audit.audit_query("login", auth, params, 403, "auxAcct1 Login")
+        audit.audit_query(
+            "presigned_url", "auxAcct1_account", params, 200, "auxAcct1 Presigned-URL"
+        )
+        audit.audit_query("login", "auxAcct1_account", params, 403, "auxAcct1 Login")
 
         # `auxAcct2` has access to query login audit logs, not presigned_url
-        auth = Gen3Auth(refresh_token=pytest.api_keys["auxAcct2_account"])
-        audit.audit_query("presigned_url", auth, params, 403, "auxAcct2 Presigned-URL")
-        audit.audit_query("login", auth, params, 200, "auxAcct2 Login")
+        audit.audit_query(
+            "presigned_url", "auxAcct2_account", params, 403, "auxAcct2 Presigned-URL"
+        )
+        audit.audit_query("login", "auxAcct2_account", params, 200, "auxAcct2 Login")
 
-    def test_audit_homepage_login_events(self, page):
-        """Audit: homepage login events"""
+    def test_audit_homepage_login_events(self, page: Page):
+        """Audit: homepage login events
+        Login to homepage and query in Audit for login events"""
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
@@ -66,20 +70,77 @@ class TestAuditService:
         login_page.logout(page)
 
         # Check the query results with auxAcct2 user
-        auth = Gen3Auth(refresh_token=pytest.api_keys["auxAcct2_account"])
         expectedResults = {
             "username": "cdis.autotest@gmail.com",
             "idp": "google",
             "client_id": None,
             "status_code": 302,
         }
-        assert audit.checkQueryResults("login", auth, params, expectedResults)
+        assert audit.checkQueryResults(
+            "login", "auxAcct2_account", params, expectedResults
+        )
+
+    def test_audit_oidc_login_events(self, page: Page):
+        """Perform login using ORCID and validate audit entry
+        NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
+        secrets to be configured with ORCID credentials"""
+        audit = Audit()
+        login_page = LoginPage()
+        timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
+        params = ["start={}".format(timestamp)]
+
+        # Perform login and logout operations using main_account to create a login record for audit service to access
+        logger.info("Logging in with ORCID Test User")
+        login_page.go_to(page)
+        login_button = page.get_by_role(
+            "button",
+            name=re.compile(r"ORCID Login", re.IGNORECASE),
+        )
+        expect(login_button).to_be_visible(timeout=5000)
+        login_button.click()
+        page.wait_for_timeout(5000)
+
+        # Handle the Cookie Settings Pop-Up
+        try:
+            page.click('text="Reject Unnecessary Cookies"')
+            time.sleep(2)
+        except:
+            logger.info("Either Cookie Pop up is not present or unable to click on it")
+
+        # Perform ORCID Login
+        login_button = page.locator("input#username")
+        expect(login_button).to_be_visible(timeout=5000)
+        page.type('input[id="username"]', os.environ["CI_TEST_ORCID_ID"])
+        page.type('input[id="password"]', os.environ["CI_TEST_ORCID_PASSWORD"])
+        page.click('text="SIGN IN"')
+        page.wait_for_timeout(3000)
+        page.screenshot(path="output/AfterLogin.png", full_page=True)
+
+        # Wait for login to perform and handle any pop ups if any
+        page.wait_for_selector("//div[@class='top-bar']//a[3]", state="attached")
+        login_page.handle_popup(page)
+        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+
+        # Perform Logout
+        login_page.logout(page)
+
+        # Check the query results with auxAcct2 user
+        expectedResults = {
+            "username": os.environ["CI_TEST_ORCID_ID"],
+            "idp": "fence",
+            "fence_idp": "orcid",
+            "client_id": None,
+            "status_code": 302,
+        }
+        assert audit.checkQueryResults(
+            "login", "auxAcct2_account", params, expectedResults
+        )
 
     def test_audit_download_presignedURL_events(self):
-        """Audit: download presigned URL events"""
+        """Audit: download presigned URL events
+        Create preSignedUrls for different files and validate corresponding
+        audit log enteries are present"""
         indexd = Indexd()
-        main_auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        dummy_auth = Gen3Auth(refresh_token=pytest.api_keys["auxAcct1_account"])
         did_records = []
         did_mapping = {}
 
@@ -117,10 +178,10 @@ class TestAuditService:
             }
             self.perform_presigned_check(
                 did_mapping[file_type],
-                main_auth,
+                "main_account",
                 200,
                 file_type,
-                dummy_auth,
+                "auxAcct1_account",
                 expectedResults,
             )
 
@@ -132,7 +193,12 @@ class TestAuditService:
                 "status_code": 401,
             }
             self.perform_presigned_check(
-                did_mapping[file_type], {}, 401, file_type, dummy_auth, expectedResults
+                did_mapping[file_type],
+                None,
+                401,
+                file_type,
+                "auxAcct1_account",
+                expectedResults,
             )
 
             # Private File - mainAcct fails to request a presigned URL with a file that doesn't exists
@@ -143,7 +209,12 @@ class TestAuditService:
                 "status_code": 404,
             }
             self.perform_presigned_check(
-                "123", main_auth, 404, file_type, dummy_auth, expectedResults
+                "123",
+                "main_account",
+                404,
+                file_type,
+                "auxAcct1_account",
+                expectedResults,
             )
 
             file_type = "public_file"
@@ -155,7 +226,12 @@ class TestAuditService:
                 "status_code": 200,
             }
             self.perform_presigned_check(
-                did_mapping[file_type], {}, 200, file_type, dummy_auth, expectedResults
+                did_mapping[file_type],
+                None,
+                200,
+                file_type,
+                "auxAcct1_account",
+                expectedResults,
             )
         finally:
             indexd.delete_files(did_records)
