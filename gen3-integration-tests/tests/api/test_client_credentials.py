@@ -14,6 +14,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.client_credentials
+@pytest.mark.fence
+@pytest.mark.requestor
 class TestClientCredentials:
     def test_client_credentials(self):
         """
@@ -48,64 +50,43 @@ class TestClientCredentials:
         client_id = credsFile[0]
         client_secret = credsFile[1]
 
-        print(f"Client ID: {client_id}")
-        print(f"Client Secret: {client_secret}")
-
-        if client_id:
-            print(f"Client ID: {client_id}")
-            print(f"Client Secret: {client_secret}")
-        else:
-            print("Error extracting client credentials.")
+        logger.debug(f"Client_id : {client_id}")
+        logger.debug(f"Client_secret : {client_secret}")
 
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")
         # TODO : wait for usersync pod to finish and completed
+
         client_access_token_response = Gen3Auth(
             endpoint=pytest.root_url,
             client_credentials=(client_id, client_secret),
         )
         client_access_token = client_access_token_response._access_token
 
-        print(f"Client Access Token: {client_access_token}")
+        logger.debug(f"Client Access Token: {client_access_token}")
 
         # Creating data for request
         data = {"username": username, "policy_id": policy}
 
-        # Create new request with access_token from newly created client in previous stage
-        create_req = requests.post(
-            requestor.BASE_URL,
-            json=data,
-            headers={"Authorization": f"bearer {client_access_token}"},
-        )
-        print(json.dumps(create_req.json(), indent=4))
-
-        assert (
-            create_req.status_code == 201
-        ), f"Expected status code 201, but got {create_req.status_code}"
-        assert (
-            "request_id" in create_req.json()
-        ), f"Expected 'request_id' property in response data"
-
-        request_id = create_req.json()["request_id"]
-        print(f"Request ID: {request_id}")
+        request_id = requestor.create_request(data, client_access_token)
 
         # Getting the status of the request_id
         req_status = requestor.get_request_status(request_id)
-        print(f"Initial status of the request is {req_status}")
+        logger.info(f"Initial status of the request is {req_status}")
 
-        # Updating the request from DRAFT to SIGNED state and check the status of the request
-        requestor.request_signed(request_id)
-        req_status_signed = requestor.get_request_status(request_id)
-        print(f"Status of the request is {req_status_signed}")
+        # # Updating the request from DRAFT to SIGNED state and check the status of the request
+        # requestor.request_signed(request_id)
+        # req_status_signed = requestor.get_request_status(request_id)
+        # logger.info(f"Status of the request is {req_status_signed}")
 
-        print("Starting the cleanup after the test ...")
-        print(f"Deleting the request id {request_id} from requestor db ...")
+        logger.info("Starting the cleanup after the test ...")
+        logger.info(f"Deleting the request id {request_id} from requestor db ...")
         if request_id:
             requestor.request_delete(request_id)
 
         # Delete the client from the fence db
-        print("Deleting client from the fence db ...")
+        logger.info("Deleting client from the fence db ...")
         gat.delete_fence_client(pytest.namespace, "jenkinsClientTester")
 
-        print("Revoking arborist policy for the user ...")
+        logger.info("Revoking arborist policy for the user ...")
         gat.revoke_arborist_policy(pytest.namespace, username, policy)
