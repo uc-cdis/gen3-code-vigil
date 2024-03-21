@@ -50,9 +50,6 @@ class TestClientCredentials:
         client_id = credsFile[0]
         client_secret = credsFile[1]
 
-        logger.debug(f"Client_id : {client_id}")
-        logger.debug(f"Client_secret : {client_secret}")
-
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")
         # TODO : wait for usersync pod to finish and completed
@@ -62,8 +59,6 @@ class TestClientCredentials:
             client_credentials=(client_id, client_secret),
         )
         client_access_token = client_access_token_response._access_token
-
-        logger.debug(f"Client Access Token: {client_access_token}")
 
         # Creating data for request
         data = {"username": username, "policy_id": policy}
