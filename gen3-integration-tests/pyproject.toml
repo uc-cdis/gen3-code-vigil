@@ -40,6 +40,7 @@ markers = [
   "workspace: tests for workspace page",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
+  "guppy: tests for guppy-service"
 ]
 pythonpath = "."
 md_report = "true"
