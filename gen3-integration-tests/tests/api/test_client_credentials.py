@@ -69,10 +69,10 @@ class TestClientCredentials:
         req_status = requestor.get_request_status(request_id)
         logger.info(f"Initial status of the request is {req_status}")
 
-        # # Updating the request from DRAFT to SIGNED state and check the status of the request
-        # requestor.request_signed(request_id)
-        # req_status_signed = requestor.get_request_status(request_id)
-        # logger.info(f"Status of the request is {req_status_signed}")
+        # Updating the request from DRAFT to SIGNED state and check the status of the request
+        requestor.request_signed(request_id)
+        req_status_signed = requestor.get_request_status(request_id)
+        logger.info(f"Status of the request is {req_status_signed}")
 
         logger.info("Starting the cleanup after the test ...")
         logger.info(f"Deleting the request id {request_id} from requestor db ...")
