@@ -73,7 +73,7 @@ class Requestor(object):
         req_id = response_data_json[0]["request_id"]
         return req_id
 
-    def get_request_status(self, request_id):
+    def get_request_status(self, request_id, user="main_account"):
         """Gets the request_status for the user's request_id in requestor"""
         status_res = requests.get(
             f"{self.BASE_URL}/{request_id}", headers=pytest.auth_headers[user]
