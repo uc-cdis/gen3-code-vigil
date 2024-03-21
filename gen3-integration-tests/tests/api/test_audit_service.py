@@ -80,6 +80,7 @@ class TestAuditService:
             "login", "auxAcct2_account", params, expectedResults
         )
 
+    @pytest.mark.wip
     def test_audit_oidc_login_events(self, page: Page):
         """Perform login using ORCID and validate audit entry
         NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
