@@ -149,6 +149,8 @@ class TestAuditService:
             "login", "auxAcct2_account", params, expectedResults
         )
 
+    @pytest.mark.indexd
+    @pytest.mark.presigned_url
     def test_audit_download_presignedURL_events(self):
         """ Audit: download presigned URL events
             Steps : Create private and public files using Indexd
