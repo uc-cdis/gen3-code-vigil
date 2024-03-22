@@ -129,7 +129,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header
+              poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header --dist loadscope
 
           - name: Debug logging
             continue-on-error: true  # if this fails, we still need to run clean-up steps
