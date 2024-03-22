@@ -2,6 +2,8 @@ import json
 import os
 import pytest
 import requests
+from gen3.auth import Gen3Auth
+from gen3.file import Gen3File
 
 from cdislogging import get_logger
 
