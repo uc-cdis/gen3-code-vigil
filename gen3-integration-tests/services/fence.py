@@ -13,6 +13,7 @@ class Fence(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/user"
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
+        self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
 
     def get_access_token(self, api_key):
         """Generate access token from api key"""
