@@ -43,7 +43,9 @@ markers = [
   "graph_query: tests for querying graph data",
   "audit: tests for audit-service",
   "fence: test for fence service",
-  "requestor: test for requestor service"
+  "requestor: test for requestor service",
+  "indexd: test for indexd service",
+  "presigned_url: test for presigned_url"
 ]
 pythonpath = "."
 md_report = "true"
