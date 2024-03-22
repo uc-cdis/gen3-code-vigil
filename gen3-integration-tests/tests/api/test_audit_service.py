@@ -31,8 +31,13 @@ class TestAuditService:
         assert update_audit_service_logging(pytest.namespace, "false")
 
     def test_audit_unauthorized_log_query(self):
-        """Audit: unauthorized log query
-        Perform audit query using various users having different roles"""
+        """ Audit: unauthorized log query
+            Call Audit log query for presignel_url and login types with below users:
+            1. main account
+            2. auxAcct1 account
+            3. auxAcct2 account
+            Users will get either 200 or 403 response based on the privileges on their account
+        """
         audit = Audit()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = ["start={}".format(timestamp)]
@@ -56,8 +61,11 @@ class TestAuditService:
         audit.audit_query("login", "auxAcct2_account", params, 200, "auxAcct2 Login")
 
     def test_audit_homepage_login_events(self, page: Page):
-        """Audit: homepage login events
-        Login to homepage and query in Audit for login events"""
+        """ Audit: homepage login events
+            Steps: Login to homepage with mainAcct user
+                   Call Audit log API using auxAcct2 user
+                   Check if entry for mainAcct user is present
+        """
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
@@ -80,11 +88,14 @@ class TestAuditService:
             "login", "auxAcct2_account", params, expectedResults
         )
 
-    @pytest.mark.wip
     def test_audit_oidc_login_events(self, page: Page):
-        """Perform login using ORCID and validate audit entry
-        NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
-        secrets to be configured with ORCID credentials"""
+        """ Audit : Perform login using ORCID and validate audit entry
+            NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
+            secrets to be configured with ORCID credentials
+            Steps : Login to homepage via ORCID using ORCID credentials
+                    Call Audit log API using auxAcct2 user
+                    Check if entry for ORCID user is present
+        """
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
@@ -138,9 +149,12 @@ class TestAuditService:
         )
 
     def test_audit_download_presignedURL_events(self):
-        """Audit: download presigned URL events
-        Create preSignedUrls for different files and validate corresponding
-        audit log enteries are present"""
+        """ Audit: download presigned URL events
+            Steps : Create private and public files using Indexd
+                    Perform a download using Presigned_URL
+                    Call Audit log API using auxAcct2 user for presigned_url category
+                    Check audit logs are present for each download scenario
+        """
         indexd = Indexd()
         did_records = []
         did_mapping = {}
