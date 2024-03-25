@@ -64,7 +64,7 @@ class WorkspacePage(object):
         screenshot(page, "jupyterWorkspace")
         page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
         # after launch, workspace takes around 6 mins to load and launc
-        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=324000)
+        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=360000)
 
     def open_python_kernel(self, page: Page):
         """perform drs pull in workspace page"""
@@ -82,7 +82,7 @@ class WorkspacePage(object):
         commandPrompt = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.PYTHON_COMMAND_FIELD
         )
-        commandPrompt.wait_for(timeout=6000, state="visible")
+        commandPrompt.wait_for(timeout=60000, state="visible")
         screenshot(page, "pythonKernel")
 
     def run_command_notebook(self, page: Page):
