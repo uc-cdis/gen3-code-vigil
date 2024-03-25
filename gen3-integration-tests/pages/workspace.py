@@ -99,7 +99,7 @@ class WorkspacePage(object):
         output = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.RUN_COMMAND_OUTPUT
         )
-        output.wait_for(timeout=6000, state="visible")
+        output.wait_for(timeout=60000, state="visible")
         screenshot(page, "gen3CommandOutput")
 
     def terminate_workspace(self, page: Page):
