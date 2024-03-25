@@ -1,9 +1,12 @@
 # Workspace Page
 import os
 import pytest
-from playwright.sync_api import expect, Page
 
 from cdislogging import get_logger
+
+from playwright.sync_api import expect, Page
+
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -46,7 +49,7 @@ class WorkspacePage(object):
         """Goes to workspace page and checks if loaded correctly"""
         page.goto(self.BASE_URL)
         page.wait_for_selector(self.READY_CUE, state="visible")
-        page.screenshot(path="output/workspacePage.png", full_page=True)
+        screenshot(page, "workspacePage")
 
     def open_jupyter_workspace(self, page: Page):
         """Launch a jupyter workspace"""
@@ -58,7 +61,7 @@ class WorkspacePage(object):
         launch_button_xpath = f"{self.NOTEBOOK_CARD}//button[text()='Launch']"
         launch_button = page.locator(launch_button_xpath)
         launch_button.click()
-        page.screenshot(path="output/jupyterWorkspace.png", full_page=True)
+        screenshot(page, "jupyterWorkspace")
         page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
         # after launch, workspace takes around 6 mins to load and launc
         page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=324000)
@@ -80,24 +83,24 @@ class WorkspacePage(object):
             self.PYTHON_COMMAND_FIELD
         )
         commandPrompt.wait_for(timeout=6000, state="visible")
-        page.screenshot(path="output/pythonKernel.png")
+        screenshot(page, "pythonKernel")
 
     def run_command_notebook(self, page: Page):
-        page.screenshot(path="output/gen3CommandOutput1.png")
+        screenshot(page, "gen3CommandOutput1")
         command_input = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.PYTHON_COMMAND_FIELD
         )
         command_input.press_sequentially("!gen3 --help")
-        page.screenshot(path="output/fillCommand.png")
+        screenshot(page, "fillCommand")
         page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.RUN_COMMAND_BUTTON
         ).click()
-        page.screenshot(path="output/gen3CommandOutput1.png")
+        screenshot(page, "gen3CommandOutput1")
         output = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
             self.RUN_COMMAND_OUTPUT
         )
         output.wait_for(timeout=6000, state="visible")
-        page.screenshot(path="output/gen3CommandOutput.png")
+        screenshot(page, "gen3CommandOutput")
 
     def terminate_workspace(self, page: Page):
         # page.get_by_role("button", name="Terminate Workspace").click()

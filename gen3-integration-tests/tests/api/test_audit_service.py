@@ -15,6 +15,7 @@ from services.indexd import Indexd
 from services.fence import Fence
 from pages.login import LoginPage
 from utils.gen3_admin_tasks import update_audit_service_logging
+from utils.test_execution import screenshot
 from playwright.sync_api import Page, expect
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
@@ -31,12 +32,12 @@ class TestAuditService:
         assert update_audit_service_logging(pytest.namespace, "false")
 
     def test_audit_unauthorized_log_query(self):
-        """ Audit: unauthorized log query
-            Call Audit log query for presignel_url and login types with below users:
-            1. main account
-            2. auxAcct1 account
-            3. auxAcct2 account
-            Users will get either 200 or 403 response based on the privileges on their account
+        """Audit: unauthorized log query
+        Call Audit log query for presignel_url and login types with below users:
+        1. main account
+        2. auxAcct1 account
+        3. auxAcct2 account
+        Users will get either 200 or 403 response based on the privileges on their account
         """
         audit = Audit()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
@@ -61,10 +62,10 @@ class TestAuditService:
         audit.audit_query("login", "auxAcct2_account", params, 200, "auxAcct2 Login")
 
     def test_audit_homepage_login_events(self, page: Page):
-        """ Audit: homepage login events
-            Steps: Login to homepage with mainAcct user
-                   Call Audit log API using auxAcct2 user
-                   Check if entry for mainAcct user is present
+        """Audit: homepage login events
+        Steps: Login to homepage with mainAcct user
+               Call Audit log API using auxAcct2 user
+               Check if entry for mainAcct user is present
         """
         audit = Audit()
         login_page = LoginPage()
@@ -90,12 +91,12 @@ class TestAuditService:
 
     @pytest.mark.wip
     def test_audit_oidc_login_events(self, page: Page):
-        """ Audit : Perform login using ORCID and validate audit entry
-            NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
-            secrets to be configured with ORCID credentials
-            Steps : Login to homepage via ORCID using ORCID credentials
-                    Call Audit log API using auxAcct2 user
-                    Check if entry for ORCID user is present
+        """Audit : Perform login using ORCID and validate audit entry
+        NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
+        secrets to be configured with ORCID credentials
+        Steps : Login to homepage via ORCID using ORCID credentials
+                Call Audit log API using auxAcct2 user
+                Check if entry for ORCID user is present
         """
         audit = Audit()
         login_page = LoginPage()
@@ -127,12 +128,12 @@ class TestAuditService:
         page.type('input[id="password"]', os.environ["CI_TEST_ORCID_PASSWORD"])
         page.click('text="SIGN IN"')
         page.wait_for_timeout(3000)
-        page.screenshot(path="output/AfterLogin.png", full_page=True)
+        screenshot(page, "AfterLogin")
 
         # Wait for login to perform and handle any pop ups if any
         page.wait_for_selector("//div[@class='top-bar']//a[3]", state="attached")
         login_page.handle_popup(page)
-        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+        screenshot(page, "AfterPopUpAccept")
 
         # Perform Logout
         login_page.logout(page)
@@ -152,11 +153,11 @@ class TestAuditService:
     @pytest.mark.indexd
     @pytest.mark.presigned_url
     def test_audit_download_presignedURL_events(self):
-        """ Audit: download presigned URL events
-            Steps : Create private and public files using Indexd
-                    Perform a download using Presigned_URL
-                    Call Audit log API using auxAcct2 user for presigned_url category
-                    Check audit logs are present for each download scenario
+        """Audit: download presigned URL events
+        Steps : Create private and public files using Indexd
+                Perform a download using Presigned_URL
+                Call Audit log API using auxAcct2 user for presigned_url category
+                Check audit logs are present for each download scenario
         """
         indexd = Indexd()
         did_records = []
