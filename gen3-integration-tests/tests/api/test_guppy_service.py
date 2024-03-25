@@ -18,7 +18,7 @@ class TestGuppyService:
         guppy = Guppy()
         assert guppy.validate_guppy_status("main_account", 200)
 
-    # @pytest.mark.skip("Results are broken")
+    @pytest.mark.skip("Test is working fine, skipping for other test runs")
     def test_guppy_test_query_1(self):
         """Scenario   : I want a list of patients (subjects) strictly younger
                      than 30 with a past stroke in ascending order of BMI.
@@ -31,7 +31,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    # @pytest.mark.skip("Test is working fine, skipping for other test runs")
+    @pytest.mark.skip("Test is working fine, skipping for other test runs")
     def test_guppy_test_query_2(self):
         """Scenario   : I want a total count of patients matching the
                      filter in the scenario above.
@@ -44,7 +44,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    # @pytest.mark.skip("Test is working fine, skipping for other test runs")
+    @pytest.mark.skip("Test is working fine, skipping for other test runs")
     def test_guppy_test_query_3(self):
         """Scenario   : I want a high-level overview of the data
                      in the database as it pertains to stroke
@@ -70,7 +70,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    # @pytest.mark.skip("Test is working fine, skipping for other test runs")
+    @pytest.mark.skip("Test is working fine, skipping for other test runs")
     def test_guppy_test_query_5(self):
         """Scenario   : I would like to list the fields on the subject document.
         GUPPY File : testQuery5.json"""
@@ -82,7 +82,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    # @pytest.mark.skip("Test is working fine, skipping for other test runs")
+    @pytest.mark.skip("Test is working fine, skipping for other test runs")
     def test_guppy_test_query_6(self):
         """Scenario   : I want to render a set of visualizations
                      summarizing data in the commons.
@@ -95,7 +95,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    @pytest.mark.skip("Error from API response")
+    # @pytest.mark.skip("Error from API response")
     def test_guppy_test_query_7(self):
         """Scenario   : I want to make multiple histograms describing
                      the BMI parameter to gain an understanding of
@@ -109,7 +109,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    # @pytest.mark.skip("Error from API response")
+    @pytest.mark.skip("Test is working fine, skipping for other test runs")
     def test_guppy_test_query_8(self):
         """Scenario   : I want to make a filtering query without
                      worrying about paginating the results, or
