@@ -6,7 +6,6 @@ import time
 import pytest
 import math
 import datetime
-import re
 
 from cdislogging import get_logger
 
@@ -22,7 +21,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.audit
 class TestAuditService:
-    '''@classmethod
+    @classmethod
     def setup_class(cls):
         assert update_audit_service_logging(pytest.namespace, "true")
 
@@ -31,12 +30,12 @@ class TestAuditService:
         assert update_audit_service_logging(pytest.namespace, "false")
 
     def test_audit_unauthorized_log_query(self):
-        """ Audit: unauthorized log query
-            Call Audit log query for presignel_url and login types with below users:
-            1. main account
-            2. auxAcct1 account
-            3. auxAcct2 account
-            Users will get either 200 or 403 response based on the privileges on their account
+        """Audit: unauthorized log query
+        Call Audit log query for presignel_url and login types with below users:
+        1. main account
+        2. auxAcct1 account
+        3. auxAcct2 account
+        Users will get either 200 or 403 response based on the privileges on their account
         """
         audit = Audit()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
@@ -61,10 +60,10 @@ class TestAuditService:
         audit.audit_query("login", "auxAcct2_account", params, 200, "auxAcct2 Login")
 
     def test_audit_homepage_login_events(self, page: Page):
-        """ Audit: homepage login events
-            Steps: Login to homepage with mainAcct user
-                   Call Audit log API using auxAcct2 user
-                   Check if entry for mainAcct user is present
+        """Audit: homepage login events
+        Steps: Login to homepage with mainAcct user
+               Call Audit log API using auxAcct2 user
+               Check if entry for mainAcct user is present
         """
         audit = Audit()
         login_page = LoginPage()
@@ -90,12 +89,12 @@ class TestAuditService:
 
     @pytest.mark.wip
     def test_audit_oidc_login_events(self, page: Page):
-        """ Audit : Perform login using ORCID and validate audit entry
-            NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
-            secrets to be configured with ORCID credentials
-            Steps : Login to homepage via ORCID using ORCID credentials
-                    Call Audit log API using auxAcct2 user
-                    Check if entry for ORCID user is present
+        """Audit : Perform login using ORCID and validate audit entry
+        NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
+        secrets to be configured with ORCID credentials
+        Steps : Login to homepage via ORCID using ORCID credentials
+                Call Audit log API using auxAcct2 user
+                Check if entry for ORCID user is present
         """
         audit = Audit()
         login_page = LoginPage()
@@ -103,36 +102,11 @@ class TestAuditService:
         params = ["start={}".format(timestamp)]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
-        logger.info("Logging in with ORCID Test User")
+        logger.info("# Logging in with mainAcct")
         login_page.go_to(page)
-        login_button = page.get_by_role(
-            "button",
-            name=re.compile(r"ORCID Login", re.IGNORECASE),
-        )
-        expect(login_button).to_be_visible(timeout=5000)
-        login_button.click()
-        page.wait_for_timeout(5000)
 
-        # Handle the Cookie Settings Pop-Up
-        try:
-            page.click('text="Reject Unnecessary Cookies"')
-            time.sleep(2)
-        except:
-            logger.info("Either Cookie Pop up is not present or unable to click on it")
-
-        # Perform ORCID Login
-        login_button = page.locator("input#username")
-        expect(login_button).to_be_visible(timeout=5000)
-        page.type('input[id="username"]', os.environ["CI_TEST_ORCID_ID"])
-        page.type('input[id="password"]', os.environ["CI_TEST_ORCID_PASSWORD"])
-        page.click('text="SIGN IN"')
-        page.wait_for_timeout(3000)
-        page.screenshot(path="output/AfterLogin.png", full_page=True)
-
-        # Wait for login to perform and handle any pop ups if any
-        page.wait_for_selector("//div[@class='top-bar']//a[3]", state="attached")
-        login_page.handle_popup(page)
-        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+        # Perform Login
+        login_page.login(page, idp="ORCID")
 
         # Perform Logout
         login_page.logout(page)
@@ -152,11 +126,11 @@ class TestAuditService:
     @pytest.mark.indexd
     @pytest.mark.presigned_url
     def test_audit_download_presignedURL_events(self):
-        """ Audit: download presigned URL events
-            Steps : Create private and public files using Indexd
-                    Perform a download using Presigned_URL
-                    Call Audit log API using auxAcct2 user for presigned_url category
-                    Check audit logs are present for each download scenario
+        """Audit: download presigned URL events
+        Steps : Create private and public files using Indexd
+                Perform a download using Presigned_URL
+                Call Audit log API using auxAcct2 user for presigned_url category
+                Check audit logs are present for each download scenario
         """
         indexd = Indexd()
         did_records = []
@@ -266,7 +240,7 @@ class TestAuditService:
         fence.createSignedUrl(did, main_auth, expectedCode, file_type)
         assert audit.checkQueryResults(
             "presigned_url", dummy_auth, params, expectedResults
-        )'''
+        )
 
     def test_audit_ras_login_events(self, page: Page):
         """Audit : Perform login using RAS and validate audit entry
@@ -282,55 +256,19 @@ class TestAuditService:
         params = ["start={}".format(timestamp)]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
-        logger.info("Logging in with ORCID Test User")
+        logger.info("# Logging in with mainAcct")
         login_page.go_to(page)
-        login_button = page.get_by_role(
-            "button",
-            name=re.compile(r"Login with RAS", re.IGNORECASE),
-        )
-        expect(login_button).to_be_visible(timeout=5000)
-        login_button.click()
-        page.wait_for_timeout(5000)
 
-        # Handle the Cookie Settings Pop-Up
-        try:
-            page.click('text="Reject Unnecessary Cookies"')
-            time.sleep(2)
-        except:
-            logger.info("Either Cookie Pop up is not present or unable to click on it")
-
-        # Perform RAS Login
-        login_button = page.locator("input#USER")
-        expect(login_button).to_be_visible(timeout=5000)
-        page.type('input[id="USER"]', os.environ["CI_TEST_RAS_ID"])
-        page.type('input[id="PASSWORD"]', os.environ["CI_TEST_RAS_PASSWORD"])
-        page.click('text="Sign in"')
-        page.wait_for_timeout(3000)
-        page.screenshot(path="output/AfterLogin.png", full_page=True)
-
-        # Handle the Grant access button
-        page.wait_for_timeout(5000)
-        try:
-            page.click('text="Grant"')
-            time.sleep(2)
-        except:
-            logger.info(
-                "Either Grant access button is not present or unable to click on it"
-            )
-
-        # Wait for login to perform and handle any pop ups if any
-        page.wait_for_selector("//div[@class='top-bar']//a[3]", state="attached")
-        login_page.handle_popup(page)
-        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+        # Perform Login
+        login_page.login(page, idp="RAS")
 
         # Perform Logout
         login_page.logout(page)
 
         # Check the query results with auxAcct2 user
         expectedResults = {
-            "username": os.environ["CI_TEST_RAS_ID"],
-            "idp": "fence",
-            "fence_idp": "ras",
+            "username": str(os.environ["CI_TEST_RAS_ID"]).lower(),
+            "idp": "ras",
             "client_id": None,
             "status_code": 302,
         }

@@ -16,6 +16,14 @@ class LoginPage(object):
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@id='popup']"  # pop_up_box
+        self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
+        self.RAS_USERNAME_INPUT = "//input[@id='USER']"
+        self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
+        self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
+        self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
+        self.ORCID_USERNAME_INPUT = "//input[@id='username']"
+        self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
+        self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
 
     def go_to(self, page: Page):
         """Goes to the login page"""
@@ -23,7 +31,7 @@ class LoginPage(object):
         page.wait_for_selector(self.READY_CUE, state="visible")
         page.screenshot(path="output/LoginPage.png", full_page=True)
 
-    def login(self, page: Page, user="main_account"):
+    def login(self, page: Page, user="main_account", idp="Google"):
         """
         Sets up Dev Cookie for main Account and logs in with Google
         Also checks if the access_token exists after login
@@ -31,9 +39,10 @@ class LoginPage(object):
         page.context.add_cookies(
             [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
         )
+        msg = r"ORCID Login" if idp == "ORCID" else r"Login from " + idp
         login_button = page.get_by_role(
             "button",
-            name=re.compile(r"Login from Google", re.IGNORECASE),
+            name=re.compile(msg, re.IGNORECASE),
         )
         """
         // for manifest PRs
@@ -44,9 +53,13 @@ class LoginPage(object):
         expect(login_button).to_be_visible(timeout=5000)
         login_button.click()
         page.wait_for_timeout(3000)
+        if idp == "ORCID":
+            self.orcid_login(page)
+        elif idp == "RAS":
+            self.ras_login(page)
+
         page.screenshot(path="output/AfterLogin.png", full_page=True)
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
-
         self.handle_popup(page)
         page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
         access_token_cookie = next(
@@ -60,6 +73,34 @@ class LoginPage(object):
         assert (
             access_token_cookie is not None
         ), "Access token cookie not found after login"
+
+    def orcid_login(self, page: Page):
+        # Handle the Cookie Settings Pop-Up
+        if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
+            page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
+            page.wait_for_timeout(3000)
+        # Perform ORCID Login
+        orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
+        expect(orcid_login_button).to_be_visible(timeout=5000)
+        page.locator(self.ORCID_USERNAME_INPUT).fill(os.environ["CI_TEST_ORCID_ID"])
+        page.locator(self.ORCID_PASSWORD_INPUT).fill(
+            os.environ["CI_TEST_ORCID_PASSWORD"]
+        )
+        orcid_login_button.click()
+        page.wait_for_timeout(3000)
+
+    def ras_login(self, page: Page):
+        # Perform RAS Login
+        ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
+        expect(ras_login_button).to_be_visible(timeout=5000)
+        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_ID"])
+        page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
+        ras_login_button.click()
+        # Handle the Grant access button
+        page.wait_for_timeout(3000)
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible():
+            page.locator(self.RAS_GRANT_BUTTON).click()
+        page.wait_for_timeout(3000)
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
