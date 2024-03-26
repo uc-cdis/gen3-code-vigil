@@ -14,6 +14,7 @@ from services.indexd import Indexd
 from services.fence import Fence
 from pages.login import LoginPage
 from utils.gen3_admin_tasks import update_audit_service_logging
+from utils.test_execution import screenshot
 from playwright.sync_api import Page, expect
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))

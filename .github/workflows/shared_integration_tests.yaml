@@ -121,7 +121,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --clean-alluredir --alluredir allure-results --no-header
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header
 
           - name: Run tests
             id: run_tests
@@ -129,7 +129,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" --clean-alluredir --alluredir allure-results --no-header --dist loadscope
+              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope
 
           - name: Debug logging
             continue-on-error: true  # if this fails, we still need to run clean-up steps

@@ -1,17 +1,18 @@
 # Login Page
 import os
 import pytest
-import re
 
 from cdislogging import get_logger
 from playwright.sync_api import Page, expect
+
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class LoginPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}/login"
+        self.BASE_URL = f"{pytest.root_url_portal}/login"
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
@@ -24,12 +25,13 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
+        self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
 
     def go_to(self, page: Page):
         """Goes to the login page"""
         page.goto(self.BASE_URL)
         page.wait_for_selector(self.READY_CUE, state="visible")
-        page.screenshot(path="output/LoginPage.png", full_page=True)
+        screenshot(page, "LoginPage")
 
     def login(self, page: Page, user="main_account", idp="Google"):
         """
@@ -61,7 +63,7 @@ class LoginPage(object):
         page.screenshot(path="output/AfterLogin.png", full_page=True)
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
         self.handle_popup(page)
-        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+        screenshot(page, "AfterPopUpAccept")
         access_token_cookie = next(
             (
                 cookie
@@ -106,7 +108,7 @@ class LoginPage(object):
         """Logs out and wait for Login button on nav bar"""
         page.get_by_role("button", name="Logout").click()
         nav_bar_login_button = page.get_by_role("button", name="Login")
-        page.screenshot(path="output/AfterLogout.png")
+        screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login
@@ -116,14 +118,10 @@ class LoginPage(object):
         if popup_message:
             logger.info("Popup message found")
             page.evaluate(
-                f"""
-                (element) => {{
-                    element.scrollTop = element.scrollHeight;
-                }}
-                """,
+                "(element) => {{element.scrollTop = element.scrollHeight;}}",
                 popup_message,
             )
-            page.screenshot(path="output/PopupBox.png")
+            screenshot(page, "DataUsePopup")
             accept_button = page.get_by_role("button", name="Accept")
             if accept_button:
                 accept_button.click()
