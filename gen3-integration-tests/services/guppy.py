@@ -43,6 +43,7 @@ class Guppy(object):
             encoding="UTF-8"
         )
         queryToSubmit = "".join(queryFile.split("\n"))
+        logger.info(queryToSubmit)
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         url = self.API_GUPPY_ENDPOINT + endpoint
         headers = {

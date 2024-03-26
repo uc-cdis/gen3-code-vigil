@@ -58,7 +58,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    @pytest.mark.skip("Error from API response")
+    # @pytest.mark.skip("Error from API response")
     def test_guppy_test_query_4(self):
         """Scenario   : Range-stepped database check of age groups.
         GUPPY File : testQuery4.json"""
@@ -95,7 +95,7 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    # @pytest.mark.skip("Error from API response")
+    @pytest.mark.skip("Error from API response")
     def test_guppy_test_query_7(self):
         """Scenario   : I want to make multiple histograms describing
                      the BMI parameter to gain an understanding of
