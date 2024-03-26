@@ -41,27 +41,18 @@ class LoginPage(object):
         page.context.add_cookies(
             [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
         )
-        msg = r"ORCID Login" if idp == "ORCID" else r"Login from " + idp
-        login_button = page.get_by_role(
-            "button",
-            name=re.compile(msg, re.IGNORECASE),
-        )
-        """
-        // for manifest PRs
-        name=re.compile(
-                r"Dev login - set username in 'dev_login' cookie", re.IGNORECASE
-            ),
-        """
-        expect(login_button).to_be_visible(timeout=5000)
-        login_button.click()
-        page.wait_for_timeout(3000)
         if idp == "ORCID":
+            page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
         elif idp == "RAS":
+            page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
-
-        page.screenshot(path="output/AfterLogin.png", full_page=True)
+        else:
+            page.locator(self.LOGIN_BUTTON).click()
+        page.wait_for_timeout(3000)
+        screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
+
         self.handle_popup(page)
         screenshot(page, "AfterPopUpAccept")
         access_token_cookie = next(
