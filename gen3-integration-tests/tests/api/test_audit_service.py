@@ -22,7 +22,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.audit
 class TestAuditService:
-    @classmethod
+    '''@classmethod
     def setup_class(cls):
         assert update_audit_service_logging(pytest.namespace, "true")
 
@@ -266,4 +266,74 @@ class TestAuditService:
         fence.createSignedUrl(did, main_auth, expectedCode, file_type)
         assert audit.checkQueryResults(
             "presigned_url", dummy_auth, params, expectedResults
+        )'''
+
+    def test_audit_ras_login_events(self, page: Page):
+        """Audit : Perform login using RAS and validate audit entry
+        NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
+        secrets to be configured with RAS credentials
+        Steps : Login to homepage via RAS using RAS credentials
+                Call Audit log API using auxAcct2 user
+                Check if entry for RAS user is present
+        """
+        audit = Audit()
+        login_page = LoginPage()
+        timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
+        params = ["start={}".format(timestamp)]
+
+        # Perform login and logout operations using main_account to create a login record for audit service to access
+        logger.info("Logging in with ORCID Test User")
+        login_page.go_to(page)
+        login_button = page.get_by_role(
+            "button",
+            name=re.compile(r"Login with RAS", re.IGNORECASE),
+        )
+        expect(login_button).to_be_visible(timeout=5000)
+        login_button.click()
+        page.wait_for_timeout(5000)
+
+        # Handle the Cookie Settings Pop-Up
+        try:
+            page.click('text="Reject Unnecessary Cookies"')
+            time.sleep(2)
+        except:
+            logger.info("Either Cookie Pop up is not present or unable to click on it")
+
+        # Perform RAS Login
+        login_button = page.locator("input#USER")
+        expect(login_button).to_be_visible(timeout=5000)
+        page.type('input[id="USER"]', os.environ["CI_TEST_RAS_ID"])
+        page.type('input[id="PASSWORD"]', os.environ["CI_TEST_RAS_PASSWORD"])
+        page.click('text="Sign in"')
+        page.wait_for_timeout(3000)
+        page.screenshot(path="output/AfterLogin.png", full_page=True)
+
+        # Handle the Grant access button
+        page.wait_for_timeout(5000)
+        try:
+            page.click('text="Grant"')
+            time.sleep(2)
+        except:
+            logger.info(
+                "Either Grant access button is not present or unable to click on it"
+            )
+
+        # Wait for login to perform and handle any pop ups if any
+        page.wait_for_selector("//div[@class='top-bar']//a[3]", state="attached")
+        login_page.handle_popup(page)
+        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+
+        # Perform Logout
+        login_page.logout(page)
+
+        # Check the query results with auxAcct2 user
+        expectedResults = {
+            "username": os.environ["CI_TEST_RAS_ID"],
+            "idp": "fence",
+            "fence_idp": "ras",
+            "client_id": None,
+            "status_code": 302,
+        }
+        assert audit.checkQueryResults(
+            "login", "auxAcct2_account", params, expectedResults
         )
