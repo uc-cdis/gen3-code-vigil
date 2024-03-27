@@ -21,6 +21,10 @@ on:
         required: true
       QA_DASHBOARD_S3_PATH:
         required: true
+      CI_TEST_ORCID_ID:
+        required: true
+      CI_TEST_ORCID_PASSWORD:
+        required: true
 
 
 concurrency:
