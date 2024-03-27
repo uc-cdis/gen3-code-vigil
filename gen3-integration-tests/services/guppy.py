@@ -37,7 +37,7 @@ class Guppy(object):
         endpoint="/graphql",
     ):
         queryFile = (
-            TEST_DATA_PATH_OBJECT / "guppy_data" / "tesData" / queryFile
+            TEST_DATA_PATH_OBJECT / "guppy_data" / "testData" / queryFile
         ).read_text(encoding="UTF-8")
         responseFile = (
             TEST_DATA_PATH_OBJECT / "guppy_data" / "testData" / responseFile
