@@ -43,9 +43,11 @@ class LoginPage(object):
         )
         if idp == "ORCID":
             page.locator("//button[normalize-space()='ORCID Login']").click()
+            page.wait_for_timeout(3000)
             self.orcid_login(page)
         elif idp == "RAS":
             page.locator("//button[normalize-space()='Login from RAS']").click()
+            page.wait_for_timeout(3000)
             self.ras_login(page)
         else:
             page.locator(self.LOGIN_BUTTON).click()
@@ -79,6 +81,7 @@ class LoginPage(object):
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
         )
+        page.screenshot(path="output/TempCheck.png", full_page=True)
         orcid_login_button.click()
         page.wait_for_timeout(3000)
 
