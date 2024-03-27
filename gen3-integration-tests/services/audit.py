@@ -10,8 +10,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class Audit(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}/audit"
-        self.AUDIT_LOG_ENDPOINT = f"{self.BASE_URL}/log"
+        self.BASE_ENDPOINT = "/audit"
+        self.AUDIT_LOG_ENDPOINT = f"{self.BASE_ENDPOINT}/log"
 
     def audit_query(self, logCategory, user, params, expectedStatus, audit_category):
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)

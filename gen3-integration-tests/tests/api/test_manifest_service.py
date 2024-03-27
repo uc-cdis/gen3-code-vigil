@@ -12,9 +12,11 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestManifestService:
     def test_manifest_service(self):
         """
-        1. Create a manifest for one user
-        2. Verify that the manifest is accessible to the same user
-        3. Verify that the manifest is inaccessible to any other user
+        Scenario: Create a manifest and verify access
+        Steps:
+            1. Create a manifest for one user
+            2. Verify that the manifest is accessible to the same user
+            3. Verify that the manifest is inaccessible to any other user
         """
         manifest_service = ManifestService()
         test_data = [{"object_id": "fake_object_id", "case_id": "fake_case_id"}]

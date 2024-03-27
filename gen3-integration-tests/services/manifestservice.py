@@ -11,7 +11,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class ManifestService(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}/manifests/"
+        self.BASE_ENDPOINT = "/manifests/"  # to be used in Gen3Auth
+        self.BASE_URL = (
+            f"{pytest.root_url}/{self.BASE_ENDPOINT}"  # to be used in requests
+        )
 
     def post_manifest_for_user(self, user: str, data: list):
         """
@@ -21,7 +24,9 @@ class ManifestService(object):
         """
         logger.info(f"Posting manifest for user {user} with data {data}")
         res = requests.post(
-            self.BASE_URL, json=data, auth=Gen3Auth(refresh_token=pytest.api_keys[user])
+            f"{self.BASE_URL}",
+            json=data,
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         status = res.status_code
         resp = res.json()
@@ -34,8 +39,7 @@ class ManifestService(object):
         Returns the response text as a string
         """
         logger.info(f"Fetching manifest data for user {user}")
-        res = requests.get(
-            self.BASE_URL, auth=Gen3Auth(refresh_token=pytest.api_keys[user])
-        )
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+        res = auth.curl(self.BASE_ENDPOINT)
         logger.info(res.text)
         return res.text
