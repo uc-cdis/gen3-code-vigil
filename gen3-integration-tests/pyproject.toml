@@ -1,6 +1,7 @@
 [tool.poetry]
 name = "gen3-integration-tests"
 version = "0.1.0"
+package-mode = false
 description = "Gen3 Integration Tests"
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -38,9 +39,15 @@ markers = [
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
   "workspace: tests for workspace page",
+  "client_credentials: tests for client credentials",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
   "guppy: tests for guppy-service"
+  "audit: tests for audit-service",
+  "fence: test for fence service",
+  "requestor: test for requestor service",
+  "indexd: test for indexd service",
+  "presigned_url: test for presigned_url"
 ]
 pythonpath = "."
 md_report = "true"

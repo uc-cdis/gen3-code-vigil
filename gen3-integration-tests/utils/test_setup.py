@@ -100,4 +100,4 @@ def generate_graph_data():
     logger.info("Done generating data:")
     for f_path in sorted(os.listdir(data_path)):
         with open(data_path / f_path, "r") as f:
-            logger.info(f"{f_path}:\n{f.read()}")
+            logger.debug(f"{f_path}:\n{f.read()}")
