@@ -203,7 +203,7 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
         raise Exception("Build number not found")
 
 
-def run_guppy_gen3_setup(test_env_namespace, audit_logging):
+def run_guppy_gen3_setup(test_env_namespace):
     """
     Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
     """
