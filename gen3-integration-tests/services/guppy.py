@@ -36,12 +36,12 @@ class Guppy(object):
         expectedStatus,
         endpoint="/graphql",
     ):
-        queryFile = (TEST_DATA_PATH_OBJECT / "guppy_data" / queryFile).read_text(
-            encoding="UTF-8"
-        )
-        responseFile = (TEST_DATA_PATH_OBJECT / "guppy_data" / responseFile).read_text(
-            encoding="UTF-8"
-        )
+        queryFile = (
+            TEST_DATA_PATH_OBJECT / "guppy_data" / "tesData" / queryFile
+        ).read_text(encoding="UTF-8")
+        responseFile = (
+            TEST_DATA_PATH_OBJECT / "guppy_data" / "testData" / responseFile
+        ).read_text(encoding="UTF-8")
         queryToSubmit = "".join(queryFile.split("\n"))
         logger.info(queryToSubmit)
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
