@@ -21,9 +21,15 @@ class TestGuppyService:
         assert guppy.validate_guppy_status("main_account", 200)
 
     def test_guppy_test_query_1(self):
-        """Scenario   : I want a list of patients (subjects) strictly younger
-                     than 30 with a past stroke in ascending order of BMI.
-        GUPPY File : testQuery1.json"""
+        """
+        Scenario:
+        I want a list of patients (subjects) strictly younger
+        than 30 with a past stroke in ascending order of BMI.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery1.json
+            2. Validate API response against data in tesResponse1.json
+        """
         guppy = Guppy()
         queryFile = "testQuery1.json"
         responseFile = "testResponse1.json"
@@ -33,9 +39,15 @@ class TestGuppyService:
         )
 
     def test_guppy_test_query_2(self):
-        """Scenario   : I want a total count of patients matching the
-                     filter in the scenario above.
-        GUPPY File : testQuery2.json"""
+        """
+        Scenario:
+        I want a total count of patients matching the
+        filter in the scenario above.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery2.json
+            2. Validate API response against data in tesResponse2.json
+        """
         guppy = Guppy()
         queryFile = "testQuery2.json"
         responseFile = "testResponse2.json"
@@ -45,10 +57,16 @@ class TestGuppyService:
         )
 
     def test_guppy_test_query_3(self):
-        """Scenario   : I want a high-level overview of the data
-                     in the database as it pertains to stroke
-                     occurrence and age groups represented.
-        GUPPY File : testQuery3.json"""
+        """
+        Scenario:
+        I want a high-level overview of the data
+        in the database as it pertains to stroke
+        occurrence and age groups represented.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery3.json
+            2. Validate API response against data in tesResponse3.json
+        """
         guppy = Guppy()
         queryFile = "testQuery3.json"
         responseFile = "testResponse3.json"
@@ -57,10 +75,16 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    @pytest.mark.skip("Error from API response")
+    @pytest.mark.wip("Error from API response")
     def test_guppy_test_query_4(self):
-        """Scenario   : Range-stepped database check of age groups.
-        GUPPY File : testQuery4.json"""
+        """
+        Scenario:
+        Range-stepped database check of age groups.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery4.json
+            2. Validate API response against data in tesResponse4.json
+        """
         guppy = Guppy()
         queryFile = "testQuery4.json"
         responseFile = "testResponse4.json"
@@ -70,8 +94,14 @@ class TestGuppyService:
         )
 
     def test_guppy_test_query_5(self):
-        """Scenario   : I would like to list the fields on the subject document.
-        GUPPY File : testQuery5.json"""
+        """
+        Scenario:
+        I would like to list the fields on the subject document.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery5.json
+            2. Validate API response against data in tesResponse5.json
+        """
         guppy = Guppy()
         queryFile = "testQuery5.json"
         responseFile = "testResponse5.json"
@@ -81,9 +111,15 @@ class TestGuppyService:
         )
 
     def test_guppy_test_query_6(self):
-        """Scenario   : I want to render a set of visualizations
-                     summarizing data in the commons.
-        GUPPY File : testQuery6.json"""
+        """
+        Scenario:
+        I want to render a set of visualizations
+        summarizing data in the commons.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery6.json
+            2. Validate API response against data in tesResponse6.json
+        """
         guppy = Guppy()
         queryFile = "testQuery6.json"
         responseFile = "testResponse6.json"
@@ -93,10 +129,15 @@ class TestGuppyService:
         )
 
     def test_guppy_test_query_7(self):
-        """Scenario   : I want to make multiple histograms describing
-                     the BMI parameter to gain an understanding of
-                     its distribution.
-        GUPPY File : testQuery7.json"""
+        """
+        Scenario:
+        I want to make multiple histograms describing the BMI
+        parameter to gain an understanding of its distribution.
+
+        Steps:
+            1. Call API guppy/graphql using Query in testQuery7.json
+            2. Validate API response against data in tesResponse7.json
+        """
         guppy = Guppy()
         queryFile = "testQuery7.json"
         responseFile = "testResponse7.json"
@@ -106,10 +147,14 @@ class TestGuppyService:
         )
 
     def test_guppy_test_query_8(self):
-        """Scenario   : I want to make a filtering query without
-                     worrying about paginating the results, or
-                     whether the result will be > 10k records.
-        GUPPY File : testQuery8.json"""
+        """Scenario:
+        I want to make a filtering query without worrying about
+        paginating the results, or whether the result will be > 10k records.
+
+        Steps:
+            1. Call API guppy/download using Query in testQuery8.json
+            2. Validate API response against data in tesResponse8.json
+        """
         guppy = Guppy()
         queryFile = "testQuery8.json"
         responseFile = "testResponse8.json"

@@ -13,11 +13,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class Guppy(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}"
         self.API_GUPPY_ENDPOINT = "/guppy"
 
     def validate_guppy_status(self, user, expectedStatus):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         url = self.API_GUPPY_ENDPOINT + "/_status"
         response = auth.curl(path=url)
         logger.info("Guppy status code : " + str(response.status_code))
@@ -44,14 +43,14 @@ class Guppy(object):
         ).read_text(encoding="UTF-8")
         queryToSubmit = "".join(queryFile.split("\n"))
         logger.info(queryToSubmit)
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         url = self.API_GUPPY_ENDPOINT + endpoint
         headers = {
             "Content-Type": "application/json",
             "Authorization": "bearer {}".format(auth.get_access_token()),
         }
         response = requests.post(
-            url=self.BASE_URL + url, data=queryToSubmit, headers=headers
+            url=pytest.root_url + url, data=queryToSubmit, headers=headers
         )
         logger.info(f"Status code: {response.status_code}")
         assert expectedStatus == response.status_code
