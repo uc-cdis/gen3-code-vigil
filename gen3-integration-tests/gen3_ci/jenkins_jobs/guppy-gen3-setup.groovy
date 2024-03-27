@@ -34,7 +34,7 @@ pipeline {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
             steps {
-                dir("audit-service-logging"){
+                dir("guppy-gen3-setup"){
                     script {
                         try {
                             sh '''#!/bin/bash +x
