@@ -1,6 +1,5 @@
 import os
 import pytest
-import requests
 
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
@@ -11,12 +10,12 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class Audit(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}"
-        self.API_AUDIT_ENDPOINT = "/audit/log"
+        self.BASE_ENDPOINT = "/audit"
+        self.AUDIT_LOG_ENDPOINT = f"{self.BASE_ENDPOINT}/log"
 
     def audit_query(self, logCategory, user, params, expectedStatus, audit_category):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        url = self.API_AUDIT_ENDPOINT + "/" + logCategory
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
         response = auth.curl(path=url)
         logger.info(audit_category + " status code : " + str(response.status_code))
@@ -24,10 +23,10 @@ class Audit(object):
         return True
 
     def checkQueryResults(self, logCategory, user, params, expectedResults):
-        url = self.API_AUDIT_ENDPOINT + "/" + logCategory
+        url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
         counter = 0
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
 
         while counter < 10:
             time.sleep(30)
