@@ -52,6 +52,7 @@ def pytest_configure(config):
             pytest.auth_headers[user],
         ) = setup.get_api_key_and_auth_header(user)
 
+    # Prevent pytest-xdist from running this on each worker individually
     if not hasattr(config, "workerinput"):
         # Get configuration files
         setup.get_configuration_files()

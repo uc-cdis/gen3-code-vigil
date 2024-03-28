@@ -56,10 +56,10 @@ All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-inte
 # Designing tests
 
 ## Design principles (not optional)
-- The tests must be independent and idempotent. This is essential since we run tests in parallel.
+- The test suites must be independent and idempotent. This is essential since we run test classes in parallel by using xdist (loadscope).
 - All tests should be able to run anywhere (locally / CI) without changing test code.
 - Debugging must be done locally, not in CI pipeline.
-- Documentation is important. Code is incomplete without it.
+- Documentation is essential. Code is incomplete without it.
 - Avoid hard waits. Test should wait for application state, not otherwise.
 - Tag tests appropriately.
 - Add test steps as docstrings in the test for understanding the purpose of the test easily.
