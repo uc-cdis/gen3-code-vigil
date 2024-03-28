@@ -5,7 +5,7 @@ import os
 import pytest
 
 from cdislogging import get_logger
-from utils.gen3_admin_tasks import run_guppy_gen3_setup
+from utils.gen3_admin_tasks import mutate_manifest_for_guppy_test
 from services.guppy import Guppy
 
 
@@ -17,7 +17,7 @@ class TestGuppyService:
     @classmethod
     def setup_class(cls):
         guppy = Guppy()
-        assert run_guppy_gen3_setup(pytest.namespace)
+        assert mutate_manifest_for_guppy_test(pytest.namespace)
         assert guppy.validate_guppy_status("main_account", 200)
 
     def test_guppy_test_query_1(self):
@@ -75,7 +75,6 @@ class TestGuppyService:
             queryFile, responseFile, queryType, "main_account", 200
         )
 
-    @pytest.mark.wip("Error from API response")
     def test_guppy_test_query_4(self):
         """
         Scenario:

@@ -13,11 +13,16 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 class Guppy(object):
     def __init__(self):
-        self.API_GUPPY_ENDPOINT = "/guppy"
+        self.BASE_ENDPOINT = "/guppy"
 
     def validate_guppy_status(self, user, expectedStatus):
+        """
+        Validate the status of Guppy
+        user - pick one from conftest.py - main_account / indexing_account / auxAcct1_account /
+            auxAcct2_account / user0_account
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        url = self.API_GUPPY_ENDPOINT + "/_status"
+        url = self.BASE_ENDPOINT + "/_status"
         response = auth.curl(path=url)
         logger.info("Guppy status code : " + str(response.status_code))
         assert expectedStatus == response.status_code
@@ -35,6 +40,11 @@ class Guppy(object):
         expectedStatus,
         endpoint="/graphql",
     ):
+        """
+        Perform API call using queryFile and validate against responseFile
+        queryType - Can be one of the following : mapping / aggregation / historgram / download
+        endpoint - Can be one of the following : /graphql or /download
+        """
         queryFile = (
             TEST_DATA_PATH_OBJECT / "guppy_data" / "testData" / queryFile
         ).read_text(encoding="UTF-8")
@@ -44,7 +54,7 @@ class Guppy(object):
         queryToSubmit = "".join(queryFile.split("\n"))
         logger.info(queryToSubmit)
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        url = self.API_GUPPY_ENDPOINT + endpoint
+        url = self.BASE_ENDPOINT + endpoint
         headers = {
             "Content-Type": "application/json",
             "Authorization": "bearer {}".format(auth.get_access_token()),
@@ -54,6 +64,8 @@ class Guppy(object):
         )
         logger.info(f"Status code: {response.status_code}")
         assert expectedStatus == response.status_code
+
+        # Check queryType and call function accordingly
         if queryType == "mapping":
             assert self.match_mapping(dict(response.json()), eval(responseFile))
         elif queryType == "aggregation":
@@ -69,6 +81,10 @@ class Guppy(object):
         return True
 
     def match_mapping(self, actualResponse, expectedResponse):
+        """ "
+        Function to validate API Call output against responseFile
+        for Mapping query type
+        """
         actualResponse = actualResponse["data"]
         expectedResponse = expectedResponse["data"]
         if "_mapping" not in actualResponse.keys():
@@ -81,6 +97,10 @@ class Guppy(object):
         return True
 
     def match_aggregation(self, actualResponse, expectedResponse):
+        """ "
+        Function to validate API Call output against responseFile
+        for Aggregation query type
+        """
         actualResponse = actualResponse["data"]
         expectedResponse = expectedResponse["data"]
         if "_aggregation" not in actualResponse.keys():
@@ -97,6 +117,10 @@ class Guppy(object):
         return True
 
     def match_histogram(self, actualResponse, expectedResponse):
+        """ "
+        Function to validate API Call output against responseFile
+        for Histogram query type
+        """
         actualResponse = actualResponse["data"]
         expectedResponse = expectedResponse["data"]
         if "_aggregation" not in actualResponse.keys():
@@ -124,6 +148,10 @@ class Guppy(object):
         return True
 
     def match_data_query(self, actualResponse, expectedResponse):
+        """ "
+        Function to validate API Call output against responseFile
+        for Download/Default query type
+        """
         assert len(actualResponse) == len(expectedResponse)
         for item in expectedResponse:
             if item not in actualResponse:

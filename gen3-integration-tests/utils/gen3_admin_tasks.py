@@ -203,7 +203,7 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
         raise Exception("Build number not found")
 
 
-def run_guppy_gen3_setup(test_env_namespace):
+def mutate_manifest_for_guppy_test(test_env_namespace):
     """
     Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
     """
@@ -211,7 +211,7 @@ def run_guppy_gen3_setup(test_env_namespace):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "guppy-gen3-setup",
+        "mutate-manifest-for-guppy-test",
     )
     params = {
         "NAMESPACE": test_env_namespace,

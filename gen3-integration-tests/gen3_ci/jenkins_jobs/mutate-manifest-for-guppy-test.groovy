@@ -29,7 +29,7 @@ pipeline {
                 ])
             }
         }
-        stage('Guppy Gen3 Setup') {
+        stage('Mutate Manifest for Guppy Test') {
             options {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
