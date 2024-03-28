@@ -175,7 +175,8 @@ def revoke_arborist_policy(test_env_namespace, username, policy):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
-        
+
+
 def update_audit_service_logging(test_env_namespace, audit_logging):
     """
     Runs jenkins job to enable/disable audit logging
@@ -188,6 +189,31 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
     )
     params = {
         "AUDIT_LOGGING": audit_logging,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=300)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def mutate_manifest_for_guppy_test(test_env_namespace):
+    """
+    Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "mutate-manifest-for-guppy-test",
+    )
+    params = {
         "NAMESPACE": test_env_namespace,
     }
     build_num = job.build_job(params)
