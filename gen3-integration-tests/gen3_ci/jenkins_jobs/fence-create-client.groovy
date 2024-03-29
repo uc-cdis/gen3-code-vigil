@@ -48,11 +48,13 @@ pipeline {
                         source $GEN3_HOME/gen3/gen3setup.sh
 
                         # construct fence-create command depending on the parameters provided by the run
-                        FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-create"
+                        FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create"
                         echo "${FENCE_CMD}"
 
                         if [ -n "$ARBORIST_POLICIES" ]; then
-                            FENCE_CMD="${FENCE_CMD} --arborist http://arborist-service/ --policies ${ARBORIST_POLICIES}"
+                            FENCE_CMD="${FENCE_CMD} --arborist http://arborist-service/ client-create --policies ${ARBORIST_POLICIES}"
+                        else
+                            FENCE_CMD="${FENCE_CMD} client-create"
                         fi
 
                         case "$CLIENT_TYPE" in
