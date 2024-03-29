@@ -52,7 +52,7 @@ pipeline {
                         echo "${FENCE_CMD}"
 
                         if [ -n "$ARBORIST_POLICIES" ]; then
-                            FENCE_CMD="${FENCE_CMD} --arborist http://arborist-service/ client-create --policies ${ARBORIST_POLICIES}"
+                            FENCE_CMD="${FENCE_CMD} client-create --policies ${ARBORIST_POLICIES}"
                         else
                             FENCE_CMD="${FENCE_CMD} client-create"
                         fi
