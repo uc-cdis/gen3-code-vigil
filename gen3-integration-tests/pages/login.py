@@ -78,6 +78,7 @@ class LoginPage(object):
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
         page.locator(self.ORCID_USERNAME_INPUT).fill(os.environ["CI_TEST_ORCID_ID"])
+        logger.info(os.environ["CI_TEST_ORCID_ID"])
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
         )
