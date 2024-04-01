@@ -15,6 +15,7 @@ class Indexd(object):
         self.BASE_URL = f"{pytest.root_url}/index"
 
     def create_files(self, files, user="indexing_account"):
+        """Create new indexd record"""
         auth = Gen3Auth(refresh_file=f"{pytest.namespace}_{user}.json")
         index = Gen3Index(auth_provider=auth)
         indexed_files = []
@@ -43,17 +44,18 @@ class Indexd(object):
         return indexed_files
 
     def get_files(self, indexd_guid, user="indexing_account"):
+        """Get record from indexd"""
         auth = Gen3Auth(refresh_file=f"{pytest.namespace}_{user}.json")
         indexd = Gen3Index(auth_provider=auth)
         try:
-            logger.debug(guid=indexd_guid)
-            record = indexd.get_record(indexd_guid)
+            logger.debug(indexd_guid)
+            record = indexd.get_record(guid=indexd_guid)
             logger.info(f"Indexd Record found {record}")
         except Exception as e:
-            logger.exception(f"Cannot find indexd record {record}")
+            logger.exception(f"Cannot find indexd record")
 
     def delete_files(self, guids):
-        # For each guid perform delete operation on indexd
+        """Delete indexd record"""
         for guid in guids:
             user = "indexing_account"
             auth = Gen3Auth(refresh_file=f"{pytest.namespace}_{user}.json")
