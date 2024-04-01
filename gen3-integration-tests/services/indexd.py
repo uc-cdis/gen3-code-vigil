@@ -13,7 +13,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index"
-        self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
 
     def create_files(self, files, user="indexing_account"):
         auth = Gen3Auth(refresh_file=f"{pytest.namespace}_{user}.json")
@@ -42,6 +41,16 @@ class Indexd(object):
             except Exception as e:
                 logger.exception(msg="Failed indexd submission got exception")
         return indexed_files
+
+    def get_files(self, indexd_guid, user="indexing_account"):
+        auth = Gen3Auth(refresh_file=f"{pytest.namespace}_{user}.json")
+        indexd = Gen3Index(auth_provider=auth)
+        try:
+            logger.debug(guid=indexd_guid)
+            record = indexd.get_record(indexd_guid)
+            logger.info(f"Indexd Record found {record}")
+        except Exception as e:
+            logger.exception(f"Cannot find indexd record {record}")
 
     def delete_files(self, guids):
         # For each guid perform delete operation on indexd
