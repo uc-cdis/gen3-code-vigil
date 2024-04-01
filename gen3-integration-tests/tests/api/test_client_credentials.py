@@ -19,7 +19,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestClientCredentials:
     def test_client_credentials(self):
         """
-        Scenario: Validate client with grant type as Client Credentials
+        Scenario: Test Client Credentials
         Steps:
             1. Create a client in Fence Db with grant_type=client_credential and run usersync
             2. Create a client_access_token from the client_id and client_secret
