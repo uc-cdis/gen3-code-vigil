@@ -1,0 +1,1 @@
+{"data":{"_aggregation":{"subject":{"_aliquots_count":{"histogram":[{"key":[0,5],"min":0,"max":4,"count":97},{"key":[5,10],"min":8,"max":8,"count":3}]}}}}}
