@@ -66,7 +66,6 @@ class LoginPage(object):
             and res["components"]["topBar"]["useProfileDropdown"]
         ):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
-            page.wait_for_timeout(3000)
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
         # Click on Logout button to logout
         else:
