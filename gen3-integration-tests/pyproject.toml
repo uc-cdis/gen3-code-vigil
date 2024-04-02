@@ -34,18 +34,28 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 addopts = "--log-cli-level=ERROR"
 markers = [
+  # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
-  "mds: tests for metadata-service",
-  "portal: tests for data-portal",
-  "workspace: tests for workspace page",
-  "client_credentials: tests for client credentials",
-  "graph_submission: tests for submitting graph data",
-  "graph_query: tests for querying graph data",
+  # services
   "audit: tests for audit-service",
   "fence: test for fence service",
-  "requestor: test for requestor service",
-  "indexd: test for indexd service",
-  "presigned_url: test for presigned_url"
+  "requestor: tests for requestor service",
+  "indexd: tests for indexd service",
+  "manifestservice: tests for manifest service",
+  "mds: tests for metadata-service",
+  "portal: tests for data-portal",
+  "frontend_framework: tests for frontend-framework",
+  # features
+  "workspace: tests for workspace page",
+  "client_credentials: tests for fence client credentials",
+  "graph_submission: tests for submitting graph data",
+  "graph_query: tests for querying graph data",
+  "guppy: tests for guppy-service",
+  "audit: tests for audit-service",
+  "fence: test for fence service",
+  "requestor: tests for requestor service",
+  "indexd: tests for indexd service",
+  "manifestservice: tests for manifest service"
 ]
 pythonpath = "."
 md_report = "true"
