@@ -6,6 +6,7 @@ from cdislogging import get_logger
 from playwright.sync_api import Page, expect
 
 from utils.test_execution import screenshot
+from utils.gen3_admin_tasks import get_portal_config
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -18,6 +19,10 @@ class LoginPage(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@id='popup']"  # pop_up_box
         self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
+        self.USER_PROFILE_DROPDOWN = (
+            "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
+        )
+        self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
     def go_to(self, page: Page):
         """Goes to the login page"""
@@ -54,7 +59,17 @@ class LoginPage(object):
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
-        page.get_by_role("button", name="Logout").click()
+        res = get_portal_config(pytest.namespace)
+        # Check if useProfileDropdown is set to True and perform logout accordingly
+        if (
+            "useProfileDropdown" in res["components"]["topBar"].keys()
+            and res["components"]["topBar"]["useProfileDropdown"]
+        ):
+            page.locator(self.USER_PROFILE_DROPDOWN).click()
+            page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
+        # Click on Logout button to logout
+        else:
+            page.get_by_role("button", name="Logout").click()
         nav_bar_login_button = page.get_by_role("button", name="Login")
         screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
