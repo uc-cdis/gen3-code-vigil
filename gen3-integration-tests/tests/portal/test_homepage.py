@@ -12,11 +12,12 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestHomePage:
     def test_home_page_navigation(self, page):
         """
+        Scenario: Login to Home Page and verify summary & cards elements
         Steps:
-        1. Navigate to home page
-        2. Login using the main account
-        3. Verify the summary and cards are as expected
-        4. Logout
+            1. Navigate to home page
+            2. Login using the main account
+            3. Verify the summary and cards are as expected
+            4. Logout
         """
         # Go to home page
         home_page = home.HomePage()
