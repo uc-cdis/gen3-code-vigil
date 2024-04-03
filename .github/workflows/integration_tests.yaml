@@ -11,6 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  delete_pr_comments:
+    name: Delete Existing PR comments
+    uses: ./.github/workflows/delete_pr_comments.yaml
   integration_tests:
     name: Integration tests
     uses: ./.github/workflows/shared_integration_tests.yaml
