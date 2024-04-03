@@ -1,12 +1,13 @@
-import subprocess
 import os
 import pytest
+import subprocess
 import datetime
 import re
 import shutil
 import time
 
 from services.indexd import Indexd
+import utils.gen3_client_install as gc
 
 from cdislogging import get_logger
 
@@ -18,37 +19,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestGen3Client:
     @classmethod
     def setup_class(cls):
-        # Installing the gen3-client executable
-        get_go_path = subprocess.run(
-            ["go env GOPATH"], shell=True, stdout=subprocess.PIPE
-        )
-        cls.go_path = get_go_path.stdout.decode("utf-8").strip()
-        logger.info(f"#### goPath: {cls.go_path}")
-        # Check if the gen3-client folder exists in GOPATH
-        os.chdir(f"{cls.go_path}")
-        os.makedirs(f"{cls.go_path}/src/github.com/", exist_ok=True)
-        os.chmod(f"{cls.go_path}/src/github.com", int("777", base=8))
-        os.makedirs(f"{cls.go_path}/src/github.com/uc-cdis/", exist_ok=True)
-        os.chmod(f"{cls.go_path}/src/github.com/uc-cdis", int("777", base=8))
-        os.chdir(f"{cls.go_path}/src/github.com/uc-cdis/")
-        subprocess.run(
-            ["git clone git@github.com:uc-cdis/cdis-data-client.git"], shell=True
-        )
-        subprocess.call(["mv cdis-data-client gen3-client"], shell=True)
-        os.chdir("gen3-client")
-        subprocess.run(["go get -d ./..."], shell=True)
-        subprocess.run(["go install ."], shell=True)
-
-        logger.info(f"gen3-client installation completed.")
-        # After installation, changing to directory where gen3-client is installed
-        os.chdir(f"{cls.go_path}/bin")
-        # Move the gen3-client executable to ~/.gen3 folder
-        subprocess.call(["mv gen3-client ~/.gen3"], shell=True)
-        # Checking the version of gen3-client
-        # 1. Verify the gen3-client is properly installed
-        # 2. Check the version of gen3-client (NOTE:you always download latest version of gen3-client)
-        version = subprocess.run(["gen3-client -v"], shell=True, stdout=subprocess.PIPE)
-        logger.info(f"### {version.stdout.decode('utf-8').strip()}")
+        gc.install_gen3_client()
 
     def test_gen3_client(self):
         """
@@ -117,37 +88,44 @@ class TestGen3Client:
                 f"Upload error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
             )
 
-        indexd.get_files(guid)
+        record = indexd.get_record(guid)
+        rev = indexd.get_rev(record)
 
-        # # Create a temporary directory for downloading the file via gen3-client
+        json_data = {"urls": ["s3://some-s3-bucket/some-file.txt"]}
+        indexd.update_record(guid, rev, json_data)
+        updated_record = indexd.get_record(guid)
+        logger.info(f"Updated_record {updated_record}")
+        assert (
+            updated_record["urls"] == json_data["urls"]
+        ), f"value of key 'url' is {updated_record['urls']}"
+
+        # Create a temporary directory for downloading the file via gen3-client
         download_path = f"tmpDownload_{current_time}"
         os.mkdir(f"{download_path}/")
-        os.chmod(f"{download_path}", int("777", base=8))
 
         logger.info(f"Downloading file via gen3-client ...")
         download_cmd = [
-            f"gen3-client download-single --profile={profile} --guid={guid} --download-path={download_path}/ --no-prompt"
+            f"gen3-client download-single --profile={profile} --guid={guid} --download-path=./{download_path}/{file_name} --no-prompt"
         ]
-        logger.debug(f"Running gen3-client download-single command : {download_cmd}")
+        logger.info(f"Running gen3-client download-single command : {download_cmd}")
         try:
             download = subprocess.run(
                 download_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             logger.info(f"Download stdout is {download.stdout.decode('utf-8')}")
+            logger.info(f"Download stderr is {download.stderr.decode('utf-8')}")
             if os.path.exists(download_path):
-                logger.info(f"File {download_path} is downloaded successfully")
+                logger.info(f"File {file_name} is downloaded successfully")
             else:
-                logger.info(f"File {download_path} is not downloaded successfully")
+                logger.info(f"File {file_name} is not downloaded successfully")
         except Exception as e:
             logger.info(
                 f"Download error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
             )
 
         # Delete the indexd record
-        indexd.delete_files(guid)
-
-        # Delete the file to be uploaded from {go_path}/bin
-        os.remove(f"{file_name}")
+        delete_record = indexd.delete_record(guid, rev)
+        assert delete_record == 200, f"Failed to delete record {guid}"
 
         # Deleting the folder src from filesystem
         try:
