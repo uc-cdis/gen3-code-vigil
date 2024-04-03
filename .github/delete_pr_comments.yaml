@@ -1,4 +1,4 @@
-ame: delete comments from github-actions
+name: delete comments from github-actions
 on:
   workflow_dispatch:
 jobs:
