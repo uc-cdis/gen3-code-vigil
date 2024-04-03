@@ -13,7 +13,14 @@ concurrency:
 jobs:
   delete_pr_comments:
     name: Delete Existing PR comments
-    uses: ./.github/workflows/delete_pr_comments.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          delete_user_name: github-actions[bot]
+          issue_number: ${{ github.event.number }}  # remove comments from the current PR
+
   integration_tests:
     name: Integration tests
     uses: ./.github/workflows/shared_integration_tests.yaml
