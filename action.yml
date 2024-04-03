@@ -1,0 +1,20 @@
+name: 'Delete Existing PR comments'
+description: 'delete comments from issue/pr by username'
+inputs:
+  github_token:
+    description: 'The GitHub token used to create an authenticated client'
+    required: true
+  delete_user_name:
+    description: 'Github username to delete comments'
+    default: 'github-actions[bot]'
+    required: false
+  body_regex:
+    description: 'Only delete if existing comment contains this text. If not provided, comments will match any body.'
+    default: '.*'
+    required: false
+  issue_number:
+    description: 'Issue/PR on which to delete comments. This must be provided to prevent mistakes.'
+    required: true
+runs:
+  using: 'node16'
+  main: 'index.js'
