@@ -53,8 +53,6 @@ class Indexd(object):
             record = indexd.get_record(guid=indexd_guid)
             logger.info(f"Indexd Record found {record}")
             return record
-            # rev = record['rev']
-            # logger.info (f"Rev of Indexd Record {rev}")
         except Exception as e:
             logger.exception(msg=f"Cannot find indexd record {e}")
 

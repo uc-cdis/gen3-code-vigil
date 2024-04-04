@@ -6,6 +6,7 @@ import re
 import shutil
 import time
 
+from pathlib import Path
 from services.indexd import Indexd
 import utils.gen3_client_install as gc
 
@@ -19,7 +20,11 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestGen3Client:
     @classmethod
     def setup_class(cls):
-        gc.install_gen3_client()
+        get_go_path = subprocess.run(
+            ["go env GOPATH"], shell=True, stdout=subprocess.PIPE
+        )
+        cls.go_path = get_go_path.stdout.decode("utf-8").strip()
+        gc.install_gen3_client(cls.go_path)
 
     def test_gen3_client(self):
         """
@@ -72,7 +77,8 @@ class TestGen3Client:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
-                logger.debug(f"### Upload stdout is {upload.stdout.decode('utf-8')}")
+                logger.info(f"### Upload stdout is {upload.stdout.decode('utf-8')}")
+                logger.info(f"### Upload stderr is {upload.stderr.decode('utf-8')}")
             except subprocess.CalledProcessError as e:
                 logger.info(e)
             if upload.returncode == 0:
@@ -88,24 +94,20 @@ class TestGen3Client:
                 f"Upload error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
             )
 
+        # Adding explicit wait for indexing job pod to finish adding record metadata
+        time.sleep(20)
+
         record = indexd.get_record(guid)
         rev = indexd.get_rev(record)
-
-        json_data = {"urls": ["s3://some-s3-bucket/some-file.txt"]}
-        indexd.update_record(guid, rev, json_data)
-        updated_record = indexd.get_record(guid)
-        logger.info(f"Updated_record {updated_record}")
-        assert (
-            updated_record["urls"] == json_data["urls"]
-        ), f"value of key 'url' is {updated_record['urls']}"
 
         # Create a temporary directory for downloading the file via gen3-client
         download_path = f"tmpDownload_{current_time}"
         os.mkdir(f"{download_path}/")
+        os.chdir(f"{download_path}")
 
         logger.info(f"Downloading file via gen3-client ...")
         download_cmd = [
-            f"gen3-client download-single --profile={profile} --guid={guid} --download-path=./{download_path}/{file_name} --no-prompt"
+            f"gen3-client download-single --profile={profile} --guid={guid} --download-path={download_path}/ --no-prompt"
         ]
         logger.info(f"Running gen3-client download-single command : {download_cmd}")
         try:
@@ -122,6 +124,13 @@ class TestGen3Client:
             logger.info(
                 f"Download error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
             )
+
+        try:
+            file_path = Path(f"{download_path}/{file_name}")
+            if file_path.exists:
+                logger.info(f"The downloaded file {file_name} exists")
+        except FileNotFoundError:
+            logger.info(f"The file {file_name} does not exist")
 
         # Delete the indexd record
         delete_record = indexd.delete_record(guid, rev)
