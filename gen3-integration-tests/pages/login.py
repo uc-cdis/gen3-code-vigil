@@ -82,8 +82,7 @@ class LoginPage(object):
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
-        page.locator(self.ORCID_USERNAME_INPUT).fill(os.environ["CI_TEST_ORCID_ID"])
-        logger.info(os.environ["CI_TEST_ORCID_ID"])
+        page.locator(self.ORCID_USERNAME_INPUT).fill(os.environ["CI_TEST_ORCID_USERID"])
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
         )
@@ -95,7 +94,7 @@ class LoginPage(object):
         # Perform RAS Login
         ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
         expect(ras_login_button).to_be_visible(timeout=5000)
-        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_ID"])
+        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_USERID"])
         page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
         ras_login_button.click()
         # Handle the Grant access button

@@ -14,8 +14,7 @@ from services.indexd import Indexd
 from services.fence import Fence
 from pages.login import LoginPage
 from utils.gen3_admin_tasks import update_audit_service_logging
-from utils.test_execution import screenshot
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -109,7 +108,7 @@ class TestAuditService:
         params = ["start={}".format(timestamp)]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
-        logger.info("# Logging in with mainAcct")
+        logger.info("# Logging in with ORCID USER")
         login_page.go_to(page)
 
         # Perform Login
@@ -252,12 +251,13 @@ class TestAuditService:
         )
 
     def test_audit_ras_login_events(self, page: Page):
-        """Audit : Perform login using RAS and validate audit entry
+        """
+        Scenario: Perform login using RAS and validate audit entry
+        Steps : 1. Login to homepage via RAS using RAS credentials
+                2. Call Audit log API using auxAcct2 user
+                3. Check if entry for RAS user is present
         NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
         secrets to be configured with RAS credentials
-        Steps : Login to homepage via RAS using RAS credentials
-                Call Audit log API using auxAcct2 user
-                Check if entry for RAS user is present
         """
         audit = Audit()
         login_page = LoginPage()
@@ -265,7 +265,7 @@ class TestAuditService:
         params = ["start={}".format(timestamp)]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
-        logger.info("# Logging in with mainAcct")
+        logger.info("# Logging in with RAS USER")
         login_page.go_to(page)
 
         # Perform Login
