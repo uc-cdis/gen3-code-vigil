@@ -16,15 +16,14 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestGraphSubmitAndQuery:
     def test_submit_query_and_delete_records(self):
         """
-        Submit graph data and perform various queries.
-
+        Scenario: Submit graph data and perform various queries.
         Steps:
-        - Submit graph data
-        - Check that querying the records return the submitted data
-        - Check that querying an invalid property errors
-        - Check that filtering on string properties works
-        - Check that node count queries work
-        - Delete the graph data
+            1. Submit graph data
+            2. Check that querying the records return the submitted data
+            3. Check that querying an invalid property errors
+            4. Check that filtering on string properties works
+            5. Check that node count queries work
+            6. Delete the graph data
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         sd_tools = GraphDataTools(auth=auth)

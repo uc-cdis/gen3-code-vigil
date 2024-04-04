@@ -16,10 +16,11 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page):
         """
+        Scenario: Workspace DRS Pull
         Steps:
-        1. Login with main_acct (cdis.autotest) user
-        2. Launch workspace
-        3. Launch Jupyter notebook and execute gen3 command
+            1. Login with main_acct (cdis.autotest) user
+            2. Launch workspace
+            3. Launch Jupyter notebook and execute gen3 command
 
         We are verifying successful launch of workspace service by launching generic notebook
         and execute gen3 command. We need would need to update the test to export the manifest from
