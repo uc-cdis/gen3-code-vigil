@@ -119,7 +119,7 @@ class TestAuditService:
 
         # Check the query results with auxAcct2 user
         expectedResults = {
-            "username": os.environ["CI_TEST_ORCID_ID"],
+            "username": os.environ["CI_TEST_ORCID_USERID"],
             "idp": "fence",
             "fence_idp": "orcid",
             "client_id": None,
@@ -276,7 +276,7 @@ class TestAuditService:
 
         # Check the query results with auxAcct2 user
         expectedResults = {
-            "username": str(os.environ["CI_TEST_RAS_ID"]).lower(),
+            "username": str(os.environ["CI_TEST_RAS_USERID"]).lower(),
             "idp": "ras",
             "client_id": None,
             "status_code": 302,
