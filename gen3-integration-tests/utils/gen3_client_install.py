@@ -20,10 +20,10 @@ def install_gen3_client(path):
         ["git clone https://github.com/uc-cdis/cdis-data-client.git"], shell=True
     )
     os.rename("cdis-data-client", "gen3-client")
-    if os.path.exists(f"{path}/src/github.com/uc-cdis/gen3-client")
+    if Path(f"{path}/src/github.com/uc-cdis/gen3-client").exists():
         os.chdir("gen3-client/")
         logger.info("Changed directory to gen3-client/")
-    else
+    else:
         logger.info("Directory cdis-data-client not found")
     subprocess.run(["go get -d ./..."], shell=True)
     subprocess.run(["go install ."], shell=True)
