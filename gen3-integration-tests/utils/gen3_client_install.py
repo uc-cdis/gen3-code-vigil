@@ -20,7 +20,7 @@ def install_gen3_client(path):
         ["git clone git@github.com:uc-cdis/cdis-data-client.git"], shell=True
     )
     subprocess.call(["mv cdis-data-client gen3-client"], shell=True)
-    os.chdir("gen3-client")
+    os.chdir("gen3-client/")
     subprocess.run(["go get -d ./..."], shell=True)
     subprocess.run(["go install ."], shell=True)
 
