@@ -80,7 +80,7 @@ spec:
           name: jenkins-secret
           key: aws_secret_access_key
     - name: JENKINS_NAMESPACE
-      value: \$JENKINS_NAMESPACE
+      value: $JENKINS_NAMESPACE
   serviceAccount: jenkins-service
   serviceAccountName: jenkins-service
 '''
