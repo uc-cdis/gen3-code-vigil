@@ -70,13 +70,15 @@ jobs:
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
               python-version: 3.9
 
           # allure report generation needs node
           - name: Set up node
-            uses: actions/setup-node@v3
+            uses: actions/setup-node@v4
+            with:
+              node-version: 20
 
           # Install gen3-integration-tests dependencies
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
