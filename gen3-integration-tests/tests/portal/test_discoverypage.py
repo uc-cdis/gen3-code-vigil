@@ -106,6 +106,7 @@ class TestDiscoveryPage(object):
 
         # Navigate to discovery page
         login_page = login.LoginPage()
+        login_page.go_to(page)
         login_page.login(page)
         discovery_page = discovery.DiscoveryPage()
         discovery_page.go_to(page)
