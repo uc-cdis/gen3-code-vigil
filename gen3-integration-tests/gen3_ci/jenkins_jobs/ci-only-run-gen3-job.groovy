@@ -6,13 +6,16 @@
     Boolean parameter GEN3_ROLL_ALL
         Default value - false
         e.g., true
+    String parameter JENKINS_NAMESPACE
+      Default value - default
 
     Artifact archived - log.txt
 */
 pipeline {
     agent {
       kubernetes {
-            yaml '''
+        namespace "${JENKINS_NAMESPACE}"
+        yaml '''
 apiVersion: v1
 kind: Pod
 metadata:
