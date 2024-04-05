@@ -14,8 +14,8 @@
 pipeline {
     agent {
       kubernetes {
-            namespace "${JENKINS_NAMESPACE}"
-            yaml '''
+        namespace "${JENKINS_NAMESPACE}"
+        yaml '''
 apiVersion: v1
 kind: Pod
 metadata:
