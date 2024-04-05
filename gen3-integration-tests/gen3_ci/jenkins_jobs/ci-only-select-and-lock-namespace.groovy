@@ -7,9 +7,12 @@
         e.g., gitops-qa
     String parameter BRANCH
         e.g. chore/update_portal_qabrh
+    String parameter JENKINS_NAMESPACE
+      Default value - default
 */
 pipeline {
     agent {
+        namespace "${JENKINS_NAMESPACE}"
         kubernetes {
             yaml '''
 apiVersion: v1
