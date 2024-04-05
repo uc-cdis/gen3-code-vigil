@@ -1,27 +1,34 @@
 # Login Page
 import os
 import pytest
-import re
 
 from cdislogging import get_logger
 from playwright.sync_api import Page, expect
+
+from utils.test_execution import screenshot
+from utils.gen3_admin_tasks import get_portal_config
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class LoginPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}/login"
+        self.BASE_URL = f"{pytest.root_url_portal}/login"
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@id='popup']"  # pop_up_box
+        self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
+        self.USER_PROFILE_DROPDOWN = (
+            "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
+        )
+        self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
     def go_to(self, page: Page):
         """Goes to the login page"""
         page.goto(self.BASE_URL)
         page.wait_for_selector(self.READY_CUE, state="visible")
-        page.screenshot(path="output/LoginPage.png", full_page=True)
+        screenshot(page, "LoginPage")
 
     def login(self, page: Page, user="main_account"):
         """
@@ -31,24 +38,13 @@ class LoginPage(object):
         page.context.add_cookies(
             [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
         )
-        login_button = page.get_by_role(
-            "button",
-            name=re.compile(r"Login from Google", re.IGNORECASE),
-        )
-        """
-        // for manifest PRs
-        name=re.compile(
-                r"Dev login - set username in 'dev_login' cookie", re.IGNORECASE
-            ),
-        """
-        expect(login_button).to_be_visible(timeout=5000)
-        login_button.click()
+        page.locator(self.LOGIN_BUTTON).click()
         page.wait_for_timeout(3000)
-        page.screenshot(path="output/AfterLogin.png", full_page=True)
+        screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
         self.handle_popup(page)
-        page.screenshot(path="output/AfterPopUpAccept.png", full_page=True)
+        screenshot(page, "AfterPopUpAccept")
         access_token_cookie = next(
             (
                 cookie
@@ -63,9 +59,19 @@ class LoginPage(object):
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
-        page.get_by_role("button", name="Logout").click()
+        res = get_portal_config(pytest.namespace)
+        # Check if useProfileDropdown is set to True and perform logout accordingly
+        if (
+            "useProfileDropdown" in res["components"]["topBar"].keys()
+            and res["components"]["topBar"]["useProfileDropdown"]
+        ):
+            page.locator(self.USER_PROFILE_DROPDOWN).click()
+            page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
+        # Click on Logout button to logout
+        else:
+            page.get_by_role("button", name="Logout").click()
         nav_bar_login_button = page.get_by_role("button", name="Login")
-        page.screenshot(path="output/AfterLogout.png")
+        screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login
@@ -75,14 +81,10 @@ class LoginPage(object):
         if popup_message:
             logger.info("Popup message found")
             page.evaluate(
-                f"""
-                (element) => {{
-                    element.scrollTop = element.scrollHeight;
-                }}
-                """,
+                "(element) => {{element.scrollTop = element.scrollHeight;}}",
                 popup_message,
             )
-            page.screenshot(path="output/PopupBox.png")
+            screenshot(page, "DataUsePopup")
             accept_button = page.get_by_role("button", name="Accept")
             if accept_button:
                 accept_button.click()

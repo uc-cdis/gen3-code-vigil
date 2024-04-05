@@ -31,14 +31,20 @@ poetry install
 ```
 Then:
 ```
-HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto
+HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
 ```
 The kubernetes namespace is required for Gen3 admin tasks. It is assumed to be the first part of the hostname (`jenkins-brain` in the example above).
 If it is different it must be explicitly defined, like
 ```
-HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --html=output/report.html --self-contained-html -n auto
+HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
 ```
-`-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). To use this feature it is imperative that the tests are designed to be independent and idempotent.
+
+We can set TESTED_ENV to the enviroment being actually tested. This is useful when we replicate the configuration of the tested environment in the dev / test environment for testing or development. We can then run the tests by executing
+```
+TESTED_ENV="healdata.org" HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
+```
+
+`-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). We run test classes / suties in parallel using the `--dist loadscope`. To use this feature it is imperative that the test suites are designed to be independent and idempotent.
 
 Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`. Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/markers.html)
 
@@ -50,10 +56,10 @@ All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-inte
 # Designing tests
 
 ## Design principles (not optional)
-- The tests must be independent and idempotent. This is essential since we run tests in parallel.
+- The test suites must be independent and idempotent. This is essential since we run test classes in parallel by using xdist (loadscope).
 - All tests should be able to run anywhere (locally / CI) without changing test code.
 - Debugging must be done locally, not in CI pipeline.
-- Documentation is important. Code is incomplete without it.
+- Documentation is essential. Code is incomplete without it.
 - Avoid hard waits. Test should wait for application state, not otherwise.
 - Tag tests appropriately.
 - Add test steps as docstrings in the test for understanding the purpose of the test easily.
