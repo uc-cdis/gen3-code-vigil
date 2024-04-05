@@ -17,10 +17,14 @@ def install_gen3_client(path):
     os.chmod(f"{path}/src/github.com/uc-cdis", int("777", base=8))
     os.chdir(f"{path}/src/github.com/uc-cdis/")
     subprocess.run(
-        ["git clone git@github.com:uc-cdis/cdis-data-client.git"], shell=True
+        ["git clone https://github.com/uc-cdis/cdis-data-client.git"], shell=True
     )
-    subprocess.call(["mv cdis-data-client gen3-client"], shell=True)
-    os.chdir("gen3-client/")
+    os.rename("cdis-data-client", "gen3-client")
+    if os.path.exists(f"{path}/src/github.com/uc-cdis/gen3-client")
+        os.chdir("gen3-client/")
+        logger.info("Changed directory to gen3-client/")
+    else
+        logger.info("Directory cdis-data-client not found")
     subprocess.run(["go get -d ./..."], shell=True)
     subprocess.run(["go install ."], shell=True)
 
