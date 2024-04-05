@@ -1,13 +1,16 @@
 /*
   String parameter NAMESPACE
     e.g., qa-anvil
+  String parameter JENKINS_NAMESPACE
+    Default value - default
 
   Archived artifacts - manifest.json
 */
 pipeline {
     agent {
       kubernetes {
-            yaml '''
+          namespace "${JENKINS_NAMESPACE}"
+          yaml '''
 apiVersion: v1
 kind: Pod
 metadata:
