@@ -115,7 +115,7 @@ class TestDiscoveryPage(object):
         # Tag search
         discovery_page.search_tag(page, "AUTOTEST Tag")
         screenshot(page, "TagSearch")
-        assert discovery_page.study_found(self.variables["study_id"])
+        assert discovery_page.study_found(page, self.variables["study_id"])
 
         # Text search by study title
         discovery_page.go_to(page)
