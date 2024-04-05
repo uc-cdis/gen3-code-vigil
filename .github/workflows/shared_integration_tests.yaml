@@ -21,6 +21,14 @@ on:
         required: true
       QA_DASHBOARD_S3_PATH:
         required: true
+      CI_TEST_ORCID_USERID:
+        required: true
+      CI_TEST_ORCID_PASSWORD:
+        required: true
+      CI_TEST_RAS_USERID:
+        required: true
+      CI_TEST_RAS_PASSWORD:
+        required: true
 
 
 concurrency:
@@ -49,6 +57,10 @@ jobs:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
           RUN_NUM: ${{ github.run_number }}
+          CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+          CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+          CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
+          CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
