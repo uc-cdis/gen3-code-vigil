@@ -7,8 +7,8 @@
 */
 pipeline {
     agent {
-        namespace "${JENKINS_NAMESPACE}"
         kubernetes {
+            namespace "${JENKINS_NAMESPACE}"
             yaml '''
 apiVersion: v1
 kind: Pod
