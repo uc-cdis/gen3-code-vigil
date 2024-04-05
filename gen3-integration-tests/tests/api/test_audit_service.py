@@ -281,6 +281,6 @@ class TestAuditService:
             "client_id": None,
             "status_code": 302,
         }
-        assert audit.checkQueryResults(
+        assert audit.check_query_results(
             "login", "auxAcct2_account", params, expectedResults
         )
