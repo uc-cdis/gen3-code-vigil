@@ -113,9 +113,9 @@ class TestDiscoveryPage(object):
         screenshot(page, "DiscoveryPage")
 
         # Tag search
-        discovery.search_tag("AUTOTEST Tag")
+        discovery_page.search_tag("AUTOTEST Tag")
         screenshot(page, "TagSearch")
-        assert discovery.study_found(self.variables["study_id"])
+        assert discovery_page.study_found(self.variables["study_id"])
 
         # Text search by study title
         discovery_page.go_to(page)
