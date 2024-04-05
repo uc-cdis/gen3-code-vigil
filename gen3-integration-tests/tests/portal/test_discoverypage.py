@@ -24,7 +24,7 @@ class TestDiscoveryPage(object):
     @classmethod
     def setup_class(cls):
         logger.info("Setup - create uuids for did and study_id")
-        cls.variables["did"] = uuid4().hex
+        cls.variables["did"] = str(uuid4())
         cls.variables["study_id"] = uuid4().hex
         cls.variables[
             "md5sum"
