@@ -4,6 +4,7 @@ import pytest
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 import time
+import pandas as pd
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -36,11 +37,15 @@ class Audit(object):
             data = response.json()
             # Counter to check response is recieved within 5 mins
             if len(data["data"]) != 0:
-                logger.info(data["data"])
-                for key, val in expectedResults.items():
-                    # Get the first entry of json data
-                    assert data["data"][0][key] == expectedResults[key]
-                return True
+                # Convert json to dataframe for easy querying of records using username
+                df = pd.json_normalize(data["data"])
+                df = df.loc[df["username"] == expectedResults["username"]]
+                logger.info(df)
+                if df.shape[0] != 0:
+                    for key, val in expectedResults.items():
+                        # Get the first entry of json data
+                        assert df.iloc[0][key] == expectedResults[key]
+                    return True
             counter += 1
 
         logger.error("Waited for 300 seconds but data was not recieved")
