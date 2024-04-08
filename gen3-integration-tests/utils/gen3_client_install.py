@@ -32,7 +32,7 @@ def install_gen3_client(path):
     # After installation, changing to directory where gen3-client is installed
     os.chdir(f"{path}/bin")
     # Move the gen3-client executable to ~/.gen3 folder
-    subprocess.call(["mv gen3-client ~/.gen3"], shell=True)
+    # subprocess.call(["mv gen3-client ~/.gen3"], shell=True)
 
     # Verify the gen3-client is properly installed
     version = subprocess.run(["gen3-client"], shell=True, stdout=subprocess.PIPE)
