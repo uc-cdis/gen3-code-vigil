@@ -35,6 +35,7 @@ class DiscoveryPage(object):
 
     def go_to(self, page: Page):
         page.goto(self.BASE_URL)
+        page.wait_for_selector(self.READY_CUE, state="visible")
 
     def search_tag(self, page: Page, tag_name: str) -> None:
         page.click(self._tag_locator(tag_name))
