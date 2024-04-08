@@ -4,12 +4,15 @@
     String parameter USERNAME
         Username
         e.g., cdis.autotest@gmail.com
+    String parameter JENKINS_NAMESPACE
+    Default value - default
 
     Artifact archived - api_key.json
 */
 pipeline {
     agent {
         kubernetes {
+            namespace "${JENKINS_NAMESPACE}"
             yaml '''
 apiVersion: v1
 kind: Pod
