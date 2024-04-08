@@ -15,7 +15,7 @@ class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index/index"
 
-    def create_files(self, files, user="indexing_account"):
+    def create_files(self, files: dict, user="indexing_account"):
         """Create new indexd record"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         index = Gen3Index(auth_provider=auth)
@@ -44,7 +44,7 @@ class Indexd(object):
                 logger.exception(msg="Failed indexd submission got exception")
         return indexed_files
 
-    def get_record(self, indexd_guid, user="indexing_account"):
+    def get_record(self, indexd_guid: str, user="indexing_account"):
         """Get record from indexd"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         indexd = Gen3Index(auth_provider=auth)
@@ -56,7 +56,7 @@ class Indexd(object):
         except Exception as e:
             logger.exception(msg=f"Cannot find indexd record {e}")
 
-    def get_rev(self, json_data):
+    def get_rev(self, json_data: dict):
         """Get revision from indexd record"""
         if json_data is not None:
             return json_data["rev"]
@@ -65,7 +65,7 @@ class Indexd(object):
             logger.info("No rev found in the provided data")
             return None  # Or a suitable default value
 
-    def update_record(self, guid, rev, data, user="indexing_account"):
+    def update_record(self, guid: str, rev: str, data: dict, user="indexing_account"):
         """Update indexd record"""
         update_res = requests.put(
             f"{self.BASE_URL}/{guid}?rev={rev}",
@@ -75,7 +75,7 @@ class Indexd(object):
         return update_res.status_code
 
     # Use this if the indexd record is created/uploaded through gen3-client upload
-    def delete_record(self, guid, rev, user="indexing_account"):
+    def delete_record(self, guid: str, rev: str, user="indexing_account"):
         """Delete indexd record if upload is not happening through gen3-sdk"""
         delete_resp = requests.delete(
             f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
@@ -83,7 +83,7 @@ class Indexd(object):
         return delete_resp.status_code
 
     # Use this if indexd record is created with the sdk client
-    def delete_files(self, guids, user="indexing_account"):
+    def delete_files(self, guids: list, user="indexing_account"):
         """Delete indexd records list via gen3-sdk"""
         for guid in guids:
             user = "indexing_account"
