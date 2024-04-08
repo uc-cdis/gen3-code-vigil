@@ -18,7 +18,7 @@ class DiscoveryPage(object):
         self.READY_CUE = "css=.discovery-search"
         self.NEXT_PAGE_BUTTON = "css=.ant-pagination-next:has-text('Next Page')"
         self.SEARCH_BAR = (
-            "css=div.discovery-search-container > span > input[type='text']"
+            "css=div.discovery-search-container >> span >> input[type='text']"
         )
         self.OPEN_IN_WORKSPACE_BUTTON = (
             "css=button:has(span:is(:text('Open In Workspace')))"
