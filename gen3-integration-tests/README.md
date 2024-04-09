@@ -21,6 +21,10 @@ Create a .env file under `gen3-code-vigil/gen3-integration-tests` with the value
 JENKINS_URL="https://jenkins.planx-pla.net"
 JENKINS_USERNAME=PlanXCyborg
 JENKINS_PASSWORD=<Jenkins API Token>
+CI_TEST_ORCID_USERID=<ORCID Username>
+CI_TEST_ORCID_PASSWORD=<ORCID Password>
+CI_TEST_RAS_USERID=<RAS Username>
+CI_TEST_RAS_PASSWORD=<RAS Password>
 ```
 The Jenkins API token can be obtained from Keeper.
 

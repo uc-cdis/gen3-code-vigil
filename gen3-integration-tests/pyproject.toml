@@ -1,7 +1,6 @@
 [tool.poetry]
 name = "gen3-integration-tests"
 version = "0.1.0"
-package-mode = false
 description = "Gen3 Integration Tests"
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -46,6 +45,7 @@ markers = [
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
   "frontend_framework: tests for frontend-framework",
+  "gen3_client: tests for gen3-client / cdis-data-client",
   # features
   "workspace: tests for workspace page",
   "client_credentials: tests for fence client credentials",
