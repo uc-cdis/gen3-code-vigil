@@ -116,19 +116,23 @@ class TestDiscoveryPage(object):
         discovery_page.search_tag(page, "AUTOTEST Tag")
         screenshot(page, "TagSearch")
         assert discovery_page.study_found(page, self.variables["study_id"])
+        screenshot(page, "StudyFound")
 
         # Text search by study title
         discovery_page.go_to(page)
-        discovery_page.search_text(page, "[AUTOTEST Title]")
+        discovery_page.search_text(page, "AUTOTEST Title")
         screenshot(page, "TextSearchTitle")
         assert discovery_page.study_found(page, self.variables["study_id"])
+        screenshot(page, "StudyFound")
 
         # Text search by study summary
         discovery_page.go_to(page)
-        discovery_page.search_text(page, "[AUTOTEST Summary]")
-        screenshot(page, "OpenInWorkspace")
+        discovery_page.search_text(page, "AUTOTEST Summary")
+        screenshot(page, "TextSearchSummary")
         assert discovery_page.study_found(page, self.variables["study_id"])
+        screenshot(page, "StudyFound")
 
         # Open study in workspace
         discovery_page.open_in_workspace(page, self.variables["study_id"])
         page.wait_for_url("**/workspace", 120)
+        screenshot(page, "OpenInWorkspace")

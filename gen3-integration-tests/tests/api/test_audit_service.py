@@ -40,26 +40,54 @@ class TestAuditService:
             2. Users will get either 200 or 403 response based on the privileges on their account
         """
         audit = Audit()
-        timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp)]
 
         # `mainAcct` does not have access to query any audit logs
         audit.audit_query(
-            "presigned_url", "main_account", params, 403, "Main-Account Presigned-URL"
+            "presigned_url",
+            "main_account",
+            "cdis.autotest@gmail.com",
+            403,
+            "Main-Account Presigned-URL",
         )
-        audit.audit_query("login", "main_account", params, 403, "Main-Account Login")
+        audit.audit_query(
+            "login",
+            "main_account",
+            "cdis.autotest@gmail.com",
+            403,
+            "Main-Account Login",
+        )
 
         # `auxAcct1` has access to query presigned_url audit logs, not login
         audit.audit_query(
-            "presigned_url", "auxAcct1_account", params, 200, "auxAcct1 Presigned-URL"
+            "presigned_url",
+            "auxAcct1_account",
+            "dummy-one@planx-pla.net",
+            200,
+            "auxAcct1 Presigned-URL",
         )
-        audit.audit_query("login", "auxAcct1_account", params, 403, "auxAcct1 Login")
+        audit.audit_query(
+            "login",
+            "auxAcct1_account",
+            "dummy-one@planx-pla.net",
+            403,
+            "auxAcct1 Login",
+        )
 
         # `auxAcct2` has access to query login audit logs, not presigned_url
         audit.audit_query(
-            "presigned_url", "auxAcct2_account", params, 403, "auxAcct2 Presigned-URL"
+            "presigned_url",
+            "auxAcct2_account",
+            "smarty-two@planx-pla.net",
+            403,
+            "auxAcct2 Presigned-URL",
         )
-        audit.audit_query("login", "auxAcct2_account", params, 200, "auxAcct2 Login")
+        audit.audit_query(
+            "login",
+            "auxAcct2_account",
+            "smarty-two@planx-pla.net",
+            200,
+            "auxAcct2 Login",
+        )
 
     @pytest.mark.portal
     def test_audit_homepage_login_events(self, page: Page):
@@ -73,7 +101,7 @@ class TestAuditService:
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp)]
+        params = ["start={}".format(timestamp), "username=cdis.autotest@gmail.com"]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("Logging in with mainAcct")
@@ -105,7 +133,10 @@ class TestAuditService:
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp)]
+        params = [
+            "start={}".format(timestamp),
+            "username={}".format(os.environ["CI_TEST_ORCID_USERID"]),
+        ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("# Logging in with ORCID USER")
@@ -243,7 +274,10 @@ class TestAuditService:
         fence = Fence()
         audit = Audit()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp)]
+        params = [
+            "start={}".format(timestamp),
+            "username={}".format(expectedResults["username"]),
+        ]
         # Create Signed URL record
         fence.createSignedUrl(did, main_auth, expectedCode, file_type)
         assert audit.check_query_results(
@@ -262,7 +296,10 @@ class TestAuditService:
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp)]
+        params = [
+            "start={}".format(timestamp),
+            "username={}".format(os.environ["CI_TEST_RAS_USERID"].lower()),
+        ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("# Logging in with RAS USER")
