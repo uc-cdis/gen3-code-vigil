@@ -37,7 +37,29 @@ pipeline {
                     source $GEN3_HOME/gen3/gen3setup.sh
 
                     etlMappingNames=$(g3kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs)
+                    IFS=' ' read -r -a aliases <<< "$etlMappingNames"
 
+                    echo "${aliases[@]}"
+                    for alias in "${aliases[@]}"; do
+                        # port-forward to talk to elastic search
+                        gen3 es port-forward > /dev/null 2>&1
+                        sleep 5s
+
+                        # checking if the alias exists
+                        exists=$(curl -I -s "$ESHOST/_alias/${alias}" 2>&1 | grep HTTP/ | tail -1 | awk '{print $2}')
+                        if [[ $exists == "200" ]]; then
+                            echo "${alias} is present"
+                        fi
+
+                        # getting the index from the alias
+                        indexAlias=$(curl -X GET -s "$ESHOST/_alias/${alias}" | jq '. | keys[0]'  | xargs)
+
+                        # check if the index number has increased
+                        version="${indexAlias##*_}"
+                        if [[ $version == "1" ]]; then
+                            echo "Index version has increased"
+                        fi
+                    done
                     '''
                 }
             }

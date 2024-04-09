@@ -38,39 +38,40 @@ pipeline {
 
                     # get etlmapping names
                     etlMappingNames=$(g3kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs)
-                    IFS=' ' read -r -a aliases <<< "$etlMappingNames"
+                    IFS=' ' read -r -a indices <<< "$etlMappingNames"
 
                     # Add the "-array-config" suffix to each element
-                    for etlMappingName in "${aliases[@]}"; do
-                        aliases+=("${etlMappingName}_0" "${etlMappingName}-array-config" "${etlMappingName}-array-config_0")
+                    for etlMappingName in "${indices[@]}"; do
+                        indices+=("${etlMappingName}-array-config")
                     done
+                    # output - qa-dcp_etl qa-dcp_file qa-dcp_etl-array-config qa-dcp_file-array-config
 
-                    echo "${aliases[@]}"
-                    for alias in ${aliases[@]}; do
+                    echo "${indices[@]}"
+                    for index in "${indices[@]}"; do
+                        # port-forward to talk to elastic search
                         gen3 es port-forward > /dev/null 2>&1
                         sleep 5s
-                        # checking if an alias exists
-                        exists=${curl -I -s $ESHOST/_alias/${alias} /dev/null 2>&1 | grep HTTP/ | tail -1 | awk '{print $2}'}
-                        if grep -q "HTTP/1.1 200 OK" <<< "$exists"; then
-                        if [[ $exists = "HTTP/1.1 200 OK"* ]]; then
-                            #do the delete part
+
+                        # will loop through the indices array and delete the zeroth index
+                        # qa-dcp_etl_0 qa-dcp_file_0 qa-dcp_etl-array-config_0 qa-dcp_file-array-config_0
+                        # deleting index_0 and checking if successfully deleted
+                        echo "Deleting index ${index} ..."
+                        delete_index0_ouput=$(curl -X DELETE -s $ESHOST/${index}_0 | jq '.acknowledged' )
+                        if [[ "$delete_index0_ouput" = "true"  ]]; then
+                            echo "${index}_0 deleted successfully"
                         else
-                            echo "Alias not found"
+                            echo "${index}_0 not deleted successfully"
                         fi
-
-                        curl -X DELETE -s $ESHOST/${alias} > /dev/null 2>&1
-                        if [[ $? -eq 0 ]]
-                        then
-                            echo "${alias}_0 successfully deleted"
+                    done
+                    # check if there are other indices associated with etlMappingName
+                    all_indices=$(curl -s -X GET "$ESHOST/_cat/indices" | grep $KUBECTL_NAMESPACE | awk '{print $3}'  | xargs)
+                    for i in $all_indices; do
+                        echo "Deleting index ${i} ..."
+                        delete_indices=$(curl -X DELETE -s $ESHOST/${i} | jq '.acknowledged')
+                        if [[ "$delete_indices" = "true"  ]]; then
+                            echo "${i} deleted successfully"
                         else
-                            echo "${alias}_0 not deleted successfully"
-
-                        # checking if an alias exists
-                        curl -I -s $ESHOST/_alias/${alias} /dev/null 2>&1
-                        if [[ $? -eq 0  ]];then
-                            echo "${alias} exists"
-                        else
-                            echo "${alias} doesnot exist"
+                            echo "${i} not deleted successfully"
                         fi
                     done
                     '''
