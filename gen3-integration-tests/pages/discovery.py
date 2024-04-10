@@ -40,7 +40,7 @@ class DiscoveryPage(object):
 
     def search_text(self, page: Page, text: str) -> None:
         page.click(self.SEARCH_BAR)
-        page.keyboard.type(text)
+        page.keyboard.type(text, delay=100)
 
     def study_found(self, page: Page, study_id: str) -> bool:
         study_row = page.locator(self._study_locator(study_id))
