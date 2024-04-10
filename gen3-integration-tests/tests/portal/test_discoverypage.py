@@ -134,5 +134,5 @@ class TestDiscoveryPage(object):
 
         # Open study in workspace
         discovery_page.open_in_workspace(page, self.variables["study_id"])
-        page.wait_for_url("**/workspace", timeout=120)
+        page.wait_for_url("**/workspace", timeout=120000)
         screenshot(page, "OpenInWorkspace")
