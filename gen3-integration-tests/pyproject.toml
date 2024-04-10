@@ -46,18 +46,13 @@ markers = [
   "portal: tests for data-portal",
   "frontend_framework: tests for frontend-framework",
   "gen3_client: tests for gen3-client / cdis-data-client",
+  "tube: tests for tube service",
+  "guppy: tests for guppy-service",
   # features
   "workspace: tests for workspace page",
   "client_credentials: tests for fence client credentials",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
-  "tube: tests for tube service",
-  "guppy: tests for guppy-service",
-  "audit: tests for audit-service",
-  "fence: test for fence service",
-  "requestor: tests for requestor service",
-  "indexd: tests for indexd service",
-  "manifestservice: tests for manifest service"
 ]
 pythonpath = "."
 md_report = "true"

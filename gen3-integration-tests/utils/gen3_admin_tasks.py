@@ -26,7 +26,7 @@ def get_portal_config(test_env_namespace):
         )
 
 
-def get_admin_vm_configurations(test_env_namespace):
+def get_admin_vm_configurations(test_env_namespace: str):
     """
     Fetch configs that require adminvm interaction using jenkins.
     Returns dict { file name: file contents }
@@ -52,7 +52,7 @@ def get_admin_vm_configurations(test_env_namespace):
         raise Exception("Build number not found")
 
 
-def run_gen3_job(test_env_namespace, job_name, roll_all=False):
+def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     Since this requires adminvm interaction we use jenkins.
@@ -81,12 +81,12 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
 
 
 def create_fence_client(
-    test_env_namespace,
-    client_name,
-    user_name,
-    client_type,
-    arborist_policies=None,
-    expires_in="",
+    test_env_namespace: str,
+    client_name: str,
+    user_name: str,
+    client_type: str,
+    arborist_policies: str = None,
+    expires_in: str = "",
 ):
     """
     Runs jenkins job to create a fence client
@@ -122,7 +122,7 @@ def create_fence_client(
         raise Exception("Build number not found")
 
 
-def delete_fence_client(test_env_namespace, client_name):
+def delete_fence_client(test_env_namespace: str, client_name: str):
     """
     Runs jenkins job to delete client
     Since this requires adminvm interaction we use jenkins.
@@ -149,7 +149,7 @@ def delete_fence_client(test_env_namespace, client_name):
         raise Exception("Build number not found")
 
 
-def revoke_arborist_policy(test_env_namespace, username, policy):
+def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
     """
     Runs jenkins job to revoke arborist policy
     Since jenkins job is faster way without too much configuration changes
@@ -177,7 +177,7 @@ def revoke_arborist_policy(test_env_namespace, username, policy):
         raise Exception("Build number not found")
 
 
-def update_audit_service_logging(test_env_namespace, audit_logging):
+def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
     """
     Runs jenkins job to enable/disable audit logging
     """
@@ -203,7 +203,7 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
         raise Exception("Build number not found")
 
 
-def mutate_manifest_for_guppy_test(test_env_namespace):
+def mutate_manifest_for_guppy_test(test_env_namespace: str):
     """
     Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
     """
@@ -228,7 +228,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace):
         raise Exception("Build number not found")
 
 
-def clean_up_indices(test_env_namespace):
+def clean_up_indices(test_env_namespace: str):
     """
     Runs jenkins job to clean up indices before running the ETL tests
     """
@@ -251,7 +251,7 @@ def clean_up_indices(test_env_namespace):
         raise Exception("Build number not found")
 
 
-def check_indices_after_etl(test_env_namespace):
+def check_indices_after_etl(test_env_namespace: str):
     """
     Runs jenkins job to clean up indices before running the ETL tests
     """
