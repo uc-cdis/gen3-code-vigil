@@ -47,6 +47,7 @@ markers = [
   "frontend_framework: tests for frontend-framework",
   "gen3_client: tests for gen3-client / cdis-data-client",
   # features
+  "agg_mds: tests for aggregate metadata service",
   "workspace: tests for workspace page",
   "client_credentials: tests for fence client credentials",
   "graph_submission: tests for submitting graph data",

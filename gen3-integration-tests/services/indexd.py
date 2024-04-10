@@ -6,7 +6,6 @@ from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from uuid import uuid4
 from cdislogging import get_logger
-from pathlib import Path
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -40,7 +39,7 @@ class Indexd(object):
                 logger.info(data)
                 record = index.create_record(**data)
                 indexed_files.append(record)
-            except Exception as e:
+            except Exception:
                 logger.exception(msg="Failed indexd submission got exception")
         return indexed_files
 
