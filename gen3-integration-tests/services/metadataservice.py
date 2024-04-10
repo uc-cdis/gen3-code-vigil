@@ -5,6 +5,8 @@ import requests
 
 from cdislogging import get_logger
 
+from gen3.auth import Gen3Auth
+
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
@@ -18,7 +20,7 @@ class MetadataService(object):
         """Get aggregate mds record for the study id specified"""
         res = requests.get(
             f"{self.AGG_MDS_ENDPOINT}/guid/{study_id}",
-            headers=pytest.auth_headers[user],
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         assert res.status_code == 200, f"Response status code was {res.status_code}"
         return res.json()["gen3_discovery"]
@@ -32,7 +34,7 @@ class MetadataService(object):
         res = requests.post(
             f"{self.MDS_ENDPOINT}/{study_id}",
             data=json.dumps(study_json),
-            headers=pytest.auth_headers[user],
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Creation request status code - {res.status_code}")
         assert res.status_code == 201, f"Response status code was {res.status_code}"
@@ -46,7 +48,7 @@ class MetadataService(object):
         res = requests.put(
             f"{self.MDS_ENDPOINT}/{study_id}",
             data=json.dumps(study_json),
-            headers=pytest.auth_headers[user],
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Update request status code - {res.status_code}")
         assert res.status_code == 200, f"Response status code was {res.status_code}"
@@ -59,7 +61,7 @@ class MetadataService(object):
         logger.info(f"Deleting study with id {study_id}")
         res = requests.delete(
             f"{self.MDS_ENDPOINT}/{study_id}",
-            headers=pytest.auth_headers[user],
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Deletion request status code - {res.status_code}")
         assert res.status_code == 200, f"Response status code was {res.status_code}"

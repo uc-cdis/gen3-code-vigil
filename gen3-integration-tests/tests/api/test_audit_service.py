@@ -26,7 +26,7 @@ class TestAuditService:
         assert update_audit_service_logging(pytest.namespace, "true")
 
     @classmethod
-    def teardown_class(self):
+    def teardown_class(cls):
         assert update_audit_service_logging(pytest.namespace, "false")
 
     def test_audit_unauthorized_log_query(self):
@@ -116,7 +116,7 @@ class TestAuditService:
             "client_id": None,
             "status_code": 302,
         }
-        assert audit.checkQueryResults(
+        assert audit.check_query_results(
             "login", "auxAcct2_account", params, expectedResults
         )
 
@@ -156,7 +156,7 @@ class TestAuditService:
             "client_id": None,
             "status_code": 302,
         }
-        assert audit.checkQueryResults(
+        assert audit.check_query_results(
             "login", "auxAcct2_account", params, expectedResults
         )
 
@@ -180,14 +180,14 @@ class TestAuditService:
                 "private": {
                     "filename": "private_file",
                     "link": "s3://cdis-presigned-url-test/testdata",
-                    "md5": "73d643ec3f4beb9020eef0beed440ad0",
+                    "md5": "73d643ec3f4beb9020eef0beed440ad0",  # pragma: allowlist secret
                     "authz": ["/programs/jnkns"],
                     "size": 9,
                 },
                 "public": {
                     "filename": "public_file",
                     "link": "s3://cdis-presigned-url-test/testdata",
-                    "md5": "73d643ec3f4beb9020eef0beed440ad1",
+                    "md5": "73d643ec3f4beb9020eef0beed440ad1",  # pragma: allowlist secret
                     "authz": ["/open"],
                     "size": 9,
                 },
@@ -280,7 +280,7 @@ class TestAuditService:
         ]
         # Create Signed URL record
         fence.createSignedUrl(did, main_auth, expectedCode, file_type)
-        assert audit.checkQueryResults(
+        assert audit.check_query_results(
             "presigned_url", dummy_auth, params, expectedResults
         )
 
@@ -318,6 +318,6 @@ class TestAuditService:
             "client_id": None,
             "status_code": 302,
         }
-        assert audit.checkQueryResults(
+        assert audit.check_query_results(
             "login", "auxAcct2_account", params, expectedResults
         )

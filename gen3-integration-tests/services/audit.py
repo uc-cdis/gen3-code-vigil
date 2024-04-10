@@ -28,7 +28,7 @@ class Audit(object):
         assert expectedStatus == response.status_code
         return True
 
-    def checkQueryResults(self, logCategory, user, params, expectedResults):
+    def check_query_results(self, logCategory, user, params, expectedResults):
         url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
         counter = 0

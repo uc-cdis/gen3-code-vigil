@@ -49,6 +49,7 @@ markers = [
   "tube: tests for tube service",
   "guppy: tests for guppy-service",
   # features
+  "agg_mds: tests for aggregate metadata service",
   "workspace: tests for workspace page",
   "client_credentials: tests for fence client credentials",
   "graph_submission: tests for submitting graph data",
