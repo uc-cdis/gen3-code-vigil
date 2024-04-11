@@ -70,7 +70,7 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -108,7 +108,7 @@ def create_fence_client(
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return {
                 "client_creds.txt": job.get_artifact_content(
@@ -139,7 +139,7 @@ def delete_fence_client(test_env_namespace, client_name):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -167,7 +167,7 @@ def revoke_arborist_policy(test_env_namespace, username, policy):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -193,7 +193,7 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=300)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return True
         else:
@@ -218,7 +218,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=300)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return True
         else:
