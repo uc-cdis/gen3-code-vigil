@@ -193,7 +193,7 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=300)
+        status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return True
         else:
