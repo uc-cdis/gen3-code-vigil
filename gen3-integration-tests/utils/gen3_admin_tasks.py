@@ -70,6 +70,40 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
     }
     build_num = job.build_job(params)
     if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=600)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def generate_test_data(
+    test_env_namespace: str,
+    submission_user: str,
+    max_examples: int,
+    submission_order: str,
+):
+    """
+    Runs jenkins job to generate test data
+    Since this requires adminvm interaction we use jenkins
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "generate-test-data",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+        "SUBMISSION_USER": submission_user,
+        "MAX_EXAMPLES": max_examples,
+        "SUBMISSION_ORDER": submission_order,
+    }
+    build_num = job.build_job(params)
+    if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
@@ -108,7 +142,7 @@ def create_fence_client(
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return {
                 "client_creds.txt": job.get_artifact_content(
@@ -139,7 +173,7 @@ def delete_fence_client(test_env_namespace, client_name):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -167,7 +201,7 @@ def revoke_arborist_policy(test_env_namespace, username, policy):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=600)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -193,7 +227,7 @@ def update_audit_service_logging(test_env_namespace, audit_logging):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=300)
         if status == "Completed":
             return True
         else:
@@ -218,7 +252,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, max_duration=300)
         if status == "Completed":
             return True
         else:
