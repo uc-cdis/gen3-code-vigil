@@ -66,9 +66,9 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
 
         steps:
-          # Enable step debugging. Uncomment this to debug pipeline issues
-          - name: Enable Step Debugging
-            run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
+          # # Enable step debugging. Uncomment this to debug pipeline issues
+          # - name: Enable Step Debugging
+          #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
