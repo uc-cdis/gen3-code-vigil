@@ -227,6 +227,20 @@ jobs:
                         "type": "mrkdwn",
                         "text": "Tests Executed: *TOTAL* - *, *PASSED* - *, *FAILED* - *"
                       }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "Test Report (Login to qa.planx-pla.net first): [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "Pod Logs Archive: [here]($POD_LOGS_URL)"
+                      }
                     }
                   ]
                 }
