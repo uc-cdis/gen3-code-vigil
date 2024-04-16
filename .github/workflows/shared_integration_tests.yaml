@@ -167,7 +167,7 @@ jobs:
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
               PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
-              echo "TOTAL=$TOTAL" >> $GITHUB_ENV
+              echo "PASSED=$PASSED" >> $GITHUB_ENV
               FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
               echo "FAILED=$FAILED" >> $GITHUB_ENV
               BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
