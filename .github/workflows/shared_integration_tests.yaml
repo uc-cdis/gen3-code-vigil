@@ -247,7 +247,7 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*Tests Executed* (ran for ${{ env.DURATION || 'N/A' }} on ${{ env.NAMESPACE || 'N/A' }})\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
+                        "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
                       }
                     },
                     {
