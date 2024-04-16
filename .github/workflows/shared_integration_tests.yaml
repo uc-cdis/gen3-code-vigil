@@ -166,10 +166,12 @@ jobs:
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
-              TOTAL=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.total')
               PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
+              echo "TOTAL=$TOTAL" >> $GITHUB_ENV
               FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
+              echo "FAILED=$FAILED" >> $GITHUB_ENV
               BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
+              echo "BROKEN=$BROKEN" >> $GITHUB_ENV
 
           - name: Render md report to the PR
             id: generate_md_report
