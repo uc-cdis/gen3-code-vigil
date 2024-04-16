@@ -234,21 +234,21 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "PR: - https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}"
+                        "text": "*PR*: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Tests Executed: - *TOTAL* - *${{ env.TOTAL }}*\n- *PASSED* - *${{ env.PASSED }}*\n- *FAILED* - *${{ env.FAILED }}*\n- *BROKEN* - *${{ env.BROKEN }}*"
+                        "text": "*Tests Executed*:\n• *TOTAL* - *${{ env.TOTAL }}*\n• *PASSED* - *${{ env.PASSED }}*\n• *FAILED* - *${{ env.FAILED }}*\n• *BROKEN* - *${{ env.BROKEN }}*"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Test Report (Login to qa.planx-pla.net first): <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>"
+                        "text": "Test Report: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>\n_(Login to https://qa.planx-pla.net first)_"
                       }
                     },
                     {
