@@ -225,8 +225,8 @@ jobs:
                     {
                       "type": "header",
                       "text": {
-                      "type": "mrkdwn",
-                        "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}",
+                      "type": "plain_text",
+                        "text": "Integration Test Results",
                         "emoji": true
                       }
                     },
@@ -234,21 +234,28 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": ">Tests Executed: - *TOTAL* - *${{ env.TOTAL }}*\n- *PASSED* - *${{ env.PASSED }}*\n- *FAILED* - *${{ env.FAILED }}*\n- *BROKEN* - *${{ env.BROKEN }}*"
+                        "text": "PR: - https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": ">Test Report (Login to qa.planx-pla.net first): <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>"
+                        "text": "Tests Executed: - *TOTAL* - *${{ env.TOTAL }}*\n- *PASSED* - *${{ env.PASSED }}*\n- *FAILED* - *${{ env.FAILED }}*\n- *BROKEN* - *${{ env.BROKEN }}*"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": ">Pod Logs Archive: <${{ env.POD_LOGS_URL }}|click here>"
+                        "text": "Test Report (Login to qa.planx-pla.net first): <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "Pod Logs Archive: <${{ env.POD_LOGS_URL }}|click here>"
                       }
                     }
                   ]
