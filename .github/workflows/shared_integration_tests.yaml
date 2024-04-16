@@ -234,7 +234,7 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*PR*: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}"
+                        "text": "*PR*: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}"
                       }
                     },
                     {
@@ -248,21 +248,21 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*Tests Executed*:\n• Total - ${{ env.TOTAL || '0' }}\n• Passed - ${{ env.PASSED || '0' }}\n• Failed - ${{ env.FAILED || '0' }}\n• Broken - ${{ env.BROKEN || '0' }}"
+                        "text": "*Tests Executed*:\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}\n:x: Failed - ${{ env.FAILED || '0' }}\n:broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>\n_(Login to https://qa.planx-pla.net first)_"
+                        "text": "*Test Report*: https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html\n_(Login to https://qa.planx-pla.net first)_"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*Pod Logs Archive*: <${{ env.POD_LOGS_URL || 'N/A' }}|click here>"
+                        "text": "*Pod Logs Archive*: ${{ env.POD_LOGS_URL || 'N/A' }}"
                       }
                     }
                   ]
