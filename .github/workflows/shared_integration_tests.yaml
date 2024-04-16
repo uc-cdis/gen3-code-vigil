@@ -220,12 +220,13 @@ jobs:
               channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
               payload: |
                 {
+                  "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}",
                   "blocks": [
                     {
                       "type": "header",
                       "text": {
                       "type": "mrkdwn",
-                        "text": "Integration test result: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}",
+                        "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}",
                         "emoji": true
                       }
                     },
