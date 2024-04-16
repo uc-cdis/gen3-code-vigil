@@ -241,21 +241,28 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*Tests Executed*:\n• *TOTAL* - *${{ env.TOTAL }}*\n• *PASSED* - *${{ env.PASSED }}*\n• *FAILED* - *${{ env.FAILED }}*\n• *BROKEN* - *${{ env.BROKEN }}*"
+                        "text": "*Test Environment*: ${{ env.NAMESPACE || 'N/A'}}"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Test Report: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>\n_(Login to https://qa.planx-pla.net first)_"
+                        "text": "*Tests Executed*:\n• Total - ${{ env.TOTAL || '0' }}\n• Passed - ${{ env.PASSED || '0' }}\n• Failed - ${{ env.FAILED || '0' }}\n• Broken - ${{ env.BROKEN || '0' }}"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Pod Logs Archive: <${{ env.POD_LOGS_URL }}|click here>"
+                        "text": "*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>\n_(Login to https://qa.planx-pla.net first)_"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Pod Logs Archive*: <${{ env.POD_LOGS_URL || 'N/A' }}|click here>"
                       }
                     }
                   ]
