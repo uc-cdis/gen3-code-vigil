@@ -169,6 +169,7 @@ jobs:
           #     TOTAL=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.total')
           #     PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
           #     FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
+          #     BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
 
           # - name: Render md report to the PR
           #   id: generate_md_report
@@ -219,27 +220,34 @@ jobs:
               channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
               payload: |
                 {
-                  "text": "Integration test result: $REPO/$PR_NUM",
+                  "type": "header",
+                  "text": {
+                  "type": "plain_text",
+                    "text": ""Integration test result: https://github.com/${{ env.REPO_FN }}/${{ env.PR_NUM }}",
+                    "emoji": true
+                  }
+                },
+                {
                   "blocks": [
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Tests Executed: *TOTAL* - *, *PASSED* - *, *FAILED* - *"
+                        "text": "Tests Executed: *TOTAL* - *${{ env.TOTAL }}*, *PASSED* - *${{ env.PASSED }}*, *FAILED* - *${{ env.FAILED }}*, *BROKEN* - *${{ env.BROKEN }}*"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Test Report (Login to qa.planx-pla.net first): [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/\$REPO/\$PR_NUM/\$RUN_NUM/index.html)"
+                        "text": "Test Report (Login to qa.planx-pla.net first): [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html)"
                       }
                     },
                     {
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "Pod Logs Archive: [here](\$POD_LOGS_URL)"
+                        "text": "Pod Logs Archive: ${{ env.POD_LOGS_URL }}"
                       }
                     }
                   ]
