@@ -15,7 +15,9 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_all_nodes() -> dict:
-    lines = (TEST_DATA_PATH_OBJECT / "DataImportOrderPath.txt").read_text()
+    lines = (
+        TEST_DATA_PATH_OBJECT / "sheepdog_peregrine" / "DataImportOrderPath.txt"
+    ).read_text()
     nodes_dict = {}
     counter = 1
     target = "project"
@@ -29,7 +31,9 @@ def get_all_nodes() -> dict:
             raise
         if node_name in ["project"]:
             continue  # project.json is not simulated
-        data = open(TEST_DATA_PATH_OBJECT / "{}.json".format(node_name))
+        data = open(
+            TEST_DATA_PATH_OBJECT / "sheepdog_peregrine" / "{}.json".format(node_name)
+        )
         nodes_dict[node_name] = {
             "data": json.load(data)[0],
             "order": counter,
@@ -48,6 +52,7 @@ def sort_nodes(nodes_dict: dict) -> dict:
 
 def ith_node_in_path(i: int) -> dict:
     nodes_dict = get_all_nodes()
+    logger.info(nodes_dict)
     for key, val in nodes_dict.items():
         if val["order"] == i:
             return nodes_dict[key]

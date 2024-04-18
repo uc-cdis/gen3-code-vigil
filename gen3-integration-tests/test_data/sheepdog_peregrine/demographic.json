@@ -1,0 +1,122 @@
+[
+    {
+        "cases": {
+            "submitter_id": "case_7780c858b5"
+        },
+        "ethnicity": "not reported",
+        "gender": "unspecified",
+        "race": "Unknown",
+        "submitter_id": "demographic_5fbc4e8d10",
+        "type": "demographic",
+        "year_of_birth": 68.82700035359834,
+        "year_of_death": 50.81421084450803
+    },
+    {
+        "cases": {
+            "submitter_id": "case_621e5e6b47"
+        },
+        "ethnicity": "not reported",
+        "gender": "not reported",
+        "race": "other",
+        "submitter_id": "demographic_b9580c85a7",
+        "type": "demographic",
+        "year_of_birth": 7.261013647090886,
+        "year_of_death": 33.352412525004425
+    },
+    {
+        "cases": {
+            "submitter_id": "case_59095fe767"
+        },
+        "ethnicity": "Unknown",
+        "gender": "male",
+        "race": "black or african american",
+        "submitter_id": "demographic_dc538406bc",
+        "type": "demographic",
+        "year_of_birth": 34.095801056453226,
+        "year_of_death": 63.15768363437647
+    },
+    {
+        "cases": {
+            "submitter_id": "case_b12c9fed51"
+        },
+        "ethnicity": null,
+        "gender": "unspecified",
+        "race": null,
+        "submitter_id": "demographic_229a70e0fb",
+        "type": "demographic",
+        "year_of_birth": 90.49239097390455,
+        "year_of_death": 96.15473927738535
+    },
+    {
+        "cases": {
+            "submitter_id": "case_7b27eb6137"
+        },
+        "ethnicity": null,
+        "gender": "female",
+        "race": "other",
+        "submitter_id": "demographic_5e18da7d13",
+        "type": "demographic",
+        "year_of_birth": 86.04780681965765,
+        "year_of_death": 93.59798854742333
+    },
+    {
+        "cases": {
+            "submitter_id": "case_d8d58c8013"
+        },
+        "ethnicity": "not hispanic or latino",
+        "gender": "unspecified",
+        "race": "Unknown",
+        "submitter_id": "demographic_1d12a3b49c",
+        "type": "demographic",
+        "year_of_birth": 23.59701040107549,
+        "year_of_death": 62.79440669600038
+    },
+    {
+        "cases": {
+            "submitter_id": "case_9f1ba6dbb0"
+        },
+        "ethnicity": null,
+        "gender": "unspecified",
+        "race": "not allowed to collect",
+        "submitter_id": "demographic_e49235b445",
+        "type": "demographic",
+        "year_of_birth": 62.72037617522067,
+        "year_of_death": 69.04304663714797
+    },
+    {
+        "cases": {
+            "submitter_id": "case_424edcce1a"
+        },
+        "ethnicity": "not allowed to collect",
+        "gender": "unspecified",
+        "race": "other",
+        "submitter_id": "demographic_6b38417c46",
+        "type": "demographic",
+        "year_of_birth": 24.635421983576233,
+        "year_of_death": 78.83557249092496
+    },
+    {
+        "cases": {
+            "submitter_id": "case_2af7e36012"
+        },
+        "ethnicity": "not allowed to collect",
+        "gender": "unspecified",
+        "race": "not allowed to collect",
+        "submitter_id": "demographic_143d8f782c",
+        "type": "demographic",
+        "year_of_birth": 18.71818881116726,
+        "year_of_death": 26.924060502424997
+    },
+    {
+        "cases": {
+            "submitter_id": "case_ff902975b8"
+        },
+        "ethnicity": "Unknown",
+        "gender": "unspecified",
+        "race": "black or african american",
+        "submitter_id": "demographic_689d5d5c30",
+        "type": "demographic",
+        "year_of_birth": 88.75009428860317,
+        "year_of_death": 52.406220201459554
+    }
+]

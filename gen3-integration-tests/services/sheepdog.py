@@ -125,7 +125,6 @@ class Sheepdog(object):
             + "(first: 0) {code programs {  name    }    _links {  id  submitter_id    }    }}"
         )
         response = peregrine.query(queryToSubmit, {}, "main_account")
-        logger.info(response)
         data = response.json()["data"]
         while len(data[topNode]) > 0:
             linkedType = data[topNode].pop()

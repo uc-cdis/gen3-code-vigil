@@ -175,6 +175,7 @@ class TestSheepdogPeregrineService:
         secondNode = sheepdog.add_node(
             nodes.get_second_node(), "main_account", validate_node=False
         )
+        logger.info(secondNode)
         if secondNode["addRes"]["code"] != 400:
             logger.error(
                 "Found status which was not 400. Response : {}".format(

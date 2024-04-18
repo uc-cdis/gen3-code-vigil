@@ -1,0 +1,212 @@
+[
+    {
+        "contributor": "ce6d72904d",
+        "coverage": "bf1c017ba0",
+        "creator": "308659b29d",
+        "data_type": "039b9edf3b",
+        "date": "2019-08-31T16:34:09+00:00",
+        "description": "77735b01fc",
+        "format": "42051bfaae",
+        "language": "62bec8b87d",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "64cc9da260",
+        "relation": "389b728c19",
+        "rights": "7e438e55fc",
+        "source": "fb8b30357b",
+        "subject": "62127601c4",
+        "submitter_id": "core_metadata_collection_3c2a6b00d4",
+        "title": "4854e3d72b",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "f9e4262e50",
+        "coverage": "cb0493be7a",
+        "creator": "8125bf7cf0",
+        "data_type": "7e53ccbc6b",
+        "date": "2016-12-05T08:20:13+00:00",
+        "description": "ca0e158df1",
+        "format": "249f45714a",
+        "language": "273b70266c",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "477c871389",
+        "relation": "e823a9c915",
+        "rights": "63b542b3f7",
+        "source": "969cdba4a6",
+        "subject": "e1c9bf68a1",
+        "submitter_id": "core_metadata_collection_2b53e73180",
+        "title": "802c498611",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "8cea76feff",
+        "coverage": "e9b298037b",
+        "creator": "4768978bec",
+        "data_type": "adfa0d8657",
+        "date": "1993-11-26T19:07:07+00:00",
+        "description": "014c3448f5",
+        "format": "a510cd62fd",
+        "language": "effe8d872c",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "9057fc39c9",
+        "relation": "33b1d370a5",
+        "rights": "27f5d1259b",
+        "source": "7d011f9173",
+        "subject": "6734a1dc0b",
+        "submitter_id": "core_metadata_collection_49088820d1",
+        "title": "1a52a93720",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "5573bea93e",
+        "coverage": "65973dfc67",
+        "creator": "6c9b4fc15b",
+        "data_type": "df1d1ee74f",
+        "date": "1982-12-17T14:16:51+00:00",
+        "description": "3f2e7505c8",
+        "format": "39c7a09701",
+        "language": "369f9aff7c",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "d1499dc929",
+        "relation": "0083ba23bc",
+        "rights": "2c717723ff",
+        "source": "9cad54fa78",
+        "subject": "6e7636379c",
+        "submitter_id": "core_metadata_collection_8a11f3b43a",
+        "title": "0b4eca4cbd",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "1e1a212375",
+        "coverage": "3882ba72c2",
+        "creator": "1a3e8599ca",
+        "data_type": "4d45e15ef5",
+        "date": "2014-11-05T03:53:43+00:00",
+        "description": "3129de75fe",
+        "format": "133a88ed5c",
+        "language": "3619be9363",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "67ff32e60c",
+        "relation": "6c366cc39f",
+        "rights": "eea38736e8",
+        "source": "4d78c4ba8a",
+        "subject": "b8688e0d8e",
+        "submitter_id": "core_metadata_collection_456ef96e52",
+        "title": "962688d12b",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "d41f012ae5",
+        "coverage": "439a3d4b93",
+        "creator": "1ba3709792",
+        "data_type": "33e335ff3b",
+        "date": "2006-05-05T19:50:00+00:00",
+        "description": "54534c5787",
+        "format": "b998615d46",
+        "language": "1ce4f48c2f",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "9c8da2ea77",
+        "relation": "99fe551e43",
+        "rights": "1337ad7214",
+        "source": "2392f4a28a",
+        "subject": "907a59ef9f",
+        "submitter_id": "core_metadata_collection_6d985b45ae",
+        "title": "b5c7cc2c54",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "ad1becd090",
+        "coverage": "a9fcf6668e",
+        "creator": "a565308f28",
+        "data_type": "c2a4e8f942",
+        "date": "2013-02-28T06:51:53+00:00",
+        "description": "b11b5af700",
+        "format": "5ac7bb0874",
+        "language": "8affb99cfb",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "6028530e16",
+        "relation": "864cafa122",
+        "rights": "f92a2387b2",
+        "source": "1c2a66eb6b",
+        "subject": "25016e7df9",
+        "submitter_id": "core_metadata_collection_5915ee9291",
+        "title": "1455444b0b",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "44390740b2",
+        "coverage": "fcc4f6e8cf",
+        "creator": "a1922f1f96",
+        "data_type": "02ff99c576",
+        "date": "2013-02-04T18:03:14+00:00",
+        "description": "70ad1ee5e4",
+        "format": "67b4711048",
+        "language": "7a00f2afb1",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "30ac1e031a",
+        "relation": "6b8f1a7e45",
+        "rights": "44674496b9",
+        "source": "17f0c59314",
+        "subject": "040d1806aa",
+        "submitter_id": "core_metadata_collection_379a73b12d",
+        "title": "c860e0a4ff",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "dec0c6f91c",
+        "coverage": "8064e602b7",
+        "creator": "aad433470e",
+        "data_type": "ea1bd89493",
+        "date": "2004-08-19T14:26:18+00:00",
+        "description": "8029883fe0",
+        "format": "aa06755cb3",
+        "language": "93bf06017a",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "551f2c78a5",
+        "relation": "79ea30ddc5",
+        "rights": "7c6049b550",
+        "source": "952354b070",
+        "subject": "92c77c9272",
+        "submitter_id": "core_metadata_collection_eeb0625243",
+        "title": "4a50690b67",
+        "type": "core_metadata_collection"
+    },
+    {
+        "contributor": "e28661080d",
+        "coverage": "9777445691",
+        "creator": "e62ab8af82",
+        "data_type": "e72acec4f8",
+        "date": "1990-08-13T18:54:15+00:00",
+        "description": "aa9133c8af",
+        "format": "1831bc6ec8",
+        "language": "c039f74e51",
+        "projects": {
+            "code": "jenkins"
+        },
+        "publisher": "dfd11882aa",
+        "relation": "29c83fb8a9",
+        "rights": "c20e3b1a49",
+        "source": "1c9cb88514",
+        "subject": "a00e0fa0ab",
+        "submitter_id": "core_metadata_collection_469922ace7",
+        "title": "16562e4a1b",
+        "type": "core_metadata_collection"
+    }
+]

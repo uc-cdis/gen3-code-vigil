@@ -1,0 +1,8 @@
+project	administrative
+experiment	administrative
+case	administrative
+sample	biospecimen
+aliquot	biospecimen
+core_metadata_collection	administrative
+read_group	biospecimen
+submitted_unaligned_reads	data_file

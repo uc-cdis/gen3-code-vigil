@@ -1,0 +1,162 @@
+[
+    {
+        "days_to_treatment": 80.68989687285173,
+        "days_to_treatment_end": 48.649880051576375,
+        "days_to_treatment_start": 77.08106369426638,
+        "diagnoses": {
+            "submitter_id": "diagnosis_30843fc853"
+        },
+        "submitter_id": "treatment_e6f092dd3d",
+        "therapeutic_agents": "8b554f11ad",
+        "treatment_anatomic_site": "Gastrointestinal, Gallbladder",
+        "treatment_intent_type": "ca9f5ce880",
+        "treatment_or_therapy": "yes",
+        "treatment_outcome": null,
+        "treatment_type": "Other",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 5.81986554509093,
+        "days_to_treatment_end": 26.598144710999495,
+        "days_to_treatment_start": 3.3054375495236488,
+        "diagnoses": {
+            "submitter_id": "diagnosis_32dac80cfc"
+        },
+        "submitter_id": "treatment_cab1b81456",
+        "therapeutic_agents": "ff3014e623",
+        "treatment_anatomic_site": "Arm",
+        "treatment_intent_type": "55565d89af",
+        "treatment_or_therapy": "no",
+        "treatment_outcome": null,
+        "treatment_type": "Internal Radiation",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 40.24593630454585,
+        "days_to_treatment_end": 79.33063499483237,
+        "days_to_treatment_start": 54.501280848230714,
+        "diagnoses": {
+            "submitter_id": "diagnosis_c8422dee62"
+        },
+        "submitter_id": "treatment_1f330383b7",
+        "therapeutic_agents": "d970708c6f",
+        "treatment_anatomic_site": "Parametrium",
+        "treatment_intent_type": "55b00a3819",
+        "treatment_or_therapy": "yes",
+        "treatment_outcome": "Treatment Ongoing",
+        "treatment_type": "Cryoablation",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 7.431184624049491,
+        "days_to_treatment_end": 5.076990177790474,
+        "days_to_treatment_start": 45.150418245285614,
+        "diagnoses": {
+            "submitter_id": "diagnosis_59e80b7a4a"
+        },
+        "submitter_id": "treatment_4afdd12c21",
+        "therapeutic_agents": "4dd32d6874",
+        "treatment_anatomic_site": "Lymph Nodes",
+        "treatment_intent_type": "7b5ccae927",
+        "treatment_or_therapy": "no",
+        "treatment_outcome": "Treatment Stopped Due to Toxicity",
+        "treatment_type": "Immunotherapy (Including Vaccines)",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 32.21567371813651,
+        "days_to_treatment_end": 41.40309981397428,
+        "days_to_treatment_start": 79.896515383198,
+        "diagnoses": {
+            "submitter_id": "diagnosis_dd78f9ca00"
+        },
+        "submitter_id": "treatment_7806edc0ca",
+        "therapeutic_agents": "0f3094ce7d",
+        "treatment_anatomic_site": "Abdomen, total",
+        "treatment_intent_type": "cd67d512e1",
+        "treatment_or_therapy": "unknown",
+        "treatment_outcome": "Treatment Stopped Due to Toxicity",
+        "treatment_type": "Radiation Therapy",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 87.822630214586,
+        "days_to_treatment_end": 74.45241809796393,
+        "days_to_treatment_start": 68.10090689005769,
+        "diagnoses": {
+            "submitter_id": "diagnosis_589edff6d2"
+        },
+        "submitter_id": "treatment_c57d3d5410",
+        "therapeutic_agents": "9d801e3e5b",
+        "treatment_anatomic_site": "Supraclavicular/Axillary Level 3",
+        "treatment_intent_type": "f467a6892d",
+        "treatment_or_therapy": "yes",
+        "treatment_outcome": "Treatment Stopped Due to Toxicity",
+        "treatment_type": "Concurrent Chemoradiation",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 99.53482132606943,
+        "days_to_treatment_end": 27.33602624807554,
+        "days_to_treatment_start": 10.755010198129266,
+        "diagnoses": {
+            "submitter_id": "diagnosis_27b62c5b98"
+        },
+        "submitter_id": "treatment_57eddb67ef",
+        "therapeutic_agents": "817bbd17db",
+        "treatment_anatomic_site": "Lung",
+        "treatment_intent_type": "7600ca2c2d",
+        "treatment_or_therapy": "no",
+        "treatment_outcome": "Partial Response",
+        "treatment_type": "Other",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 73.31557222224058,
+        "days_to_treatment_end": 11.625520922998634,
+        "days_to_treatment_start": 74.46459302133786,
+        "diagnoses": {
+            "submitter_id": "diagnosis_21d1e10702"
+        },
+        "submitter_id": "treatment_35abaa3c73",
+        "therapeutic_agents": "2857230c06",
+        "treatment_anatomic_site": "Ascites",
+        "treatment_intent_type": "43df8847b3",
+        "treatment_or_therapy": null,
+        "treatment_outcome": "Treatment Ongoing",
+        "treatment_type": "Pharmaceutical Therapy",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 74.23092792258463,
+        "days_to_treatment_end": 58.86026622566103,
+        "days_to_treatment_start": 49.354841778024735,
+        "diagnoses": {
+            "submitter_id": "diagnosis_fc7b743762"
+        },
+        "submitter_id": "treatment_af95c36270",
+        "therapeutic_agents": "33c8bf8a72",
+        "treatment_anatomic_site": "Body, total",
+        "treatment_intent_type": "55a726ffc0",
+        "treatment_or_therapy": null,
+        "treatment_outcome": null,
+        "treatment_type": "Unknown",
+        "type": "treatment"
+    },
+    {
+        "days_to_treatment": 17.978766959727654,
+        "days_to_treatment_end": 99.88435149967097,
+        "days_to_treatment_start": 99.42384637755767,
+        "diagnoses": {
+            "submitter_id": "diagnosis_b6a5f81d54"
+        },
+        "submitter_id": "treatment_f96d0736a0",
+        "therapeutic_agents": "03d86c692f",
+        "treatment_anatomic_site": "Gastrointestinal, Gallbladder",
+        "treatment_intent_type": "050ff3dd3e",
+        "treatment_or_therapy": "not reported",
+        "treatment_outcome": "Partial Response",
+        "treatment_type": "Pharmaceutical Therapy",
+        "type": "treatment"
+    }
+]

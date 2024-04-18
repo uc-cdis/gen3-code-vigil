@@ -1,0 +1,142 @@
+[
+    {
+        "aliquot_quantity": 35.14635629230815,
+        "aliquot_volume": 59.01405993346091,
+        "amount": 51.55770101438867,
+        "analyte_type": "3e8be6d784",
+        "analyte_type_id": "D",
+        "concentration": 46.719169643296574,
+        "samples": {
+            "submitter_id": "sample_82ba8d6596"
+        },
+        "source_center": "91c0f01ec2",
+        "submitter_id": "aliquot_84bf12706b",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 63.53250462062614,
+        "aliquot_volume": 89.9580146213648,
+        "amount": 95.64421380228295,
+        "analyte_type": "312006fdc1",
+        "analyte_type_id": "E",
+        "concentration": 31.93180260554832,
+        "samples": {
+            "submitter_id": "sample_8b96347083"
+        },
+        "source_center": "a489fc72de",
+        "submitter_id": "aliquot_5e4c22adf0",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 8.671084517295357,
+        "aliquot_volume": 39.295516480968004,
+        "amount": 13.370036135214402,
+        "analyte_type": "e7bb974c42",
+        "analyte_type_id": "E",
+        "concentration": 56.30786713391247,
+        "samples": {
+            "submitter_id": "sample_beb63865ec"
+        },
+        "source_center": "936959a7af",
+        "submitter_id": "aliquot_e55169eacf",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 83.11012361707205,
+        "aliquot_volume": 8.87395092694916,
+        "amount": 48.77931937124254,
+        "analyte_type": "4e2b637aee",
+        "analyte_type_id": null,
+        "concentration": 68.20198666956618,
+        "samples": {
+            "submitter_id": "sample_d9b4e415b6"
+        },
+        "source_center": "9e7a03228b",
+        "submitter_id": "aliquot_83eda1faf5",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 50.29275904413987,
+        "aliquot_volume": 53.32186036834703,
+        "amount": 48.813310864665326,
+        "analyte_type": "48da74f418",
+        "analyte_type_id": "Y",
+        "concentration": 97.00856776760503,
+        "samples": {
+            "submitter_id": "sample_64d10cdcdf"
+        },
+        "source_center": "7150c06765",
+        "submitter_id": "aliquot_8e8da1c8ca",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 18.525168955747752,
+        "aliquot_volume": 11.848420650490432,
+        "amount": 92.9213957441619,
+        "analyte_type": "83e785a404",
+        "analyte_type_id": "H",
+        "concentration": 4.942744030824764,
+        "samples": {
+            "submitter_id": "sample_da9db023de"
+        },
+        "source_center": "83f0d527e8",
+        "submitter_id": "aliquot_899a72baf2",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 41.044125869114744,
+        "aliquot_volume": 16.854950305806394,
+        "amount": 4.865477955231457,
+        "analyte_type": "8d8e9f48a1",
+        "analyte_type_id": "D",
+        "concentration": 21.632419034939833,
+        "samples": {
+            "submitter_id": "sample_7de9053f5a"
+        },
+        "source_center": "4759b3e0a7",
+        "submitter_id": "aliquot_f55ba19b50",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 6.273943996307807,
+        "aliquot_volume": 37.220861555051634,
+        "amount": 69.20085445862237,
+        "analyte_type": "db87c2be59",
+        "analyte_type_id": "T",
+        "concentration": 48.2838232705912,
+        "samples": {
+            "submitter_id": "sample_b698cbff15"
+        },
+        "source_center": "1fcb37ea73",
+        "submitter_id": "aliquot_2fe4948f4a",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 59.21167161791989,
+        "aliquot_volume": 32.73724828621888,
+        "amount": 24.1210308786481,
+        "analyte_type": "1b0baded4c",
+        "analyte_type_id": null,
+        "concentration": 53.38037884238337,
+        "samples": {
+            "submitter_id": "sample_def2638712"
+        },
+        "source_center": "8c2c535f2e",
+        "submitter_id": "aliquot_7cd063995c",
+        "type": "aliquot"
+    },
+    {
+        "aliquot_quantity": 58.141935471192205,
+        "aliquot_volume": 40.36016074525438,
+        "amount": 39.17411479654398,
+        "analyte_type": "bd7c93c259",
+        "analyte_type_id": "E",
+        "concentration": 41.615809480156116,
+        "samples": {
+            "submitter_id": "sample_7a0865af2d"
+        },
+        "source_center": "dd3418683f",
+        "submitter_id": "aliquot_91f7f44891",
+        "type": "aliquot"
+    }
+]
