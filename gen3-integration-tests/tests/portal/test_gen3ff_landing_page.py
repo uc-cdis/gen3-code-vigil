@@ -3,7 +3,7 @@ import pytest
 
 from cdislogging import get_logger
 
-from pages import home, gen3ff_landing_page
+from pages import gen3ff_landing_page
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -26,6 +26,12 @@ class TestGen3FFLandingPage(object):
         gen3ff.is_current_page(page)
 
     def test_landing_page_buttons(self, page):
+        """
+        Scenario: Verify buttons on landing page work as expected
+        Steps:
+            1. Navigate to landing page
+            2. Click on the buttons and verify browser is redirected correctly
+        """
         gen3ff = gen3ff_landing_page.Gen3FFLandingPage()
         gen3ff.go_to(page)
         gen3ff.check_button(page, "Explore Data", "/discovery")

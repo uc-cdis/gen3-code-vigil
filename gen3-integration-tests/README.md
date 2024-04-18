@@ -21,6 +21,10 @@ Create a .env file under `gen3-code-vigil/gen3-integration-tests` with the value
 JENKINS_URL="https://jenkins.planx-pla.net"
 JENKINS_USERNAME=PlanXCyborg
 JENKINS_PASSWORD=<Jenkins API Token>
+CI_TEST_ORCID_USERID=<ORCID Username>
+CI_TEST_ORCID_PASSWORD=<ORCID Password>
+CI_TEST_RAS_USERID=<RAS Username>
+CI_TEST_RAS_PASSWORD=<RAS Password>
 ```
 The Jenkins API token can be obtained from Keeper.
 
@@ -31,13 +35,15 @@ poetry install
 ```
 Then:
 ```
-HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
+HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --alluredir allure-results -n auto --dist loadscope
 ```
 The kubernetes namespace is required for Gen3 admin tasks. It is assumed to be the first part of the hostname (`jenkins-brain` in the example above).
 If it is different it must be explicitly defined, like
 ```
-HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
+HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --alluredir allure-results -n auto --dist loadscope
 ```
+
+We use [allure-pytest](https://pypi.org/project/allure-pytest/). The report can be viewed by running `allure serve allure-results`
 
 We can set TESTED_ENV to the enviroment being actually tested. This is useful when we replicate the configuration of the tested environment in the dev / test environment for testing or development. We can then run the tests by executing
 ```

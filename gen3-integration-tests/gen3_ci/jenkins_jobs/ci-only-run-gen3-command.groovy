@@ -3,12 +3,15 @@
         e.g., qa-anvil
     String parameter COMMAND
         e.g., gen3 secrets decode portal-config gitops.json | jq '.discoveryConfig.minimalFieldMapping.uid'
+    String parameter JENKINS_NAMESPACE
+      Default value - default
 
     Artifact archived - result.txt
 */
 pipeline {
     agent {
       kubernetes {
+            namespace "${JENKINS_NAMESPACE}"
             yaml '''
 apiVersion: v1
 kind: Pod

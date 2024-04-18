@@ -21,6 +21,14 @@ on:
         required: true
       QA_DASHBOARD_S3_PATH:
         required: true
+      CI_TEST_ORCID_USERID:
+        required: true
+      CI_TEST_ORCID_PASSWORD:
+        required: true
+      CI_TEST_RAS_USERID:
+        required: true
+      CI_TEST_RAS_PASSWORD:
+        required: true
 
 
 concurrency:
@@ -49,6 +57,10 @@ jobs:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
           RUN_NUM: ${{ github.run_number }}
+          CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+          CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+          CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
+          CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
@@ -70,13 +82,20 @@ jobs:
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
-              python-version: 3.9
+              python-version: '3.9'
+
+          - name: Set up Go
+            uses: actions/setup-go@v5
+            with:
+              go-version: '1.17'
 
           # allure report generation needs node
           - name: Set up node
-            uses: actions/setup-node@v3
+            uses: actions/setup-node@v4
+            with:
+              node-version: 20
 
           # Install gen3-integration-tests dependencies
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings

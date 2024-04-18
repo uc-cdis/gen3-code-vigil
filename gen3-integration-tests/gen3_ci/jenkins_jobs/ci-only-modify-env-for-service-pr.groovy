@@ -7,10 +7,13 @@
     String parameter VERSION
         Version, specifically the quay image tag
         e.g., 2023.09
+    String parameter JENKINS_NAMESPACE
+      Default value - default
 */
 pipeline {
     agent {
         kubernetes {
+            namespace "${JENKINS_NAMESPACE}"
             yaml '''
 apiVersion: v1
 kind: Pod
