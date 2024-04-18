@@ -18,7 +18,30 @@ class Sheepdog(object):
     def __init__(self):
         self.BASE_ADD_ENDPOINT = "/api/v0/submission"
 
-    def addNode(self, node, user, validate_node=True):
+    def get_did_from_file_id(self, file_node: dict, auth: Gen3Auth) -> str:
+        if not file_node["data"]["id"]:
+            logger.error(
+                "Parameter id is missing from node. Node details: {}".format(file_node)
+            )
+            raise
+        response = requests.get(
+            url=pytest.root_url
+            + self.BASE_ADD_ENDPOINT
+            + "/jnkns/jenkins/export?ids={}&format=json".format(
+                file_node["data"]["id"]
+            ),
+            auth=auth,
+        )
+        return response.json()[0]["object_id"]
+
+    def add_node(
+        self,
+        node: dict,
+        user: str,
+        validate_node=True,
+        validate_node_update=False,
+        invalid_property=False,
+    ) -> dict:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         response = requests.put(
             url=pytest.root_url + self.BASE_ADD_ENDPOINT + "/jnkns/jenkins",
@@ -29,14 +52,42 @@ class Sheepdog(object):
         node["addRes"] = data
         node["data"]["id"] = data["entities"][0]["id"]
 
+        if "_file" in node["category"] and not invalid_property:
+            node["did"] = self.get_did_from_file_id(node, auth)
+
         # Validate node was created
         if validate_node:
-            if data["created_entity_count"] != 1:
+            if validate_node_update:
+                property_to_check = data["updated_entity_count"]
+            else:
+                property_to_check = data["created_entity_count"]
+            if property_to_check != 1:
                 logger.error("Node wasn't created. Node details : {}".format(node))
                 raise
         return node
 
-    def deleteNode(self, node, user, validate_node=True):
+    def add_nodes(self, nodes_dict: dict, user: str) -> dict:
+        nodes_mapping = {}
+        sortedNodes = nodes.sort_nodes(nodes_dict).items()
+        for key, val in sortedNodes:
+            logger.info("Adding node for {}".format(key))
+            node = self.add_node(val, user)
+            nodes_mapping[key] = node
+        return nodes_mapping
+
+    def update_node(
+        self,
+        node: dict,
+        user: str,
+        validate_node=True,
+        validate_node_update=True,
+        invalid_property=False,
+    ) -> dict:
+        return self.add_node(
+            node, user, validate_node, validate_node_update, invalid_property
+        )
+
+    def delete_node(self, node: dict, user: str, validate_node=True) -> None:
         id = node["data"]["id"]
         if not id:
             logger.error("Cannot delete node because node.data.id is missing")
@@ -57,9 +108,15 @@ class Sheepdog(object):
                     "Node wasn't deleted. Node delete response : {}".format(data)
                 )
                 raise
-        return
 
-    def deleteAllNodes(self):
+    def delete_nodes(self, nodes_dict: dict, user: str) -> None:
+        for key, val in dict(
+            sorted(nodes_dict.items(), key=lambda item: item[1]["order"], reverse=True)
+        ).items():
+            logger.info("Deleting node for {}".format(key))
+            self.delete_node(val, user)
+
+    def delete_all_nodes(self) -> None:
         peregrine = Peregrine()
         topNode = "project"
         queryToSubmit = (
@@ -68,6 +125,7 @@ class Sheepdog(object):
             + "(first: 0) {code programs {  name    }    _links {  id  submitter_id    }    }}"
         )
         response = peregrine.query(queryToSubmit, {}, "main_account")
+        logger.info(response)
         data = response.json()["data"]
         while len(data[topNode]) > 0:
             linkedType = data[topNode].pop()
@@ -75,11 +133,14 @@ class Sheepdog(object):
             program = linkedType["programs"][0]["name"]
             while len(linkedType["_links"]) > 0:
                 linkedTypeInstance = linkedType["_links"].pop()
-                self.deleteByIdRecursively(
+                logger.info(linkedTypeInstance["id"])
+                self.delete_by_id_recursively(
                     linkedTypeInstance["id"], project, program, "main_account"
                 )
 
-    def deleteByIdRecursively(self, id, project, program, user):
+    def delete_by_id_recursively(
+        self, id: str, project: str, program: str, user: str
+    ) -> None:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         # Endpoint for deleting the node using id
         BASE_DELETE_ENDPOINT = "/api/v0/submission/{}/{}/entities/{}".format(
@@ -104,5 +165,7 @@ class Sheepdog(object):
         # Need to delete depenedent(s)
         if data["code"] != 200 and data["dependent_ids"] != "":
             dependents = data["dependent_ids"].split(",")
-            self.deleteByIdRecursively(dependents[0], project, program, "main_account")
-            self.deleteByIdRecursively(id, project, program, "main_account")
+            self.delete_by_id_recursively(
+                dependents[0], project, program, "main_account"
+            )
+            self.delete_by_id_recursively(id, project, program, "main_account")

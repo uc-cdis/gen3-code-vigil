@@ -15,38 +15,54 @@ class Peregrine(object):
     def __init__(self):
         self.BASE_QUERY_ENDPOINT = "/api/v0/submission/graphql"
 
-    def query(self, queryString, variableString, user):
+    def query(self, query_string: str, variable_string: str, user: str) -> dict:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         response = requests.post(
             url=pytest.root_url + self.BASE_QUERY_ENDPOINT,
-            data=json.dumps({"query": queryString, "variables": variableString}),
+            data=json.dumps({"query": query_string, "variables": variable_string}),
             auth=auth,
         )
         return response
 
-    def queryNodeFields(self, node, filters={}):
-        fieldsString = self.fieldsToString(node["data"])
-        filterString = ""
+    def query_node_fields(self, node: dict, filters={}) -> str:
+        fields_string = self.fields_to_string(node["data"])
+        filter_string = ""
         if filters is not None and filters != {}:
-            filterString = self.filterToString(filters)
-            filterString = "( " + filterString + ")"
+            filter_string = self.filter_to_string(filters)
+            filter_string = "( " + filter_string + ")"
 
-        queryToSubmit = (
-            "{ " + node["name"] + " " + filterString + " {" + fieldsString + " } }"
+        query_to_submit = (
+            "{ " + node["name"] + " " + filter_string + " {" + fields_string + " } }"
         )
-        return self.query(queryToSubmit, {}, "main_account")
+        return self.query(query_to_submit, {}, "main_account")
 
-    def fieldsToString(self, data):
+    def fields_to_string(self, data: dict) -> str:
         primitive_types = [int, float, bool, str]
-        fieldsString = ""
+        fields_string = ""
         for key, val in data.items():
             if type(val) in primitive_types:
-                fieldsString += "\n{}".format(key)
-        return fieldsString
+                fields_string += "\n{}".format(key)
+        return fields_string
 
-    def filterToString(self, filters):
-        filterString = []
+    def filter_to_string(self, filters: dict) -> str:
+        filter_string = []
         for key, val in filters.items():
             if isinstance(val, str):
-                filterString.append('{}: "{}"'.format(key, val))
-        return ", ".join(filterString)
+                filter_string.append('{}: "{}"'.format(key, val))
+        return ", ".join(filter_string)
+
+    def query_count(self, type_count: str) -> dict:
+        query_to_submit = "{" + type_count + "}"
+        return self.query(query_to_submit, {}, "main_account")
+
+    def query_with_path_to(self, from_node: dict, to_node: dict) -> dict:
+        query_to_submit = (
+            "query Test { "
+            + from_node["name"]
+            + ' (order_by_desc: "created_datetime",with_path_to: { type: "'
+            + to_node["name"]
+            + '", submitter_id: "'
+            + to_node["data"]["submitter_id"]
+            + '"} ) { submitter_id } }'
+        )
+        return self.query(query_to_submit, {}, "main_account")

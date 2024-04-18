@@ -226,3 +226,31 @@ def mutate_manifest_for_guppy_test(test_env_namespace):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+
+
+def create_expired_token(test_env_namespace, service, expiration, username):
+    """
+    Roll a give service pod
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "create-expired-token",
+    )
+    params = {
+        "SERVICE": service,
+        "EXPIRATION": expiration,
+        "USERNAME": username,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=300)
+        if status == "Completed":
+            return job.get_artifact_content(build_num, "expired_token.txt")
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
