@@ -132,7 +132,6 @@ class Sheepdog(object):
             program = linkedType["programs"][0]["name"]
             while len(linkedType["_links"]) > 0:
                 linkedTypeInstance = linkedType["_links"].pop()
-                logger.info(linkedTypeInstance["id"])
                 self.delete_by_id_recursively(
                     linkedTypeInstance["id"], project, program, "main_account"
                 )

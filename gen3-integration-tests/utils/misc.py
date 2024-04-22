@@ -1,10 +1,13 @@
 import os
 import time
+import requests
+import pytest
 
 from cdislogging import get_logger
 from filelock import Timeout, FileLock
 
 from utils import TEST_DATA_PATH_OBJECT
+from gen3.auth import Gen3Auth
 
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
@@ -80,3 +83,45 @@ def one_worker_only(wait_secs=3, max_wait_minutes=1):
         return run_with_lock
 
     return one_worker_only_decorator
+
+
+def create_program(program_name, auth_header, user="main_account"):
+    auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+    program_form = (
+        '{"name":"'
+        + program_name
+        + '","type":"program","dbgap_accession_number":"'
+        + program_name
+        + '"}'
+    )
+    response = requests.post(
+        url=pytest.root_url + "/api/v0/submission",
+        headers=auth_header,
+        auth=auth,
+        data=program_form,
+    )
+    if response.status_code == 200:
+        logger.info("Successfully Created/Updated program")
+    else:
+        logger.error("Failed to Create/Update program")
+
+
+def create_project(project_name, auth_header, user="main_account"):
+    auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+    project_form = (
+        '{"type":"project","code":"'
+        + project_name
+        + '","name":"jenkins","dbgap_accession_number":"'
+        + project_name
+        + '","state":"open","releasable":true}'
+    )
+    response = requests.post(
+        url=pytest.root_url + "/api/v0/submission",
+        headers=auth_header,
+        auth=auth,
+        data=project_form,
+    )
+    if response.status_code == 200:
+        logger.info("Successfully Created/Updated project")
+    else:
+        logger.error("Failed to Create/Update project")
