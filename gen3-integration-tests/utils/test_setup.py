@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import requests
 
 from cdislogging import get_logger
 from datasimulator.main import (
@@ -9,6 +10,7 @@ from datasimulator.main import (
     run_submission_order_generation,
 )
 from pathlib import Path
+from gen3.auth import Gen3Auth
 
 from services.fence import Fence
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
@@ -101,3 +103,33 @@ def generate_graph_data():
     for f_path in sorted(os.listdir(data_path)):
         with open(data_path / f_path, "r") as f:
             logger.debug(f"{f_path}:\n{f.read()}")
+
+
+def create_program_project():
+    """
+    Creates program and project if not present already
+    """
+    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+    api_key_json, auth_header = get_api_key_and_auth_header(user="main_account")
+    program_form = '{"name":"jnkns","type":"program","dbgap_accession_number":"jnkns"}'
+    project_form = '{"type":"project","code":"jenkins","name":"jenkins","dbgap_accession_number":"jenkins","state":"open","releasable":true}'
+    response = requests.post(
+        url=pytest.root_url + "/api/v0/submission",
+        headers=auth_header,
+        auth=auth,
+        data=program_form,
+    )
+    if response.status_code == 200:
+        logger.info("Successfully Created/Updated program")
+    else:
+        logger.error("Failed to Create/Update program")
+    response = requests.post(
+        url=pytest.root_url + "/api/v0/submission/jnkns",
+        headers=auth_header,
+        auth=auth,
+        data=project_form,
+    )
+    if response.status_code == 200:
+        logger.info("Successfully Created/Updated project")
+    else:
+        logger.error("Failed to Create/Update project")

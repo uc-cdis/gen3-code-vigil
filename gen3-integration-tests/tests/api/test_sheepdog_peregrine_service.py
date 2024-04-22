@@ -13,6 +13,7 @@ from services.sheepdog import Sheepdog
 from services.peregrine import Peregrine
 from services.indexd import Indexd
 from utils.gen3_admin_tasks import create_expired_token
+from utils.test_setup import create_program_project
 
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
@@ -30,6 +31,7 @@ class TestSheepdogPeregrineService:
         roll_service_pod(pytest.namespace, 'indexd')"""
 
     def setup_method(self, method):
+        create_program_project()
         sdp = Sheepdog()
         # Delete all existing nodes prior to running the test cases
         logger.info("Deleting any existing nodes before test case execution")
