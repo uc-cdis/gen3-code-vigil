@@ -7,6 +7,8 @@ from cdislogging import get_logger
 
 from gen3.auth import Gen3Auth
 
+from utils.misc import retry
+
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
@@ -16,6 +18,7 @@ class MetadataService(object):
         self.MDS_ENDPOINT = f"{self.BASE_URL}/metadata"
         self.AGG_MDS_ENDPOINT = f"{self.BASE_URL}/aggregate/metadata"
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def get_aggregate_metadata(self, study_id, user="main_account"):
         """Get aggregate mds record for the study id specified"""
         res = requests.get(
