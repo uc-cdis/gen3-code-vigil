@@ -103,20 +103,23 @@ def create_program(program_name, auth_header, user="main_account"):
     if response.status_code == 200:
         logger.info("Successfully Created/Updated program")
     else:
+        logger.info(response.json())
         logger.error("Failed to Create/Update program")
 
 
-def create_project(project_name, auth_header, user="main_account"):
+def create_project(program_name, project_name, auth_header, user="main_account"):
     auth = Gen3Auth(refresh_token=pytest.api_keys[user])
     project_form = (
         '{"type":"project","code":"'
         + project_name
-        + '","name":"jenkins","dbgap_accession_number":"'
+        + '","name":"'
+        + project_name
+        + '","dbgap_accession_number":"'
         + project_name
         + '","state":"open","releasable":true}'
     )
     response = requests.post(
-        url=pytest.root_url + "/api/v0/submission",
+        url=pytest.root_url + "/api/v0/submission/" + program_name,
         headers=auth_header,
         auth=auth,
         data=project_form,
@@ -124,4 +127,5 @@ def create_project(project_name, auth_header, user="main_account"):
     if response.status_code == 200:
         logger.info("Successfully Created/Updated project")
     else:
+        logger.info(response.json())
         logger.error("Failed to Create/Update project")

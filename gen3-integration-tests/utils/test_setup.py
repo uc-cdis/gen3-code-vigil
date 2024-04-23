@@ -109,5 +109,5 @@ def create_program_project(user="main_account"):
     Creates program and project if not present already
     """
     api_key_json, auth_header = get_api_key_and_auth_header(user=user)
-    create_project("jnkns", auth_header, user)
-    create_program("jenkins", auth_header, user)
+    create_program("jnkns", auth_header, user)
+    create_project("jnkns", "jenkins", auth_header, user)

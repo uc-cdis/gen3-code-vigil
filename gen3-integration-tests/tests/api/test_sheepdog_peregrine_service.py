@@ -28,9 +28,10 @@ class TestSheepdogPeregrineService:
     def setup_class(cls):
         logger.info("Generating data")
         generate_graph_data()
+        logger.info("Create/Update program and project")
+        create_program_project()
 
     def setup_method(self, method):
-        create_program_project()
         sdp = Sheepdog()
         # Delete all existing nodes prior to running the test cases
         logger.info("Deleting any existing nodes before test case execution")
