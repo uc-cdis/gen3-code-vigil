@@ -29,7 +29,10 @@ on:
         required: true
       CI_TEST_RAS_PASSWORD:
         required: true
-
+      CI_SLACK_BOT_TOKEN:
+        required: true
+      CI_SLACK_CHANNEL_ID:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -106,7 +109,7 @@ jobs:
               pip install poetry
               poetry install
               poetry show
-              poetry run playwright install
+              poetry run playwright install chromium
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
@@ -165,6 +168,16 @@ jobs:
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
+              PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
+              echo "PASSED=$PASSED" >> $GITHUB_ENV
+              FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
+              echo "FAILED=$FAILED" >> $GITHUB_ENV
+              BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
+              echo "BROKEN=$BROKEN" >> $GITHUB_ENV
+              DURATION_MS=$(cat ./allure-report/widgets/summary.json | jq -r '.time.duration')
+              MINUTES=$(echo "$DURATION_MS / 60000" | bc)
+              SECONDS=$(( ($milliseconds / 1000) % 60 ))
+              echo "DURATION=${MINUTES}m ${SECONDS}s" >> $GITHUB_ENV
 
           - name: Render md report to the PR
             id: generate_md_report
@@ -205,6 +218,58 @@ jobs:
             run: gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Publish allure report and pod logs url to Slack
+            id: slack_notify
+            # if: ${{ steps.gh_comment_pod_logs_link.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v1.25.0
+            with:
+              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              payload: |
+                {
+                  "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}",
+                  "blocks": [
+                    {
+                      "type": "header",
+                      "text": {
+                      "type": "plain_text",
+                        "text": "Integration Test Results",
+                        "emoji": true
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*PR*: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>  _(login to https://qa.planx-pla.net first)_"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Pod Logs Archive*: <${{ env.POD_LOGS_URL || 'N/A' }}|click here>"
+                      }
+                    }
+                  ]
+                }
+            env:
+              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
 
           - name: Release CI environment
             id: release_ci_env

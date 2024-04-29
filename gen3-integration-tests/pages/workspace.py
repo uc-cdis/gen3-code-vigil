@@ -64,7 +64,7 @@ class WorkspacePage(object):
         screenshot(page, "jupyterWorkspace")
         page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
         # after launch, workspace takes around 6 mins to load and launc
-        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=360000)
+        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=600000)
 
     def open_python_kernel(self, page: Page):
         """perform drs pull in workspace page"""
