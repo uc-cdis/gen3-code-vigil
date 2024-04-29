@@ -136,6 +136,8 @@ jobs:
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
+            env:
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
           - name: Run tests pertaining to specific service
             id: run_service_tests
