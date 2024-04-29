@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from cdislogging import get_logger
+from pages.login import LoginPage
 from services.coremetadata import CoreMetaData
 from services.indexd import Indexd
 from services.peregrine import Peregrine
@@ -17,6 +18,7 @@ from utils.test_setup import create_program_project, generate_graph_data
 
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
+from playwright.sync_api import Page
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -617,106 +619,3 @@ class TestSheepdogPeregrineService:
 
         # Delete all remaining records
         sheepdog.delete_nodes(nodes_dict, "main_account")
-
-    def test_core_metadata(self):
-        """
-        Scenario: Test core metadata
-        Steps:
-        """
-        sheepdog = Sheepdog()
-        coremetadata = CoreMetaData()
-        # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-
-        valid_file = sheepdog.add_node(nodes.get_file_node(), "main_account")
-        metadata = coremetadata.get_core_metadata(file=valid_file, user="main_account")
-        coremetadata.see_json_core_metadata(file=valid_file, metadata=metadata)
-
-        metadata = coremetadata.get_core_metadata(
-            file=valid_file, user="main_account", format="x-bibtex"
-        )
-        coremetadata.see_bibtex_core_metadata(file=valid_file, metadata=metadata)
-
-        sheepdog.delete_node(valid_file, "main_account")
-
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
-
-    def test_core_metadata_invalid_object_id(self):
-        """
-        Scenario: Test core metadata invalid object_id
-        Steps:
-        """
-        sheepdog = Sheepdog()
-        coremetadata = CoreMetaData()
-        # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-
-        invalid_file = nodes.get_file_node()
-        invalid_file["data"]["object_id"] = "invalid_object_id"
-        invalid_file["did"] = "invalid_object_id"
-        metadata = coremetadata.get_core_metadata(
-            file=invalid_file, user="main_account", expected_status=404
-        )
-        coremetadata.see_core_metadata_error(
-            metadata=metadata, message='object_id "invalid_object_id" not found'
-        )
-
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
-
-    def test_core_metadata_no_permission(self):
-        """
-        Scenario: Test core metadata no permission
-        Steps:
-        """
-        sheepdog = Sheepdog()
-        coremetadata = CoreMetaData()
-        # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-
-        valid_file = sheepdog.add_node(nodes.get_file_node(), "main_account")
-        metadata = coremetadata.get_core_metadata(
-            file=valid_file,
-            user="main_account",
-            expected_status=401,
-            invalid_authorization=True,
-        )
-        coremetadata.see_core_metadata_error(
-            metadata=metadata,
-            message="Authentication Error: could not parse authorization header",
-        )
-
-        sheepdog.delete_node(valid_file, "main_account")
-
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
-
-    @pytest.mark.wip("Test in development")
-    def test_core_metadata_page(self):
-        """
-        Scenario: Test core metadata page
-        Steps:
-        """
-        sheepdog = Sheepdog()
-        peregrine = Peregrine()
-        # login_page = LoginPage()
-        coremetadata = CoreMetaData()
-        # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-
-        valid_file = sheepdog.add_node(nodes.get_file_node(), "main_account")
-        metadata = coremetadata.get_core_metadata(file=valid_file, user="main_account")
-        coremetadata.see_json_core_metadata(file=valid_file, metadata=metadata)
-        logger.info(metadata.json())
-
-        # Perform login and logout operations using main_account to create a login record for audit service to access
-        logger.info("Logging in with mainAcct")
-        # login_page.go_to(page)
-        # login_page.login(page)
-        # login_page.logout(page)
-
-        # sheepdog.delete_node(valid_file, "main_account")
-
-        # Delete all remaining records
-        # sheepdog.delete_nodes(nodes_dict, "main_account")

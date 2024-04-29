@@ -65,3 +65,18 @@ class Peregrine(object):
             + '"} ) { submitter_id } }'
         )
         return self.query(query_to_submit, {}, "main_account")
+
+    def see_json_core_metadata(self, file, metadata):
+        metadata = metadata.json()
+        assert (
+            file["data"]["file_name"] == metadata["file_name"]
+        ), f"file_name not matched/found.\n{file}\n{metadata}"
+        assert (
+            file["did"] == metadata["object_id"]
+        ), f"object_id not matched/found.\n{file}\n{metadata}"
+        assert (
+            file["data"]["type"] == metadata["type"]
+        ), f"type not matched/found.\n{file}\n{metadata}"
+        assert (
+            file["data"]["data_format"] == metadata["data_format"]
+        ), f"data_format not matched/found.\n{file}\n{metadata}"

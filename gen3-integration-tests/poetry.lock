@@ -484,13 +484,13 @@ dev = ["flake8", "hypothesis", "ipython", "mypy (>=0.710)", "portray", "pytest (
 
 [[package]]
 name = "dataclasses-json"
-version = "0.6.4"
+version = "0.6.5"
 description = "Easily serialize dataclasses to and from JSON."
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = "<4.0,>=3.7"
 files = [
-    {file = "dataclasses_json-0.6.4-py3-none-any.whl", hash = "sha256:f90578b8a3177f7552f4e1a6e535e84293cd5da421fcce0642d49c0d7bdf8df2"},
-    {file = "dataclasses_json-0.6.4.tar.gz", hash = "sha256:73696ebf24936560cca79a2430cbc4f3dd23ac7bf46ed17f38e5e5e7657a6377"},
+    {file = "dataclasses_json-0.6.5-py3-none-any.whl", hash = "sha256:f49c77aa3a85cac5bf5b7f65f4790ca0d2be8ef4d92c75e91ba0103072788a39"},
+    {file = "dataclasses_json-0.6.5.tar.gz", hash = "sha256:1c287594d9fcea72dc42d6d3836cf14848c2dc5ce88f65ed61b36b57f515fe26"},
 ]
 
 [package.dependencies]
@@ -1862,18 +1862,18 @@ python-slugify = ">=6.0.0,<9.0.0"
 
 [[package]]
 name = "pytest-xdist"
-version = "3.5.0"
+version = "3.6.1"
 description = "pytest xdist plugin for distributed testing, most importantly across multiple CPUs"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-xdist-3.5.0.tar.gz", hash = "sha256:cbb36f3d67e0c478baa57fa4edc8843887e0f6cfc42d677530a36d7472b32d8a"},
-    {file = "pytest_xdist-3.5.0-py3-none-any.whl", hash = "sha256:d075629c7e00b611df89f490a5063944bee7a4362a5ff11c7cc7824a03dfce24"},
+    {file = "pytest_xdist-3.6.1-py3-none-any.whl", hash = "sha256:9ed4adfb68a016610848639bb7e02c9352d5d9f03d04809919e2dafc3be4cca7"},
+    {file = "pytest_xdist-3.6.1.tar.gz", hash = "sha256:ead156a4db231eec769737f57668ef58a2084a34b2e55c4a8fa20d861107300d"},
 ]
 
 [package.dependencies]
-execnet = ">=1.1"
-pytest = ">=6.2.0"
+execnet = ">=2.1"
+pytest = ">=7.0.0"
 
 [package.extras]
 psutil = ["psutil (>=3.0)"]
@@ -2220,17 +2220,17 @@ test = ["pytablewriter (>=0.46)", "pytest"]
 
 [[package]]
 name = "tcolorpy"
-version = "0.1.4"
+version = "0.1.6"
 description = "tcolopy is a Python library to apply true color for terminal text."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tcolorpy-0.1.4-py3-none-any.whl", hash = "sha256:d0926480aa5012f34877d69fc3b670f207dc165674e68ad07458fa6ee5b12724"},
-    {file = "tcolorpy-0.1.4.tar.gz", hash = "sha256:f0dceb1cb95e554cee63024b3cd2fd8d4628c568773de2d1e6b4f0478461901c"},
+    {file = "tcolorpy-0.1.6-py3-none-any.whl", hash = "sha256:8c15cb3167f30b0a433d72297e9d68667c825bd9e2af41c8dd7dfbd3d7f7e207"},
+    {file = "tcolorpy-0.1.6.tar.gz", hash = "sha256:8cea0bf5f8cf03f77528a9acfbf312df935573892ba5ea3b2516e61fa54de9a5"},
 ]
 
 [package.extras]
-test = ["pytest (>=6.0.1)", "pytest-md-report (>=0.4.1)"]
+test = ["pytest (>=6.0.1)", "pytest-md-report (>=0.5)"]
 
 [[package]]
 name = "text-unidecode"
@@ -2507,4 +2507,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "701e504ea52305583b589adc6d369c915fb2ca0938722f63e1b64176a1f5c987"
+content-hash = "92ecb82ae9c1cb0e15c14187abd7f93c9bca62abfe32554142ad0c94fef789cd"
