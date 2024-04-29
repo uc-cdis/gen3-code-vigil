@@ -106,6 +106,7 @@ def submit_graph_and_file_metadata(
     consent_codes=None,
     create_new_parents=False,
     user="main_account",
+    validate_node=True,
 ) -> dict:
     existing_file_node = get_file_node()
     metadata = existing_file_node
@@ -129,7 +130,7 @@ def submit_graph_and_file_metadata(
     if "id" in existing_file_node["data"].keys():
         sheepdog.delete_node(existing_file_node, "main_account")
 
-    sheepdog.add_node(metadata, "main_account")
+    metadata = sheepdog.add_node(metadata, "main_account", validate_node)
     return metadata
 
 
@@ -158,7 +159,7 @@ def submit_links_for_node(
                 new_id = f"{linked_node['data']['type']}_{res}"
                 linked_node["data"]["submitter_id"] = new_id
                 record["data"][prop]["submitter_id"] = new_id
-            sheepdog.add_node(linked_node, user)
+            sheepdog.add_node(linked_node, user, validate_node=False)
 
 
 def get_node_with_submitter_id(submitter_id: str) -> dict:

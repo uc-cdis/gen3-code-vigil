@@ -1,18 +1,18 @@
 """
 SHEEPDOG & PEREGRINE SERVICE
 """
+import json
 import os
 import pytest
 import requests
-import json
 
 from cdislogging import get_logger
-
-from utils import nodes
-from services.sheepdog import Sheepdog
-from services.peregrine import Peregrine
+from services.coremetadata import CoreMetaData
 from services.indexd import Indexd
-from utils.gen3_admin_tasks import create_expired_token
+from services.peregrine import Peregrine
+from services.sheepdog import Sheepdog
+from utils import nodes
+from utils.gen3_admin_tasks import create_expired_token, kube_setup_service
 from utils.test_setup import create_program_project, generate_graph_data
 
 from gen3.auth import Gen3Auth
@@ -22,7 +22,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.sheepdog
-@pytest.mark.peregrine
 class TestSheepdogPeregrineService:
     @classmethod
     def setup_class(cls):
@@ -30,6 +29,8 @@ class TestSheepdogPeregrineService:
         generate_graph_data()
         logger.info("Create/Update program and project")
         create_program_project()
+        logger.info("Restarting indexd service")
+        assert kube_setup_service(pytest.namespace, "indexd")
 
     def setup_method(self, method):
         sdp = Sheepdog()
@@ -92,6 +93,7 @@ class TestSheepdogPeregrineService:
         nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
         sheepdog.delete_nodes(nodes_dict, "main_account")
 
+    @pytest.mark.peregrine
     def test_make_simple_query(self):
         """
         Scenario: Make simple query
@@ -118,6 +120,7 @@ class TestSheepdogPeregrineService:
         # Create a node using sheepdog. Verify node is present.
         sheepdog.delete_node(node, "main_account")
 
+    @pytest.mark.peregrine
     def test_query_all_node_fields(self):
         """
         Scenario: Query all node fields
@@ -152,6 +155,7 @@ class TestSheepdogPeregrineService:
         sheepdog.delete_nodes(nodes_dict, "main_account")
 
     @pytest.mark.skip("Test case is broken")
+    @pytest.mark.peregrine
     def test_submit_node_without_parent(self):
         """
         Scenario: Submit node without parent
@@ -187,6 +191,7 @@ class TestSheepdogPeregrineService:
             )
             raise
 
+    @pytest.mark.peregrine
     def test_query_on_invalid_field(self):
         """
         Scenario: Query on invalid field
@@ -212,6 +217,7 @@ class TestSheepdogPeregrineService:
             )
             raise
 
+    @pytest.mark.peregrine
     def test_filter_query_by_string_attribute(self):
         """
         Scenario: Filter query by string attribute
@@ -249,6 +255,7 @@ class TestSheepdogPeregrineService:
             raise
         sheepdog.delete_nodes(nodes_dict, "main_account")
 
+    @pytest.mark.peregrine
     def test_field_count_filter(self):
         """
         Scenario: Test _[field]_count filter
@@ -285,6 +292,7 @@ class TestSheepdogPeregrineService:
                 raise
         sheepdog.delete_nodes(nodes_dict, "main_account")
 
+    @pytest.mark.peregrine
     def test_filter_by_project_id(self):
         """
         Scenario: Filter by project_id
@@ -316,6 +324,7 @@ class TestSheepdogPeregrineService:
                     raise
         sheepdog.delete_nodes(nodes_dict, "main_account")
 
+    @pytest.mark.peregrine
     def test_filter_by_invalid_project_id(self):
         """
         Scenario: Filter by invalid project_id
@@ -343,6 +352,7 @@ class TestSheepdogPeregrineService:
         # Delete the node created. Verify node is deleted.
         sheepdog.delete_node(node, "main_account")
 
+    @pytest.mark.peregrine
     def test_with_path_to_first_to_last_node(self):
         """
         Scenario: Test with_path_to - first to last node
@@ -374,6 +384,7 @@ class TestSheepdogPeregrineService:
         # Delete all nodes. Verify all nodes are deleted.
         sheepdog.delete_nodes(nodes_dict, "main_account")
 
+    @pytest.mark.peregrine
     def test_with_path_to_last_to_first_node(self):
         """
         Scenario: Test with_path_to - last to first node
@@ -543,6 +554,10 @@ class TestSheepdogPeregrineService:
         """
         Scenario: Submit file invalid property
         Steps:
+            1. Create nodes using sheepdog. Verify nodes are present.
+            2. Create a file node with an invalid property
+            3. Validate node wasn't added
+            4. Delete all nodes. Verify all nodes are deleted.
         """
         sheepdog = Sheepdog()
 
@@ -568,6 +583,12 @@ class TestSheepdogPeregrineService:
         """
         Scenario: Update file with invalid property
         Steps:
+            1. Create nodes using sheepdog. Verify nodes are present.
+            2. Create a file node and retrieve record from indexd
+            3. Update file node with invalid property and try updating node
+            4. Validate node wasn't updated
+            5. Delete file node and delete indexd record
+            6. Delete all nodes. Verify all nodes are deleted.
         """
         sheepdog = Sheepdog()
         indexd = Indexd()
@@ -596,3 +617,106 @@ class TestSheepdogPeregrineService:
 
         # Delete all remaining records
         sheepdog.delete_nodes(nodes_dict, "main_account")
+
+    def test_core_metadata(self):
+        """
+        Scenario: Test core metadata
+        Steps:
+        """
+        sheepdog = Sheepdog()
+        coremetadata = CoreMetaData()
+        # Create nodes using sheepdog. Verify nodes are present.
+        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+
+        valid_file = sheepdog.add_node(nodes.get_file_node(), "main_account")
+        metadata = coremetadata.get_core_metadata(file=valid_file, user="main_account")
+        coremetadata.see_json_core_metadata(file=valid_file, metadata=metadata)
+
+        metadata = coremetadata.get_core_metadata(
+            file=valid_file, user="main_account", format="x-bibtex"
+        )
+        coremetadata.see_bibtex_core_metadata(file=valid_file, metadata=metadata)
+
+        sheepdog.delete_node(valid_file, "main_account")
+
+        # Delete all remaining records
+        sheepdog.delete_nodes(nodes_dict, "main_account")
+
+    def test_core_metadata_invalid_object_id(self):
+        """
+        Scenario: Test core metadata invalid object_id
+        Steps:
+        """
+        sheepdog = Sheepdog()
+        coremetadata = CoreMetaData()
+        # Create nodes using sheepdog. Verify nodes are present.
+        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+
+        invalid_file = nodes.get_file_node()
+        invalid_file["data"]["object_id"] = "invalid_object_id"
+        invalid_file["did"] = "invalid_object_id"
+        metadata = coremetadata.get_core_metadata(
+            file=invalid_file, user="main_account", expected_status=404
+        )
+        coremetadata.see_core_metadata_error(
+            metadata=metadata, message='object_id "invalid_object_id" not found'
+        )
+
+        # Delete all remaining records
+        sheepdog.delete_nodes(nodes_dict, "main_account")
+
+    def test_core_metadata_no_permission(self):
+        """
+        Scenario: Test core metadata no permission
+        Steps:
+        """
+        sheepdog = Sheepdog()
+        coremetadata = CoreMetaData()
+        # Create nodes using sheepdog. Verify nodes are present.
+        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+
+        valid_file = sheepdog.add_node(nodes.get_file_node(), "main_account")
+        metadata = coremetadata.get_core_metadata(
+            file=valid_file,
+            user="main_account",
+            expected_status=401,
+            invalid_authorization=True,
+        )
+        coremetadata.see_core_metadata_error(
+            metadata=metadata,
+            message="Authentication Error: could not parse authorization header",
+        )
+
+        sheepdog.delete_node(valid_file, "main_account")
+
+        # Delete all remaining records
+        sheepdog.delete_nodes(nodes_dict, "main_account")
+
+    @pytest.mark.wip("Test in development")
+    def test_core_metadata_page(self):
+        """
+        Scenario: Test core metadata page
+        Steps:
+        """
+        sheepdog = Sheepdog()
+        peregrine = Peregrine()
+        # login_page = LoginPage()
+        coremetadata = CoreMetaData()
+        # Create nodes using sheepdog. Verify nodes are present.
+        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+
+        valid_file = sheepdog.add_node(nodes.get_file_node(), "main_account")
+        metadata = coremetadata.get_core_metadata(file=valid_file, user="main_account")
+        coremetadata.see_json_core_metadata(file=valid_file, metadata=metadata)
+        logger.info(metadata.json())
+
+        # Perform login and logout operations using main_account to create a login record for audit service to access
+        logger.info("Logging in with mainAcct")
+        # login_page.go_to(page)
+        # login_page.login(page)
+        # login_page.logout(page)
+
+        # sheepdog.delete_node(valid_file, "main_account")
+
+        # Delete all remaining records
+        # sheepdog.delete_nodes(nodes_dict, "main_account")

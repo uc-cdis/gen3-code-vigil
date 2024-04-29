@@ -254,3 +254,29 @@ def create_expired_token(test_env_namespace, service, expiration, username):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+
+
+def kube_setup_service(test_env_namespace, servicename):
+    """
+    Runs jenkins job to kube setup service
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "kube-setup-service",
+    )
+    params = {
+        "SERVICENAME": servicename,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")

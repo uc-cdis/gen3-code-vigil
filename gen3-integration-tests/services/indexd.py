@@ -54,6 +54,7 @@ class Indexd(object):
             return record
         except Exception as e:
             logger.exception(msg=f"Cannot find indexd record {e}")
+            raise
 
     def get_rev(self, json_data: dict):
         """Get revision from indexd record"""

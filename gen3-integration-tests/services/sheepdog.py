@@ -52,7 +52,11 @@ class Sheepdog(object):
         node["addRes"] = data
         node["data"]["id"] = data["entities"][0]["id"]
 
-        if "_file" in node["category"] and not invalid_property:
+        if (
+            "_file" in node["category"]
+            and not invalid_property
+            and node["addRes"]["code"] in [200, 201]
+        ):
             node["did"] = self.get_did_from_file_id(node, auth)
 
         # Validate node was created
