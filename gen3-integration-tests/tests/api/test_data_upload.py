@@ -38,10 +38,6 @@ big_file_path = f"./{big_file_name}"
 @pytest.mark.indexd
 @pytest.mark.sheepdog
 class TestDataUpload:
-    @classmethod
-    def setup_class(cls):
-        assert kube_setup_service(pytest.namespace, "indexd")
-
     def setup_method(self, method):
         sdp = Sheepdog()
         create_program_project()
@@ -56,10 +52,6 @@ class TestDataUpload:
             file.write(file_content)
 
     def teardown_method(self, method):
-        sdp = Sheepdog()
-        # Delete all nodes post running the test cases
-        logger.info("Deleting any existing nodes after test case execution")
-        sdp.delete_all_nodes()
         # Delete local small file created in setup_method
         os.remove(file_path)
 

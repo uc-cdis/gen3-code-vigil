@@ -25,25 +25,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.sheepdog
 class TestSheepdogPeregrineService:
-    @classmethod
-    def setup_class(cls):
-        logger.info("Generating data")
-        generate_graph_data()
-        logger.info("Create/Update program and project")
-        create_program_project()
-        logger.info("Restarting indexd service")
-        assert kube_setup_service(pytest.namespace, "indexd")
-
     def setup_method(self, method):
         sdp = Sheepdog()
         # Delete all existing nodes prior to running the test cases
         logger.info("Deleting any existing nodes before test case execution")
-        sdp.delete_all_nodes()
-
-    def teardown_method(self, method):
-        sdp = Sheepdog()
-        # Delete all nodes post running the test cases
-        logger.info("Deleting any existing nodes after test case execution")
         sdp.delete_all_nodes()
 
     def test_submit_node_unauthenticated(self):

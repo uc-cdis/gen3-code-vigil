@@ -57,21 +57,6 @@ class CoreMetaData(object):
         assert response.status_code == expected_status, f"{response}"
         return response
 
-    def see_json_core_metadata(self, file, metadata):
-        metadata = metadata.json()
-        assert (
-            file["data"]["file_name"] == metadata["file_name"]
-        ), f"file_name not matched/found.\n{file}\n{metadata}"
-        assert (
-            file["did"] == metadata["object_id"]
-        ), f"object_id not matched/found.\n{file}\n{metadata}"
-        assert (
-            file["data"]["type"] == metadata["type"]
-        ), f"type not matched/found.\n{file}\n{metadata}"
-        assert (
-            file["data"]["data_format"] == metadata["data_format"]
-        ), f"data_format not matched/found.\n{file}\n{metadata}"
-
     def see_bibtex_core_metadata(self, file, metadata):
         metadata = metadata.content.decode()
         assert (
