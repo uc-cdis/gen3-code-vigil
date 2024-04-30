@@ -116,7 +116,7 @@ jobs:
           - name: Select CI environment
             id: select_ci_env
             run: |
-              labels=$(gh api repos/$REPO_FN/pulls/$PULL_REQUEST_NUMBER --jq '.labels.[].name')
+              labels=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels.[].name')
               echo "$labels"
               env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq 'map(select(test("jenkins-"; "i"))) | first')
               echo "env_label"
