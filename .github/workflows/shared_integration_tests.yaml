@@ -56,7 +56,6 @@ jobs:
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
-          PR_LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
           RUN_NUM: ${{ github.run_number }}
@@ -117,8 +116,8 @@ jobs:
           - name: Select CI environment
             id: select_ci_env
             run: |
-              labels="${PR_LABELS//\\n/ }"
-              env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
+              env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
+              echo "$env_label"
               if [[ $env_label != "" && $env_label != null ]]; then
                 echo "Found PR label $env_label"
                 poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
