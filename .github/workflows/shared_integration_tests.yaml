@@ -116,7 +116,7 @@ jobs:
           - name: Select CI environment
             id: select_ci_env
             run: |
-              labels="$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels.[].name')"
+              labels=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels.[].name')
               env_label=$(echo "$labels" | jq -r 'map(select(test("jenkins-"; "i"))) | first')
               if [[ $env_label != "" && $env_label != null ]]; then
                 echo "Found PR label $env_label"
