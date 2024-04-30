@@ -25,7 +25,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 @pytest.mark.peregrine
 class TestGetCoreMetadata:
     def setup_method(self, method):
-        sdp = Sheepdog()
+        sdp = Sheepdog(program="jnkns", project="jenkins-2")
         # Delete all existing nodes prior to running the test cases
         logger.info("Deleting any existing nodes before test case execution")
         sdp.delete_all_nodes()
@@ -34,8 +34,16 @@ class TestGetCoreMetadata:
         """
         Scenario: Test core metadata
         Steps:
+            1. Create nodes and verify they are added using main_account
+            2. Add file node and verify it is added using main_account
+            3. Identify the endpoint of coremetadata using the peregrine version
+            4. Get metadata record for the GUID from file node using application/json format
+            5. Validate file_name, GUID, Type and data_format of file node matches in metadata
+            6. Get metadata record for the GUID from file node using x-bibtex format
+            7. Validate file_name, GUID, Type and data_format of file node matches in metadata
+            8. Delete all nodes
         """
-        sheepdog = Sheepdog()
+        sheepdog = Sheepdog(program="jnkns", project="jenkins-2")
         peregrine = Peregrine()
         coremetadata = CoreMetaData()
         # Create nodes using sheepdog. Verify nodes are present.
@@ -59,8 +67,14 @@ class TestGetCoreMetadata:
         """
         Scenario: Test core metadata invalid object_id
         Steps:
+            1. Create nodes and verify they are added using main_account
+            2. Get invalid_file node details and update did with wrong value
+            3. Identify the endpoint of coremetadata using the peregrine version
+            4. Get metadata record for the GUID from file node using application/json format
+            5. Step 4 should fail with 404 error as object/did is not present
+            6. Delete all nodes
         """
-        sheepdog = Sheepdog()
+        sheepdog = Sheepdog(program="jnkns", project="jenkins-2")
         coremetadata = CoreMetaData()
         # Create nodes using sheepdog. Verify nodes are present.
         nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
@@ -82,8 +96,15 @@ class TestGetCoreMetadata:
         """
         Scenario: Test core metadata no permission
         Steps:
+            1. Create nodes and verify they are added using main_account
+            2. Add file node and verify it is added using main_account
+            3. Identify the endpoint of coremetadata using the peregrine version
+            4. Get metadata record for the GUID from file node using application/json format and invalid authorization
+            5. Step 4 should fail with 401 error as invalid authorization was passed
+            6. Verify "Authentication Error: could not parse authorization header" message was recieved
+            7. Delete all nodes
         """
-        sheepdog = Sheepdog()
+        sheepdog = Sheepdog(program="jnkns", project="jenkins-2")
         coremetadata = CoreMetaData()
         # Create nodes using sheepdog. Verify nodes are present.
         nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
