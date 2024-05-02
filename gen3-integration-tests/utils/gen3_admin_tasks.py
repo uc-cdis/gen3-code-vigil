@@ -107,9 +107,7 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
 
 def generate_test_data(
     test_env_namespace: str,
-    submission_user: str,
     max_examples: int,
-    submission_order: str,
 ):
     """
     Runs jenkins job to generate test data
@@ -123,9 +121,7 @@ def generate_test_data(
     )
     params = {
         "NAMESPACE": test_env_namespace,
-        "SUBMISSION_USER": submission_user,
         "MAX_EXAMPLES": max_examples,
-        "SUBMISSION_ORDER": submission_order,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -197,7 +193,7 @@ def create_fence_client(
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return {
                 "client_creds.txt": job.get_artifact_content(
@@ -228,7 +224,7 @@ def delete_fence_client(test_env_namespace: str, client_name: str):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -256,7 +252,7 @@ def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
@@ -282,7 +278,7 @@ def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=300)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return True
         else:
@@ -307,7 +303,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=300)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return True
         else:
