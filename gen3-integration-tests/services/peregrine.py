@@ -23,17 +23,17 @@ class Peregrine(object):
         )
         return response
 
-    def query_node_fields(self, node: dict, filters={}) -> str:
-        fields_string = self.fields_to_string(node["data"])
+    def query_to_submit(self, node: dict, filters={}) -> str:
+        fields_string = self.fields_to_string(node.props)
         filter_string = ""
         if filters is not None and filters != {}:
             filter_string = self.filter_to_string(filters)
             filter_string = "( " + filter_string + ")"
 
-        query_to_submit = (
-            "{ " + node["name"] + " " + filter_string + " {" + fields_string + " } }"
+        query_for_submission = (
+            "{ " + node.node_name + " " + filter_string + " {" + fields_string + " } }"
         )
-        return self.query(query_to_submit, {}, "main_account")
+        return query_for_submission
 
     def fields_to_string(self, data: dict) -> str:
         primitive_types = [int, float, bool, str]
@@ -54,29 +54,29 @@ class Peregrine(object):
         query_to_submit = "{" + type_count + "}"
         return self.query(query_to_submit, {}, "main_account")
 
-    def query_with_path_to(self, from_node: dict, to_node: dict) -> dict:
+    def query_with_path_to(self, from_node: dict, to_node: dict) -> str:
         query_to_submit = (
             "query Test { "
-            + from_node["name"]
+            + from_node.node_name
             + ' (order_by_desc: "created_datetime",with_path_to: { type: "'
-            + to_node["name"]
+            + to_node.node_name
             + '", submitter_id: "'
-            + to_node["data"]["submitter_id"]
+            + to_node.props["submitter_id"]
             + '"} ) { submitter_id } }'
         )
-        return self.query(query_to_submit, {}, "main_account")
+        return query_to_submit
 
     def see_json_core_metadata(self, file, metadata):
         metadata = metadata.json()
         assert (
-            file["data"]["file_name"] == metadata["file_name"]
+            file.props["file_name"] == metadata["file_name"]
         ), f"file_name not matched/found.\n{file}\n{metadata}"
         assert (
-            file["did"] == metadata["object_id"]
+            file.indexd_guid == metadata["object_id"]
         ), f"object_id not matched/found.\n{file}\n{metadata}"
         assert (
-            file["data"]["type"] == metadata["type"]
+            file.props["type"] == metadata["type"]
         ), f"type not matched/found.\n{file}\n{metadata}"
         assert (
-            file["data"]["data_format"] == metadata["data_format"]
+            file.props["data_format"] == metadata["data_format"]
         ), f"data_format not matched/found.\n{file}\n{metadata}"

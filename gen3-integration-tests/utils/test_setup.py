@@ -111,3 +111,4 @@ def create_program_project(user="main_account"):
     api_key_json, auth_header = get_api_key_and_auth_header(user=user)
     create_program("jnkns", auth_header, user)
     create_project("jnkns", "jenkins", auth_header, user)
+    create_project("jnkns", "jenkins2", auth_header, user)

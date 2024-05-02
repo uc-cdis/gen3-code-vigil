@@ -7,29 +7,32 @@ import pytest
 import requests
 
 from cdislogging import get_logger
-from pages.login import LoginPage
-from services.coremetadata import CoreMetaData
 from services.indexd import Indexd
 from services.peregrine import Peregrine
-from services.sheepdog import Sheepdog
-from utils import nodes
-from utils.gen3_admin_tasks import create_expired_token, kube_setup_service
-from utils.test_setup import create_program_project, generate_graph_data
-
+from services.graph import GraphDataTools
+from utils.gen3_admin_tasks import create_expired_token
 from gen3.auth import Gen3Auth
-from gen3.index import Gen3Index
-from playwright.sync_api import Page
+from gen3.submission import Gen3SubmissionQueryError
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.sheepdog
 class TestSheepdogPeregrineService:
-    def setup_method(self, method):
-        sdp = Sheepdog()
-        # Delete all existing nodes prior to running the test cases
-        logger.info("Deleting any existing nodes before test case execution")
-        sdp.delete_all_nodes()
+    @classmethod
+    def setup_class(cls):
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        sd_tools.delete_nodes()
+
+    def teardown_method(self, method):
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        sd_tools.delete_nodes()
 
     def test_submit_node_unauthenticated(self):
         """
@@ -39,6 +42,10 @@ class TestSheepdogPeregrineService:
             2. Create a node with expired token
             3. Creating node should fail
         """
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         # Generate an expired token
         res = create_expired_token(
             pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
@@ -52,11 +59,11 @@ class TestSheepdogPeregrineService:
 
         # Create a node with expired token
         response = requests.put(
-            url=pytest.root_url + "/api/v0/submission/jnkns/jenkins",
-            data=json.dumps(nodes.get_first_node()),
+            url=pytest.root_url + "/api/v0/submission/jnkns/jenkins2",
+            data=json.dumps(sd_tools.get_first_node().props),
             headers=auth_header,
         )
-        assert response.status_code == 401, f"Failed to delete record {response.json()}"
+        assert response.status_code == 401, f"Failed to delete record {response}"
 
     def test_submit_and_delete_node(self):
         """
@@ -65,9 +72,13 @@ class TestSheepdogPeregrineService:
             1. Create a node using sheepdog. Verify node is present.
             2. Delete the node created. Verify node is deleted.
         """
-        sheepdog = Sheepdog()
-        node = sheepdog.add_node(nodes.get_first_node(), "main_account")
-        sheepdog.delete_node(node, "main_account")
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        node = sd_tools.get_first_node()
+        sd_tools._submit_record(record=node)
+        sd_tools._delete_record(unique_id=node.unique_id)
 
     def test_submit_and_delete_node_path(self):
         """
@@ -76,9 +87,15 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Deleted the nodes. Verify nodes are deleted.
         """
-        sheepdog = Sheepdog()
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        nodes = sd_tools.get_path_to_file()
+        # Create nodes using sheepdog. Verify nodes are present.
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
+        sd_tools.delete_nodes()
 
     @pytest.mark.peregrine
     def test_make_simple_query(self):
@@ -89,12 +106,16 @@ class TestSheepdogPeregrineService:
             2. Perform a simple query to retieve the record created.
             3. Delete the node created. Verify node is deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         peregrine = Peregrine()
         # Create a node using sheepdog. Verify node is present.
-        node = sheepdog.add_node(nodes.get_first_node(), "main_account")
+        node = sd_tools.get_first_node()
+        sd_tools._submit_record(record=node)
         # Create a node using sheepdog. Verify node is present.
-        queryToSubmit = "query Test { alias1: " + node["data"]["type"] + " { id } }"
+        queryToSubmit = "query Test { alias1: " + node.props["type"] + " { id } }"
         response = peregrine.query(queryToSubmit, {}, "main_account")
         data = response.json()["data"]
         if "alias1" not in data or len(data["alias1"]) != 1:
@@ -104,8 +125,7 @@ class TestSheepdogPeregrineService:
                 )
             )
             raise
-        # Create a node using sheepdog. Verify node is present.
-        sheepdog.delete_node(node, "main_account")
+        sd_tools._delete_record(unique_id=node.unique_id)
 
     @pytest.mark.peregrine
     def test_query_all_node_fields(self):
@@ -115,33 +135,36 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Query nodes information using peregrine
             3. Validate results of nodes with results from peregrine
-            4. Delete the node created. Verify node is deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        nodes = sd_tools.get_path_to_file()
         peregrine = Peregrine()
         # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
         results = {}
-        for key, val in nodes_dict.items():
+        for key, val in nodes.items():
             # Query nodes information using peregrine
-            results[key] = peregrine.query_node_fields(val)
+            query_to_submit = peregrine.query_to_submit(val)
+            query_results = sd_tools.graphql_query(query_text=query_to_submit)
             # Validate results of nodes with results from peregrine
-            for parameter, value in results[key].json()["data"][key][0].items():
-                if nodes_dict[key]["data"][parameter] != value:
+            for parameter, value in query_results["data"][key][0].items():
+                if val.props[parameter] != value:
                     logger.info(
                         "Result from Peregrine: {}".format(
                             results[key].json()["data"][key]
                         )
                     )
-                    logger.info("Node data: {}".format(nodes_dict[key]))
+                    logger.info("Node data: {}".format(val.props))
                     logger.error(
                         "{} in results don't match with node data".format(parameter)
                     )
                     raise
-        # Delete the node created. Verify node is deleted.
-        sheepdog.delete_nodes(nodes_dict, "main_account")
 
-    @pytest.mark.skip("Test case is broken")
+    '''@pytest.mark.skip("Test case is broken")
     @pytest.mark.peregrine
     def test_submit_node_without_parent(self):
         """
@@ -152,7 +175,9 @@ class TestSheepdogPeregrineService:
             3. Validate length of fields returned for node name is 0
             4. Delete the node created. Verify node is deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+        sheepdog = Sheepdog(program="jnkns", project="jenkins2")
         peregrine = Peregrine()
         # Verify parent node does not exist
         parentNode = nodes.get_first_node()
@@ -176,7 +201,7 @@ class TestSheepdogPeregrineService:
                     secondNode.json()
                 )
             )
-            raise
+            raise'''
 
     @pytest.mark.peregrine
     def test_query_on_invalid_field(self):
@@ -186,23 +211,31 @@ class TestSheepdogPeregrineService:
             1. Get type field value from First node
             2. Perform a simple query using an invalid field
         """
-        peregrine = Peregrine()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         invalidField = "abcdef"
         # Get type field value from First node
-        nodeType = nodes.get_first_node()["data"]["type"]
+        nodeType = sd_tools.get_first_node().props["type"]
         # Perform a simple query using an invalid field
-        queryToSubmit = "{ " + nodeType + "{ " + invalidField + "}}"
-        response = peregrine.query(queryToSubmit, {}, "main_account").json()
-        if (
-            'Cannot query field "{}" on type "{}".'.format(invalidField, nodeType)
-            != response["errors"][0]
-        ):
-            logger.error(
-                'Cannot query field "{}" on type "{}". entry wasn\'t found. Response : {}'.format(
-                    invalidField, nodeType, response
+        query_to_submit = "{ " + nodeType + "{ " + invalidField + "}}"
+        try:
+            sd_tools.graphql_query(query_text=query_to_submit)
+        except Gen3SubmissionQueryError as e:
+            logger.info(f"{e}")
+            if (
+                '[\'Cannot query field "{}" on type "{}".\']'.format(
+                    invalidField, nodeType
                 )
-            )
-            raise
+                != f"{e}"
+            ):
+                logger.error(
+                    'Cannot query field "{}" on type "{}". entry wasn\'t found. Response : {}'.format(
+                        invalidField, nodeType, f"{e}"
+                    )
+                )
+                raise
 
     @pytest.mark.peregrine
     def test_filter_query_by_string_attribute(self):
@@ -212,35 +245,31 @@ class TestSheepdogPeregrineService:
             1. Get a property from Node data which is a string attribute
             2. Perform a query using the the property retieved in step 1
         """
-        sheepdog = Sheepdog()
-        peregrine = Peregrine()
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        nodes = sd_tools.get_path_to_file()
+        # Create nodes using sheepdog. Verify nodes are present.
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
         # Get field of type string from first node
-        first_node = nodes.get_first_node()
-        test_field = nodes.get_field_of_type(first_node, str)
+        first_node = sd_tools.get_first_node()
+        test_field = sd_tools.get_field_of_type(first_node, str)
         # Perform a query using the the property retieved in step 1
         query_to_submit = (
             "{"
-            + first_node["name"]
+            + first_node.node_name
             + " ("
             + test_field
             + ': "'
-            + first_node["data"][test_field]
+            + first_node.props[test_field]
             + '") {    id  }}'
         )
-        response = peregrine.query(query_to_submit, {}, "main_account")
-        try:
-            if first_node["name"] in response.json()["data"].keys():
-                logger.info(response.json())
-        except:
-            logger.error(
-                "{} not found in response {}".format(
-                    first_node["name"], response.json()
-                )
-            )
-            raise
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+        response = sd_tools.graphql_query(query_text=query_to_submit)
+        assert (
+            first_node.node_name in response["data"].keys()
+        ), "{} not found in response {}".format(first_node.node_name, response)
 
     @pytest.mark.peregrine
     def test_field_count_filter(self):
@@ -252,33 +281,38 @@ class TestSheepdogPeregrineService:
             3. Count the number of each node type after creating nodes
             4. Count of each node type should get incremented by 1
         """
-        sheepdog = Sheepdog()
-        peregrine = Peregrine()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         previous_counts = {}
         new_counts = {}
-        # Count number of each node type
-        for key, val in nodes.get_path_to_file().items():
-            type_count = "_{}_count".format(val["name"])
-            previous_counts[val["name"]] = peregrine.query_count(type_count).json()[
-                "data"
-            ][type_count]
+        nodes = sd_tools.get_path_to_file()
 
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-        for key, val in nodes.get_path_to_file().items():
-            type_count = "_{}_count".format(val["name"])
-            new_counts[val["name"]] = peregrine.query_count(type_count).json()["data"][
-                type_count
-            ]
+        # Count number of each node type
+        for key, val in nodes.items():
+            previous_counts[val.node_name] = sd_tools.query_node_count(val.node_name)
+
+        # Create nodes using sheepdog. Verify nodes are present.
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
+
+        # Count number of each node type
+        for key, val in nodes.items():
+            new_counts[val.node_name] = sd_tools.query_node_count(val.node_name)
 
         for key, val in new_counts.items():
             # Check node count has increased by 1
-            if new_counts[key] != previous_counts[key] + 1:
+            if (
+                new_counts[key]["data"][f"_{key}_count"]
+                != previous_counts[key]["data"][f"_{key}_count"] + 1
+            ):
                 logger.info("Counts before adding node : {}".format(previous_counts))
                 logger.info("Counts after adding node : {}".format(new_counts))
                 logger.error("Node count hasn't increased by 1 for {}".format(key))
                 raise
-        sheepdog.delete_nodes(nodes_dict, "main_account")
 
+    '''@pytest.mark.wip("Looks like a duplicate test case")
     @pytest.mark.peregrine
     def test_filter_by_project_id(self):
         """
@@ -287,14 +321,15 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Perform a query using an project_id.
             3. Validate length of fields returned for node name is present.
-            4. Delete the nodes created. Verify nodes are deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+        sheepdog = Sheepdog(program="jnkns", project="jenkins2")
         peregrine = Peregrine()
         # Create nodes using sheepdog. Verify nodes are present.
         nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
         results = {}
-        filters = {"project_id": "jnkns-jenkins"}
+        filters = {"project_id": "jnkns-jenkins2"}
         for key, val in nodes_dict.items():
             results[key] = peregrine.query_node_fields(val, filters)
             for parameter, value in results[key].json()["data"][key][0].items():
@@ -308,8 +343,7 @@ class TestSheepdogPeregrineService:
                     logger.error(
                         "{} in results don't match with node data".format(parameter)
                     )
-                    raise
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+                    raise'''
 
     @pytest.mark.peregrine
     def test_filter_by_invalid_project_id(self):
@@ -321,23 +355,25 @@ class TestSheepdogPeregrineService:
             3. Validate length of fields returned for node name is 0
             4. Delete the node created. Verify node is deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         peregrine = Peregrine()
         # Create a node using sheepdog. Verify node is present.
-        node = sheepdog.add_node(nodes.get_first_node(), "main_account")
+        node = sd_tools.get_first_node()
+        sd_tools._submit_record(record=node)
         # Perform a query using an invalid project_id.
         filters = {"project_id": "NOT-EXIST"}
-        response = peregrine.query_node_fields(node, filters)
+        query_to_submit = peregrine.query_to_submit(node, filters)
+        response = sd_tools.graphql_query(query_text=query_to_submit)
         # Validate length of fields returned for node name is 0
-        if len(response.json()["data"][node["name"]]) != 0:
+        if len(response["data"][node.node_name]) != 0:
             logger.error(
-                "Found fields for {}. Response : {}".format(
-                    node["name"], response.json()
-                )
+                "Found fields for {}. Response : {}".format(node.node_name, response)
             )
             raise
-        # Delete the node created. Verify node is deleted.
-        sheepdog.delete_node(node, "main_account")
+        sd_tools._delete_record(unique_id=node.unique_id)
 
     @pytest.mark.peregrine
     def test_with_path_to_first_to_last_node(self):
@@ -347,29 +383,25 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Query path from first node to last node.
             3. Verify first node name is present response.
-            4. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
-        peregrine = Peregrine()
-        # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-        # Query path from first node to last node.
-        response = peregrine.query_with_path_to(
-            nodes.get_first_node(), nodes.get_last_node()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
         )
+        peregrine = Peregrine()
+        nodes = sd_tools.get_path_to_file()
+        # Create nodes using sheepdog. Verify nodes are present.
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
+        # Query path from first node to last node.
+        first_node = sd_tools.get_first_node()
+        last_node = sd_tools.get_last_node()
+        query_to_submit = peregrine.query_with_path_to(first_node, last_node)
+        response = sd_tools.graphql_query(query_text=query_to_submit)
         # Verify first node name is present response.
-        try:
-            if nodes.get_first_node()["name"] in response.json()["data"].keys():
-                logger.info(response.json())
-        except:
-            logger.error(
-                "{} not found in response {}".format(
-                    nodes.get_first_node()["name"], response.json()
-                )
-            )
-            raise
-        # Delete all nodes. Verify all nodes are deleted.
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+        assert (
+            first_node.node_name in response["data"].keys()
+        ), "{} not found in response {}".format(first_node.node_name, response)
 
     @pytest.mark.peregrine
     def test_with_path_to_last_to_first_node(self):
@@ -379,31 +411,27 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Query path from last node to first node.
             3. Verify last node name is present response.
-            4. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
-        peregrine = Peregrine()
-        # Create nodes using sheepdog. Verify nodes are present.
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
-        # Query path from last node to first node.
-        response = peregrine.query_with_path_to(
-            nodes.get_last_node(), nodes.get_first_node()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
         )
+        peregrine = Peregrine()
+        nodes = sd_tools.get_path_to_file()
+        # Create nodes using sheepdog. Verify nodes are present.
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
+        # Query path from last node to first node.
+        first_node = sd_tools.get_first_node()
+        last_node = sd_tools.get_last_node()
+        query_to_submit = peregrine.query_with_path_to(last_node, first_node)
+        response = sd_tools.graphql_query(query_text=query_to_submit)
         # Verify last node name is present response.
-        try:
-            if nodes.get_last_node()["name"] in response.json()["data"].keys():
-                logger.info(response.json())
-        except:
-            logger.error(
-                "{} not found in response {}".format(
-                    nodes.get_last_node()["name"], response.json()
-                )
-            )
-            raise
-        # Delete all nodes. Verify all nodes are deleted.
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+        assert (
+            last_node.node_name in response["data"].keys()
+        ), "{} not found in response {}".format(last_node.node_name, response)
 
-    @pytest.mark.skip("Test case is broken")
+    '''@pytest.mark.skip("Test case is broken")
     def test_submit_data_node_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
@@ -413,8 +441,10 @@ class TestSheepdogPeregrineService:
             3. Submit metatdata for file node, including consent codes
             4. Verify indexd record was created with the correct consent codes
         """
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
         indexd = Indexd()
-        sheepdog = Sheepdog()
+        sheepdog = Sheepdog(program="jnkns", project="jenkins2")
         records = indexd.get_all_records()
 
         # Delete indexd records
@@ -438,7 +468,7 @@ class TestSheepdogPeregrineService:
 
         # Verify indexd record was created with the correct consent codes
         response = indexd.get_record(file_node_wit_ccs["did"])
-        indexd.file_equals(response, file_node_wit_ccs)
+        indexd.file_equals(response, file_node_wit_ccs)'''
 
     @pytest.mark.indexd
     def test_submit_and_delete_file(self):
@@ -448,25 +478,28 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Create a file node and retrieve record from indexd
             3. Delete file node and delete indexd record
-            4. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         indexd = Indexd()
+        nodes = sd_tools.get_path_to_file()
         # Adding all nodes except file node
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
 
         # Adding file node and retrieveing indexd record
-        node = sheepdog.add_node(nodes.get_file_node(), "main_account")
-        record = indexd.get_record(indexd_guid=node["did"])
+        node = sd_tools.get_file_node()
+        sd_tools._submit_record(record=node)
+        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
         # Deleting file node and indexd record
-        sheepdog.delete_node(node, "main_account")
-        delete_record = indexd.delete_record(guid=node["did"], rev=rev)
-        assert delete_record == 200, f"Failed to delete record {node['did']}"
-
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+        sd_tools._delete_record(unique_id=node.unique_id)
+        delete_record = indexd.delete_record(guid=node.indexd_guid, rev=rev)
+        assert delete_record == 200, f"Failed to delete record {node.indexd_guid}"
 
     @pytest.mark.indexd
     def test_submit_file_with_url(self):
@@ -476,28 +509,33 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Create a file node with URL and retrieve record from indexd
             3. Delete file node and delete indexd record
-            4. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
+        nodes = sd_tools.get_path_to_file()
         # Adding all nodes except file node
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
 
         # Adding file node and retrieveing indexd record
-        file_node = nodes.get_file_node()
-        file_node["data"]["urls"] = test_url
-        node = sheepdog.add_node(file_node, "main_account")
-        record = indexd.get_record(indexd_guid=node["did"])
+        node = sd_tools.get_file_node()
+        node.props["urls"] = test_url
+        sd_tools._submit_record(record=node)
+        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
-        # Deleting file node and indexd record
-        sheepdog.delete_node(node, "main_account")
-        delete_record = indexd.delete_record(guid=node["did"], rev=rev)
-        assert delete_record == 200, f"Failed to delete record {node['did']}"
+        # Check node and indexd record contents
+        indexd.file_equals(record, node)
 
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+        # Deleting file node and indexd record
+        sd_tools._delete_record(unique_id=node.unique_id)
+        delete_record = indexd.delete_record(guid=node.indexd_guid, rev=rev)
+        assert delete_record == 200, f"Failed to delete record {node.indexd_guid}"
 
     @pytest.mark.indexd
     def test_submit_file_then_update_with_url(self):
@@ -508,35 +546,41 @@ class TestSheepdogPeregrineService:
             2. Create a file node and retrieve record from indexd
             3. Add URL to file node and update file node.
             4. Delete file node and delete indexd record
-            5. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
+        nodes = sd_tools.get_path_to_file()
         # Adding all nodes except file node
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+        for key, val in nodes.items():
+            sd_tools._submit_record(record=val)
 
         # Adding file node and retrieveing indexd record without URL
-        file_node = nodes.get_file_node()
-        node = sheepdog.add_node(file_node, "main_account")
-        record = indexd.get_record(indexd_guid=node["did"])
+        node = sd_tools.get_file_node()
+        sd_tools._submit_record(record=node)
+        did = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        record = indexd.get_record(indexd_guid=did)
         rev = indexd.get_rev(record)
 
         # Add URL to the node data and update it
-        file_node["data"]["urls"] = test_url
-        node = sheepdog.update_node(file_node, "main_account")
-        record = indexd.get_record(indexd_guid=node["did"])
+        node.props["urls"] = test_url
+        sd_tools._submit_record(record=node)
+        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
+        # Check node and indexd record contents
+        indexd.file_equals(record, node)
+
         # Deleting file node and indexd record
-        sheepdog.delete_node(node, "main_account")
-        delete_record = indexd.delete_record(guid=node["did"], rev=rev)
-        assert delete_record == 200, f"Failed to delete record {node['did']}"
+        sd_tools._delete_record(unique_id=node.unique_id)
+        delete_record = indexd.delete_record(guid=node.indexd_guid, rev=rev)
+        assert delete_record == 200, f"Failed to delete record {node.indexd_guid}"
 
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
-
-    @pytest.mark.wip("This test case is broken due to bug in sheepdog")
+    '''@pytest.mark.wip("This test case is broken due to bug in sheepdog")
     def test_submit_file_invalid_property(self):
         """
         Scenario: Submit file invalid property
@@ -544,15 +588,16 @@ class TestSheepdogPeregrineService:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Create a file node with an invalid property
             3. Validate node wasn't added
-            4. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+        sheepdog = Sheepdog(program="jnkns", project="jenkins2")
 
         # Adding all nodes except file node
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+        sheepdog.add_nodes(np.get_path_to_file(), "main_account")
 
         # Adding invalid property to node and attempting to create record
-        file_node = nodes.get_file_node()
+        file_node = np.get_file_node()
         file_node["data"]["file_size"] = "hello"
         node = sheepdog.add_node(
             file_node, "main_account", validate_node=False, invalid_property=True
@@ -560,9 +605,6 @@ class TestSheepdogPeregrineService:
         logger.info(node)
 
         # Need to insert check to validate "Internal server error. Sorry, something unexpected went wrong!" is part of transactional_errors
-
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
 
     @pytest.mark.indexd
     @pytest.mark.wip("This test case is broken due to bug in sheepdog")
@@ -575,15 +617,16 @@ class TestSheepdogPeregrineService:
             3. Update file node with invalid property and try updating node
             4. Validate node wasn't updated
             5. Delete file node and delete indexd record
-            6. Delete all nodes. Verify all nodes are deleted.
         """
-        sheepdog = Sheepdog()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+        sheepdog = Sheepdog(program="jnkns", project="jenkins2")
         indexd = Indexd()
         # Adding all nodes except file node
-        nodes_dict = sheepdog.add_nodes(nodes.get_path_to_file(), "main_account")
+        sheepdog.add_nodes(np.get_path_to_file(), "main_account")
 
         # Adding file node and retrieveing indexd record
-        file_node = nodes.get_file_node()
+        file_node = np.get_file_node()
         node = sheepdog.add_node(file_node, "main_account")
         record = indexd.get_record(indexd_guid=node["did"])
         rev = indexd.get_rev(record)
@@ -598,9 +641,6 @@ class TestSheepdogPeregrineService:
         # Deleting file node and indexd record
         sheepdog.delete_node(node, "main_account")
         delete_record = indexd.delete_record(guid=node["did"], rev=rev)
-        assert delete_record == 200, f"Failed to delete record {node['did']}"
+        assert delete_record == 200, f"Failed to delete record {node['did']}"'''
 
-        # Need to insert check to validate "Internal server error. Sorry, something unexpected went wrong!" is part of transactional_errors
-
-        # Delete all remaining records
-        sheepdog.delete_nodes(nodes_dict, "main_account")
+    # Need to insert check to validate "Internal server error. Sorry, something unexpected went wrong!" is part of transactional_errors

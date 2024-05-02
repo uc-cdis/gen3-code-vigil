@@ -53,23 +53,23 @@ class CoreMetaData(object):
             "Authorization": authorization,
             "Accept": format,
         }
-        response = requests.get(url=url + file["did"], headers=headers)
+        response = requests.get(url=url + file.indexd_guid, headers=headers)
         assert response.status_code == expected_status, f"{response}"
         return response
 
     def see_bibtex_core_metadata(self, file, metadata):
         metadata = metadata.content.decode()
         assert (
-            file["data"]["file_name"] in metadata
+            file.props["file_name"] in metadata
         ), f"file_name not matched/found.\n{file}\n{metadata}"
         assert (
-            file["did"] in metadata
+            file.indexd_guid in metadata
         ), f"object_id not matched/found.\n{file}\n{metadata}"
         assert (
-            file["data"]["type"] in metadata
+            file.props["type"] in metadata
         ), f"type not matched/found.\n{file}\n{metadata}"
         assert (
-            file["data"]["data_format"] in metadata
+            file.props["data_format"] in metadata
         ), f"data_format not matched/found.\n{file}\n{metadata}"
 
     def see_core_metadata_error(self, metadata, message):

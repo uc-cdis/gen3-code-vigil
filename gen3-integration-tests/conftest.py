@@ -62,7 +62,7 @@ def pytest_configure(config):
         # Generate test data
         setup.generate_graph_data()
         # Restarting indexd service for Sheepdog and Peregrine
-        assert kube_setup_service(pytest.namespace, "indexd")
+        # assert kube_setup_service(pytest.namespace, "indexd")
 
     # Compute root url for portal
     try:

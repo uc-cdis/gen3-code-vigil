@@ -15,8 +15,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class Sheepdog(object):
-    def __init__(self):
+    def __init__(self, program, project):
         self.BASE_ADD_ENDPOINT = "/api/v0/submission"
+        self.program = program
+        self.project = project
 
     def get_did_from_file_id(self, file_node: dict, auth: Gen3Auth) -> str:
         if not file_node["data"]["id"]:
@@ -27,8 +29,8 @@ class Sheepdog(object):
         response = requests.get(
             url=pytest.root_url
             + self.BASE_ADD_ENDPOINT
-            + "/jnkns/jenkins/export?ids={}&format=json".format(
-                file_node["data"]["id"]
+            + "/{}/{}/export?ids={}&format=json".format(
+                self.program, self.project, file_node["data"]["id"]
             ),
             auth=auth,
         )
@@ -44,7 +46,9 @@ class Sheepdog(object):
     ) -> dict:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         response = requests.put(
-            url=pytest.root_url + self.BASE_ADD_ENDPOINT + "/jnkns/jenkins",
+            url=pytest.root_url
+            + self.BASE_ADD_ENDPOINT
+            + f"/{self.program}/{self.project}",
             data=json.dumps(node["data"]),
             auth=auth,
         )
@@ -100,7 +104,7 @@ class Sheepdog(object):
         response = requests.delete(
             url=pytest.root_url
             + self.BASE_ADD_ENDPOINT
-            + "/jnkns/jenkins/entities/{}".format(id),
+            + "/{}/{}/entities/{}".format(self.program, self.project, id),
             auth=auth,
         )
         data = response.json()
