@@ -1,146 +1,101 @@
 import pytest
-import subprocess
-import datetime
-import time
-import utils.gen3_client_install as gc
-import utils.gen3_admin_tasks as gat
+import os
+import requests
+import fastavro
+import json
 
-from gen3.auth import Gen3Auth
-from services.graph import GraphDataTools
+from datetime import datetime
+from playwright.sync_api import Page, expect
+from pages.login import LoginPage
+from pages.exploration import ExplorationPage
 from utils.test_execution import screenshot
-from services.indexd import Indexd
+import utils.gen3_admin_tasks as gat
 
 from cdislogging import get_logger
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-@pytest.mark.tube
 class TestPFBExport(object):
-    variables = {}
+    # @classmethod
+    # def setup_class(cls):
+    #     # Generate test data in jenkins
+    #     gat.generate_test_data(pytest.namespace, 10)
+    #     # Run ELT job after generating test data
+    #     gat.run_gen3_job(pytest.namespace, "etl")
+    #     # Rolling guppy after the ETL job run
+    #     gat.run_gen3_job(pytest.namespace, "kube-setup-guppy")
 
-    @classmethod
-    def setup_class(cls):
-        logger.info("Setup")
-
-        # handling the targetMappingNode
-        # submitted_unaligned_reads is set by default in pretty much every dictionary
-        cls.variables["target_mapping_node"] = (
-            "sequencing"
-            if "anvil" in pytest.namespace
-            else "unaligned_reads_file"
-            if "vpodc" in pytest.namespace
-            else "submitted_unaligned_reads"
-        )
-
-        # Restore original etl-mapping and manifest-guppy configmaps
-        logger.info(
-            "Running kube-setup-guppy to restore any configmaps that have been mutated. This can take a couple of mins..."
-        )
-        gat.run_gen3_job(pytest.namespace, "kube-setup-guppy")
-
-        # getting go_path to install gen3-client
-        get_go_path = subprocess.run(
-            ["go env GOPATH"], shell=True, stdout=subprocess.PIPE
-        )
-        cls.variables["get_go_path"] = get_go_path
-
-    def teardown_class(cls):
-        # logger.info("Teardown - Clean up Indices and kube-setup-guppy")
-        # logger.info("Cleaning up indices created from ETL run")
-        # gat.clean_up_indices(pytest.namespace)
-
-        logger.info(
-            "Running kube-setup-guppy to restore any configmaps that have been mutated. This can take a couple of mins..."
-        )
-        gat.run_gen3_job(pytest.namespace, "kube-setup-guppy")
-
-    def generate_data_and_upload(self):
+    def test_pfb_export(self, page):
         """
         Scenario: Test PFB Export
         Steps:
-            1. Submit dummy data to the Gen3 Commons environment
-            2. Upload a file through the gen3-client CLI
-            3. Map the uploaded file to one of the subjects of the dummy dataset
-            4. Mutate etl-mapping config and run ETL to create new indices in elastic search
-            5. Mutate manifest-guppy config and roll guppy so the recently-submitted dataset will be available on the Explorer page
-            6. Visit the Explorer page, select a cohort, export to PFB and download the .avro file
-            7. Install the latest pypfb CLI version and make sure we can parse the avro file
+            1. Generate Data for jenkins env
+            2. Run ETL job and roll Guppy service after the ETL is successful
+            3. Login with main_account and go to Exploration Page
+            4. Click on 'Export to PFB' button and check the footer for success message
+            5. Get the PreSigned URl and make a API call to get the content of the PFB file
+            6. Run PyPFB CLI command to
         """
-        indexd = Indexd()
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(auth=auth)
-
-        # generating random data with target_mapping_node
-        gat.generate_test_data(
-            pytest.namespace,
-            pytest.users["main_account"],
-            1,
-            self.variables["target_mapping_node"],
+        login_page = LoginPage()
+        exploration_page = ExplorationPage()
+        # Go to login page and log in with main_account user
+        login_page.go_to(page)
+        login_page.login(page)
+        #
+        exploration_page.go_to_and_check_button(page)
+        download_pfb_link = exploration_page.check_pfb_status(page)
+        logger.debug(f"Downloadable PFB File Link : {download_pfb_link}")
+        # Sending API request to 'download_pfb_link' to get the content of the file
+        pfb_download_file = requests.get(
+            download_pfb_link, headers={"Accept": "binary/octet-stream"}
         )
+        pfb_content = pfb_download_file.content
+        logger.debug(f"PFB Content : {pfb_content}")
 
-        # querying based on the graph node utilized for file mapping
-        query_string = f'query {{ {self.variables["target_mapping_node"]} (first: 20, project_id: "DEV-test", quick_search: "", order_by_desc: "updated_datetime") {{id, type, submitter_id}} }}'
-        variables = None
+        unique_num = int(datetime.now().timestamp())
+        logger.debug(f"{unique_num}")
+        pfb_file_path = f"./test_export_{unique_num}.avro"
 
-        received_data = sd_tools.graphql_query(query_string, variables)
-        logger.info(f"received data: {received_data}")
+        # Writing content of the Avro file to local avro file
+        with open(pfb_file_path, "wb") as pfb_file:
+            pfb_file.write(pfb_content)
 
-        # install gen3-client
-        gc.install_gen3_client(self.variables["get_go_path"])
-        cred_json_file = f"~/.gen3/{pytest.namespace}_main_account.json"
-        profile = f"{pytest.namespace}_profile"
-        # configuring profile via gen3-client
-        logger.info(f"Configuring gen3-client profile {profile} ...")
-        configure_client_cmd = [
-            f"gen3-client configure --profile={profile} --cred={cred_json_file} --apiendpoint={pytest.root_url}"
-        ]
-        logger.info(f"Running gen3-client configure command : {configure_client_cmd}")
-        configure = subprocess.run(configure_client_cmd, shell=True)
-        if configure.returncode == 0:
-            logger.info(f"Successfully configure profile {profile}")
+        if not os.path.exists(pfb_file_path):
+            raise ValueError(f"A {pfb_file_path} file should have been created")
+
+        # Print the content of pfb_file_path
+        with open(pfb_file_path, "rb") as avro_file:
+            pfb_content = avro_file.read()
+            logger.debug(f"Contents of {pfb_file_path}: {pfb_content}")
+
+        # Convert content of avro file to json file
+        with open(pfb_file_path, "rb") as avro_file:
+            avro_reader = fastavro.reader(avro_file)
+            records = [record for record in avro_reader]
+
+        # Convert Avro records to JSON format
+        json_data = json.dumps(records, indent=2)
+
+        # Write JSON data to file
+        json_file_path = f"./test_export_{unique_num}.json"
+        with open(json_file_path, "w") as json_file:
+            json_file.write(json_data)
+
+        node_list = []
+        with open(json_file_path, "r") as json_file:
+            json_content = json.load(json_file)
+            for item in json_content:
+                nodes = item.get("object", {}).get("nodes", [])
+                for node in nodes:
+                    node_name = node.get("name")
+                    if node_name:
+                        node_list.append(node_name)
+
+        logger.debug(f"Node Names : {node_list}")
+        assert "program" in node_list, "Program node not found in node list"
+        assert "project" in node_list, "Project node not found in node list"
+        if "anvil" in pytest.namespace:
+            assert "subject" in node_list, "Subject node not found in node list"
         else:
-            logger.info(f"Failed to configure profile {profile}")
-        # create a file that can be uploaded
-        file_data = (
-            f"This is a test file uploaded via gen3-client test for PFBExport Test"
-        )
-        current_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%S")
-        file_name = f"file_{current_time}.txt"
-        file_path = f"./{file_name}"
-        with open(file_name, "w") as f:
-            f.write(file_data)
-        # Upload file via gen3-client
-        logger.info(f"Uploading file via gen3-client ...")
-        upload_cmd = [
-            f"gen3-client upload --profile={profile} --upload-path={file_path}"
-        ]
-        logger.info(f"Running gen3-client upload command : {upload_cmd}")
-        try:
-            try:
-                upload = subprocess.run(
-                    upload_cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-                logger.info(f"### Upload stdout is {upload.stdout.decode('utf-8')}")
-                logger.info(f"### Upload stderr is {upload.stderr.decode('utf-8')}")
-            except subprocess.CalledProcessError as e:
-                logger.info(e)
-            if upload.returncode == 0:
-                regex_exp_pattern = r"to GUID\s*(.+)."
-                guid_match = re.findall(
-                    regex_exp_pattern, upload.stderr.decode("utf-8")
-                )
-                if guid_match:
-                    guid = guid_match[0]
-                    logger.info(f"Uploaded File GUID : {guid}")
-        except Exception as e:
-            logger.info(
-                f"Upload error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
-            )
-        # Adding explicit wait for indexing job pod to finish adding record metadata
-        time.sleep(20)
-        record = indexd.get_record(guid)
-        logger.info(f"{record}")
+            assert "study" in node_list, "Study node not found in node list"

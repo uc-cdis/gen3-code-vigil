@@ -21,6 +21,15 @@ pipeline {
                   submoduleCfg: [],
                   userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/cloud-automation.git']]
                 ])
+                // data-simulator
+                checkout([
+                  $class: 'GitSCM',
+                  branches: [[name: 'refs/heads/master']],
+                  doGenerateSubmoduleConfigurations: false,
+                  extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'data-simulator']],
+                  submoduleCfg: [],
+                  userRemoteConfigs: [[credentialsId: 'PlanXCyborgUser', url: 'https://github.com/uc-cdis/data-simulator.git']]
+                ])
             }
         }
         stage('Run GenTestData') {
@@ -33,7 +42,8 @@ pipeline {
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
 
-                            gen3 job run gentestdata -w SUBMISSION_USER \${SUBMISSION_USER} MAX_EXAMPLES \${MAX_EXAMPLES} SUBMISSION_ORDER \${SUBMISSION_ORDER}
+                            echo "Generating dummy data for the test ..."
+                            gen3 job run gentestdata SUBMISSION_USER \${SUBMISSION_USER} MAX_EXAMPLES \${MAX_EXAMPLES} SUBMISSION_ORDER \${SUBMISSION_ORDER}
                             g3kubectl wait --for=condition=complete --timeout=-1s jobs/gentestdata
                         '''
                     }
