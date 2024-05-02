@@ -80,6 +80,32 @@ def run_gen3_job(test_env_namespace, job_name, roll_all=False):
         raise Exception("Build number not found")
 
 
+def roll_kube_pods(test_env_namespace, service_name):
+    """
+    Roll a service in env
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-roll-pods",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+        "SERVICE_NAME": service_name,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=600)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
 def generate_test_data(
     test_env_namespace: str,
     max_examples: int,

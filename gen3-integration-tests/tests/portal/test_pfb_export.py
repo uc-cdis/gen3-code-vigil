@@ -17,14 +17,14 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class TestPFBExport(object):
-    # @classmethod
-    # def setup_class(cls):
-    #     # Generate test data in jenkins
-    #     gat.generate_test_data(pytest.namespace, 10)
-    #     # Run ELT job after generating test data
-    #     gat.run_gen3_job(pytest.namespace, "etl")
-    #     # Rolling guppy after the ETL job run
-    #     gat.run_gen3_job(pytest.namespace, "kube-setup-guppy")
+    @classmethod
+    def setup_class(cls):
+        # Generate test data in jenkins
+        gat.generate_test_data(pytest.namespace, 10)
+        # Run ELT job after generating test data
+        gat.run_gen3_job(pytest.namespace, "etl")
+        # Rolling guppy after the ETL job run
+        gat.run_kube_pods(pytest.namespace, "guppy")
 
     def test_pfb_export(self, page):
         """
