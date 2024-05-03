@@ -57,7 +57,6 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          COMMIT_TIME: ${{ github.event.pull_request.head.repo.updated_at }}
           RUN_NUM: ${{ github.run_number }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
@@ -68,6 +67,10 @@ jobs:
           # # Enable step debugging. Uncomment this to debug pipeline issues
           # - name: Enable Step Debugging
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
+
+          # Get timestamp of the last commit to the PR branch
+          - name: Get commit time
+            run: echo "COMMIT_TIME=$(git show -s --format=%ci ${{ github.event.pull_request.head.sha }})" >> $GITHUB_ENV
 
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
