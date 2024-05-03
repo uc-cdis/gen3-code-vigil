@@ -24,7 +24,7 @@ class TestPFBExport(object):
         # Run ELT job after generating test data
         gat.run_gen3_job(pytest.namespace, "etl")
         # Rolling guppy after the ETL job run
-        gat.run_kube_pods(pytest.namespace, "guppy")
+        gat.roll_kube_pods(pytest.namespace, "guppy")
 
     def test_pfb_export(self, page):
         """
