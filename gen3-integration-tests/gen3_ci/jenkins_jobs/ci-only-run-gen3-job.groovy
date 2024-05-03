@@ -114,7 +114,6 @@ spec:
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            gen3 kube-setup-secrets
                             if [ $GEN3_ROLL_ALL == "true" ]; then
                                 gen3 roll all
                             fi
