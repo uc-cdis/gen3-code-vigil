@@ -69,9 +69,14 @@ jobs:
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
           # Checkout current branch of gen3-code-vigil if it is the repo under test
-          - name: Checkout integration test code from dev branch
-            if: ${{ github.event.repository.name == 'gen3-code-vigil' }}
+          - name: Checkout repo/branch under test
             uses: actions/checkout@v4
+            with:
+              ref: ${{ github.event.pull_request.head.ref }}
+
+          # Get timestamp of the last commit to the PR branch
+          - name: Get commit time
+            run: echo "COMMIT_TIME=$(git show -s --format=%ci ${{ github.event.pull_request.head.sha }})" >> $GITHUB_ENV
 
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code from master branch
@@ -108,10 +113,6 @@ jobs:
               poetry install
               poetry show
               poetry run playwright install chromium
-
-          # Get timestamp of the last commit to the PR branch
-          - name: Get commit time
-            run: echo "COMMIT_TIME=$(git show -s --format=%ci ${{ github.event.pull_request.head.sha }})" >> $GITHUB_ENV
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
