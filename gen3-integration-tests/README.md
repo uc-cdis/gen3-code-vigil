@@ -6,8 +6,11 @@
 The code supports running different steps as different users. Please see pytest_configure method in conftest.py for details.
 
 The users required to run the tests are:
-- `main_account` is the default user. Save API key for that user as `<namespace>_main_account.json` in `~/.gen3` directory. For example, `qa-dcp_main_account.json`
+- `main_account` is the default user. Save API key for that user as `<namespace>_main_account.json` in `~/.gen3` directory. For example, `qa-dcp_main_account.json`.
 - `indexing_account` is the indexing_admin user. Save the API key as `<namespace>_indexing_account.json` in `~/.gen3` directory.
+- `auxAcct1_account` is an auxiliary user account-1. The user does not have `data-upload` role but has `abc.programs.test_program.projects.test_project1-viewer` policy. Save the API key as `<namespace>_auxAcct1_account.json` in `~/.gen3` directory.
+- `auxAcct2_account` is an auxiliary user account-2. The user does not have `data-upload` role but has `abc.programs.test_program2.projects.test_project3-viewer` policy. Save the API key as `<namespace>_auxAcct2_account.json` in `~/.gen3` directory.
+- `user0_account` is an user account-0. Save the API key as `<namespace>_user0_account.json` in `~/.gen3` directory.
 
 You can use the following jenkins job to generate the api_keys (the keys are saved as build artifacts):
 - If `NAMESPACE` is on `qaplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/generate-api-keys/)
@@ -26,7 +29,7 @@ CI_TEST_ORCID_PASSWORD=<ORCID Password>
 CI_TEST_RAS_USERID=<RAS Username>
 CI_TEST_RAS_PASSWORD=<RAS Password>
 ```
-The Jenkins API token can be obtained from Keeper.
+The Jenkins API token, ORCID creds and RAS creds can be obtained from Keeper.
 
 ## Running tests
 Switch to `gen3-code-vigil/gen3-integration-tests` and run the command:
