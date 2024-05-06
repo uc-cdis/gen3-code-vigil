@@ -77,13 +77,13 @@ def generate_graph_data():
     project = "jenkins"
     max_samples = 1  # the submission functions in services/graph.py assume there is only 1 record per node
     # TODO we should try setting `required_only` to False so the test data is more representative of real data
-    required_only = True
+    required_only = False
 
     graph = initialize_graph(
         dictionary_url=dictionary_url,
         program=program,
         project=project,
-        consent_codes=True,
+        consent_codes=False,
     )
     run_simulation(
         graph=graph,
@@ -111,4 +111,3 @@ def create_program_project(user="main_account"):
     api_key_json, auth_header = get_api_key_and_auth_header(user=user)
     create_program("jnkns", auth_header, user)
     create_project("jnkns", "jenkins", auth_header, user)
-    create_project("jnkns", "jenkins2", auth_header, user)

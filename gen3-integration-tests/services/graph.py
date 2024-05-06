@@ -160,51 +160,6 @@ class GraphDataTools:
         for node_name in self.submission_order:
             self._submit_record(self.test_records[node_name])
 
-    def ith_node_in_path(self, i: int):
-        node_name = self.submission_order[i - 1]
-        return self.test_records[node_name]
-
-    def get_first_node(self):
-        return self.ith_node_in_path(1)
-
-    def get_last_node(self):
-        return self.ith_node_in_path(-1)
-
-    def get_path_with_file_node(self, path_to_file=False, file_node=False):
-        all_nodes = copy.deepcopy(self.test_records)
-        file_node_name = ""
-        for node_name in self.submission_order:
-            if "_file" in all_nodes[node_name].category:
-                file_node_name = node_name
-        file_node_item = all_nodes[file_node_name]
-        del all_nodes[file_node_name]
-        if path_to_file:
-            return all_nodes
-        if file_node:
-            return file_node_item
-
-    def get_path_to_file(self):
-        return self.get_path_with_file_node(path_to_file=True)
-
-    def get_file_node(self):
-        return self.get_path_with_file_node(file_node=True)
-
-    def get_field_of_type(self, node: dict, field_type: object):
-        for key, val in node.props.items():
-            if isinstance(val, field_type):
-                return key
-
-    def get_did_from_file_id(self, guid: str) -> str:
-        response = requests.get(
-            url=pytest.root_url
-            + self.BASE_ADD_ENDPOINT
-            + "/{}/{}/export?ids={}&format=json".format(
-                self.program_name, self.project_code, guid
-            ),
-            auth=self.auth,
-        )
-        return response.json()[0]["object_id"]
-
     def submit_new_record(self, node_name: str) -> GraphRecord:
         """
         Starting from a generated test data record, submit a new record with a
@@ -297,6 +252,68 @@ class GraphDataTools:
         query = f'{{ _{node_name}_count (project_id: "{self.project_id}") }}'
         return self.graphql_query(query)
 
+    def submit_single_record(self, record: GraphRecord):
+        """
+        Submit a single record
+        """
+        return self._submit_record(record=record)
+
+    def get_ith_record(self, position: int):
+        """
+        Get the record for ith based node position.
+
+        Args:
+            i: position - python based position, starts from 0 and ends with -1
+        """
+        return self.test_records[self.submission_order[position]]
+
+    def get_path_with_file_node(self, path_to_file=False, file_node=False):
+        """
+        Get all nodes except node with _file category or get node with _file category
+
+        Args:
+            path_to_file: returns all nodes except for node with _file category
+            file_node : returns the node with _file category
+        """
+        all_nodes = copy.deepcopy(self.test_records)
+        file_node_name = ""
+        for node_name in self.submission_order:
+            if "_file" in all_nodes[node_name].category:
+                file_node_name = node_name
+        file_node_item = all_nodes[file_node_name]
+        del all_nodes[file_node_name]
+        if path_to_file:
+            return all_nodes
+        if file_node:
+            return file_node_item
+
+    def get_field_of_type(self, node: dict, field_type: object) -> str:
+        """
+        Gets the field of desired data type
+
+        Args:
+            field_type: python object like str, int, dict, etc.
+        """
+        for key, val in node.props.items():
+            if isinstance(val, field_type):
+                return key
+
+    def get_did_from_file_id(self, guid: str) -> str:
+        """
+        Returns the did/indexd_guid value for file node
+        Args:
+            guid: node's entities based id
+        """
+        response = requests.get(
+            url=pytest.root_url
+            + self.BASE_ADD_ENDPOINT
+            + "/{}/{}/export?ids={}&format=json".format(
+                self.program_name, self.project_code, guid
+            ),
+            auth=self.auth,
+        )
+        return response.json()[0]["object_id"]
+
     def submit_graph_and_file_metadata(
         self,
         file_guid=None,
@@ -307,7 +324,18 @@ class GraphDataTools:
         create_new_parents=False,
         user="main_account",
     ) -> dict:
-        existing_file_node = self.get_file_node()
+        """
+        Submits the graph and file metadata
+        Args:
+            file_guid: File GUID (optional)
+            file_size: File Size (optional)
+            file_md5: File MD5 (optional)
+            submitter_id: Submitter Id (optional)
+            consent_codes: Consent Codes (optional)
+            create_new_parents: Creates new parents incase of existing nodes. Boolean value.
+            user: user having permission to submit nodes
+        """
+        existing_file_node = self.get_path_with_file_node(file_node=True)
         metadata = existing_file_node
         if file_guid:
             metadata.props["object_id"] = file_guid
@@ -319,11 +347,8 @@ class GraphDataTools:
             metadata.props["submitter_id"] = submitter_id
         if consent_codes:
             if "consent_codes" not in metadata.props.keys():
-                logger.error(
-                    "Tried to set consent_codes but consent_codes not in dictionary. Should test be disabled?"
-                )
-                raise
-            metadata.props["consent_codes"] = consent_codes
+                metadata.props["consent_codes"] = []
+            metadata.props["consent_codes"] += consent_codes
         self.submit_links_for_node(metadata, create_new_parents, user)
 
         if "id" in existing_file_node.props.keys():
@@ -364,3 +389,15 @@ class GraphDataTools:
         for node_name, node_details in all_nodes.items():
             if node_details.props["submitter_id"] == submitter_id:
                 return all_nodes[node_name]
+
+    def get_dependent_node(self) -> GraphRecord:
+        """
+        Gets the first available child node
+        """
+        for key, val in self.test_records.items():
+            for prop in val.props:
+                if (
+                    isinstance(val.props[prop], dict)
+                    and "submitter_id" in val.props[prop].keys()
+                ):
+                    return val

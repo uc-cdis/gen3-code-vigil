@@ -14,15 +14,6 @@ class Peregrine(object):
     def __init__(self):
         self.BASE_QUERY_ENDPOINT = "/api/v0/submission/graphql"
 
-    def query(self, query_string: str, variable_string: str, user: str) -> dict:
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        response = requests.post(
-            url=pytest.root_url + self.BASE_QUERY_ENDPOINT,
-            data=json.dumps({"query": query_string, "variables": variable_string}),
-            auth=auth,
-        )
-        return response
-
     def query_to_submit(self, node: dict, filters={}) -> str:
         fields_string = self.fields_to_string(node.props)
         filter_string = ""
@@ -49,10 +40,6 @@ class Peregrine(object):
             if isinstance(val, str):
                 filter_string.append('{}: "{}"'.format(key, val))
         return ", ".join(filter_string)
-
-    def query_count(self, type_count: str) -> dict:
-        query_to_submit = "{" + type_count + "}"
-        return self.query(query_to_submit, {}, "main_account")
 
     def query_with_path_to(self, from_node: dict, to_node: dict) -> str:
         query_to_submit = (
