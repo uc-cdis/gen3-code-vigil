@@ -32,7 +32,11 @@ pipeline {
                 ])
             }
         }
+<<<<<<< HEAD
         stage('Kube Setup Service') {
+=======
+        stage('Kube Setup SERVICE') {
+>>>>>>> 8327cfe (remove roll_pod job and add kube-setup job)
             options {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
