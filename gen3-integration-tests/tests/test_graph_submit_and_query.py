@@ -19,6 +19,19 @@ from services.graph import GraphDataTools
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+def validate_consent_codes():
+    """
+    Function to check if consent_codes is available in dictionary or not.
+    Used to skip test if consent_codes in not available.
+    """
+    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
+    metadata = sd_tools.get_path_with_file_node(file_node=True)
+    if "consent_codes" not in metadata.props.keys():
+        return True
+    return False
+
+
 class FileNode:
     def __init__(self, did: str, props: dict, authz: list) -> None:
         self.did = did
@@ -270,6 +283,9 @@ class TestGraphSubmitAndQuery:
             last_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(last_node.node_name, response)
 
+    @pytest.mark.skipif(
+        validate_consent_codes(), reason="Consent Codes not available in dictionary"
+    )
     def test_submit_data_node_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
