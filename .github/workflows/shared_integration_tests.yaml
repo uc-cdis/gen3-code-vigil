@@ -149,8 +149,7 @@ jobs:
             # if: ${{ steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | join(" or ")')
-              test_label+="-k $label"
+              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
