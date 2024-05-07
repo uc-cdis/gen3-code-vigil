@@ -81,38 +81,38 @@ jobs:
               repository: uc-cdis/gen3-code-vigil
               ref: master
 
-          # gen3-integration-tests run with python 3.9
-          - name: Set up Python
-            uses: actions/setup-python@v5
-            with:
-              python-version: '3.9'
+          # # gen3-integration-tests run with python 3.9
+          # - name: Set up Python
+          #   uses: actions/setup-python@v5
+          #   with:
+          #     python-version: '3.9'
 
-          - name: Set up Go
-            uses: actions/setup-go@v5
-            with:
-              go-version: '1.17'
+          # - name: Set up Go
+          #   uses: actions/setup-go@v5
+          #   with:
+          #     go-version: '1.17'
 
-          # allure report generation needs node
-          - name: Set up node
-            uses: actions/setup-node@v4
-            with:
-              node-version: 20
+          # # allure report generation needs node
+          # - name: Set up node
+          #   uses: actions/setup-node@v4
+          #   with:
+          #     node-version: 20
 
-          # Install gen3-integration-tests dependencies
-          # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
-          - name: Install dependencies
-            run: |
-              sudo apt-get install -y --reinstall wamerican
-              python -m pip install --upgrade pip
-              pip install poetry
-              poetry install
-              poetry show
-              poetry run playwright install chromium
+          # # Install gen3-integration-tests dependencies
+          # # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+          # - name: Install dependencies
+          #   run: |
+          #     sudo apt-get install -y --reinstall wamerican
+          #     python -m pip install --upgrade pip
+          #     pip install poetry
+          #     poetry install
+          #     poetry show
+          #     poetry run playwright install chromium
 
-          - name: Get commit time
-            run: |
-              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+          # - name: Get commit time
+          #   run: |
+          #     commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+          #     echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
           # # TODO: Rely on a database in AWS to make this faster
           # # Select an unlocked environment
