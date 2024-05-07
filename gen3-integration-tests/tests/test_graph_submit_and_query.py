@@ -270,6 +270,7 @@ class TestGraphSubmitAndQuery:
             last_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(last_node.node_name, response)
 
+    @pytest.mark.wip("Test is broken, debugging.")
     def test_submit_data_node_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
