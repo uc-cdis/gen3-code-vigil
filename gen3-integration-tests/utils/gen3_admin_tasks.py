@@ -70,9 +70,35 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def kube_setup_service(test_env_namespace, servicename):
+    """
+    Runs jenkins job to kube setup service
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "kube-setup-service",
+    )
+    params = {
+        "SERVICENAME": servicename,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
@@ -96,7 +122,7 @@ def roll_kube_pods(test_env_namespace, service_name):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num, max_duration=600)
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:

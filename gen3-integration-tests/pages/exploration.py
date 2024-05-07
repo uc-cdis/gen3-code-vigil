@@ -24,7 +24,6 @@ class ExplorationPage(object):
         self.EXPORT_TO_PFB_BUTTON = "//button[contains(text(), 'Export to PFB')]"
         self.PFB_WAIT_FOOTER = "//div[@class='explorer-button-group__toaster-text']//div[contains(.,'Please do not navigate away from this page until your export is finished.')]"
         self.PFB_ERROR_FOOTER = "//div[@class='explorer-button-group__toaster-text']//div[contains(.,'There was an error exporting your cohort.')]"
-        # self.PFB_SUCCESS_FOOTER = "//div[@class='explorer-button-group__toaster-text']//a[contains(.,\'Click here to download your PFB.\')]"
         self.PFB_SUCCESS_FOOTER = (
             "//a[contains(@class, 'explorer-button-group__toaster-dl-link')]"
         )
@@ -61,6 +60,10 @@ class ExplorationPage(object):
         try:
             export_to_pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
             export_to_pfb_button.wait_for()
+            print(
+                "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
+            )
+            page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
         except TimeoutError:
             print(
                 "### The `Export to PFB` is disabled on the 'Data' tab. Let's switch to the 'File' tab..."
@@ -68,11 +71,6 @@ class ExplorationPage(object):
             page.locator(self.FILE_TAB).click()
             page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
             screenshot(page, "fileTabsPage")
-        else:
-            print(
-                "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
-            )
-            page.wait_for_selector("//button[contains(text(), 'Export to PFB')]")
 
     def check_pfb_status(self, page: Page):
         pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
