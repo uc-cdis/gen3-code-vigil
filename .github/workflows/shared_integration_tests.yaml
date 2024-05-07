@@ -81,66 +81,66 @@ jobs:
               repository: uc-cdis/gen3-code-vigil
               ref: master
 
-          # # gen3-integration-tests run with python 3.9
-          # - name: Set up Python
-          #   uses: actions/setup-python@v5
-          #   with:
-          #     python-version: '3.9'
+          # gen3-integration-tests run with python 3.9
+          - name: Set up Python
+            uses: actions/setup-python@v5
+            with:
+              python-version: '3.9'
 
-          # - name: Set up Go
-          #   uses: actions/setup-go@v5
-          #   with:
-          #     go-version: '1.17'
+          - name: Set up Go
+            uses: actions/setup-go@v5
+            with:
+              go-version: '1.17'
 
-          # # allure report generation needs node
-          # - name: Set up node
-          #   uses: actions/setup-node@v4
-          #   with:
-          #     node-version: 20
+          # allure report generation needs node
+          - name: Set up node
+            uses: actions/setup-node@v4
+            with:
+              node-version: 20
 
-          # # Install gen3-integration-tests dependencies
-          # # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
-          # - name: Install dependencies
-          #   run: |
-          #     sudo apt-get install -y --reinstall wamerican
-          #     python -m pip install --upgrade pip
-          #     pip install poetry
-          #     poetry install
-          #     poetry show
-          #     poetry run playwright install chromium
+          # Install gen3-integration-tests dependencies
+          # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+          - name: Install dependencies
+            run: |
+              sudo apt-get install -y --reinstall wamerican
+              python -m pip install --upgrade pip
+              pip install poetry
+              poetry install
+              poetry show
+              poetry run playwright install chromium
 
-          # - name: Get commit time
-          #   run: |
-          #     commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-          #     echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+          - name: Get commit time
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
-          # # TODO: Rely on a database in AWS to make this faster
-          # # Select an unlocked environment
-          # # If an env is specified in a PR label use it, else pick one from the pool
-          # - name: Select CI environment
-          #   id: select_ci_env
-          #   run: |
-          #     env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
-          #     echo "$env_label"
-          #     if [[ $env_label != "" && $env_label != null ]]; then
-          #       echo "Found PR label $env_label"
-          #       poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
-          #     else
-          #       poetry run python -m gen3_ci.scripts.select_ci_environment
-          #     fi
+          # TODO: Rely on a database in AWS to make this faster
+          # Select an unlocked environment
+          # If an env is specified in a PR label use it, else pick one from the pool
+          - name: Select CI environment
+            id: select_ci_env
+            run: |
+              env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
+              echo "$env_label"
+              if [[ $env_label != "" && $env_label != null ]]; then
+                echo "Found PR label $env_label"
+                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
+              else
+                poetry run python -m gen3_ci.scripts.select_ci_environment
+              fi
 
-          # # TODO: Improve the logic to do differential updates to the env, not roll all services
-          # # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
-          # # Generate API keys for test users for the environment
-          # - name: Prepare CI environment
-          #   id: prep_ci_env
-          #   if: ${{ steps.select_ci_env.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     mkdir $HOME/.gen3
-          #     poetry run python -m gen3_ci.scripts.prepare_ci_environment
-          #   env:
-          #     QUAY_REPO: ${{ inputs.QUAY_REPO }}
+          # TODO: Improve the logic to do differential updates to the env, not roll all services
+          # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
+          # Generate API keys for test users for the environment
+          - name: Prepare CI environment
+            id: prep_ci_env
+            if: ${{ steps.select_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              mkdir $HOME/.gen3
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
+            env:
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels
@@ -155,13 +155,13 @@ jobs:
               done
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
-          # - name: Run tests pertaining to specific service
-          #   id: run_service_tests
-          #   if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     mkdir output
-          #     poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header
+          - name: Run tests pertaining to specific service
+            id: run_service_tests
+            if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              mkdir output
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header
 
           - name: Run tests
             id: run_tests
@@ -177,126 +177,126 @@ jobs:
           #     echo steps.run_service_tests.outcome = ${{ steps.run_service_tests.outcome }}
           #     echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
-          # - name: Generate allure report
-          #   id: generate_allure_report
-          #   if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     npm install -g allure-commandline --save-dev
-          #     allure generate allure-results -o allure-report --clean
-          #     PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
-          #     echo "PASSED=$PASSED" >> $GITHUB_ENV
-          #     FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
-          #     echo "FAILED=$FAILED" >> $GITHUB_ENV
-          #     BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
-          #     echo "BROKEN=$BROKEN" >> $GITHUB_ENV
-          #     DURATION_MS=$(cat ./allure-report/widgets/summary.json | jq -r '.time.duration')
-          #     MINUTES=$(echo "$DURATION_MS / 60000" | bc)
-          #     SECONDS=$(( ($milliseconds / 1000) % 60 ))
-          #     echo "DURATION=${MINUTES}m ${SECONDS}s" >> $GITHUB_ENV
+          - name: Generate allure report
+            id: generate_allure_report
+            if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              npm install -g allure-commandline --save-dev
+              allure generate allure-results -o allure-report --clean
+              PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
+              echo "PASSED=$PASSED" >> $GITHUB_ENV
+              FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
+              echo "FAILED=$FAILED" >> $GITHUB_ENV
+              BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
+              echo "BROKEN=$BROKEN" >> $GITHUB_ENV
+              DURATION_MS=$(cat ./allure-report/widgets/summary.json | jq -r '.time.duration')
+              MINUTES=$(echo "$DURATION_MS / 60000" | bc)
+              SECONDS=$(( ($milliseconds / 1000) % 60 ))
+              echo "DURATION=${MINUTES}m ${SECONDS}s" >> $GITHUB_ENV
 
-          # - name: Render md report to the PR
-          #   id: generate_md_report
-          #   if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
-          #   env:
-          #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          - name: Render md report to the PR
+            id: generate_md_report
+            if: ${{ steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # - name: Upload allure report to S3
-          #   id: upload_allure_report
-          #   if: ${{ steps.generate_allure_report.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
-          #   env:
-          #     AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-          #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-          #     AWS_DEFAULT_REGION: 'us-east-1'
+          - name: Upload allure report to S3
+            id: upload_allure_report
+            if: ${{ steps.generate_allure_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+              AWS_DEFAULT_REGION: 'us-east-1'
 
-          # - name: Publish allure report link to the PR
-          #   id: gh_comment_allure_link
-          #   if: ${{ steps.upload_allure_report.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
-          #   env:
-          #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          - name: Publish allure report link to the PR
+            id: gh_comment_allure_link
+            if: ${{ steps.upload_allure_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # - name: Archive pod logs from CI environment
-          #   id: archive_pod_logs
-          #   if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+          - name: Archive pod logs from CI environment
+            id: archive_pod_logs
+            if: ${{ steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
-          # - name: Publish pod logs url to the PR
-          #   id: gh_comment_pod_logs_link
-          #   if: ${{ steps.archive_pod_logs.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
-          #   env:
-          #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          - name: Publish pod logs url to the PR
+            id: gh_comment_pod_logs_link
+            if: ${{ steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # - name: Publish allure report and pod logs url to Slack
-          #   id: slack_notify
-          #   # if: ${{ steps.gh_comment_pod_logs_link.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   uses: slackapi/slack-github-action@v1.25.0
-          #   with:
-          #     channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
-          #     payload: |
-          #       {
-          #         "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}",
-          #         "blocks": [
-          #           {
-          #             "type": "header",
-          #             "text": {
-          #             "type": "plain_text",
-          #               "text": "Integration Test Results",
-          #               "emoji": true
-          #             }
-          #           },
-          #           {
-          #             "type": "section",
-          #             "text": {
-          #               "type": "mrkdwn",
-          #               "text": "*PR*: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}"
-          #             }
-          #           },
-          #           {
-          #             "type": "section",
-          #             "text": {
-          #               "type": "mrkdwn",
-          #               "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
-          #             }
-          #           },
-          #           {
-          #             "type": "section",
-          #             "text": {
-          #               "type": "mrkdwn",
-          #               "text": "*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>  _(login to https://qa.planx-pla.net first)_"
-          #             }
-          #           },
-          #           {
-          #             "type": "section",
-          #             "text": {
-          #               "type": "mrkdwn",
-          #               "text": "*Pod Logs Archive*: <${{ env.POD_LOGS_URL || 'N/A' }}|click here>"
-          #             }
-          #           }
-          #         ]
-          #       }
-          #   env:
-          #     SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+          - name: Publish allure report and pod logs url to Slack
+            id: slack_notify
+            # if: ${{ steps.gh_comment_pod_logs_link.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v1.25.0
+            with:
+              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              payload: |
+                {
+                  "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}",
+                  "blocks": [
+                    {
+                      "type": "header",
+                      "text": {
+                      "type": "plain_text",
+                        "text": "Integration Test Results",
+                        "emoji": true
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*PR*: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>  _(login to https://qa.planx-pla.net first)_"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": "*Pod Logs Archive*: <${{ env.POD_LOGS_URL || 'N/A' }}|click here>"
+                      }
+                    }
+                  ]
+                }
+            env:
+              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
 
-          # - name: Release CI environment
-          #   id: release_ci_env
-          #   if: ${{ steps.select_ci_env.outcome == 'success' || cancelled() }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: poetry run python -m gen3_ci.scripts.release_ci_environment
+          - name: Release CI environment
+            id: release_ci_env
+            if: ${{ steps.select_ci_env.outcome == 'success' || cancelled() }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
-          # - name: Mark workflow as failed for unsuccessful test runs
-          #   if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
-          #   run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
+          - name: Mark workflow as failed for unsuccessful test runs
+            if: ${{ steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
-          # - name: Stop pending jenkins jobs for cancelled run
-          #   if: ${{ cancelled() }}
-          #   run: poetry run python -m gen3_ci.scripts.clean_up_jenkins
+          - name: Stop pending jenkins jobs for cancelled run
+            if: ${{ cancelled() }}
+            run: poetry run python -m gen3_ci.scripts.clean_up_jenkins
