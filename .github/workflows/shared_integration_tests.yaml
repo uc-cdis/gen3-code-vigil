@@ -149,7 +149,7 @@ jobs:
             # if: ${{ steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              test_labels=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))))
+              test_labels=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test")))')
               for label in $(echo "$test_labels" | jq -r '.[].name'); do
                   test_label+="-k $label "
               done
