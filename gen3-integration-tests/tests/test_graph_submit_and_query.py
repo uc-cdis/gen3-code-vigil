@@ -270,7 +270,6 @@ class TestGraphSubmitAndQuery:
             last_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(last_node.node_name, response)
 
-    @pytest.mark.wip("Test is broken, debugging.")
     def test_submit_data_node_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
@@ -314,6 +313,8 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(response, file_node_wit_ccs)
 
     @pytest.mark.peregrine
+    @pytest.mark.indexd
+    @pytest.mark.portal
     def test_core_metadata_page(self, page: LoginPage):
         """
         Scenario: Test core metadata page
@@ -359,6 +360,7 @@ class TestGraphSubmitAndQuery:
         sd_tools.delete_nodes()
 
     @pytest.mark.peregrine
+    @pytest.mark.indexd
     def test_core_metadata(self):
         """
         Scenario: Test core metadata
@@ -400,6 +402,7 @@ class TestGraphSubmitAndQuery:
         sd_tools.delete_nodes()
 
     @pytest.mark.peregrine
+    @pytest.mark.indexd
     def test_core_metadata_invalid_object_id(self):
         """
         Scenario: Test core metadata invalid object_id
@@ -435,6 +438,7 @@ class TestGraphSubmitAndQuery:
         sd_tools.delete_nodes()
 
     @pytest.mark.peregrine
+    @pytest.mark.indexd
     def test_core_metadata_no_permission(self):
         """
         Scenario: Test core metadata no permission

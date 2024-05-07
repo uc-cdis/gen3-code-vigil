@@ -347,7 +347,8 @@ class GraphDataTools:
             metadata.props["submitter_id"] = submitter_id
         if consent_codes:
             if "consent_codes" not in metadata.props.keys():
-                metadata.props["consent_codes"] = []
+                logger.info("Consent Codes not available in dictionary")
+                pytest.skip("Consent Codes not available in dictionary")
             metadata.props["consent_codes"] += consent_codes
         self.submit_links_for_node(metadata, create_new_parents, user)
 
