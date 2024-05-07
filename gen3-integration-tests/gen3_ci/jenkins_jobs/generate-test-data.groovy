@@ -43,7 +43,7 @@ pipeline {
                             source $GEN3_HOME/gen3/gen3setup.sh
 
                             echo "Generating dummy data for the test ..."
-                            gen3 job run gentestdata SUBMISSION_USER \${SUBMISSION_USER} MAX_EXAMPLES \${MAX_EXAMPLES} SUBMISSION_ORDER \${SUBMISSION_ORDER}
+                            gen3 job run gentestdata MAX_EXAMPLES \${MAX_EXAMPLES}
                             g3kubectl wait --for=condition=complete --timeout=-1s jobs/gentestdata
                         '''
                     }
