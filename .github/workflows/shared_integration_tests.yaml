@@ -109,7 +109,6 @@ jobs:
               poetry show
               poetry run playwright install chromium
 
-          # Get timestamp of the last commit to the PR branch
           - name: Get commit time
             run: |
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
@@ -143,13 +142,24 @@ jobs:
             env:
               QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
+          # This is used for running specific test suites by labeling the PR with the test class
+          # Multiple suites can be executed by adding multiple labels
+          - name: Get test labels
+            id: get_test_labels
+            # if: ${{ steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              echo $test_label
+              echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header --dist loadscope
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header ${{ env.TEST_LABEL }} --dist loadscope
 
           - name: Run tests
             id: run_tests
@@ -157,7 +167,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope
+              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
 
           - name: Debug logging
             continue-on-error: true  # if this fails, we still need to run clean-up steps

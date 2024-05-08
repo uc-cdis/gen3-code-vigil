@@ -3,6 +3,7 @@ import os
 import pytest
 import requests
 
+
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from gen3.submission import Gen3SubmissionQueryError

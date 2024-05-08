@@ -62,7 +62,7 @@ class WorkspacePage(object):
         launch_button = page.locator(launch_button_xpath)
         launch_button.click()
         screenshot(page, "jupyterWorkspace")
-        page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
+        page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible", timeout=600000)
         # after launch, workspace takes around 6 mins to load and launc
         page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=600000)
 
