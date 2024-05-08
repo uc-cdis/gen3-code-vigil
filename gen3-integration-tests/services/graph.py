@@ -36,8 +36,8 @@ class GraphRecord:
         self.unique_id = None
         self.indexd_guid = None
 
-    '''def __str__(self) -> str:
-        return f"GraphRecord '{self.node_name}': {self.props}"'''
+    def __str__(self) -> str:
+        return f"GraphRecord '{self.node_name}': {self.props}"
 
 
 class GraphDataTools:
@@ -94,7 +94,7 @@ class GraphDataTools:
                 logger.info(
                     f"Pre-test clean up: deleting '{node_name}' record '{record['id']}'"
                 )
-                self._delete_record(record["id"])
+                self.delete_record(record["id"])
 
     def _load_test_records(self) -> None:
         """
@@ -131,7 +131,7 @@ class GraphDataTools:
                 node_name, node_category, order, props
             )
 
-    def _submit_record(
+    def submit_record(
         self, record: GraphRecord, expected_status_code: int = 200
     ) -> dict:
         """
@@ -158,7 +158,7 @@ class GraphDataTools:
         in the right order.
         """
         for node_name in self.submission_order:
-            self._submit_record(self.test_records[node_name])
+            self.submit_record(self.test_records[node_name])
 
     def submit_new_record(self, node_name: str) -> GraphRecord:
         """
@@ -170,10 +170,10 @@ class GraphDataTools:
         """
         record = copy.deepcopy(self.test_records[node_name])
         record.props["submitter_id"] = f"{node_name}_{str(uuid.uuid4())[:8]}"
-        self._submit_record(record)
+        self.submit_record(record)
         return record
 
-    def _delete_record(
+    def delete_record(
         self, unique_id: str, expected_status_code: int = 200
     ) -> requests.Response:
         """
@@ -252,21 +252,6 @@ class GraphDataTools:
         query = f'{{ _{node_name}_count (project_id: "{self.project_id}") }}'
         return self.graphql_query(query)
 
-    def submit_single_record(self, record: GraphRecord):
-        """
-        Submit a single record
-        """
-        return self._submit_record(record=record)
-
-    def get_ith_record(self, position: int):
-        """
-        Get the record for ith based node position.
-
-        Args:
-            i: position - python based position, starts from 0 and ends with -1
-        """
-        return self.test_records[self.submission_order[position]]
-
     def get_path_with_file_node(self, path_to_file=False, file_node=False):
         """
         Get all nodes except node with _file category or get node with _file category
@@ -277,13 +262,16 @@ class GraphDataTools:
         """
         all_nodes = copy.deepcopy(self.test_records)
         file_node_name = ""
+        # Get file node name with _file category
         for node_name in self.submission_order:
             if "_file" in all_nodes[node_name].category:
                 file_node_name = node_name
         file_node_item = all_nodes[file_node_name]
         del all_nodes[file_node_name]
+        # Return all nodes except for the node with _file category recieved above
         if path_to_file:
             return all_nodes
+        # Return node with _file category recieved above
         if file_node:
             return file_node_item
 
@@ -350,9 +338,9 @@ class GraphDataTools:
         self.submit_links_for_node(metadata, create_new_parents, user)
 
         if "id" in existing_file_node.props.keys():
-            self._delete_record(unique_id=existing_file_node.unique_id)
+            self.delete_record(unique_id=existing_file_node.unique_id)
 
-        self._submit_record(record=metadata)
+        self.submit_record(record=metadata)
         return metadata
 
     def submit_links_for_node(
@@ -380,7 +368,7 @@ class GraphDataTools:
                     new_id = f"{linked_node.props['type']}_{res}"
                     linked_node.props["submitter_id"] = new_id
                     record.props[prop]["submitter_id"] = new_id
-                self._submit_record(record=linked_node)
+                self.submit_record(record=linked_node)
 
     def get_node_with_submitter_id(self, submitter_id: str) -> dict:
         all_nodes = self.test_records
@@ -399,3 +387,57 @@ class GraphDataTools:
                     and "submitter_id" in val.props[prop].keys()
                 ):
                     return val
+
+    def query_to_submit(self, node: dict, filters={}) -> str:
+        fields_string = self.fields_to_string(node.props)
+        filter_string = ""
+        if filters is not None and filters != {}:
+            filter_string = self.filter_to_string(filters)
+            filter_string = "(" + filter_string + ")"
+
+        query_for_submission = (
+            "{ " + node.node_name + " " + filter_string + " {" + fields_string + " } }"
+        )
+        return query_for_submission
+
+    def fields_to_string(self, data: dict) -> str:
+        primitive_types = [int, float, bool, str]
+        fields_string = ""
+        for key, val in data.items():
+            if type(val) in primitive_types:
+                fields_string += f"\n{key}"
+        return fields_string
+
+    def filter_to_string(self, filters: dict) -> str:
+        filter_string = []
+        for key, val in filters.items():
+            if isinstance(val, str):
+                filter_string.append(f'{key}: "{val}"')
+        return ", ".join(filter_string)
+
+    def query_with_path_to(self, from_node: dict, to_node: dict) -> str:
+        query_to_submit = (
+            "query Test { "
+            + from_node.node_name
+            + ' (order_by_desc: "created_datetime",with_path_to: { type: "'
+            + to_node.node_name
+            + '", submitter_id: "'
+            + to_node.props["submitter_id"]
+            + '"} ) { submitter_id } }'
+        )
+        return query_to_submit
+
+    def see_json_core_metadata(self, file, metadata):
+        metadata = metadata.json()
+        assert (
+            file.props["file_name"] == metadata["file_name"]
+        ), f"file_name not matched/found.\n{file}\n{metadata}"
+        assert (
+            file.indexd_guid == metadata["object_id"]
+        ), f"object_id not matched/found.\n{file}\n{metadata}"
+        assert (
+            file.props["type"] == metadata["type"]
+        ), f"type not matched/found.\n{file}\n{metadata}"
+        assert (
+            file.props["data_format"] == metadata["data_format"]
+        ), f"data_format not matched/found.\n{file}\n{metadata}"

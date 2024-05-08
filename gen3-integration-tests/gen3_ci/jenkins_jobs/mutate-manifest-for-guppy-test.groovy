@@ -2,9 +2,6 @@
   String parameter NAMESPACE
     e.g., qa-anvil
 
-  String parameter SERVICENAME
-    e.g., indexd, fence, etc
-
   Archived artifacts -
 */
 pipeline {
@@ -32,12 +29,12 @@ pipeline {
                 ])
             }
         }
-        stage('Kube Setup Service') {
+        stage('Mutate Manifest for Guppy Test') {
             options {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
             steps {
-                dir("kube-setup-service"){
+                dir("guppy-gen3-setup"){
                     script {
                         try {
                             sh '''#!/bin/bash +x
@@ -46,8 +43,8 @@ pipeline {
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
 
-                            # Perform kube-setup-service
-                            gen3 kube-setup-\${SERVICENAME}
+                            # Mutate guppy config to point guppy to pre-defined Canine ETL'ed data
+                            gen3 mutate-guppy-config-for-guppy-test
 
                             # Validate pods to roll up
                             gen3 kube-wait4-pods || true

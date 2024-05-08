@@ -3,6 +3,8 @@ import os
 import pytest
 import requests
 
+from utils.misc import retry
+
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 
@@ -14,9 +16,8 @@ class Fence(object):
         self.BASE_URL = f"{pytest.root_url}/user"
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
         self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
-        self.UPLOAD_FILE_ENDPOINT = f"{self.BASE_URL}/data/upload"
-        self.CREATE_API_KEY_ENDPOINT = f"{self.BASE_URL}/credentials/api"
-        self.DELETE_FILE_ENDPOINT = f"{self.BASE_URL}/data"
+        self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
+        self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
 
     def get_access_token(self, api_key):
         """Generate access token from api key"""
@@ -50,18 +51,13 @@ class Fence(object):
             return response.json()
         return response
 
-    def get_upload_url_from_fence(self, file_name: str, user: str) -> dict:
-        response = self.get_url_for_data_upload(file_name, user)
-        self.has_url(response.json())
-        return response.json()
-
     def get_url_for_data_upload(self, file_name: str, user: str) -> dict:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         headers = {
             "Content-Type": "application/json",
         }
         response = requests.post(
-            url=self.UPLOAD_FILE_ENDPOINT,
+            url=self.DATA_UPLOAD_ENDPOINT,
             data=json.dumps({"file_name": file_name}),
             auth=auth,
             headers=headers,
@@ -76,13 +72,6 @@ class Fence(object):
             "url" not in response.content.decode()
         ), f"URL key is missing.\n{response}"
 
-    def create_api_key(self, scope: list, user: str) -> None:
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = requests.post(
-            url=self.CREATE_API_KEY_ENDPOINT, data={scope}, auth=auth
-        )
-        logger.info(response)
-
     def get_file(self, url: str) -> str:
         response = requests.get(url=url)
         return response.content.decode()
@@ -96,6 +85,23 @@ class Fence(object):
 
     def delete_file(self, guid: str, user: str) -> int:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        url = f"{self.DELETE_FILE_ENDPOINT}/{guid}"
+        url = f"{self.DATA_ENDPOINT}/{guid}"
         response = requests.delete(url=url, auth=auth)
         return response.status_code
+
+    def upload_file_to_s3_using_presigned_url(
+        self, presigned_url, file_path, file_size
+    ):
+        headers = {"Content-Length": str(file_size)}
+        response = requests.put(
+            url=presigned_url, data=open(file_path, "rb"), headers=headers
+        )
+        assert (
+            response.status_code == 200
+        ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
+
+    @retry(times=12, delay=10, exceptions=(AssertionError))
+    def wait_upload_file_updated_from_indexd_listener(indexd, file_node):
+        response = indexd.get_record(file_node.did)
+        indexd.file_equals(res=response, file_node=file_node)
+        return response

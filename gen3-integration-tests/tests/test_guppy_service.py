@@ -16,6 +16,7 @@ class TestGuppyService:
     @classmethod
     def setup_class(cls):
         guppy = Guppy()
+        # assert mutate_manifest_for_guppy_test(pytest.namespace)
         assert guppy.validate_guppy_status("main_account", 200)
 
     def test_guppy_test_query_1(self):

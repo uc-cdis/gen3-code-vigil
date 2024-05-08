@@ -3,12 +3,10 @@ import os
 import pytest
 import requests
 
-
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from gen3.submission import Gen3SubmissionQueryError
 from utils.gen3_admin_tasks import create_expired_token
-from services.peregrine import Peregrine
 from services.indexd import Indexd
 from services.coremetadata import CoreMetaData
 from pages.login import LoginPage
@@ -52,7 +50,7 @@ class TestGraphSubmitAndQuery:
         sd_tools.delete_nodes()
 
     @pytest.mark.peregrine
-    def test_submit_query_and_delete_records(self):
+    def test_submit_query_anddelete_records(self):
         """
         Scenario: Submit graph data and perform various queries.
         Steps:
@@ -146,6 +144,7 @@ class TestGraphSubmitAndQuery:
         res = create_expired_token(
             pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
         )
+
         res = res.splitlines()[-1].strip()
         auth_header = {
             "Accept": "application/json",
@@ -154,9 +153,10 @@ class TestGraphSubmitAndQuery:
         }
 
         # Create a node with expired token
+        first_node = sd_tools.test_records[sd_tools.submission_order[0]]
         response = requests.put(
             url=pytest.root_url + "/api/v0/submission/jnkns/jenkins",
-            data=json.dumps(sd_tools.get_ith_record(position=0).props),
+            data=json.dumps(first_node.props),
             headers=auth_header,
         )
         assert response.status_code == 401, f"Failed to delete record {response}"
@@ -175,10 +175,9 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        peregrine = Peregrine()
         # Verify parent node does not exist
-        parent_node = sd_tools.get_ith_record(position=0)
-        query_to_submit = peregrine.query_to_submit(parent_node)
+        parent_node = sd_tools.test_records[sd_tools.submission_order[0]]
+        query_to_submit = sd_tools.query_to_submit(parent_node)
         parent_response = sd_tools.graphql_query(query_text=query_to_submit)
         # Validate length of fields returned for node name is 0
         if len(parent_response["data"][parent_node.node_name]) != 0:
@@ -192,7 +191,7 @@ class TestGraphSubmitAndQuery:
         # Attempt to add second node which has a dependency on another node
         second_node = sd_tools.get_dependent_node()
         try:
-            logger.info(sd_tools.submit_single_record(record=second_node))
+            logger.info(sd_tools.submit_record(record=second_node))
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != 400:
                 logger.error(f"Expected 400 status code not found. Response: {e}")
@@ -212,13 +211,12 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        peregrine = Peregrine()
         # Create a node using sheepdog. Verify node is present.
-        node = sd_tools.get_ith_record(position=0)
-        sd_tools.submit_single_record(record=node)
+        node = sd_tools.test_records[sd_tools.submission_order[0]]
+        sd_tools.submit_record(record=node)
         # Perform a query using an invalid project_id.
         filters = {"project_id": "NOT-EXIST"}
-        query_to_submit = peregrine.query_to_submit(node, filters)
+        query_to_submit = sd_tools.query_to_submit(node, filters)
         response = sd_tools.graphql_query(query_text=query_to_submit)
         # Validate length of fields returned for node name is 0
         if len(response["data"][node.node_name]) != 0:
@@ -226,7 +224,7 @@ class TestGraphSubmitAndQuery:
                 "Found fields for {}. Response : {}".format(node.node_name, response)
             )
             raise
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
 
     @pytest.mark.peregrine
     def test_with_path_to_first_to_last_node(self):
@@ -241,15 +239,14 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        peregrine = Peregrine()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
         # Query path from first node to last node.
-        first_node = sd_tools.get_ith_record(position=0)
-        last_node = sd_tools.get_ith_record(position=-1)
-        query_to_submit = peregrine.query_with_path_to(first_node, last_node)
+        first_node = sd_tools.test_records[sd_tools.submission_order[0]]
+        last_node = sd_tools.test_records[sd_tools.submission_order[-1]]
+        query_to_submit = sd_tools.query_with_path_to(first_node, last_node)
         response = sd_tools.graphql_query(query_text=query_to_submit)
         # Verify first node name is present response.
         assert (
@@ -269,15 +266,14 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        peregrine = Peregrine()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
         # Query path from last node to first node.
-        first_node = sd_tools.get_ith_record(position=0)
-        last_node = sd_tools.get_ith_record(position=-1)
-        query_to_submit = peregrine.query_with_path_to(last_node, first_node)
+        first_node = sd_tools.test_records[sd_tools.submission_order[0]]
+        last_node = sd_tools.test_records[sd_tools.submission_order[-1]]
+        query_to_submit = sd_tools.query_with_path_to(last_node, first_node)
         response = sd_tools.graphql_query(query_text=query_to_submit)
         # Verify last node name is present response.
         assert (
@@ -344,7 +340,6 @@ class TestGraphSubmitAndQuery:
             6. Delete file node and delete indexd record
             7. Delete all nodes. Verify all nodes are deleted.
         """
-        peregrine = Peregrine()
         login_page = LoginPage()
         core_metadata_page = CoreMetadataPage()
         coremetadata = CoreMetaData()
@@ -355,13 +350,13 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         node = sd_tools.get_path_with_file_node(file_node=True)
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
         metadata = coremetadata.get_core_metadata(file=node, user="main_account")
-        peregrine.see_json_core_metadata(file=node, metadata=metadata)
+        sd_tools.see_json_core_metadata(file=node, metadata=metadata)
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("Logging in with mainAcct")
@@ -371,7 +366,7 @@ class TestGraphSubmitAndQuery:
         core_metadata_page.verify_metadata_page_elements(page)
         login_page.logout(page)
 
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
 
         # Delete all remaining records
         sd_tools.delete_nodes()
@@ -391,7 +386,6 @@ class TestGraphSubmitAndQuery:
             7. Validate file_name, GUID, Type and data_format of file node matches in metadata
             8. Delete all nodes
         """
-        peregrine = Peregrine()
         coremetadata = CoreMetaData()
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         sd_tools = GraphDataTools(
@@ -400,20 +394,20 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         node = sd_tools.get_path_with_file_node(file_node=True)
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
         metadata = coremetadata.get_core_metadata(file=node, user="main_account")
-        peregrine.see_json_core_metadata(file=node, metadata=metadata)
+        sd_tools.see_json_core_metadata(file=node, metadata=metadata)
 
         metadata = coremetadata.get_core_metadata(
             file=node, user="main_account", format="x-bibtex"
         )
         coremetadata.see_bibtex_core_metadata(file=node, metadata=metadata)
 
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
 
         # Delete all remaining records
         sd_tools.delete_nodes()
@@ -439,7 +433,7 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         invalid_node = sd_tools.get_path_with_file_node(file_node=True)
         invalid_node.props["object_id"] = "invalid_object_id"
@@ -476,10 +470,10 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         node = sd_tools.get_path_with_file_node(file_node=True)
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
         metadata = coremetadata.get_core_metadata(
             file=node,
@@ -492,7 +486,7 @@ class TestGraphSubmitAndQuery:
             message="Authentication Error: could not parse authorization header",
         )
 
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
 
         # Delete all remaining records
         sd_tools.delete_nodes()
@@ -514,17 +508,17 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Adding all nodes except file node
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         # Adding file node and retrieveing indexd record
         node = sd_tools.get_path_with_file_node(file_node=True)
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
         # Deleting file node and indexd record
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
         delete_record = indexd.delete_record(guid=node.indexd_guid, rev=rev)
         assert delete_record == 200, f"Failed to delete record {node.indexd_guid}"
 
@@ -546,12 +540,12 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Adding all nodes except file node
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         # Adding file node and retrieveing indexd record
         node = sd_tools.get_path_with_file_node(file_node=True)
         node.props["urls"] = test_url
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
@@ -560,7 +554,7 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(record, node)
 
         # Deleting file node and indexd record
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
         delete_record = indexd.delete_record(guid=node.indexd_guid, rev=rev)
         assert delete_record == 200, f"Failed to delete record {node.indexd_guid}"
 
@@ -583,18 +577,18 @@ class TestGraphSubmitAndQuery:
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Adding all nodes except file node
         for key, val in nodes.items():
-            sd_tools.submit_single_record(record=val)
+            sd_tools.submit_record(record=val)
 
         # Adding file node and retrieveing indexd record without URL
         node = sd_tools.get_path_with_file_node(file_node=True)
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         did = sd_tools.get_did_from_file_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=did)
         rev = indexd.get_rev(record)
 
         # Add URL to the node data and update it
         node.props["urls"] = test_url
-        sd_tools.submit_single_record(record=node)
+        sd_tools.submit_record(record=node)
         node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
@@ -603,6 +597,6 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(record, node)
 
         # Deleting file node and indexd record
-        sd_tools._delete_record(unique_id=node.unique_id)
+        sd_tools.delete_record(unique_id=node.unique_id)
         delete_record = indexd.delete_record(guid=node.indexd_guid, rev=rev)
         assert delete_record == 200, f"Failed to delete record {node.indexd_guid}"
