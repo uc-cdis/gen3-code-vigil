@@ -5,6 +5,7 @@ import requests
 
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
+from gen3.index import Gen3Index
 from gen3.submission import Gen3SubmissionQueryError
 from utils.gen3_admin_tasks import create_expired_token
 from services.indexd import Indexd
@@ -293,10 +294,11 @@ class TestGraphSubmitAndQuery:
             4. Verify indexd record was created with the correct consent codes
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        indexd_auth = Gen3Auth(refresh_token=pytest.api_keys["indexing_account"])
+        indexd = Gen3Index(auth_provider=indexd_auth)
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        indexd = Indexd()
         records = indexd.get_all_records()
 
         # Delete indexd records

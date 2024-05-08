@@ -94,16 +94,6 @@ class Indexd(object):
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
 
-    def get_all_records(self, user="indexing_account"):
-        """Get all records from indexd"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
-        indexd = Gen3Index(auth_provider=auth)
-        try:
-            records = indexd.get_all_records()
-            return records
-        except Exception as e:
-            logger.exception(msg=f"Cannot find indexd records {e}")
-
     def file_equals(self, res: dict, file_node: dict) -> None:
         logger.info(f"Response data : {res}")
         logger.info(f"File Node with CCs : {file_node.props}")
