@@ -8,13 +8,12 @@ from datasimulator.main import (
     run_simulation,
     run_submission_order_generation,
 )
+from gen3.auth import Gen3Auth
 from pathlib import Path
 
 from services.fence import Fence
 from services.graph import GraphDataTools
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
-
-from gen3.auth import Gen3Auth
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -111,5 +110,7 @@ def create_program_project(user="main_account"):
     Creates program and project if not present already
     """
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    sd_tools.create_program_and_project()
+    sd_tools = GraphDataTools(auth=auth)
+    api_key_json, auth_header = get_api_key_and_auth_header(user=user)
+    sd_tools.create_program("jnkns", auth_header)
+    sd_tools.create_project("jnkns", "jenkins", auth_header)

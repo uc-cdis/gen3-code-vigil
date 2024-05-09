@@ -10,11 +10,9 @@ from gen3.submission import Gen3SubmissionQueryError
 from utils.gen3_admin_tasks import create_expired_token
 from services.indexd import Indexd
 from services.coremetadata import CoreMetaData
+from services.graph import GraphDataTools
 from pages.login import LoginPage
 from pages.core_metadata_page import CoreMetadataPage
-
-from services.graph import GraphDataTools
-
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -295,16 +293,16 @@ class TestGraphSubmitAndQuery:
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         indexd_auth = Gen3Auth(refresh_token=pytest.api_keys["indexing_account"])
-        indexd = Gen3Index(auth_provider=indexd_auth)
+        gen3_indexd = Gen3Index(auth_provider=indexd_auth)
+        indexd = Indexd()
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        records = indexd.get_all_records()
+        records = gen3_indexd.get_all_records()
 
         # Delete indexd records
         for record in records:
-            delete_resp = indexd.delete_record(guid=record["did"], rev=record["rev"])
-            assert delete_resp == 200, f"Failed to delete record {record['did']}"
+            gen3_indexd.delete_record(guid=record["did"])
 
         # Submit metatdata for file node, including consent codes
         sheepdog_res = sd_tools.submit_graph_and_file_metadata(

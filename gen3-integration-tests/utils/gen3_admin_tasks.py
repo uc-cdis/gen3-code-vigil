@@ -203,6 +203,31 @@ def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
         raise Exception("Build number not found")
 
 
+def mutate_manifest_for_guppy_test(test_env_namespace: str):
+    """
+    Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "mutate-manifest-for-guppy-test",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
 def clean_up_indices(test_env_namespace: str):
     """
     Runs jenkins job to clean up indices before running the ETL tests
