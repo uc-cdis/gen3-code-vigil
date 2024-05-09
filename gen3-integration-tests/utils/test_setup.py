@@ -112,5 +112,6 @@ def create_program_project(user="main_account"):
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth)
     api_key_json, auth_header = get_api_key_and_auth_header(user=user)
-    sd_tools.create_program("jnkns", auth_header)
-    sd_tools.create_project("jnkns", "jenkins", auth_header)
+    # sd_tools.create_program("jnkns", auth_header)
+    # sd_tools.create_project("jnkns", "jenkins", auth_header)
+    sd_tools.create_program_and_project()

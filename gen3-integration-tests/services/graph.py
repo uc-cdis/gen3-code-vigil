@@ -62,7 +62,7 @@ class GraphDataTools:
 
     # Creating Prgram and project using sdk is failing.
     # TODO : Once the fix is available, revert back to belo code.
-    '''def create_program_and_project(self) -> None:
+    def create_program_and_project(self) -> None:
         """
         Creates a program record and a project record. Uses the `program_name` and `project_code`
         set during the initialization of the `GraphDataTools` instance.
@@ -83,7 +83,7 @@ class GraphDataTools:
             "name": self.project_code,
             "dbgap_accession_number": self.project_code,
         }
-        self.sdk.create_project(self.program_name, project_record)'''
+        self.sdk.create_project(self.program_name, project_record)
 
     def create_program(self, program_name, auth_header):
         program_form = (
