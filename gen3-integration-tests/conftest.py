@@ -57,10 +57,10 @@ def pytest_configure(config):
     if not hasattr(config, "workerinput"):
         # Get configuration files
         setup.get_configuration_files()
-        # Create/Update program and project
-        setup.create_program_project()
         # Generate test data
         setup.generate_graph_data()
+        # Create/Update program and project
+        setup.create_program_project()
 
     # Compute root url for portal
     try:
