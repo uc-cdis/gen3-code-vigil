@@ -85,48 +85,6 @@ class GraphDataTools:
         }
         self.sdk.create_project(self.program_name, project_record)
 
-    def create_program(self, program_name, auth_header):
-        program_form = (
-            '{"name":"'
-            + program_name
-            + '","type":"program","dbgap_accession_number":"'
-            + program_name
-            + '"}'
-        )
-        response = requests.post(
-            url=pytest.root_url + self.BASE_ADD_ENDPOINT,
-            headers=auth_header,
-            auth=self.auth,
-            data=program_form,
-        )
-        if response.status_code == 200:
-            logger.info("Successfully Created/Updated program")
-        else:
-            logger.info(response.json())
-            logger.error("Failed to Create/Update program")
-
-    def create_project(self, program_name, project_name, auth_header):
-        project_form = (
-            '{"type":"project","code":"'
-            + project_name
-            + '","name":"'
-            + project_name
-            + '","dbgap_accession_number":"'
-            + project_name
-            + '","state":"open","releasable":true}'
-        )
-        response = requests.post(
-            url=pytest.root_url + self.BASE_ADD_ENDPOINT + program_name,
-            headers=auth_header,
-            auth=self.auth,
-            data=project_form,
-        )
-        if response.status_code == 200:
-            logger.info("Successfully Created/Updated project")
-        else:
-            logger.info(response.json())
-            logger.error("Failed to Create/Update project")
-
     def delete_all_records_in_test_project(self) -> None:
         """
         Clean up before starting the test suite (useful when running tests locally)
