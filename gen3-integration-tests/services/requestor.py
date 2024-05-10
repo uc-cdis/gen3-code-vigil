@@ -4,6 +4,7 @@ import requests
 import json
 
 from gen3.auth import Gen3Auth
+from services.fence import Fence
 
 from cdislogging import get_logger
 
@@ -38,13 +39,13 @@ class Requestor(object):
 
     def create_request_with_authHeader(
         self,
-        user="main_account",
-        username=None,
-        policy_id=None,
-        resource_paths=None,
-        role_ids=None,
-        revoke=False,
-        request_status=None,
+        user: str = "main_account",
+        username: str = None,
+        policy_id: str = None,
+        resource_paths: list = None,
+        role_ids: list = None,
+        revoke: bool = False,
+        request_status: str = None,
     ):
         """Create a new request in requestor with auth_headers"""
         data = {}
@@ -78,21 +79,16 @@ class Requestor(object):
             data["status"] = request_status
         # if revoke=true using revoke url else using base_url
         endpoint = f"{self.REVOKE_URL}" if revoke else f"{self.BASE_URL}"
-        logger.info(f"endpoint: %s", endpoint)
         # send post request
         create_req = requests.post(
             endpoint,
             json=data,
-            headers={"Authorization": f"bearer {gen3auth._access_token}"},
+            headers={"Authorization": f"bearer {gen3auth.get_access_token()}"},
         )
         logger.info(f"### {create_req.text}")
-        if create_req.status_code == 201:
-            create_req_json = create_req.json()
-            logger.info(json.dumps(create_req_json, indent=4))
-            return create_req_json
-        return None
+        return create_req
 
-    def get_request_id(self, policy, user):
+    def get_request_id(self, policy: str, user: str):
         """Gets the request_id for the user"""
         id_res = requests.get(
             f"{self.USER_ENDPOINT}?policy_id={policy}",
@@ -103,7 +99,7 @@ class Requestor(object):
         req_id = response_data_json[0]["request_id"]
         return req_id
 
-    def get_request_status(self, request_id, user="main_account"):
+    def get_request_status(self, request_id: str, user: str = "main_account"):
         """Gets the request_status for the user's request_id in requestor"""
         status_res = requests.get(
             f"{self.BASE_URL}/{request_id}", headers=pytest.auth_headers[user]
@@ -113,7 +109,7 @@ class Requestor(object):
 
         return req_status
 
-    def request_signed(self, request_id, user="main_account"):
+    def request_signed(self, request_id: str, user: str = "main_account"):
         """Updates the request to SIGNED status"""
         logger.info(f"Updating the {request_id} to SIGNED status ...")
         requests.put(
@@ -122,7 +118,7 @@ class Requestor(object):
             headers=pytest.auth_headers[user],
         )
 
-    def request_approved(self, request_id, user="main_account"):
+    def request_approved(self, request_id: str, user: str = "main_account"):
         """Updates the request to APPROVED status"""
         logger.info(f"Updating the {request_id} to APPROVED status ...")
         requests.put(
@@ -131,7 +127,7 @@ class Requestor(object):
             headers=pytest.auth_headers[user],
         )
 
-    def request_delete(self, request_id, user="main_account"):
+    def request_delete(self, request_id: str, user: str = "main_account"):
         """Deletes the request fro requestor"""
         logger.info(f"Deleting the {request_id} ...")
         response = requests.delete(
@@ -139,11 +135,13 @@ class Requestor(object):
         )
         response.raise_for_status()
 
-    def get_request_list(self, access_token):
+    def get_request_list(self, user: str):
         """Gets te list of requests for the user"""
+        gen3auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         logger.info(f"Getting user request list ...")
         requests.get(
-            f"{self.BASE_URL}", headers={"Authorization": f"Bearer {access_token}"}
+            f"{self.BASE_URL}",
+            headers={"Authorization": f"Bearer {gen3auth.get_access_token()}"},
         )
 
     # TODO : use Gen3Auth.curl to send requests

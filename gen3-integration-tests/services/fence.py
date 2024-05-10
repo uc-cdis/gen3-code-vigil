@@ -46,7 +46,7 @@ class Fence(object):
         assert expectedStatus == response.status_code
         return True
 
-    def getUserInfo(self, user="main_account"):
+    def get_user_info(self, user: str = "main_account"):
         """Get user info"""
         user_info_response = requests.get(
             f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
