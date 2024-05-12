@@ -18,11 +18,9 @@ class Indexd(object):
         """Create new indexd record"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         index = Gen3Index(auth_provider=auth)
-        indexed_files = []
+        indexd_files = []
         # Create record for each file
         for file in files:
-            logger.info(files[file])
-            logger.info(file)
             if "did" not in files[file]:
                 files[file]["did"] = str(uuid4())
             # Create data dictionary to provide as argument for Indexd create record function
@@ -31,17 +29,21 @@ class Indexd(object):
                 "size": files[file]["size"],
                 "file_name": files[file]["filename"],
                 "did": files[file]["did"],
-                "urls": [files[file]["link"]],
-                "authz": files[file]["authz"],
             }
+            if "authz" in files[file].keys():
+                data["authz"] = files[file]["authz"]
+            if "acl" in files[file].keys():
+                data["acl"] = files[file]["acl"]
+            if "link" in files[file].keys():
+                data["urls"] = [files[file]["link"]]
 
             try:
                 logger.info(data)
                 record = index.create_record(**data)
-                indexed_files.append(record)
+                indexd_files.append(record)
             except Exception:
                 logger.exception(msg="Failed indexd submission got exception")
-        return indexed_files
+        return indexd_files
 
     def get_record(self, indexd_guid: str, user="indexing_account"):
         """Get record from indexd"""
@@ -76,9 +78,13 @@ class Indexd(object):
     # Use this if the indexd record is created/uploaded through gen3-client upload
     def delete_record(self, guid: str, rev: str, user="indexing_account"):
         """Delete indexd record if upload is not happening through gen3-sdk"""
-        delete_resp = requests.delete(
-            f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
-        )
+        try:
+            delete_resp = requests.delete(
+                f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
+            )
+        except Exception as e:
+            logger.error(f"Failed to delete record. {e}")
+            raise
         return delete_resp.status_code
 
     # Use this if indexd record is created with the sdk client
