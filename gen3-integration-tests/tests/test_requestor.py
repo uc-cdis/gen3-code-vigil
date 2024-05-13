@@ -42,7 +42,7 @@ class TestRequestor:
         logger.info(
             "Creating request with policy 'random-policy' which does not exist in Arborist"
         )
-        random_policy = requestor.create_request_with_authHeader(
+        random_policy = requestor.create_request_with_auth_header(
             username=req_data["username"], policy_id=req_data["policy_id"]
         )
         if random_policy is not None:
@@ -84,7 +84,7 @@ class TestRequestor:
             "policy_id": "requestor_integration_test",
             "username": pytest.users["user0_account"],
         }
-        create_resp = requestor.create_request_with_authHeader(
+        create_resp = requestor.create_request_with_auth_header(
             username=req_data["username"], policy_id=req_data["policy_id"]
         )
         assert (
@@ -115,7 +115,7 @@ class TestRequestor:
         # sending revoke request on the policy
         req_data["revoke"] = True
         logger.debug(f"Updated req_data : {req_data}")
-        revoke_req = requestor.create_request_with_authHeader(
+        revoke_req = requestor.create_request_with_auth_header(
             username=req_data["username"],
             policy_id=req_data["policy_id"],
             revoke=req_data["revoke"],
@@ -171,7 +171,7 @@ class TestRequestor:
             "username": pytest.users["user0_account"],
             "revoke": True,
         }
-        revoke_req = requestor.create_request_with_authHeader(
+        revoke_req = requestor.create_request_with_auth_header(
             username=req_data["username"],
             policy_id=req_data["policy_id"],
             revoke=req_data["revoke"],
@@ -214,7 +214,7 @@ class TestRequestor:
             "username": pytest.users["user0_account"],
             "status": "SIGNED",
         }
-        signed_req = requestor.create_request_with_authHeader(
+        signed_req = requestor.create_request_with_auth_header(
             username=req_data["username"],
             policy_id=req_data["policy_id"],
             request_status=req_data["status"],
@@ -238,7 +238,7 @@ class TestRequestor:
         # sending revoke request
         req_data["revoke"] = True
         logger.debug(f"Updated req_data : {req_data}")
-        revoke_req = requestor.create_request_with_authHeader(
+        revoke_req = requestor.create_request_with_auth_header(
             username=req_data["username"],
             policy_id=req_data["policy_id"],
             revoke=req_data["revoke"],
@@ -292,7 +292,7 @@ class TestRequestor:
             "status": "SIGNED",
         }
 
-        signed_req = requestor.create_request_with_authHeader(
+        signed_req = requestor.create_request_with_auth_header(
             username=req_data["username"],
             resource_paths=req_data["resource_paths"],
             role_ids=req_data["role_ids"],
@@ -323,7 +323,7 @@ class TestRequestor:
             "policy_id": policy,
             "status": "SIGNED",
         }
-        revoke_req = requestor.create_request_with_authHeader(
+        revoke_req = requestor.create_request_with_auth_header(
             username=revoke_data["username"],
             policy_id=revoke_data["policy_id"],
             revoke=revoke_data["revoke"],

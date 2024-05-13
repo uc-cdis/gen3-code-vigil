@@ -64,7 +64,7 @@ class TestClientCredentials:
         # Creating data for request
         data = {"username": username, "policy_id": policy}
 
-        request_id = requestor.create_request_with_clientToken(
+        request_id = requestor.create_request_with_client_token(
             data, client_access_token
         )
 
