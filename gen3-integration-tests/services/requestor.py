@@ -17,7 +17,7 @@ class Requestor(object):
         self.USER_ENDPOINT = f"{self.BASE_URL}/user"
         self.REVOKE_URL = f"{self.BASE_URL}?revoke"
 
-    def create_request_with_clientToken(self, data, client_token):
+    def create_request_with_client_token(self, data, client_token):
         """Create a new request in requestor with client token"""
         create_req = requests.post(
             f"{self.BASE_URL}",
@@ -37,7 +37,7 @@ class Requestor(object):
 
         return request_id
 
-    def create_request_with_authHeader(
+    def create_request_with_auth_header(
         self,
         user: str = "main_account",
         username: str = None,
@@ -71,7 +71,7 @@ class Requestor(object):
             }
         else:
             logger.info(
-                f"Incorrect args in create request: must have policyID or resourcePaths+roleIds"
+                f"Incorrect args in create request: must have policy_id or resource_paths and role_ids"
             )
             return None
         # if request_status is argument
@@ -85,7 +85,7 @@ class Requestor(object):
             json=data,
             headers={"Authorization": f"bearer {gen3auth.get_access_token()}"},
         )
-        logger.info(f"### {create_req.text}")
+        logger.debug(f"### {create_req.text}")
         return create_req
 
     def get_request_id(self, policy: str, user: str):

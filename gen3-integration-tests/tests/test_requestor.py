@@ -72,7 +72,7 @@ class TestRequestor:
         revoke_request_id = None
         login_page.go_to(page)
         login_page.login(page)
-        # Checking the userInfo for authz permissions and authz should not contain policy
+        # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
@@ -98,14 +98,14 @@ class TestRequestor:
             self.variables["request_ids"].append(request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
 
-        # Checking the userInfo for authz permissions and authz should not contain policy as the request is not in SIGNED status
+        # Checking the user_Info for authz permissions and authz should not contain policy as the request is not in SIGNED status
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
             "/requestor_integration_test" not in user_policy["authz"]
         ), "Authz contains policy '/requestor_integration_test'"
 
-        # sending SIGNED request with request_id and check the userInfo which should contain policy
+        # sending SIGNED request with request_id and check the user_Info which should contain policy
         requestor.request_signed(request_id)
         user_policy = fence.get_user_info("user0_account")
         assert (
@@ -130,14 +130,14 @@ class TestRequestor:
             self.variables["request_ids"].append(revoke_request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
 
-        # Checking the userInfo for authz permissions and authz should contain policy as the revoke request is not in SIGNED status
+        # Checking the user_Info for authz permissions and authz should contain policy as the revoke request is not in SIGNED status
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
             "/requestor_integration_test" in user_policy["authz"]
         ), "Authz does not contains policy '/requestor_integration_test'"
 
-        # sending SIGNED request with revoke_request_id and check userinfo which should not contain policy
+        # sending SIGNED request with revoke_request_id and check user_info which should not contain policy
         requestor.request_signed(revoke_request_id)
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
@@ -149,7 +149,7 @@ class TestRequestor:
         """
         Scenario: Request to revoke for policy that exists in Arborist but user does not have access to - (Negative)
         Steps:
-            1. Login with main_account and check the user policy '/requestor_integration_test' in userinfo
+            1. Login with main_account and check the user policy '/requestor_integration_test' in user_info
             2. Send a revoke request to policy '/requestor_integration_test' to which user0 has no access
             3. Request status code = 400
         """
@@ -158,7 +158,7 @@ class TestRequestor:
         requestor = Requestor()
         login_page.go_to(page)
         login_page.login(page)
-        # Checking the userInfo for authz permissions and authz should not contain policy
+        # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
@@ -189,10 +189,10 @@ class TestRequestor:
         """
         Scenario: Request to access policy with SIGNED status and revoke it later
         Steps:
-            1. Login with main_account and check the user policy '/requestor_integration_test' in userinfo
+            1. Login with main_account and check the user policy '/requestor_integration_test' in user_info
             2. Send a create request for user 0 with request_status = SIGNED
-            3. Check the user policy '/requestor_integration_test' is present in user0 userinfo
-            4. Send a revoke request and check if the user policy '/requestor_integration_test' is not in user 0 userinfo
+            3. Check the user policy '/requestor_integration_test' is present in user0 user_info
+            4. Send a revoke request and check if the user policy '/requestor_integration_test' is not in user 0 user_info
         """
         login_page = LoginPage()
         fence = Fence()
@@ -201,7 +201,7 @@ class TestRequestor:
         revoke_request_id = None
         login_page.go_to(page)
         login_page.login(page)
-        # Checking the userInfo for authz permissions and authz should not contain policy
+        # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
@@ -229,7 +229,7 @@ class TestRequestor:
             self.variables["request_ids"].append(request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
 
-        # Checking the userInfo for authz permissions and authz should contain policy
+        # Checking the user_info for authz permissions and authz should contain policy
         user_policy = fence.get_user_info("user0_account")
         assert (
             "/requestor_integration_test" in user_policy["authz"]
@@ -254,7 +254,7 @@ class TestRequestor:
             self.variables["request_ids"].append(revoke_request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
 
-        # Checking the userInfo for authz permissions and authz should not contain policy
+        # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
@@ -265,10 +265,10 @@ class TestRequestor:
         """
         Scenario: Request to access for resource_paths and role_ids wth SIGNED status and revoke it later
         Steps:
-            1. Login with main_account and check the user policy '/requestor_integration_test' in userinfo
+            1. Login with main_account and check the user policy '/requestor_integration_test' in user_info
             2. Send a create request for user0 with resource_paths and role_ids with SIGNED status
             3. Send a revoke request with policy_id from step 2 with SIGNED status
-            4. And verify that the user policy '/requestor_integration_test' is not present in userinfo
+            4. And verify that the user policy '/requestor_integration_test' is not present in user_info
         """
         login_page = LoginPage()
         fence = Fence()
@@ -277,7 +277,7 @@ class TestRequestor:
         revoke_request_id = None
         login_page.go_to(page)
         login_page.login(page)
-        # Checking the userInfo for authz permissions and authz should not contain policy
+        # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
@@ -310,7 +310,7 @@ class TestRequestor:
         # storing the policy_id for revoke request
         policy = signed_req_data.get("policy_id")
 
-        # Checking the userInfo for authz permissions and authz should contain policy
+        # Checking the user_info for authz permissions and authz should contain policy
         user_policy = fence.get_user_info("user0_account")
         assert (
             "/requestor_integration_test" in user_policy["authz"]
@@ -339,7 +339,7 @@ class TestRequestor:
             self.variables["request_ids"].append(revoke_request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
 
-        # Checking the userInfo for authz permissions and authz should not contain policy
+        # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
         logger.debug(f"User policy: {user_policy['authz']}")
         assert (
