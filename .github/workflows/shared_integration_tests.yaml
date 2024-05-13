@@ -57,7 +57,6 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          COMMIT_TIME: ${{ github.event.pull_request.head.repo.pushed_at }}
           RUN_NUM: ${{ github.run_number }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
@@ -110,6 +109,11 @@ jobs:
               poetry show
               poetry run playwright install chromium
 
+          - name: Get commit time
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
@@ -138,13 +142,24 @@ jobs:
             env:
               QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
+          # This is used for running specific test suites by labeling the PR with the test class
+          # Multiple suites can be executed by adding multiple labels
+          - name: Get test labels
+            id: get_test_labels
+            # if: ${{ steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              echo $test_label
+              echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: ${{ inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header ${{ env.TEST_LABEL }}
 
           - name: Run tests
             id: run_tests
@@ -152,7 +167,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope
+              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
 
           - name: Debug logging
             continue-on-error: true  # if this fails, we still need to run clean-up steps
