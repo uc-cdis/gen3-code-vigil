@@ -23,7 +23,7 @@ class LoginPage(object):
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
         self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
         self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
-        self.ORCID_USERNAME_INPUT = "//input[@id='username']"
+        self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
         self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
