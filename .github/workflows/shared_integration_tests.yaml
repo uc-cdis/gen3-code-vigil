@@ -93,7 +93,7 @@ jobs:
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             run: |
-              if git diff --name-only origin/main...$GITHUB_SHA | grep -qv '\.md$'; then
+              if git diff --name-only origin/main...$COMMIT_SHA | grep -qv '\.md$'; then
                 echo "PR contains non-Markdown files"
               else
                 echo "Skipping CI since PR contains only Markdown files"
