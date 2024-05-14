@@ -68,6 +68,15 @@ jobs:
           # - name: Enable Step Debugging
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+          # Skip integration tests when the following PR labels are present:
+          # not-ready-for-ci / decommission-environment
+          - name: Skip integration tests for specific PR labels
+            run: |
+              if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
+                  echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
+                  exit 0
+              fi
+
           # Checkout current branch of gen3-code-vigil if it is the repo under test
           - name: Checkout integration test code from dev branch
             if: ${{ github.event.repository.name == 'gen3-code-vigil' }}
@@ -80,6 +89,16 @@ jobs:
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: master
+
+          # Skip tests when there are only markdown files
+          - name: Check if PR contains only Markdown files
+            run: |
+              if git diff --name-only origin/main...$GITHUB_SHA | grep -qv '\.md$'; then
+                echo "PR contains non-Markdown files"
+              else
+                echo "PR contains only Markdown files"
+                exit 0
+              fi
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
