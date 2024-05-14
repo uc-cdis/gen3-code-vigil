@@ -87,7 +87,7 @@ jobs:
             run: |
               if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
                   echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
-                  export "SKIP_TESTS=true" >> $GITHUB_ENV
+                  echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
           # Skip tests when there are only markdown files
@@ -97,7 +97,7 @@ jobs:
                 echo "PR contains non-Markdown files"
               else
                 echo "Skipping CI since PR contains only Markdown files"
-                export "SKIP_TESTS=true" >> $GITHUB_ENV
+                echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
           # gen3-integration-tests run with python 3.9
