@@ -93,7 +93,7 @@ jobs:
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             run: |
-              if git diff --name-only HEAD...$COMMIT_SHA | grep -qv '\.md$'; then
+              if git diff --name-only HEAD..$COMMIT_SHA | grep -qv '\.md$'; then
                 echo "PR contains non-Markdown files"
               else
                 echo "Skipping CI since PR contains only Markdown files"
@@ -241,7 +241,10 @@ jobs:
             id: gh_comment_allure_link
             if: ${{ env.SKIP_TESTS != 'true' && steps.upload_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
+            run: |
+              echo ${{ env.SKIP_TESTS }}
+              echo ${{ steps.upload_allure_report.outcome == 'success' }}
+              gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
