@@ -93,7 +93,7 @@ jobs:
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             run: |
-              if git diff --name-only origin/main...$COMMIT_SHA | grep -qv '\.md$'; then
+              if git diff --name-only HEAD...$COMMIT_SHA | grep -qv '\.md$'; then
                 echo "PR contains non-Markdown files"
               else
                 echo "Skipping CI since PR contains only Markdown files"
@@ -120,63 +120,63 @@ jobs:
             with:
               node-version: 20
 
-          # Install gen3-integration-tests dependencies
-          # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
-          - name: Install dependencies
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              sudo apt-get install -y --reinstall wamerican
-              python -m pip install --upgrade pip
-              pip install poetry
-              poetry install
-              poetry show
-              poetry run playwright install chromium
+          # # Install gen3-integration-tests dependencies
+          # # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+          # - name: Install dependencies
+          #   if: ${{ env.SKIP_TESTS != 'true' }}
+          #   run: |
+          #     sudo apt-get install -y --reinstall wamerican
+          #     python -m pip install --upgrade pip
+          #     pip install poetry
+          #     poetry install
+          #     poetry show
+          #     poetry run playwright install chromium
 
-          - name: Get commit time
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+          # - name: Get commit time
+          #   if: ${{ env.SKIP_TESTS != 'true' }}
+          #   run: |
+          #     commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+          #     echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
-          # TODO: Rely on a database in AWS to make this faster
-          # Select an unlocked environment
-          # If an env is specified in a PR label use it, else pick one from the pool
-          - name: Select CI environment
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            id: select_ci_env
-            run: |
-              env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
-              echo "$env_label"
-              if [[ $env_label != "" && $env_label != null ]]; then
-                echo "Found PR label $env_label"
-                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
-              else
-                poetry run python -m gen3_ci.scripts.select_ci_environment
-              fi
+          # # TODO: Rely on a database in AWS to make this faster
+          # # Select an unlocked environment
+          # # If an env is specified in a PR label use it, else pick one from the pool
+          # - name: Select CI environment
+          #   if: ${{ env.SKIP_TESTS != 'true' }}
+          #   id: select_ci_env
+          #   run: |
+          #     env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
+          #     echo "$env_label"
+          #     if [[ $env_label != "" && $env_label != null ]]; then
+          #       echo "Found PR label $env_label"
+          #       poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
+          #     else
+          #       poetry run python -m gen3_ci.scripts.select_ci_environment
+          #     fi
 
-          # TODO: Improve the logic to do differential updates to the env, not roll all services
-          # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
-          # Generate API keys for test users for the environment
-          - name: Prepare CI environment
-            id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-            env:
-              QUAY_REPO: ${{ inputs.QUAY_REPO }}
+          # # TODO: Improve the logic to do differential updates to the env, not roll all services
+          # # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
+          # # Generate API keys for test users for the environment
+          # - name: Prepare CI environment
+          #   id: prep_ci_env
+          #   if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   run: |
+          #     mkdir $HOME/.gen3
+          #     poetry run python -m gen3_ci.scripts.prepare_ci_environment
+          #   env:
+          #     QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
-          # This is used for running specific test suites by labeling the PR with the test class
-          # Multiple suites can be executed by adding multiple labels
-          - name: Get test labels
-            id: get_test_labels
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
-              echo $test_label
-              echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+          # # This is used for running specific test suites by labeling the PR with the test class
+          # # Multiple suites can be executed by adding multiple labels
+          # - name: Get test labels
+          #   id: get_test_labels
+          #   if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   run: |
+          #     test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+          #     echo $test_label
+          #     echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
           - name: Run tests pertaining to specific service
             id: run_service_tests
