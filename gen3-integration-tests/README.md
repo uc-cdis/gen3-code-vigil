@@ -81,5 +81,3 @@ Test code is organized into 4 directories:  `services`, `tests`, `test-data` and
 - `tests` contains the tests written in pytest. Tests are further separated into api tests and gui tests.
 - `test-data` contains the test data.
 - `utils` contains utility and helper functions.
-
-Testing
