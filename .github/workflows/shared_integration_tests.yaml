@@ -93,7 +93,6 @@ jobs:
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             run: |
-              # Get a list of all file extensions in the pull request
               git fetch -q
               FILE_TYPES=$(git diff --name-only ${{ github.event.before }} ${{ env.COMMIT_SHA }} | awk -F . '{print $NF}' | sort -u)
               echo $FILE_TYPES
