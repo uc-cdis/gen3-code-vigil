@@ -94,6 +94,7 @@ jobs:
           - name: Skip integration tests if PR contains only Markdown files
             run: |
               # Get a list of all file extensions in the pull request
+              git fetch
               FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | awk -F . '{print $NF}' | sort -u)
               echo $FILE_TYPES
 
