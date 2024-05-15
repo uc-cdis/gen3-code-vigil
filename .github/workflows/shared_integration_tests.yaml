@@ -94,7 +94,7 @@ jobs:
           - name: Skip integration tests if PR contains only Markdown files
             run: |
               git fetch -q
-              FILE_TYPES=$(git diff --name-only ${{ github.event.before }} ${{ env.COMMIT_SHA }} | awk -F . '{print $NF}' | sort -u)
+              FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | awk -F . '{print $NF}' | sort -u)
               echo $FILE_TYPES
 
               # Check if the only file type is markdown
