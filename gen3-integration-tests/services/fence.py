@@ -18,6 +18,7 @@ class Fence(object):
         self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
         self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
         self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
+        self.USER_ENDPOINT = f"{self.BASE_URL}/user"
 
     def get_access_token(self, api_key):
         """Generate access token from api key"""
@@ -105,3 +106,12 @@ class Fence(object):
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_node=file_node)
         return response
+
+    def get_user_info(self, user: str = "main_account"):
+        """Get user info"""
+        user_info_response = requests.get(
+            f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
+        )
+        response_data = user_info_response.json()
+        logger.debug(f"User info {response_data}")
+        return response_data
