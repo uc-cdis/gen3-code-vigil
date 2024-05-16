@@ -9,6 +9,7 @@ from utils.test_execution import screenshot
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+# TODO move to portal functions / rename, it doesn't have to be called "core metadata"
 class CoreMetadataPage(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url_portal}/files"

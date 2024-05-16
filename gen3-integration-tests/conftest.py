@@ -6,7 +6,6 @@ from cdislogging import get_logger
 
 from utils import test_setup as setup
 from utils import TEST_DATA_PATH_OBJECT
-from utils.gen3_admin_tasks import kube_setup_service
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
@@ -57,10 +56,8 @@ def pytest_configure(config):
     if not hasattr(config, "workerinput"):
         # Get configuration files
         setup.get_configuration_files()
-        # Generate test data
+        # Generate test data (this does not submit it)
         setup.generate_graph_data()
-        # Create/Update program and project
-        setup.create_program_project()
 
     # Compute root url for portal
     try:

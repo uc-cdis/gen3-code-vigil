@@ -1,6 +1,7 @@
 import os
 import pytest
 import requests
+import time
 
 from dotenv import load_dotenv
 from cdislogging import get_logger
@@ -274,7 +275,8 @@ def check_indices_after_etl(test_env_namespace: str):
         raise Exception("Build number not found")
 
 
-def create_expired_token(test_env_namespace, service, expiration, username):
+# TODO update calling functions - create_expired_token => create_access_token
+def create_access_token(test_env_namespace, service, expired, username):
     """
     Roll a give service pod
     """
@@ -282,8 +284,12 @@ def create_expired_token(test_env_namespace, service, expiration, username):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "create-expired-token",
+        "create-expired-token",  # TODO update this and the job script
     )
+    if expired:
+        expiration = 1
+    else:
+        expiration = 300  # 5 min
     params = {
         "SERVICE": service,
         "EXPIRATION": expiration,
@@ -294,6 +300,8 @@ def create_expired_token(test_env_namespace, service, expiration, username):
     if build_num:
         status = job.wait_for_build_completion(build_num, max_duration=300)
         if status == "Completed":
+            if expired:
+                time.sleep(expiration)
             return job.get_artifact_content(build_num, "expired_token.txt")
         else:
             job.terminate_build(build_num)
@@ -302,6 +310,7 @@ def create_expired_token(test_env_namespace, service, expiration, username):
         raise Exception("Build number not found")
 
 
+# TODO remove this if unused... in a while
 def kube_setup_service(test_env_namespace, servicename):
     """
     Runs jenkins job to kube setup service

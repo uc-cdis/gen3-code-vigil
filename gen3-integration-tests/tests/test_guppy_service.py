@@ -16,6 +16,8 @@ class TestGuppyService:
     @classmethod
     def setup_class(cls):
         guppy = Guppy()
+        # this may be needed once these new tests are used for manifest PRs
+        # TODO: remove if not needed
         # assert mutate_manifest_for_guppy_test(pytest.namespace)
         assert guppy.validate_guppy_status("main_account", 200)
 

@@ -77,7 +77,6 @@ def generate_graph_data():
     program = "jnkns"
     project = "jenkins"
     max_samples = 1  # the submission functions in services/graph.py assume there is only 1 record per node
-    # TODO we should try setting `required_only` to False so the test data is more representative of real data
     required_only = False
 
     graph = initialize_graph(
@@ -103,13 +102,3 @@ def generate_graph_data():
     for f_path in sorted(os.listdir(data_path)):
         with open(data_path / f_path, "r") as f:
             logger.debug(f"{f_path}:\n{f.read()}")
-
-
-def create_program_project(user="main_account"):
-    """
-    Creates program and project if not present already
-    """
-    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth)
-    api_key_json, auth_header = get_api_key_and_auth_header(user=user)
-    sd_tools.create_program_and_project()

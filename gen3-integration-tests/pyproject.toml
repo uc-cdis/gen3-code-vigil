@@ -46,8 +46,6 @@ markers = [
   "portal: tests for data-portal",
   "frontend_framework: tests for frontend-framework",
   "gen3_client: tests for gen3-client / cdis-data-client",
-  "sheepdog: tests for sheepdog",
-  "peregrine: tests for peregrine",
   "tube: tests for tube service",
   "guppy: tests for guppy-service",
   # features

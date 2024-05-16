@@ -24,7 +24,7 @@ def validate_consent_codes():
     """
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    metadata = sd_tools.get_path_with_file_node(file_node=True)
+    metadata = sd_tools.get_file_node()
     if "consent_codes" not in metadata.props.keys():
         return True
     return False
@@ -39,17 +39,17 @@ class FileNode:
 
 @pytest.mark.graph_submission
 @pytest.mark.graph_query
-@pytest.mark.sheepdog
 class TestGraphSubmitAndQuery:
     def setup_method(self, method):
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
-        sd_tools.delete_nodes()
+        # TODO move `create_program_and_project` to "before suite" instead of "before each test"
+        sd_tools.create_program_and_project()
+        sd_tools.delete_all_records_in_test_project()
 
-    @pytest.mark.peregrine
-    def test_submit_query_anddelete_records(self):
+    def test_submit_query_and_delete_records(self):
         """
         Scenario: Submit graph data and perform various queries.
         Steps:
@@ -62,7 +62,7 @@ class TestGraphSubmitAndQuery:
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         sd_tools = GraphDataTools(auth=auth)
-        sd_tools.delete_all_records_in_test_project()
+        sd_tools.load_test_records()
 
         logger.info("Submitting test records")
         sd_tools.submit_all_test_records()
@@ -139,6 +139,7 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         # Generate an expired token
         res = create_expired_token(
             pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
@@ -160,7 +161,6 @@ class TestGraphSubmitAndQuery:
         )
         assert response.status_code == 401, f"Failed to delete record {response}"
 
-    @pytest.mark.peregrine
     def test_submit_node_without_parent(self):
         """
         Scenario: Submit node without parent
@@ -174,10 +174,10 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         # Verify parent node does not exist
         parent_node = sd_tools.test_records[sd_tools.submission_order[0]]
-        query_to_submit = sd_tools.query_to_submit(parent_node)
-        parent_response = sd_tools.graphql_query(query_text=query_to_submit)
+        parent_response = sd_tools.query_record_fields(parent_node)
         # Validate length of fields returned for node name is 0
         if len(parent_response["data"][parent_node.node_name]) != 0:
             logger.error(
@@ -188,7 +188,7 @@ class TestGraphSubmitAndQuery:
             raise
 
         # Attempt to add second node which has a dependency on another node
-        second_node = sd_tools.get_dependent_node()
+        second_node = sd_tools.get_record_with_parent()
         try:
             logger.info(sd_tools.submit_record(record=second_node))
         except requests.exceptions.HTTPError as e:
@@ -196,7 +196,6 @@ class TestGraphSubmitAndQuery:
                 logger.error(f"Expected 400 status code not found. Response: {e}")
                 raise
 
-    @pytest.mark.peregrine
     def test_filter_by_invalid_project_id(self):
         """
         Scenario: Filter by invalid project_id
@@ -210,13 +209,12 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         # Create a node using sheepdog. Verify node is present.
         node = sd_tools.test_records[sd_tools.submission_order[0]]
         sd_tools.submit_record(record=node)
         # Perform a query using an invalid project_id.
-        filters = {"project_id": "NOT-EXIST"}
-        query_to_submit = sd_tools.query_to_submit(node, filters)
-        response = sd_tools.graphql_query(query_text=query_to_submit)
+        response = sd_tools.query_record_fields(node, {"project_id": "NOT-EXIST"})
         # Validate length of fields returned for node name is 0
         if len(response["data"][node.node_name]) != 0:
             logger.error(
@@ -225,7 +223,6 @@ class TestGraphSubmitAndQuery:
             raise
         sd_tools.delete_record(unique_id=node.unique_id)
 
-    @pytest.mark.peregrine
     def test_with_path_to_first_to_last_node(self):
         """
         Scenario: Test with_path_to - first to last node
@@ -238,6 +235,7 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
@@ -245,14 +243,12 @@ class TestGraphSubmitAndQuery:
         # Query path from first node to last node.
         first_node = sd_tools.test_records[sd_tools.submission_order[0]]
         last_node = sd_tools.test_records[sd_tools.submission_order[-1]]
-        query_to_submit = sd_tools.query_with_path_to(first_node, last_node)
-        response = sd_tools.graphql_query(query_text=query_to_submit)
+        response = sd_tools.query_record_with_path_to(first_node, last_node)
         # Verify first node name is present response.
         assert (
             first_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(first_node.node_name, response)
 
-    @pytest.mark.peregrine
     def test_with_path_to_last_to_first_node(self):
         """
         Scenario: Test with_path_to - last to first node
@@ -265,6 +261,7 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
@@ -272,8 +269,7 @@ class TestGraphSubmitAndQuery:
         # Query path from last node to first node.
         first_node = sd_tools.test_records[sd_tools.submission_order[0]]
         last_node = sd_tools.test_records[sd_tools.submission_order[-1]]
-        query_to_submit = sd_tools.query_with_path_to(last_node, first_node)
-        response = sd_tools.graphql_query(query_text=query_to_submit)
+        response = sd_tools.query_record_with_path_to(last_node, first_node)
         # Verify last node name is present response.
         assert (
             last_node.node_name in response["data"].keys()
@@ -298,6 +294,7 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()  # TODO use `submit_file_records=False`
         records = gen3_indexd.get_all_records()
 
         # Delete indexd records
@@ -305,10 +302,15 @@ class TestGraphSubmitAndQuery:
             gen3_indexd.delete_record(guid=record["did"])
 
         # Submit metatdata for file node, including consent codes
-        sheepdog_res = sd_tools.submit_graph_and_file_metadata(
-            None, None, None, None, ["CC1", "CC2"]
-        )
-        sheepdog_res.indexd_guid = sd_tools.get_did_from_file_id(
+        # file_node = self.get_file_node()
+        # file_node.props["consent_codes"] = ["CC1", "CC2"]
+        # self.submit_links_for_node(metadata, create_new_parents, user)
+        # self.submit_record(record=metadata)
+        # TODO: replace the block below with the block above
+        # sheepdog_res = sd_tools.submit_graph_and_file_metadata(
+        #     None, None, None, None, ["CC1", "CC2"]
+        # )
+        sheepdog_res.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
             guid=sheepdog_res.unique_id
         )
 
@@ -325,7 +327,6 @@ class TestGraphSubmitAndQuery:
         response = indexd.get_record(file_node_wit_ccs.did)
         indexd.file_equals(response, file_node_wit_ccs)
 
-    @pytest.mark.peregrine
     @pytest.mark.indexd
     @pytest.mark.portal
     def test_core_metadata_page(self, page: LoginPage):
@@ -347,14 +348,15 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
             sd_tools.submit_record(record=val)
 
-        node = sd_tools.get_path_with_file_node(file_node=True)
+        node = sd_tools.get_file_node()
         sd_tools.submit_record(record=node)
-        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        node.indexd_guid = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         metadata = coremetadata.get_core_metadata(file=node, user="main_account")
         sd_tools.see_json_core_metadata(file=node, metadata=metadata)
 
@@ -368,11 +370,10 @@ class TestGraphSubmitAndQuery:
 
         sd_tools.delete_record(unique_id=node.unique_id)
 
-        # Delete all remaining records
-        sd_tools.delete_nodes()
-
-    @pytest.mark.peregrine
+    # TODO move indexd tests to a new test suite and use pytest.mark.graph_submission/query
+    # when needed. May create issues with parallel tests updating graph data at the same time
     @pytest.mark.indexd
+    # TODO rename "core metadata" references, call it something like "test_file_landing_page"
     def test_core_metadata(self):
         """
         Scenario: Test core metadata
@@ -391,14 +392,15 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
             sd_tools.submit_record(record=val)
 
-        node = sd_tools.get_path_with_file_node(file_node=True)
+        node = sd_tools.get_file_node()
         sd_tools.submit_record(record=node)
-        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        node.indexd_guid = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         metadata = coremetadata.get_core_metadata(file=node, user="main_account")
         sd_tools.see_json_core_metadata(file=node, metadata=metadata)
 
@@ -409,10 +411,6 @@ class TestGraphSubmitAndQuery:
 
         sd_tools.delete_record(unique_id=node.unique_id)
 
-        # Delete all remaining records
-        sd_tools.delete_nodes()
-
-    @pytest.mark.peregrine
     @pytest.mark.indexd
     def test_core_metadata_invalid_object_id(self):
         """
@@ -430,12 +428,13 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
             sd_tools.submit_record(record=val)
 
-        invalid_node = sd_tools.get_path_with_file_node(file_node=True)
+        invalid_node = sd_tools.get_file_node()
         invalid_node.props["object_id"] = "invalid_object_id"
         invalid_node.indexd_guid = "invalid_object_id"
         metadata = coremetadata.get_core_metadata(
@@ -445,10 +444,6 @@ class TestGraphSubmitAndQuery:
             metadata=metadata, message='object_id "invalid_object_id" not found'
         )
 
-        # Delete all remaining records
-        sd_tools.delete_nodes()
-
-    @pytest.mark.peregrine
     @pytest.mark.indexd
     def test_core_metadata_no_permission(self):
         """
@@ -467,14 +462,15 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Create nodes using sheepdog. Verify nodes are present.
         for key, val in nodes.items():
             sd_tools.submit_record(record=val)
 
-        node = sd_tools.get_path_with_file_node(file_node=True)
+        node = sd_tools.get_file_node()
         sd_tools.submit_record(record=node)
-        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        node.indexd_guid = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         metadata = coremetadata.get_core_metadata(
             file=node,
             user="main_account",
@@ -487,9 +483,6 @@ class TestGraphSubmitAndQuery:
         )
 
         sd_tools.delete_record(unique_id=node.unique_id)
-
-        # Delete all remaining records
-        sd_tools.delete_nodes()
 
     @pytest.mark.indexd
     def test_submit_and_delete_file(self):
@@ -504,16 +497,20 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        # TODO: replace all `get_path_with_file_node(path_to_file=True)`+`submit_record` calls with
+        # a `load_test_records(submit_file_records=False)` call
+        # sd_tools.load_test_records()
         indexd = Indexd()
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
         # Adding all nodes except file node
         for key, val in nodes.items():
             sd_tools.submit_record(record=val)
+        # TODO: where is the indexd record submitted?
 
         # Adding file node and retrieveing indexd record
-        node = sd_tools.get_path_with_file_node(file_node=True)
+        node = sd_tools.get_file_node()
         sd_tools.submit_record(record=node)
-        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        node.indexd_guid = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
@@ -535,6 +532,7 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
@@ -543,10 +541,10 @@ class TestGraphSubmitAndQuery:
             sd_tools.submit_record(record=val)
 
         # Adding file node and retrieveing indexd record
-        node = sd_tools.get_path_with_file_node(file_node=True)
+        node = sd_tools.get_file_node()
         node.props["urls"] = test_url
         sd_tools.submit_record(record=node)
-        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        node.indexd_guid = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
@@ -572,6 +570,7 @@ class TestGraphSubmitAndQuery:
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins"
         )
+        sd_tools.load_test_records()
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         nodes = sd_tools.get_path_with_file_node(path_to_file=True)
@@ -580,16 +579,16 @@ class TestGraphSubmitAndQuery:
             sd_tools.submit_record(record=val)
 
         # Adding file node and retrieveing indexd record without URL
-        node = sd_tools.get_path_with_file_node(file_node=True)
+        node = sd_tools.get_file_node()
         sd_tools.submit_record(record=node)
-        did = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        did = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=did)
         rev = indexd.get_rev(record)
 
         # Add URL to the node data and update it
         node.props["urls"] = test_url
         sd_tools.submit_record(record=node)
-        node.indexd_guid = sd_tools.get_did_from_file_id(guid=node.unique_id)
+        node.indexd_guid = sd_tools.get_indexd_id_from_graph_id(guid=node.unique_id)
         record = indexd.get_record(indexd_guid=node.indexd_guid)
         rev = indexd.get_rev(record)
 
