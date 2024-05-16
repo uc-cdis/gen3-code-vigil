@@ -18,9 +18,11 @@ class Indexd(object):
         """Create new indexd record"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         index = Gen3Index(auth_provider=auth)
-        indexd_files = []
+        indexed_files = []
         # Create record for each file
         for file in files:
+            logger.info(files[file])
+            logger.info(file)
             if "did" not in files[file]:
                 files[file]["did"] = str(uuid4())
             # Create data dictionary to provide as argument for Indexd create record function
@@ -29,21 +31,17 @@ class Indexd(object):
                 "size": files[file]["size"],
                 "file_name": files[file]["filename"],
                 "did": files[file]["did"],
+                "urls": [files[file]["link"]],
+                "authz": files[file]["authz"],
             }
-            if "authz" in files[file].keys():
-                data["authz"] = files[file]["authz"]
-            if "acl" in files[file].keys():
-                data["acl"] = files[file]["acl"]
-            if "link" in files[file].keys():
-                data["urls"] = [files[file]["link"]]
 
             try:
                 logger.info(data)
                 record = index.create_record(**data)
-                indexd_files.append(record)
+                indexed_files.append(record)
             except Exception:
                 logger.exception(msg="Failed indexd submission got exception")
-        return indexd_files
+        return indexed_files
 
     def get_record(self, indexd_guid: str, user="indexing_account"):
         """Get record from indexd"""
@@ -56,6 +54,7 @@ class Indexd(object):
             return record
         except Exception as e:
             logger.exception(msg=f"Cannot find indexd record {e}")
+            raise
 
     def get_rev(self, json_data: dict):
         """Get revision from indexd record"""
@@ -78,13 +77,9 @@ class Indexd(object):
     # Use this if the indexd record is created/uploaded through gen3-client upload
     def delete_record(self, guid: str, rev: str, user="indexing_account"):
         """Delete indexd record if upload is not happening through gen3-sdk"""
-        try:
-            delete_resp = requests.delete(
-                f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
-            )
-        except Exception as e:
-            logger.error(f"Failed to delete record. {e}")
-            raise
+        delete_resp = requests.delete(
+            f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
+        )
         return delete_resp.status_code
 
     # Use this if indexd record is created with the sdk client
@@ -98,3 +93,24 @@ class Indexd(object):
                 index.delete_record(guid=guid)
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
+
+    def file_equals(self, res: dict, file_node: dict) -> None:
+        logger.info(f"Response data : {res}")
+        logger.info(f"File Node with CCs : {file_node.props}")
+        if res["hashes"]["md5"] != file_node.props["md5sum"]:
+            logger.error("md5 value mismatch")
+            raise
+        if res["size"] != file_node.props["file_size"]:
+            logger.error("file_size value mismatch")
+            raise
+        if "urls" not in res.keys():
+            logger.error("urls key missing")
+            raise
+        if "urls" in file_node.props.keys():
+            if file_node.props["urls"] not in res["urls"]:
+                logger.error("urls value mismatch")
+                raise
+        if "authz" in file_node.props.keys():
+            for authz_val in file_node.props["authz"]:
+                if authz_val not in res["authz"]:
+                    logger.error(f"{authz_val} not found in authz list")

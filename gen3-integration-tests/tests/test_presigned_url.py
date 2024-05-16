@@ -14,6 +14,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.indexd
+@pytest.mark.fence
 class TestPresignedURL:
     @classmethod
     def setup_class(cls):
