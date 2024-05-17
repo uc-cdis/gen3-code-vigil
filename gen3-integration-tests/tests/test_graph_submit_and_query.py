@@ -302,9 +302,9 @@ class TestGraphSubmitAndQuery:
     @pytest.mark.indexd
     @pytest.mark.portal
     @pytest.mark.graph_query
-    def test_core_metadata_page(self, page: LoginPage):
+    def test_file_landing_page(self, page: LoginPage):
         """
-        Scenario: Test core metadata page
+        Scenario: Test file landing page
         Steps:
             1. Create nodes using sheepdog. Verify nodes are present.
             2. Create a file node
@@ -339,14 +339,11 @@ class TestGraphSubmitAndQuery:
 
         self.sd_tools.delete_record(unique_id=file_record.unique_id)
 
-    # TODO move indexd tests to a new test suite and use pytest.mark.graph_submission/query
-    # when needed. May create issues with parallel tests updating graph data at the same time
     @pytest.mark.indexd
     @pytest.mark.graph_query
-    # TODO rename "core metadata" references, call it something like "test_file_landing_page"
-    def test_core_metadata(self):
+    def test_sheepdog_metadata(self):
         """
-        Scenario: Test core metadata
+        Scenario: Test sheepdog metadata
         Steps:
             1. Create nodes and verify they are added using main_account
             2. Add file node and verify it is added using main_account
@@ -381,9 +378,9 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
-    def test_core_metadata_invalid_object_id(self):
+    def test_sheepdog_metadata_invalid_object_id(self):
         """
-        Scenario: Test core metadata invalid object_id
+        Scenario: Test sheepdog metadata invalid object_id
         Steps:
             1. Create nodes and verify they are added using main_account
             2. Get invalid_file node details and update did with wrong value
@@ -398,15 +395,15 @@ class TestGraphSubmitAndQuery:
         metadata = self.sd_tools.get_core_metadata(
             file=invalid_file_record, user="main_account", expected_status=404
         )
-        self.sd_tools.see_core_metadata_error(
+        self.sd_tools.see_metadata_error(
             metadata=metadata, message='object_id "invalid_object_id" not found'
         )
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
-    def test_core_metadata_no_permission(self):
+    def test_sheepdog_metadata_no_permission(self):
         """
-        Scenario: Test core metadata no permission
+        Scenario: Test sheepdog metadata no permission
         Steps:
             1. Create nodes and verify they are added using main_account
             2. Add file node and verify it is added using main_account
@@ -428,7 +425,7 @@ class TestGraphSubmitAndQuery:
             expected_status=401,
             invalid_authorization=True,
         )
-        self.sd_tools.see_core_metadata_error(
+        self.sd_tools.see_metadata_error(
             metadata=metadata,
             message="Authentication Error: could not parse authorization header",
         )

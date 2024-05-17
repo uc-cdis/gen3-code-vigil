@@ -254,18 +254,6 @@ class GraphDataTools:
             if self.test_records[node_name].category.endswith("_file"):
                 return copy.deepcopy(self.test_records[node_name])
 
-    # TODO delete if not used
-    def get_field_of_type(self, node: dict, field_type: object) -> str:
-        """
-        Gets the field of desired data type
-
-        Args:
-            field_type: python object like str, int, dict, etc.
-        """
-        for key, val in node.props.items():
-            if isinstance(val, field_type):
-                return key
-
     def get_indexd_id_from_graph_id(self, unique_id: str) -> str:
         """
         Returns the did/indexd_guid value for file node
@@ -327,6 +315,13 @@ class GraphDataTools:
     def submit_links_for_node(
         self, record: GraphRecord, new_submitter_ids=False, user="main_account"
     ) -> None:
+        """
+        Submits a graph link for the node
+        Args:
+            record: Graph record for which graph link needs to be submitted
+            new_submitter_ids: Create new submitter ids for the graph link
+            user: user having access to submit graph link
+        """
         for prop in record.props:
             if (
                 isinstance(record.props[prop], dict)
@@ -352,6 +347,11 @@ class GraphDataTools:
                 self.submit_record(record=linked_node)
 
     def get_node_with_submitter_id(self, submitter_id: str) -> dict:
+        """
+        Returns the Graph record for the node containing the submitter_id
+        Args:
+            submitter_id: submitter_id for which graph record needs to be searched
+        """
         all_nodes = self.test_records
         for node_name, node_details in all_nodes.items():
             if node_details.props["submitter_id"] == submitter_id:
@@ -371,6 +371,12 @@ class GraphDataTools:
         raise Exception("Did not find any record with parents")
 
     def query_record_fields(self, record: dict, filters={}) -> str:
+        """
+        Generates the graphql query and performs a query operation
+        Args:
+            record: Graph record for which query needs to be performed
+            filters: pass filters for the query if needed
+        """
         fields_string = self._fields_to_string(record.props)
         filter_string = ""
         if filters is not None and filters != {}:
@@ -389,6 +395,11 @@ class GraphDataTools:
         return self.graphql_query(query_for_submission)
 
     def _fields_to_string(self, data: dict) -> str:
+        """
+        Converts the fields to query based string as needed to perform a graphql query operation
+        Args:
+            data: Graph record data
+        """
         primitive_types = [int, float, bool, str]
         fields_string = ""
         for key, val in data.items():
@@ -397,6 +408,11 @@ class GraphDataTools:
         return fields_string
 
     def _filter_to_string(self, filters: dict) -> str:
+        """
+        Converts the filters to query based string as needed to perform a graphql query operation
+        Args:
+            filters: Graph record filters
+        """
         filter_string = []
         for key, val in filters.items():
             if isinstance(val, str):
@@ -404,6 +420,12 @@ class GraphDataTools:
         return ", ".join(filter_string)
 
     def query_record_with_path_to(self, from_node: dict, to_node: dict) -> str:
+        """
+        Uses with_path_to filter to query from one node to another
+        Args:
+            from_node: First node to be queried from
+            to_node : Last node to be queried to
+        """
         query_to_submit = (
             "query Test { "
             + from_node.node_name
@@ -423,6 +445,15 @@ class GraphDataTools:
         expected_status=200,
         invalid_authorization=False,
     ):
+        """
+        Returns the coremetadata information for the Graph record
+        Args:
+            file: Graph record
+            user : user having permission to perform graphql operation
+            format: format to be provided in headers
+            expected_status: expected api response status
+            invalid_authorization: If True set the authorization to invalid
+        """
         min_sem_ver = "3.2.0"
         min_monthly_release = "2023.04.0"
         monthly_release_cutoff = "2020"
@@ -457,6 +488,12 @@ class GraphDataTools:
         return response
 
     def verify_metadata_bibtex_contents(self, record, metadata):
+        """
+        Verifies the metadata bibtex contents is as expected
+        Args:
+            record: Graph Record
+            metadata: coremetadata information
+        """
         metadata = metadata.content.decode()
         assert (
             record.props["file_name"] in metadata
@@ -471,7 +508,13 @@ class GraphDataTools:
             record.props["data_format"] in metadata
         ), f"data_format not matched/found.\n{record}\n{metadata}"
 
-    def see_core_metadata_error(self, metadata, message):
+    def see_metadata_error(self, metadata, message):
+        """
+        Verifies the metadata errors
+        Args:
+            metadata: coremetadata information
+            message: expected message
+        """
         if "message" not in metadata.json().keys():
             logger.error(f"Message key missing.\n{metadata.json()}")
             raise
@@ -481,6 +524,12 @@ class GraphDataTools:
             raise
 
     def verify_metadata_json_contents(self, record, metadata):
+        """
+        Verifies the metadata json contents is as expected
+        Args:
+            record: Graph Record
+            metadata: coremetadata information
+        """
         metadata = metadata.json()
         assert (
             record.props["file_name"] == metadata["file_name"]
