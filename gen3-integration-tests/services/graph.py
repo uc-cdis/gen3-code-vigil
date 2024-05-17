@@ -114,7 +114,7 @@ class GraphDataTools:
                 raise
             if node_name in ["program", "project"]:
                 continue  # program and project are created separately
-            if not submit_file_records and node_category.endswith("_file"):
+            if not file_records and node_category.endswith("_file"):
                 continue
             self.submission_order.append(node_name)
             file_path = self.test_data_path / f"{node_name}.json"
