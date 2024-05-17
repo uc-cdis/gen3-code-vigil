@@ -22,8 +22,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     Used to skip test if consent_codes in not available.
     """
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    metadata = sd_tools.get_file_record()
+    self.sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
+    metadata = self.sd_tools.get_file_record()
     if "consent_codes" not in metadata.props.keys():
         return True
     return False'''
@@ -37,26 +37,22 @@ class FileNode:
 
 
 @pytest.mark.graph_submission
-@pytest.mark.graph_query
 class TestGraphSubmitAndQuery:
+    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
+    sd_tools.load_test_records()
+
     @classmethod
     def setup_class(cls):
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
-        sd_tools.create_program_and_project()
+        cls.sd_tools.create_program_and_project()
+        cls.sd_tools.load_test_records()
+        cls.sd_tools.delete_all_records_in_test_project()
 
     def teardown_method(self, method):
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
-        # Load all test records
-        sd_tools.load_test_records()
         # Delete all test records
-        sd_tools.delete_all_records_in_test_project()
+        self.sd_tools.delete_all_records_in_test_project()
 
+    @pytest.mark.graph_query
     def test_submit_query_and_delete_records(self):
         """
         Scenario: Submit graph data and perform various queries.
@@ -68,28 +64,28 @@ class TestGraphSubmitAndQuery:
             5. Check that node count queries work
             6. Delete the graph data
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(auth=auth)
-        sd_tools.load_test_records()
+        self.sd_tools.load_test_records()
 
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
 
         new_records = []
         try:
             logger.info(
                 "For each node, query all the properties and check that the response matches"
             )
-            for node_name, record in sd_tools.test_records.items():
+            for node_name, record in self.sd_tools.test_records.items():
                 primitive_props = [
                     prop
                     for prop in record.props.keys()
                     if type(record.props[prop]) != dict
                 ]
                 props_str = " ".join(primitive_props)
-                query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}") {{ {props_str} }} }}'
+                query = f'query {{ {node_name} (project_id: "{self.sd_tools.project_id}") {{ {props_str} }} }}'
                 received_data = (
-                    sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
+                    self.sd_tools.graphql_query(query)
+                    .get("data", {})
+                    .get(node_name, [])
                 )
                 assert (
                     len(received_data) == 1
@@ -102,38 +98,40 @@ class TestGraphSubmitAndQuery:
             # right node order, but the new record should not have any "1 to 1" links, or new linked records
             # should be submitted as well. For now this is easier.
             node_name = "core_metadata_collection"
-            record = sd_tools.test_records[node_name]
+            record = self.sd_tools.test_records[node_name]
 
             logger.info("Query an invalid property")
-            query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}") {{ prop_does_not_exist }} }}'
+            query = f'query {{ {node_name} (project_id: "{self.sd_tools.project_id}") {{ prop_does_not_exist }} }}'
             with pytest.raises(
                 Gen3SubmissionQueryError,
                 match=f'Cannot query field "prop_does_not_exist" on type "{node_name}".',
             ):
-                sd_tools.graphql_query(query)
+                self.sd_tools.graphql_query(query)
 
             logger.info("Query with filter on a string property")
             string_prop = [
                 prop for prop in record.props.keys() if type(record.props[prop]) == str
             ][0]
             string_prop_value = record.props[string_prop]
-            query = f'query {{ {node_name} (project_id: "{sd_tools.project_id}", {string_prop}: "{string_prop_value}") {{ {string_prop} }} }}'
+            query = f'query {{ {node_name} (project_id: "{self.sd_tools.project_id}", {string_prop}: "{string_prop_value}") {{ {string_prop} }} }}'
             received_data = (
-                sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
+                self.sd_tools.graphql_query(query).get("data", {}).get(node_name, [])
             )
             assert len(received_data) == 1
             assert received_data[0][string_prop] == string_prop_value
 
             logger.info("Query node count before and after submitting a new record")
-            result = sd_tools.query_node_count(node_name)
+            result = self.sd_tools.query_node_count(node_name)
             count = result.get("data", {}).get(f"_{node_name}_count")
-            new_records.append(sd_tools.submit_new_record(node_name))
-            result = sd_tools.query_node_count(node_name)
+            new_records.append(self.sd_tools.submit_new_record(node_name))
+            result = self.sd_tools.query_node_count(node_name)
             assert result.get("data", {}).get(f"_{node_name}_count") == count + 1
         finally:
             if new_records:
-                sd_tools.delete_records([record.unique_id for record in new_records])
-            sd_tools.delete_all_test_records()
+                self.sd_tools.delete_records(
+                    [record.unique_id for record in new_records]
+                )
+            self.sd_tools.delete_all_test_records()
 
     def test_submit_node_unauthenticated(self):
         """
@@ -143,12 +141,8 @@ class TestGraphSubmitAndQuery:
             2. Create a node with expired token
             3. Creating node should fail
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records
-        sd_tools.load_test_records()
+        self.sd_tools.load_test_records()
         # Generate an expired token
         res = create_access_token(
             pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
@@ -162,7 +156,7 @@ class TestGraphSubmitAndQuery:
         }
 
         # Create a node with expired token
-        first_node = sd_tools.test_records[sd_tools.submission_order[0]]
+        first_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         response = requests.put(
             url=pytest.root_url + "/api/v0/submission/jnkns/jenkins",
             data=json.dumps(first_node.props),
@@ -170,6 +164,7 @@ class TestGraphSubmitAndQuery:
         )
         assert response.status_code == 401, f"Failed to delete record {response}"
 
+    @pytest.mark.graph_query
     def test_submit_node_without_parent(self):
         """
         Scenario: Submit node without parent
@@ -179,15 +174,11 @@ class TestGraphSubmitAndQuery:
             3. Validate length of fields returned for node name is 0
             4. Delete the node created. Verify node is deleted.
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records
-        sd_tools.load_test_records()
+        self.sd_tools.load_test_records()
         # Verify parent node does not exist
-        parent_node = sd_tools.test_records[sd_tools.submission_order[0]]
-        parent_response = sd_tools.query_record_fields(parent_node)
+        parent_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
+        parent_response = self.sd_tools.query_record_fields(parent_node)
         # Validate length of fields returned for node name is 0
         if len(parent_response["data"][parent_node.node_name]) != 0:
             logger.error(
@@ -198,14 +189,15 @@ class TestGraphSubmitAndQuery:
             raise
 
         # Attempt to add second node which has a dependency on another node
-        second_node = sd_tools.get_record_with_parent()
+        second_node = self.sd_tools.get_record_with_parent()
         try:
-            logger.info(sd_tools.submit_record(record=second_node))
+            logger.info(self.sd_tools.submit_record(record=second_node))
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != 400:
                 logger.error(f"Expected 400 status code not found. Response: {e}")
                 raise
 
+    @pytest.mark.graph_query
     def test_filter_by_invalid_project_id(self):
         """
         Scenario: Filter by invalid project_id
@@ -215,25 +207,24 @@ class TestGraphSubmitAndQuery:
             3. Validate length of fields returned for node name is 0
             4. Delete the node created. Verify node is deleted.
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records
-        sd_tools.load_test_records()
+        self.sd_tools.load_test_records()
         # Create a node using sheepdog. Verify node is present.
-        record = sd_tools.test_records[sd_tools.submission_order[0]]
-        sd_tools.submit_record(record=record)
+        record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
+        self.sd_tools.submit_record(record=record)
         # Perform a query using an invalid project_id.
-        response = sd_tools.query_record_fields(record, {"project_id": "NOT-EXIST"})
+        response = self.sd_tools.query_record_fields(
+            record, {"project_id": "NOT-EXIST"}
+        )
         # Validate length of fields returned for node name is 0
         if len(response["data"][record.node_name]) != 0:
             logger.error(
                 "Found fields for {}. Response : {}".format(record.node_name, response)
             )
             raise
-        sd_tools.delete_record(unique_id=record.unique_id)
+        self.sd_tools.delete_record(unique_id=record.unique_id)
 
+    @pytest.mark.graph_query
     def test_with_path_to_first_to_last_node(self):
         """
         Scenario: Test with_path_to - first to last node
@@ -242,23 +233,20 @@ class TestGraphSubmitAndQuery:
             2. Query path from first node to last node.
             3. Verify first node name is present response.
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records
-        sd_tools.load_test_records()
+        self.sd_tools.load_test_records()
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
         # Query path from first node to last node.
-        first_node = sd_tools.test_records[sd_tools.submission_order[0]]
-        last_node = sd_tools.test_records[sd_tools.submission_order[-1]]
-        response = sd_tools.query_record_with_path_to(first_node, last_node)
+        first_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
+        last_node = self.sd_tools.test_records[self.sd_tools.submission_order[-1]]
+        response = self.sd_tools.query_record_with_path_to(first_node, last_node)
         # Verify first node name is present response.
         assert (
             first_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(first_node.node_name, response)
 
+    @pytest.mark.graph_query
     def test_with_path_to_last_to_first_node(self):
         """
         Scenario: Test with_path_to - last to first node
@@ -267,18 +255,14 @@ class TestGraphSubmitAndQuery:
             2. Query path from last node to first node.
             3. Verify last node name is present response.
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records
-        sd_tools.load_test_records()
+        self.sd_tools.load_test_records()
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
         # Query path from last node to first node.
-        first_node = sd_tools.test_records[sd_tools.submission_order[0]]
-        last_node = sd_tools.test_records[sd_tools.submission_order[-1]]
-        response = sd_tools.query_record_with_path_to(last_node, first_node)
+        first_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
+        last_node = self.sd_tools.test_records[self.sd_tools.submission_order[-1]]
+        response = self.sd_tools.query_record_with_path_to(last_node, first_node)
         # Verify last node name is present response.
         assert (
             last_node.node_name in response["data"].keys()
@@ -296,15 +280,11 @@ class TestGraphSubmitAndQuery:
             3. Submit metatdata for file node, including consent codes
             4. Verify indexd record was created with the correct consent codes
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         indexd_auth = Gen3Auth(refresh_token=pytest.api_keys["indexing_account"])
         gen3_indexd = Gen3Index(auth_provider=indexd_auth)
         indexd = Indexd()
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         records = gen3_indexd.get_all_records()
 
         # Delete indexd records
@@ -312,12 +292,12 @@ class TestGraphSubmitAndQuery:
             gen3_indexd.delete_record(guid=record["did"])
 
         # Submit metatdata for file node, including consent codes
-        file_record = sd_tools.get_file_record()
+        file_record = self.sd_tools.get_file_record()
         file_record.props["consent_codes"] += ["CC1", "CC2"]
-        sd_tools.submit_links_for_node(record=file_record)
-        sd_tools.submit_record(record=file_record)
+        self.sd_tools.submit_links_for_node(record=file_record)
+        self.sd_tools.submit_record(record=file_record)
 
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
 
@@ -336,6 +316,7 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.portal
+    @pytest.mark.graph_query
     def test_core_metadata_page(self, page: LoginPage):
         """
         Scenario: Test core metadata page
@@ -350,21 +331,21 @@ class TestGraphSubmitAndQuery:
         """
         login_page = LoginPage()
         metadata_landing_page = MetadataLandingPage()
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
-        file_record = sd_tools.get_file_record()
-        sd_tools.submit_record(record=file_record)
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        self.sd_tools.submit_all_test_records()
+        file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_record(record=file_record)
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
-        metadata = sd_tools.get_core_metadata(file=file_record, user="main_account")
-        sd_tools.verify_metadata_json_contents(record=file_record, metadata=metadata)
+        metadata = self.sd_tools.get_core_metadata(
+            file=file_record, user="main_account"
+        )
+        self.sd_tools.verify_metadata_json_contents(
+            record=file_record, metadata=metadata
+        )
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("Logging in with mainAcct")
@@ -374,11 +355,12 @@ class TestGraphSubmitAndQuery:
         metadata_landing_page.verify_metadata_page_elements(page)
         login_page.logout(page)
 
-        sd_tools.delete_record(unique_id=file_record.unique_id)
+        self.sd_tools.delete_record(unique_id=file_record.unique_id)
 
     # TODO move indexd tests to a new test suite and use pytest.mark.graph_submission/query
     # when needed. May create issues with parallel tests updating graph data at the same time
     @pytest.mark.indexd
+    @pytest.mark.graph_query
     # TODO rename "core metadata" references, call it something like "test_file_landing_page"
     def test_core_metadata(self):
         """
@@ -393,31 +375,34 @@ class TestGraphSubmitAndQuery:
             7. Validate file_name, GUID, Type and data_format of file node matches in metadata
             8. Delete all nodes
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
 
-        file_record = sd_tools.get_file_record()
-        sd_tools.submit_record(record=file_record)
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_record(record=file_record)
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
-        metadata = sd_tools.get_core_metadata(file=file_record, user="main_account")
-        sd_tools.verify_metadata_json_contents(record=file_record, metadata=metadata)
+        metadata = self.sd_tools.get_core_metadata(
+            file=file_record, user="main_account"
+        )
+        self.sd_tools.verify_metadata_json_contents(
+            record=file_record, metadata=metadata
+        )
 
-        metadata = sd_tools.get_core_metadata(
+        metadata = self.sd_tools.get_core_metadata(
             file=file_record, user="main_account", format="x-bibtex"
         )
-        sd_tools.verify_metadata_bibtex_contents(record=file_record, metadata=metadata)
+        self.sd_tools.verify_metadata_bibtex_contents(
+            record=file_record, metadata=metadata
+        )
 
-        sd_tools.delete_record(unique_id=file_record.unique_id)
+        self.sd_tools.delete_record(unique_id=file_record.unique_id)
 
     @pytest.mark.indexd
+    @pytest.mark.graph_query
     def test_core_metadata_invalid_object_id(self):
         """
         Scenario: Test core metadata invalid object_id
@@ -429,23 +414,20 @@ class TestGraphSubmitAndQuery:
             5. Step 4 should fail with 404 error as object/did is not present
             6. Delete all nodes
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records without records
-        sd_tools.load_test_records()
-        invalid_file_record = sd_tools.get_file_record()
+        self.sd_tools.load_test_records()
+        invalid_file_record = self.sd_tools.get_file_record()
         invalid_file_record.props["object_id"] = "invalid_object_id"
         invalid_file_record.indexd_guid = "invalid_object_id"
-        metadata = sd_tools.get_core_metadata(
+        metadata = self.sd_tools.get_core_metadata(
             file=invalid_file_record, user="main_account", expected_status=404
         )
-        sd_tools.see_core_metadata_error(
+        self.sd_tools.see_core_metadata_error(
             metadata=metadata, message='object_id "invalid_object_id" not found'
         )
 
     @pytest.mark.indexd
+    @pytest.mark.graph_query
     def test_core_metadata_no_permission(self):
         """
         Scenario: Test core metadata no permission
@@ -458,32 +440,28 @@ class TestGraphSubmitAndQuery:
             6. Verify "Authentication Error: could not parse authorization header" message was recieved
             7. Delete all nodes
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
 
-        file_record = sd_tools.get_file_record()
-        sd_tools.submit_record(record=file_record)
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_record(record=file_record)
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
-        metadata = sd_tools.get_core_metadata(
+        metadata = self.sd_tools.get_core_metadata(
             file=file_record,
             user="main_account",
             expected_status=401,
             invalid_authorization=True,
         )
-        sd_tools.see_core_metadata_error(
+        self.sd_tools.see_core_metadata_error(
             metadata=metadata,
             message="Authentication Error: could not parse authorization header",
         )
 
-        sd_tools.delete_record(unique_id=file_record.unique_id)
+        self.sd_tools.delete_record(unique_id=file_record.unique_id)
 
     @pytest.mark.indexd
     def test_submit_and_delete_file(self):
@@ -494,27 +472,23 @@ class TestGraphSubmitAndQuery:
             2. Create a file node and retrieve record from indexd
             3. Delete file node and delete indexd record
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         indexd = Indexd()
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
 
         # Adding file node and retrieveing indexd record
-        file_record = sd_tools.get_file_record()
-        sd_tools.submit_record(record=file_record)
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_record(record=file_record)
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
         rev = indexd.get_rev(record)
 
         # Deleting file node and indexd record
-        sd_tools.delete_record(unique_id=file_record.unique_id)
+        self.sd_tools.delete_record(unique_id=file_record.unique_id)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
         assert (
             delete_record == 200
@@ -529,22 +503,18 @@ class TestGraphSubmitAndQuery:
             2. Create a file node with URL and retrieve record from indexd
             3. Delete file node and delete indexd record
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
 
         # Adding file node and retrieveing indexd record
-        file_record = sd_tools.get_file_record()
+        file_record = self.sd_tools.get_file_record()
         file_record.props["urls"] = test_url
-        sd_tools.submit_record(record=file_record)
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        self.sd_tools.submit_record(record=file_record)
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
@@ -554,7 +524,7 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(record, file_record)
 
         # Deleting file node and indexd record
-        sd_tools.delete_record(unique_id=file_record.unique_id)
+        self.sd_tools.delete_record(unique_id=file_record.unique_id)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
         assert (
             delete_record == 200
@@ -570,28 +540,24 @@ class TestGraphSubmitAndQuery:
             3. Add URL to file node and update file node.
             4. Delete file node and delete indexd record
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         # Load all test records without records having category ending with _file
-        sd_tools.load_test_records(submit_file_records=False)
+        self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        self.sd_tools.submit_all_test_records()
 
         # Adding file node and retrieveing indexd record without URL
-        file_record = sd_tools.get_file_record()
-        sd_tools.submit_record(record=file_record)
-        did = sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
+        file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_record(record=file_record)
+        did = self.sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
         record = indexd.get_record(indexd_guid=did)
         rev = indexd.get_rev(record)
 
         # Add URL to the node data and update it
         file_record.props["urls"] = test_url
-        sd_tools.submit_record(record=file_record)
-        file_record.indexd_guid = sd_tools.get_indexd_id_from_graph_id(
+        self.sd_tools.submit_record(record=file_record)
+        file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
@@ -601,7 +567,7 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(record, file_record)
 
         # Deleting file node and indexd record
-        sd_tools.delete_record(unique_id=file_record.unique_id)
+        self.sd_tools.delete_record(unique_id=file_record.unique_id)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
         assert (
             delete_record == 200

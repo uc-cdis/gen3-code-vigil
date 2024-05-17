@@ -97,7 +97,7 @@ class GraphDataTools:
                 )
                 self.delete_record(record["id"])
 
-    def load_test_records(self, submit_file_records=True) -> None:
+    def load_test_records(self, file_records=True) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at
         `test_data/graph_data` by `generate_graph_data()`.
