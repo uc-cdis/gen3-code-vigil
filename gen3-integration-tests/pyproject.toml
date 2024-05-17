@@ -1,6 +1,7 @@
 [tool.poetry]
 name = "gen3-integration-tests"
 version = "0.1.0"
+package-mode = false
 description = "Gen3 Integration Tests"
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
