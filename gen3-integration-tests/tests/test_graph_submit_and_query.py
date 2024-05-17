@@ -11,7 +11,7 @@ from utils.gen3_admin_tasks import create_access_token
 from services.indexd import Indexd
 from services.graph import GraphDataTools
 from pages.login import LoginPage
-from pages.metadata_landing_page import MetadataLandingPage
+from pages.files_landing_page import FilesLandingPage
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -330,7 +330,7 @@ class TestGraphSubmitAndQuery:
             7. Delete all nodes. Verify all nodes are deleted.
         """
         login_page = LoginPage()
-        metadata_landing_page = MetadataLandingPage()
+        files_landing_page = FilesLandingPage()
         # Load all test records without records having category ending with _file
         self.sd_tools.load_test_records(file_records=False)
         logger.info("Submitting test records")
@@ -351,8 +351,8 @@ class TestGraphSubmitAndQuery:
         logger.info("Logging in with mainAcct")
         login_page.go_to(page)
         login_page.login(page)
-        metadata_landing_page.goto_metadata_page(page, metadata.json()["object_id"])
-        metadata_landing_page.verify_metadata_page_elements(page)
+        files_landing_page.goto_metadata_page(page, metadata.json()["object_id"])
+        files_landing_page.verify_metadata_page_elements(page)
         login_page.logout(page)
 
         self.sd_tools.delete_record(unique_id=file_record.unique_id)

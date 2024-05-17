@@ -9,7 +9,7 @@ from utils.test_execution import screenshot
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-class MetadataLandingPage(object):
+class FilesLandingPage(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url_portal}/files"
         self.METADATA_PAGE_CLASS = "//div[@class='core-metadata-page']"
