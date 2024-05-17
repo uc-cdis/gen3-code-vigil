@@ -38,12 +38,12 @@ pipeline {
                 ])
             }
         }
-        stage('Create Expired Token') {
+        stage('Create Access Token') {
             options {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
             steps {
-                dir("create-expired-token") {
+                dir("create-access-token") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
@@ -52,7 +52,7 @@ pipeline {
                             source $GEN3_HOME/gen3/gen3setup.sh
 
                             # Create expired token
-                            g3kubectl exec $(gen3 pod \$SERVICE \$NAMESPACE) -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account,google_credentials --type access_token --exp \$EXPIRATION --username \$USERNAME > expired_token.txt
+                            g3kubectl exec $(gen3 pod \$SERVICE \$NAMESPACE) -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account,google_credentials --type access_token --exp \$EXPIRATION --username \$USERNAME > access_token.txt
                             '''
                     }
                 }
@@ -61,7 +61,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'create-expired-token/expired_token.txt'
+            archiveArtifacts artifacts: 'create-access-token/access_token.txt'
         }
     }
 }

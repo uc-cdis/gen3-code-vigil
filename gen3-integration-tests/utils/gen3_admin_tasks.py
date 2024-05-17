@@ -284,7 +284,7 @@ def create_access_token(test_env_namespace, service, expired, username):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "create-expired-token",  # TODO update this and the job script
+        "create-access-token",
     )
     if expired:
         expiration = 1
@@ -302,7 +302,7 @@ def create_access_token(test_env_namespace, service, expired, username):
         if status == "Completed":
             if expired:
                 time.sleep(expiration)
-            return job.get_artifact_content(build_num, "expired_token.txt")
+            return job.get_artifact_content(build_num, "access_token.txt")
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
