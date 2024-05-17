@@ -16,17 +16,17 @@ from pages.files_landing_page import FilesLandingPage
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-'''def validate_consent_codes():
+def skip_consent_code_test(gdt: GraphDataTools):
     """
-    Function to check if consent_codes is available in dictionary or not.
+    Function to check if consent_codes is available in dictionary.
     Used to skip test if consent_codes in not available.
     """
-    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    self.sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    metadata = self.sd_tools.get_file_record()
+    metadata = gdt.get_file_record()
     if "consent_codes" not in metadata.props.keys():
+        logger.info("Running consent code tests since dictionary has them")
         return True
-    return False'''
+    logger.info("Skipping consent code tests since dictionary does not have them")
+    return False
 
 
 class FileNode:
@@ -40,11 +40,11 @@ class FileNode:
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
+    sd_tools.load_test_records()
 
     @classmethod
     def setup_class(cls):
         cls.sd_tools.create_program_and_project()
-        cls.sd_tools.load_test_records()
         cls.sd_tools.delete_all_records_in_test_project()
 
     def teardown_method(self, method):
@@ -255,9 +255,10 @@ class TestGraphSubmitAndQuery:
             last_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(last_node.node_name, response)
 
-    # @pytest.mark.skipif(
-    #    validate_consent_codes(), reason="Consent Codes not available in dictionary"
-    # )
+    @pytest.mark.skipif(
+        skip_consent_code_test(sd_tools),
+        reason="Consent Codes not available in dictionary",
+    )
     def test_submit_data_node_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
