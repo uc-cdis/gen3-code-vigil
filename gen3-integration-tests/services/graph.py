@@ -114,6 +114,8 @@ class GraphDataTools:
                 raise
             if node_name in ["program", "project"]:
                 continue  # program and project are created separately
+            if not submit_file_records and node_category.endswith("_file"):
+                continue
             self.submission_order.append(node_name)
             file_path = self.test_data_path / f"{node_name}.json"
             try:
@@ -206,7 +208,6 @@ class GraphDataTools:
             if e.response.status_code != expected_status_code:
                 logger.error(f"Error while deleting record: {e.response.text}")
                 raise
-        return result
 
     def delete_all_test_records(self) -> None:
         """
@@ -242,7 +243,7 @@ class GraphDataTools:
         query = f'{{ _{node_name}_count (project_id: "{self.project_id}") }}'
         return self.graphql_query(query)
 
-    def get_file_node(self):
+    def get_file_record(self):
         """
         TODO: update this description
         Get all nodes except node with _file category or get node with _file category
@@ -250,30 +251,6 @@ class GraphDataTools:
         for node_name in self.submission_order:
             if self.test_records[node_name].category.endswith("_file"):
                 return copy.deepcopy(self.test_records[node_name])
-
-    # TODO delete this function
-    def get_path_with_file_node(self, path_to_file=False, file_node=False):
-        """
-        Get all nodes except node with _file category or get node with _file category
-
-        Args:
-            path_to_file: returns all nodes except for node with _file category
-            file_node : returns the node with _file category
-        """
-        all_nodes = copy.deepcopy(self.test_records)
-        file_node_name = ""
-        # Get file node name with _file category
-        for node_name in self.submission_order:
-            if "_file" in all_nodes[node_name].category:
-                file_node_name = node_name
-        file_node_item = all_nodes[file_node_name]
-        del all_nodes[file_node_name]
-        # Return all nodes except for the node with _file category recieved above
-        if path_to_file:
-            return all_nodes
-        # Return node with _file category recieved above
-        if file_node:
-            return file_node_item
 
     # TODO delete if not used
     def get_field_of_type(self, node: dict, field_type: object) -> str:
@@ -303,8 +280,8 @@ class GraphDataTools:
         )
         return response.json()[0]["object_id"]
 
-    # TODO delete this function
-    def submit_graph_and_file_metadata(
+    # TODO Commenting out the function for now as it is not being used in test_graph_submit_and_query.py
+    '''def submit_graph_and_file_metadata(
         self,
         file_guid=None,
         file_size=None,
@@ -343,7 +320,7 @@ class GraphDataTools:
             self.delete_record(unique_id=existing_file_node.unique_id)
 
         self.submit_record(record=metadata)
-        return metadata
+        return metadata'''
 
     # TODO remove or comment out if unused
     def submit_links_for_node(

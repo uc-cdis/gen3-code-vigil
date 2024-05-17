@@ -4,7 +4,13 @@
 
   String parameter SERVICE
     e.g., sheepdog, indexd
-  This is to help roll a specific service pod
+
+  String parameter EXPIRATION
+    e.g., 1, 300 (value in seconds)
+
+  String parameter USERNAME
+    e.g., cdis.autotest@gmail.com
+  This is to help create access token
 
 */
 pipeline {

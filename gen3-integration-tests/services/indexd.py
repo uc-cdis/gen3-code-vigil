@@ -97,20 +97,11 @@ class Indexd(object):
     def file_equals(self, res: dict, file_node: dict) -> None:
         logger.info(f"Response data : {res}")
         logger.info(f"File Node with CCs : {file_node.props}")
-        if res["hashes"]["md5"] != file_node.props["md5sum"]:
-            logger.error("md5 value mismatch")
-            raise
-        if res["size"] != file_node.props["file_size"]:
-            logger.error("file_size value mismatch")
-            raise
-        if "urls" not in res.keys():
-            logger.error("urls key missing")
-            raise
+        assert res["hashes"]["md5"] == file_node.props["md5sum"], "md5 value mismatch"
+        assert res["size"] == file_node.props["file_size"], "file_size value mismatch"
+        assert "urls" in res.keys(), "urls key missing"
         if "urls" in file_node.props.keys():
-            if file_node.props["urls"] not in res["urls"]:
-                logger.error("urls value mismatch")
-                raise
+            assert file_node.props["urls"] in res["urls"], "urls value mismatch"
         if "authz" in file_node.props.keys():
             for authz_val in file_node.props["authz"]:
-                if authz_val not in res["authz"]:
-                    logger.error(f"{authz_val} not found in authz list")
+                assert authz_val in res["authz"], f"{authz_val} not found in authz list"

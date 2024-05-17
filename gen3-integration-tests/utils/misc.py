@@ -7,7 +7,6 @@ from cdislogging import get_logger
 from filelock import Timeout, FileLock
 
 from utils import TEST_DATA_PATH_OBJECT
-from gen3.auth import Gen3Auth
 
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
