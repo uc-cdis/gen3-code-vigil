@@ -12,6 +12,7 @@ from gen3.submission import Gen3Submission
 import requests
 
 from utils import TEST_DATA_PATH_OBJECT
+from packaging.version import Version
 
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
@@ -50,6 +51,7 @@ class GraphDataTools:
     ) -> None:
         self.sdk = Gen3Submission(auth_provider=auth)
         self.BASE_URL = "/api/v0/submission/"
+        self.GRAPHQL_VERSION_ENDPOINT = "/api/search/_version"
         self.auth = auth
         self.program_name = program_name
         self.project_code = project_code
@@ -101,8 +103,6 @@ class GraphDataTools:
         `test_data/graph_data` by `generate_graph_data()`.
         Load `DataImportOrderPath.txt` into `self.submission_order`.
         """
-        # TODO: if `submit_file_records==False` do not submit any records for nodes
-        # that end in `_file`
         lines = (self.test_data_path / "DataImportOrderPath.txt").read_text()
         for order, line in enumerate(lines.split("\n")):
             if not line:
@@ -245,9 +245,9 @@ class GraphDataTools:
 
     def get_file_record(self):
         """
-        TODO: update this description
-        Get all nodes except node with _file category or get node with _file category
+        Returns a record which has category ending with _file
         """
+        self.load_test_records()
         for node_name in self.submission_order:
             if self.test_records[node_name].category.endswith("_file"):
                 return copy.deepcopy(self.test_records[node_name])
@@ -280,7 +280,7 @@ class GraphDataTools:
         )
         return response.json()[0]["object_id"]
 
-    # TODO Commenting out the function for now as it is not being used in test_graph_submit_and_query.py
+    # Commenting out the function for now as it is not being used in test_graph_submit_and_query.py
     '''def submit_graph_and_file_metadata(
         self,
         file_guid=None,
@@ -415,18 +415,82 @@ class GraphDataTools:
         )
         return self.graphql_query(query_to_submit)
 
-    # TODO rename core metadata
-    def see_json_core_metadata(self, file, metadata):
+    def get_core_metadata(
+        self,
+        file,
+        user,
+        format="application/json",
+        expected_status=200,
+        invalid_authorization=False,
+    ):
+        min_sem_ver = "3.2.0"
+        min_monthly_release = "2023.04.0"
+        monthly_release_cutoff = "2020"
+
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        response = auth.curl(path=self.GRAPHQL_VERSION_ENDPOINT)
+        peregrine_version = response.json()["version"]
+        url = f"{pytest.root_url}/api/search/coremetadata/"
+
+        if peregrine_version:
+            try:
+                if Version(peregrine_version) < Version(min_sem_ver) or (
+                    Version(peregrine_version) >= Version(monthly_release_cutoff)
+                    and Version(peregrine_version) < Version(min_monthly_release)
+                ):
+                    # Legacy endpoint
+                    url = "{pytest.root_url}/coremetadata/"
+            except:
+                logger.error(
+                    "Can't parse or compare the peregrine version: don't user legacy url"
+                )
+
+        authorization = f"bearer {auth.get_access_token()}"
+        if invalid_authorization:
+            authorization = "invalid"
+        headers = {
+            "Authorization": authorization,
+            "Accept": format,
+        }
+        response = requests.get(url=url + file.indexd_guid, headers=headers)
+        assert response.status_code == expected_status, f"{response}"
+        return response
+
+    def verify_metadata_bibtex_contents(self, record, metadata):
+        metadata = metadata.content.decode()
+        assert (
+            record.props["file_name"] in metadata
+        ), f"file_name not matched/found.\n{record}\n{metadata}"
+        assert (
+            record.indexd_guid in metadata
+        ), f"object_id not matched/found.\n{record}\n{metadata}"
+        assert (
+            record.props["type"] in metadata
+        ), f"type not matched/found.\n{record}\n{metadata}"
+        assert (
+            record.props["data_format"] in metadata
+        ), f"data_format not matched/found.\n{record}\n{metadata}"
+
+    def see_core_metadata_error(self, metadata, message):
+        if "message" not in metadata.json().keys():
+            logger.error(f"Message key missing.\n{metadata.json()}")
+            raise
+        logger.info(metadata.json()["message"])
+        if message != metadata.json()["message"]:
+            logger.error(f"Expected message not found.\n{metadata.json()}")
+            raise
+
+    def verify_metadata_json_contents(self, record, metadata):
         metadata = metadata.json()
         assert (
-            file.props["file_name"] == metadata["file_name"]
-        ), f"file_name not matched/found.\n{file}\n{metadata}"
+            record.props["file_name"] == metadata["file_name"]
+        ), f"file_name not matched/found.\n{record}\n{metadata}"
         assert (
-            file.indexd_guid == metadata["object_id"]
-        ), f"object_id not matched/found.\n{file}\n{metadata}"
+            record.indexd_guid == metadata["object_id"]
+        ), f"object_id not matched/found.\n{record}\n{metadata}"
         assert (
-            file.props["type"] == metadata["type"]
-        ), f"type not matched/found.\n{file}\n{metadata}"
+            record.props["type"] == metadata["type"]
+        ), f"type not matched/found.\n{record}\n{metadata}"
         assert (
-            file.props["data_format"] == metadata["data_format"]
-        ), f"data_format not matched/found.\n{file}\n{metadata}"
+            record.props["data_format"] == metadata["data_format"]
+        ), f"data_format not matched/found.\n{record}\n{metadata}"
