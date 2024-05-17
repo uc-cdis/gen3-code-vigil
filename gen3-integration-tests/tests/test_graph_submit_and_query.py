@@ -40,7 +40,6 @@ class FileNode:
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    sd_tools.load_test_records()
 
     @classmethod
     def setup_class(cls):
@@ -64,8 +63,6 @@ class TestGraphSubmitAndQuery:
             5. Check that node count queries work
             6. Delete the graph data
         """
-        self.sd_tools.load_test_records()
-
         logger.info("Submitting test records")
         self.sd_tools.submit_all_test_records()
 
@@ -141,8 +138,6 @@ class TestGraphSubmitAndQuery:
             2. Create a node with expired token
             3. Creating node should fail
         """
-        # Load all test records
-        self.sd_tools.load_test_records()
         # Generate an expired token
         res = create_access_token(
             pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
@@ -174,8 +169,6 @@ class TestGraphSubmitAndQuery:
             3. Validate length of fields returned for node name is 0
             4. Delete the node created. Verify node is deleted.
         """
-        # Load all test records
-        self.sd_tools.load_test_records()
         # Verify parent node does not exist
         parent_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         parent_response = self.sd_tools.query_record_fields(parent_node)
@@ -207,8 +200,6 @@ class TestGraphSubmitAndQuery:
             3. Validate length of fields returned for node name is 0
             4. Delete the node created. Verify node is deleted.
         """
-        # Load all test records
-        self.sd_tools.load_test_records()
         # Create a node using sheepdog. Verify node is present.
         record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         self.sd_tools.submit_record(record=record)
@@ -233,8 +224,6 @@ class TestGraphSubmitAndQuery:
             2. Query path from first node to last node.
             3. Verify first node name is present response.
         """
-        # Load all test records
-        self.sd_tools.load_test_records()
         logger.info("Submitting test records")
         self.sd_tools.submit_all_test_records()
         # Query path from first node to last node.
@@ -255,8 +244,6 @@ class TestGraphSubmitAndQuery:
             2. Query path from last node to first node.
             3. Verify last node name is present response.
         """
-        # Load all test records
-        self.sd_tools.load_test_records()
         logger.info("Submitting test records")
         self.sd_tools.submit_all_test_records()
         # Query path from last node to first node.
@@ -283,15 +270,12 @@ class TestGraphSubmitAndQuery:
         indexd_auth = Gen3Auth(refresh_token=pytest.api_keys["indexing_account"])
         gen3_indexd = Gen3Index(auth_provider=indexd_auth)
         indexd = Indexd()
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
         records = gen3_indexd.get_all_records()
 
         # Delete indexd records
         for record in records:
             gen3_indexd.delete_record(guid=record["did"])
 
-        # Submit metatdata for file node, including consent codes
         file_record = self.sd_tools.get_file_record()
         file_record.props["consent_codes"] += ["CC1", "CC2"]
         self.sd_tools.submit_links_for_node(record=file_record)
@@ -331,11 +315,8 @@ class TestGraphSubmitAndQuery:
         """
         login_page = LoginPage()
         files_landing_page = FilesLandingPage()
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
-        logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
         file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_links_for_node(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -375,12 +356,8 @@ class TestGraphSubmitAndQuery:
             7. Validate file_name, GUID, Type and data_format of file node matches in metadata
             8. Delete all nodes
         """
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
-        logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
-
         file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_links_for_node(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -414,8 +391,6 @@ class TestGraphSubmitAndQuery:
             5. Step 4 should fail with 404 error as object/did is not present
             6. Delete all nodes
         """
-        # Load all test records without records
-        self.sd_tools.load_test_records()
         invalid_file_record = self.sd_tools.get_file_record()
         invalid_file_record.props["object_id"] = "invalid_object_id"
         invalid_file_record.indexd_guid = "invalid_object_id"
@@ -440,12 +415,8 @@ class TestGraphSubmitAndQuery:
             6. Verify "Authentication Error: could not parse authorization header" message was recieved
             7. Delete all nodes
         """
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
-        logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
-
         file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_links_for_node(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -473,13 +444,8 @@ class TestGraphSubmitAndQuery:
             3. Delete file node and delete indexd record
         """
         indexd = Indexd()
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
-        logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
-
-        # Adding file node and retrieveing indexd record
         file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_links_for_node(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -505,13 +471,8 @@ class TestGraphSubmitAndQuery:
         """
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
-        logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
-
-        # Adding file node and retrieveing indexd record
         file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_links_for_node(file_record)
         file_record.props["urls"] = test_url
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
@@ -542,13 +503,8 @@ class TestGraphSubmitAndQuery:
         """
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
-        # Load all test records without records having category ending with _file
-        self.sd_tools.load_test_records(file_records=False)
-        logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
-
-        # Adding file node and retrieveing indexd record without URL
         file_record = self.sd_tools.get_file_record()
+        self.sd_tools.submit_links_for_node(file_record)
         self.sd_tools.submit_record(record=file_record)
         did = self.sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
         record = indexd.get_record(indexd_guid=did)

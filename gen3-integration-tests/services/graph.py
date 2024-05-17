@@ -97,12 +97,14 @@ class GraphDataTools:
                 )
                 self.delete_record(record["id"])
 
-    def load_test_records(self, file_records=True) -> None:
+    def load_test_records(self) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at
         `test_data/graph_data` by `generate_graph_data()`.
         Load `DataImportOrderPath.txt` into `self.submission_order`.
         """
+        self.submission_order = []
+        self.test_records = {}
         lines = (self.test_data_path / "DataImportOrderPath.txt").read_text()
         for order, line in enumerate(lines.split("\n")):
             if not line:
@@ -114,8 +116,6 @@ class GraphDataTools:
                 raise
             if node_name in ["program", "project"]:
                 continue  # program and project are created separately
-            if not file_records and node_category.endswith("_file"):
-                continue
             self.submission_order.append(node_name)
             file_path = self.test_data_path / f"{node_name}.json"
             try:
@@ -160,7 +160,10 @@ class GraphDataTools:
         Following the order set by `self.submission_order`, submit all the records in `self.test_records`,
         in the right order.
         """
+        logger.debug(f"submission order: {self.submission_order}")
         for node_name in self.submission_order:
+            logger.debug(f"Submitting record for {node_name}")
+            logger.debug(self.test_records[node_name])
             self.submit_record(self.test_records[node_name])
 
     def submit_new_record(self, node_name: str) -> GraphRecord:
@@ -247,7 +250,6 @@ class GraphDataTools:
         """
         Returns a record which has category ending with _file
         """
-        self.load_test_records()
         for node_name in self.submission_order:
             if self.test_records[node_name].category.endswith("_file"):
                 return copy.deepcopy(self.test_records[node_name])
@@ -280,7 +282,7 @@ class GraphDataTools:
         )
         return response.json()[0]["object_id"]
 
-    # Commenting out the function for now as it is not being used in test_graph_submit_and_query.py
+    # TODO: Remove if not used after migration is complete
     '''def submit_graph_and_file_metadata(
         self,
         file_guid=None,
@@ -322,9 +324,8 @@ class GraphDataTools:
         self.submit_record(record=metadata)
         return metadata'''
 
-    # TODO remove or comment out if unused
     def submit_links_for_node(
-        self, record: dict, new_submitter_ids=False, user="main_account"
+        self, record: GraphRecord, new_submitter_ids=False, user="main_account"
     ) -> None:
         for prop in record.props:
             if (
@@ -350,7 +351,6 @@ class GraphDataTools:
                     record.props[prop]["submitter_id"] = new_id
                 self.submit_record(record=linked_node)
 
-    # TODO remove or comment out if unused
     def get_node_with_submitter_id(self, submitter_id: str) -> dict:
         all_nodes = self.test_records
         for node_name, node_details in all_nodes.items():
