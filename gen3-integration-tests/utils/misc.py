@@ -1,7 +1,5 @@
 import os
 import time
-import pytest
-import requests
 
 from cdislogging import get_logger
 from filelock import Timeout, FileLock

@@ -322,7 +322,7 @@ class GraphDataTools:
         Submits a graph link for the node
         Args:
             record: Graph record for which graph link needs to be submitted
-            new_submitter_ids: Create new submitter ids for the graph link
+            new_submitter_ids: Whether to create new submitter ids for the graph link
             user: user having access to submit graph link
         """
         for prop in record.props:

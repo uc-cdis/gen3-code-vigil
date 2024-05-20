@@ -420,6 +420,7 @@ class TestGraphSubmitAndQuery:
         Steps:
             1. Submit graph data using sheepdog. Verify records are present.
             2. Create a file record and retrieve record from indexd
+               (an indexd record is automatically created when a sheepdog file record is created)
             3. Delete file record and delete indexd record
         """
         indexd = Indexd()
@@ -446,6 +447,7 @@ class TestGraphSubmitAndQuery:
         Steps:
             1. Submit graph data using sheepdog. Verify records are present.
             2. Create a file record with URL and retrieve record from indexd
+               (an indexd record is automatically created when a sheepdog file record is created)
             3. Delete file record and delete indexd record
         """
         indexd = Indexd()
@@ -476,7 +478,9 @@ class TestGraphSubmitAndQuery:
         Steps:
             1. Submit graph data using sheepdog. Verify records are present.
             2. Create a file record and retrieve record from indexd
+               (an indexd record is automatically created when a sheepdog file record is created)
             3. Add URL to file record and update file record.
+               (the indexd record is automatically updated when its sheepdog file record is updated)
             4. Delete file record and delete indexd record
         """
         indexd = Indexd()

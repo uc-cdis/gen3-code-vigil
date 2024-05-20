@@ -275,7 +275,6 @@ def check_indices_after_etl(test_env_namespace: str):
         raise Exception("Build number not found")
 
 
-# TODO update calling functions - create_expired_token => create_access_token
 def create_access_token(test_env_namespace, service, expired, username):
     """
     Roll a give service pod
