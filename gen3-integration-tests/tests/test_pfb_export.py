@@ -17,31 +17,23 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class TestPFBExport(object):
-    @classmethod
-    def setup_class(cls):
-        # Run ETL job after generating test data
-        gat.run_gen3_job(pytest.namespace, "etl")
-        # Rolling guppy after the ETL job run
-        # gat.roll_kube_pods(pytest.namespace, "guppy")
-        gat.kube_setup_service(pytest.namespace, "guppy")
-
     def test_pfb_export(self, page):
         """
         Scenario: Test PFB Export
         Steps:
-            1. Generate Data for jenkins env
+            1.
             2. Run ETL job and roll Guppy service after the ETL is successful
             3. Login with main_account and go to Exploration Page
             4. Click on 'Export to PFB' button and check the footer for success message
             5. Get the PreSigned URl and make a API call to get the content of the PFB file
-            6. Run PyPFB CLI command to
+            6. Run PyPFB CLI command
         """
         login_page = LoginPage()
         exploration_page = ExplorationPage()
         # Go to login page and log in with main_account user
         login_page.go_to(page)
         login_page.login(page)
-        #
+
         exploration_page.go_to_and_check_button(page)
         download_pfb_link = exploration_page.check_pfb_status(page)
         logger.debug(f"Downloadable PFB File Link : {download_pfb_link}")
