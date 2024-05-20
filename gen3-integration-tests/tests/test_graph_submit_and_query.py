@@ -29,13 +29,6 @@ def skip_consent_code_test(gdt: GraphDataTools):
     return False
 
 
-class FileNode:
-    def __init__(self, did: str, props: dict, authz: list) -> None:
-        self.did = did
-        self.props = props
-        self.authz = authz
-
-
 @pytest.mark.graph_submission
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
@@ -118,13 +111,13 @@ class TestGraphSubmitAndQuery:
         result = self.sd_tools.query_node_count(node_name)
         assert result.get("data", {}).get(f"_{node_name}_count") == count + 1
 
-    def test_submit_node_unauthenticated(self):
+    def test_submit_record_unauthenticated(self):
         """
-        Scenario: Submit node unauthenticated
+        Scenario: Submit record unauthenticated
         Steps:
             1. Generate an expired token
-            2. Create a node with expired token
-            3. Creating node should fail
+            2. Create a record with expired token
+            3. Creating record should fail
         """
         # Generate an expired token
         res = create_access_token(
@@ -138,16 +131,16 @@ class TestGraphSubmitAndQuery:
             "Content-Type": "application/json",
         }
 
-        # Create a node with expired token
-        first_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
+        # Create a record with expired token
+        first_record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         response = requests.put(
             url=pytest.root_url + "/api/v0/submission/jnkns/jenkins",
-            data=json.dumps(first_node.props),
+            data=json.dumps(first_record.props),
             headers=auth_header,
         )
         assert (
             response.status_code == 401
-        ), f"Failed to delete record. Response: {response}"
+        ), f"Should have failed to create record. Response: {response}"
 
     @pytest.mark.graph_query
     def test_submit_record_without_parent(self):
@@ -156,25 +149,23 @@ class TestGraphSubmitAndQuery:
         Steps:
             1. Create a record using sheepdog. Verify record is present.
             2. Perform a query using an invalid project_id.
-            3. Validate length of fields returned for node name is 0
-            4. Delete the record created. Verify record is deleted.
+            3. Validate no records are returned for the node
         """
-        # Verify parent node does not exist
-        parent_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
-        parent_response = self.sd_tools.query_record_fields(parent_node)
-        # Validate length of fields returned for node name is 0
-        if len(parent_response["data"][parent_node.node_name]) != 0:
-            logger.error(
-                "Found fields for {}. Response : {}".format(
-                    parent_node.node_name, parent_response
-                )
-            )
-            raise
+        # Verify parent record does not exist
+        parent_record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
+        parent_response = self.sd_tools.query_record_fields(parent_record)
 
-        # Attempt to add second node which has a dependency on another node
-        second_node = self.sd_tools.get_record_with_parent()
+        # Validate no records are returned for the node
+        assert (
+            len(parent_response["data"][parent_record.node_name]) == 0
+        ), "Expected no records for {}. Response: {}".format(
+            parent_record.node_name, parent_response
+        )
+
+        # Attempt to add second record which has a dependency on another record
+        second_record = self.sd_tools.get_record_with_parent()
         try:
-            logger.info(self.sd_tools.submit_record(record=second_node))
+            logger.info(self.sd_tools.submit_record(record=second_record))
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != 400:
                 logger.error(f"Expected 400 status code not found. Response: {e}")
@@ -185,25 +176,25 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Filter by invalid project_id
         Steps:
-            1. Create a record using sheepdog. Verify node is present.
+            1. Create a record using sheepdog. Verify record is present.
             2. Perform a query using an invalid project_id.
-            3. Validate length of fields returned for node name is 0
-            4. Delete the record created. Verify record is deleted.
+            3. Validate no records are returned for the node
         """
-        # Create a record using sheepdog. Verify node is present.
+        # Create a record using sheepdog. Verify record is present.
         record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         self.sd_tools.submit_record(record=record)
         # Perform a query using an invalid project_id.
         response = self.sd_tools.query_record_fields(
             record, {"project_id": "NOT-EXIST"}
         )
-        # Validate length of fields returned for node name is 0
+        # Validate no records are returned for the node
         if len(response["data"][record.node_name]) != 0:
             logger.error(
-                "Found fields for {}. Response : {}".format(record.node_name, response)
+                "Expected no records for {}. Response : {}".format(
+                    record.node_name, response
+                )
             )
             raise
-        self.sd_tools.delete_record(unique_id=record.unique_id)
 
     @pytest.mark.graph_query
     def test_with_path_to_first_to_last_node(self):
@@ -269,14 +260,20 @@ class TestGraphSubmitAndQuery:
 
         file_record = self.sd_tools.get_file_record()
         file_record.props["consent_codes"] += ["CC1", "CC2"]
-        self.sd_tools.submit_links_for_node(record=file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
 
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
 
-        file_node_wit_ccs = FileNode(
+        class FileRecord:
+            def __init__(self, did: str, props: dict, authz: list) -> None:
+                self.did = did
+                self.props = props
+                self.authz = authz
+
+        file_record_wit_ccs = FileRecord(
             did=file_record.indexd_guid,
             props={
                 "md5sum": file_record.props["md5sum"],
@@ -286,8 +283,8 @@ class TestGraphSubmitAndQuery:
         )
 
         # Verify indexd record was created with the correct consent codes
-        response = indexd.get_record(file_node_wit_ccs.did)
-        indexd.file_equals(response, file_node_wit_ccs)
+        response = indexd.get_record(file_record_wit_ccs.did)
+        indexd.assert_file_equals(response, file_record_wit_ccs)
 
     @pytest.mark.indexd
     @pytest.mark.portal
@@ -307,7 +304,7 @@ class TestGraphSubmitAndQuery:
         login_page = LoginPage()
         files_landing_page = FilesLandingPage()
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_links_for_node(file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -342,10 +339,9 @@ class TestGraphSubmitAndQuery:
             5. Validate file_name, GUID, Type and data_format of file record matches in metadata
             6. Get metadata record for the GUID from file record using x-bibtex format
             7. Validate file_name, GUID, Type and data_format of file record matches in metadata
-            8. Delete all records
         """
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_links_for_node(file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -363,8 +359,6 @@ class TestGraphSubmitAndQuery:
         self.sd_tools.verify_metadata_bibtex_contents(
             record=file_record, metadata=metadata
         )
-
-        self.sd_tools.delete_record(unique_id=file_record.unique_id)
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
@@ -401,10 +395,9 @@ class TestGraphSubmitAndQuery:
             4. Get metadata record for the GUID from file record using application/json format and invalid authorization
             5. Step 4 should fail with 401 error as invalid authorization was passed
             6. Verify "Authentication Error: could not parse authorization header" message was recieved
-            7. Delete all nodes
         """
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_links_for_node(file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -420,8 +413,6 @@ class TestGraphSubmitAndQuery:
             message="Authentication Error: could not parse authorization header",
         )
 
-        self.sd_tools.delete_record(unique_id=file_record.unique_id)
-
     @pytest.mark.indexd
     def test_submit_and_delete_file(self):
         """
@@ -433,7 +424,7 @@ class TestGraphSubmitAndQuery:
         """
         indexd = Indexd()
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_links_for_node(file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -441,7 +432,7 @@ class TestGraphSubmitAndQuery:
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
         rev = indexd.get_rev(record)
 
-        # Deleting file node and indexd record
+        # Deleting file record and indexd record
         self.sd_tools.delete_record(unique_id=file_record.unique_id)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
         assert (
@@ -460,7 +451,7 @@ class TestGraphSubmitAndQuery:
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_links_for_node(file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         file_record.props["urls"] = test_url
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
@@ -469,11 +460,10 @@ class TestGraphSubmitAndQuery:
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
         rev = indexd.get_rev(record)
 
-        # Check node and indexd record contents
-        indexd.file_equals(record, file_record)
+        # Check record and indexd record contents
+        indexd.assert_file_equals(record, file_record)
 
-        # Deleting file node and indexd record
-        self.sd_tools.delete_record(unique_id=file_record.unique_id)
+        # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
         assert (
             delete_record == 200
@@ -492,13 +482,13 @@ class TestGraphSubmitAndQuery:
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_links_for_node(file_record)
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         did = self.sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
         record = indexd.get_record(indexd_guid=did)
         rev = indexd.get_rev(record)
 
-        # Add URL to the node data and update it
+        # Add URL to the record data and update it
         file_record.props["urls"] = test_url
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
@@ -507,11 +497,10 @@ class TestGraphSubmitAndQuery:
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
         rev = indexd.get_rev(record)
 
-        # Check node and indexd record contents
-        indexd.file_equals(record, file_record)
+        # Check record and indexd record contents
+        indexd.assert_file_equals(record, file_record)
 
-        # Deleting file node and indexd record
-        self.sd_tools.delete_record(unique_id=file_record.unique_id)
+        # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
         assert (
             delete_record == 200

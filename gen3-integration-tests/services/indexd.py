@@ -94,7 +94,7 @@ class Indexd(object):
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
 
-    def file_equals(self, res: dict, file_node: dict) -> None:
+    def assert_file_equals(self, res: dict, file_node: dict) -> None:
         logger.info(f"Response data : {res}")
         logger.info(f"File Node with CCs : {file_node.props}")
         assert res["hashes"]["md5"] == file_node.props["md5sum"], "md5 value mismatch"

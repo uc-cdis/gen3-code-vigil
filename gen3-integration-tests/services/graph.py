@@ -307,7 +307,7 @@ class GraphDataTools:
             metadata.props["submitter_id"] = submitter_id
         if consent_codes:
             metadata.props["consent_codes"] += consent_codes
-        self.submit_links_for_node(metadata, create_new_parents, user)
+        self.submit_links_for_record(metadata, create_new_parents, user)
 
         if "id" in existing_file_node.props.keys():
             self.delete_record(unique_id=existing_file_node.unique_id)
@@ -315,7 +315,7 @@ class GraphDataTools:
         self.submit_record(record=metadata)
         return metadata'''
 
-    def submit_links_for_node(
+    def submit_links_for_record(
         self, record: GraphRecord, new_submitter_ids=False, user="main_account"
     ) -> None:
         """
@@ -339,7 +339,7 @@ class GraphDataTools:
                     )
                     raise
 
-                self.submit_links_for_node(linked_node, new_submitter_ids)
+                self.submit_links_for_record(linked_node, new_submitter_ids)
                 if new_submitter_ids:
                     res = "".join(
                         random.choices(string.ascii_lowercase + string.digits, k=5)

@@ -104,7 +104,7 @@ class Fence(object):
     @retry(times=12, delay=10, exceptions=(AssertionError))
     def wait_upload_file_updated_from_indexd_listener(indexd, file_node):
         response = indexd.get_record(file_node.did)
-        indexd.file_equals(res=response, file_node=file_node)
+        indexd.assert_file_equals(res=response, file_node=file_node)
         return response
 
     def get_user_info(self, user: str = "main_account"):
