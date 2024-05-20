@@ -84,19 +84,6 @@ class GraphDataTools:
         }
         self.sdk.create_project(self.program_name, project_record)
 
-    def delete_all_records_in_test_project(self) -> None:
-        """
-        Clean up before starting the test suite (useful when running tests locally)
-        """
-        for node_name in self.submission_order[::-1]:
-            query = f'query {{ {node_name} (project_id: "{self.project_id}", first: 0) {{ id }} }}'
-            result = self.graphql_query(query).get("data", {}).get(node_name, [])
-            for record in result:
-                logger.info(
-                    f"Pre-test clean up: deleting '{node_name}' record '{record['id']}'"
-                )
-                self.delete_record(record["id"])
-
     def load_test_records(self) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at
@@ -212,10 +199,26 @@ class GraphDataTools:
                 logger.error(f"Error while deleting record: {e.response.text}")
                 raise
 
+    def delete_all_records_in_test_project(self) -> None:
+        """
+        Following the order set by `self.submission_order`, delete all the records in
+        `self.test_records`, in the right order.
+        This only deletes records in the test project, so that tests can be run locally safely
+        and keep other data untouched.
+        """
+        for node_name in self.submission_order[::-1]:
+            query = f'query {{ {node_name} (project_id: "{self.project_id}", first: 0) {{ id }} }}'
+            result = self.graphql_query(query).get("data", {}).get(node_name, [])
+            for record in result:
+                logger.info(
+                    f"Pre-test clean up: deleting '{node_name}' record '{record['id']}'"
+                )
+                self.delete_record(record["id"])
+
     def delete_all_test_records(self) -> None:
         """
-        Following the order set by `self.submission_order`, delete all the records in `self.test_records`,
-        in the right order.
+        Same as `delete_all_records_in_test_project()`, but only delete the records that were generated and loaded into memory by `load_test_records()`.
+        YOU PROBABLY DON'T NEED THIS. JUST USE `delete_all_records_in_test_project`.
         """
         to_delete = []
         for node_name in reversed(self.submission_order):
