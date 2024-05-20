@@ -157,17 +157,19 @@ class TestGraphSubmitAndQuery:
             data=json.dumps(first_node.props),
             headers=auth_header,
         )
-        assert response.status_code == 401, f"Failed to delete record {response}"
+        assert (
+            response.status_code == 401
+        ), f"Failed to delete record. Response: {response}"
 
     @pytest.mark.graph_query
-    def test_submit_node_without_parent(self):
+    def test_submit_record_without_parent(self):
         """
-        Scenario: Submit node without parent
+        Scenario: Submit record without parent
         Steps:
-            1. Create a node using sheepdog. Verify node is present.
+            1. Create a record using sheepdog. Verify record is present.
             2. Perform a query using an invalid project_id.
             3. Validate length of fields returned for node name is 0
-            4. Delete the node created. Verify node is deleted.
+            4. Delete the record created. Verify record is deleted.
         """
         # Verify parent node does not exist
         parent_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
@@ -195,12 +197,12 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Filter by invalid project_id
         Steps:
-            1. Create a node using sheepdog. Verify node is present.
+            1. Create a record using sheepdog. Verify node is present.
             2. Perform a query using an invalid project_id.
             3. Validate length of fields returned for node name is 0
-            4. Delete the node created. Verify node is deleted.
+            4. Delete the record created. Verify record is deleted.
         """
-        # Create a node using sheepdog. Verify node is present.
+        # Create a record using sheepdog. Verify node is present.
         record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         self.sd_tools.submit_record(record=record)
         # Perform a query using an invalid project_id.
@@ -220,7 +222,7 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Test with_path_to - first to last node
         Steps:
-            1. Create nodes using sheepdog. Verify nodes are present.
+            1. Submit graph data using sheepdog. Verify records are present.
             2. Query path from first node to last node.
             3. Verify first node name is present response.
         """
@@ -240,7 +242,7 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Test with_path_to - last to first node
         Steps:
-            1. Create nodes using sheepdog. Verify nodes are present.
+            1. Submit graph data using sheepdog. Verify records are present.
             2. Query path from last node to first node.
             3. Verify last node name is present response.
         """
@@ -259,7 +261,7 @@ class TestGraphSubmitAndQuery:
         skip_consent_code_test(sd_tools),
         reason="Consent Codes not available in dictionary",
     )
-    def test_submit_data_node_with_consent_codes(self):
+    def test_submit_data_record_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
         Steps:
@@ -306,13 +308,13 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Test file landing page
         Steps:
-            1. Create nodes using sheepdog. Verify nodes are present.
-            2. Create a file node
-            3. Get core metadata using node in step 2
+            1. Submit graph data using sheepdog. Verify records are present.
+            2. Create a file record
+            3. Get core metadata using record in step 2
             4. Reteive object_id from metadata record recieved
             5. Load metadata page using object_id and verify the elements
-            6. Delete file node and delete indexd record
-            7. Delete all nodes. Verify all nodes are deleted.
+            6. Delete file record and delete indexd record
+            7. Delete all records. Verify all records are deleted.
         """
         login_page = LoginPage()
         files_landing_page = FilesLandingPage()
@@ -345,14 +347,14 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Test sheepdog metadata
         Steps:
-            1. Create nodes and verify they are added using main_account
-            2. Add file node and verify it is added using main_account
+            1. Submit graph data and verify they are added using main_account
+            2. Add file record and verify it is added using main_account
             3. Identify the endpoint of coremetadata using the peregrine version
-            4. Get metadata record for the GUID from file node using application/json format
-            5. Validate file_name, GUID, Type and data_format of file node matches in metadata
-            6. Get metadata record for the GUID from file node using x-bibtex format
-            7. Validate file_name, GUID, Type and data_format of file node matches in metadata
-            8. Delete all nodes
+            4. Get metadata record for the GUID from file record using application/json format
+            5. Validate file_name, GUID, Type and data_format of file record matches in metadata
+            6. Get metadata record for the GUID from file record using x-bibtex format
+            7. Validate file_name, GUID, Type and data_format of file record matches in metadata
+            8. Delete all records
         """
         file_record = self.sd_tools.get_file_record()
         self.sd_tools.submit_links_for_node(file_record)
@@ -382,12 +384,12 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Test sheepdog metadata invalid object_id
         Steps:
-            1. Create nodes and verify they are added using main_account
-            2. Get invalid_file node details and update did with wrong value
+            1. Submit graph data and verify they are added using main_account
+            2. Get invalid_file record details and update did with wrong value
             3. Identify the endpoint of coremetadata using the peregrine version
-            4. Get metadata record for the GUID from file node using application/json format
+            4. Get metadata record for the GUID from file record using application/json format
             5. Step 4 should fail with 404 error as object/did is not present
-            6. Delete all nodes
+            6. Delete all records
         """
         invalid_file_record = self.sd_tools.get_file_record()
         invalid_file_record.props["object_id"] = "invalid_object_id"
@@ -405,10 +407,10 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Test sheepdog metadata no permission
         Steps:
-            1. Create nodes and verify they are added using main_account
-            2. Add file node and verify it is added using main_account
+            1. Submit graph data and verify they are added using main_account
+            2. Add file record and verify it is added using main_account
             3. Identify the endpoint of coremetadata using the peregrine version
-            4. Get metadata record for the GUID from file node using application/json format and invalid authorization
+            4. Get metadata record for the GUID from file record using application/json format and invalid authorization
             5. Step 4 should fail with 401 error as invalid authorization was passed
             6. Verify "Authentication Error: could not parse authorization header" message was recieved
             7. Delete all nodes
@@ -437,9 +439,9 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Submit and delete file
         Steps:
-            1. Create nodes using sheepdog. Verify nodes are present.
-            2. Create a file node and retrieve record from indexd
-            3. Delete file node and delete indexd record
+            1. Submit graph data using sheepdog. Verify records are present.
+            2. Create a file record and retrieve record from indexd
+            3. Delete file record and delete indexd record
         """
         indexd = Indexd()
         file_record = self.sd_tools.get_file_record()
@@ -463,9 +465,9 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Submit file with URL
         Steps:
-            1. Create nodes using sheepdog. Verify nodes are present.
-            2. Create a file node with URL and retrieve record from indexd
-            3. Delete file node and delete indexd record
+            1. Submit graph data using sheepdog. Verify records are present.
+            2. Create a file record with URL and retrieve record from indexd
+            3. Delete file record and delete indexd record
         """
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
@@ -494,10 +496,10 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Submit file then update with URL
         Steps:
-            1. Create nodes using sheepdog. Verify nodes are present.
-            2. Create a file node and retrieve record from indexd
-            3. Add URL to file node and update file node.
-            4. Delete file node and delete indexd record
+            1. Submit graph data using sheepdog. Verify records are present.
+            2. Create a file record and retrieve record from indexd
+            3. Add URL to file record and update file record.
+            4. Delete file record and delete indexd record
         """
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
