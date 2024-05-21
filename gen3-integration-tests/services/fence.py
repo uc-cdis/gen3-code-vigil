@@ -14,6 +14,7 @@ class Fence(object):
         self.BASE_URL = f"{pytest.root_url}/user"
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
         self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
+        self.USER_ENDPOINT = f"{self.BASE_URL}/user"
 
     def get_access_token(self, api_key):
         """Generate access token from api key"""
@@ -44,3 +45,12 @@ class Fence(object):
         logger.info(str(file_type) + " status code : " + str(response.status_code))
         assert expectedStatus == response.status_code
         return True
+
+    def get_user_info(self, user: str = "main_account"):
+        """Get user info"""
+        user_info_response = requests.get(
+            f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
+        )
+        response_data = user_info_response.json()
+        logger.debug(f"User info {response_data}")
+        return response_data
