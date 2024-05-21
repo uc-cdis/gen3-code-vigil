@@ -238,10 +238,8 @@ class TestGraphSubmitAndQuery:
         """
         Scenario: Update file with invalid property
         Steps:
-            1. Retrieve records from Indexd
-            2. Delete all records retrieved.
-            3. Submit metatdata for file node, including consent codes
-            4. Verify indexd record was created with the correct consent codes
+            1. Submit metadata for file node, including consent codes
+            2. Verify indexd record was created with the correct consent codes
         """
         indexd = Indexd()
 

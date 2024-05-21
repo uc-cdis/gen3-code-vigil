@@ -219,7 +219,7 @@ class GraphDataTools:
 
     def delete_all_test_records(self) -> None:
         """
-        Same as `delete_all_records_in_test_project()`, but only delete the records that were generated and loaded into memory by `load_test_records()`.
+        Same as `delete_all_records_in_test_project()`, but only delete the records that were generated and loaded into memory by `_load_test_records()`.
         YOU PROBABLY DON'T NEED THIS. JUST USE `delete_all_records_in_test_project`.
         """
         to_delete = []

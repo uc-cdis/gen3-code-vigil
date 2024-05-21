@@ -15,7 +15,6 @@ class TestETL:
     # sd_tools = GraphDataTools(
     #     auth=auth, program_name="jnkns", project_code="jenkins"
     # )
-    # sd_tools.load_test_records()
     # NOTE may need to use a different project to avoid conflicts with other tests
     # that use graph data, when running tests in parallel
 
