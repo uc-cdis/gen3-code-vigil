@@ -94,14 +94,31 @@ class Indexd(object):
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
 
-    def assert_file_equals(self, res: dict, file_node: dict) -> None:
+    def file_equals(self, res: dict, file_node: dict) -> None:
         logger.info(f"Response data : {res}")
         logger.info(f"File Node with CCs : {file_node.props}")
-        assert res["hashes"]["md5"] == file_node.props["md5sum"], "md5 value mismatch"
-        assert res["size"] == file_node.props["file_size"], "file_size value mismatch"
-        assert "urls" in res.keys(), "urls key missing"
+        errors = []
+        if res["hashes"]["md5"] != file_node.props["md5sum"]:
+            errors.append(
+                f"md5 value mismatch: '{res['hashes']['md5']}' != '{file_node.props['md5sum']}'"
+            )
+        if res["size"] != file_node.props["file_size"]:
+            errors.append(
+                f"file_size value mismatch: '{res['size']}' != '{file_node.props['file_size']}'"
+            )
+        if "urls" not in res.keys():
+            errors.append(f"urls keyword missing in {res.keys()}")
         if "urls" in file_node.props.keys():
-            assert file_node.props["urls"] in res["urls"], "urls value mismatch"
+            if file_node.props["urls"] not in res["urls"]:
+                errors.append(
+                    f"urls value mismatch: {file_node.props['urls']} not in {res['urls']}"
+                )
         if "authz" in file_node.props.keys():
             for authz_val in file_node.props["authz"]:
-                assert authz_val in res["authz"], f"{authz_val} not found in authz list"
+                if authz_val not in res["authz"]:
+                    errors.append(
+                        f"{authz_val} not found in authz list: {res['authz']}"
+                    )
+        if errors:
+            logger.error(f"indexd.file_equals(): files do not match: {errors}")
+        return len(errors) == 0, errors

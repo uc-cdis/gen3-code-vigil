@@ -269,7 +269,7 @@ class TestGraphSubmitAndQuery:
 
         # Verify indexd record was created with the correct consent codes
         response = indexd.get_record(file_record_wit_ccs.did)
-        indexd.assert_file_equals(response, file_record_wit_ccs)
+        indexd.file_equals(response, file_record_wit_ccs)
 
     @pytest.mark.indexd
     @pytest.mark.portal
@@ -448,7 +448,7 @@ class TestGraphSubmitAndQuery:
         rev = indexd.get_rev(record)
 
         # Check record and indexd record contents
-        indexd.assert_file_equals(record, file_record)
+        indexd.file_equals(record, file_record)
 
         # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
@@ -487,7 +487,7 @@ class TestGraphSubmitAndQuery:
         rev = indexd.get_rev(record)
 
         # Check record and indexd record contents
-        indexd.assert_file_equals(record, file_record)
+        indexd.file_equals(record, file_record)
 
         # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
         delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
