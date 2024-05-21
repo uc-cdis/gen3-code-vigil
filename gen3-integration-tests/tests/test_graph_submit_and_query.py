@@ -33,7 +33,6 @@ def skip_consent_code_test(gdt: GraphDataTools):
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    sd_tools.load_test_records()
 
     @classmethod
     def setup_class(cls):
@@ -164,12 +163,12 @@ class TestGraphSubmitAndQuery:
 
         # Attempt to add second record which has a dependency on another record
         second_record = self.sd_tools.get_record_with_parent()
-        try:
-            logger.info(self.sd_tools.submit_record(record=second_record))
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code != 400:
-                logger.error(f"Expected 400 status code not found. Response: {e}")
-                raise
+        # Validate submit_record fails with status code as 400
+        with pytest.raises(
+            requests.exceptions.HTTPError,
+            match="400",
+        ):
+            self.sd_tools.submit_record(record=second_record)
 
     @pytest.mark.graph_query
     def test_filter_by_invalid_project_id(self):
@@ -189,12 +188,7 @@ class TestGraphSubmitAndQuery:
         )
         # Validate no records are returned for the node
         if len(response["data"][record.node_name]) != 0:
-            logger.error(
-                "Expected no records for {}. Response : {}".format(
-                    record.node_name, response
-                )
-            )
-            raise
+            raise f"Expected no records for {record.node_name}. Response : {response}"
 
     @pytest.mark.graph_query
     def test_with_path_to_first_to_last_node(self):
@@ -249,14 +243,7 @@ class TestGraphSubmitAndQuery:
             3. Submit metatdata for file node, including consent codes
             4. Verify indexd record was created with the correct consent codes
         """
-        indexd_auth = Gen3Auth(refresh_token=pytest.api_keys["indexing_account"])
-        gen3_indexd = Gen3Index(auth_provider=indexd_auth)
         indexd = Indexd()
-        records = gen3_indexd.get_all_records()
-
-        # Delete indexd records
-        for record in records:
-            gen3_indexd.delete_record(guid=record["did"])
 
         file_record = self.sd_tools.get_file_record()
         file_record.props["consent_codes"] += ["CC1", "CC2"]
@@ -312,7 +299,7 @@ class TestGraphSubmitAndQuery:
         metadata = self.sd_tools.get_core_metadata(
             file=file_record, user="main_account"
         )
-        self.sd_tools.verify_metadata_json_contents(
+        self.sd_tools.verify_core_metadata_json_contents(
             record=file_record, metadata=metadata
         )
 
@@ -328,9 +315,9 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
-    def test_sheepdog_metadata(self):
+    def test_sheepdog_core_metadata(self):
         """
-        Scenario: Test sheepdog metadata
+        Scenario: Test sheepdog core metadata
         Steps:
             1. Submit graph data and verify they are added using main_account
             2. Add file record and verify it is added using main_account
@@ -349,22 +336,22 @@ class TestGraphSubmitAndQuery:
         metadata = self.sd_tools.get_core_metadata(
             file=file_record, user="main_account"
         )
-        self.sd_tools.verify_metadata_json_contents(
+        self.sd_tools.verify_core_metadata_json_contents(
             record=file_record, metadata=metadata
         )
 
         metadata = self.sd_tools.get_core_metadata(
             file=file_record, user="main_account", format="x-bibtex"
         )
-        self.sd_tools.verify_metadata_bibtex_contents(
+        self.sd_tools.verify_core_metadata_bibtex_contents(
             record=file_record, metadata=metadata
         )
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
-    def test_sheepdog_metadata_invalid_object_id(self):
+    def test_sheepdog_core_metadata_invalid_object_id(self):
         """
-        Scenario: Test sheepdog metadata invalid object_id
+        Scenario: Test sheepdog core metadata invalid object_id
         Steps:
             1. Submit graph data and verify they are added using main_account
             2. Get invalid_file record details and update did with wrong value
@@ -379,15 +366,15 @@ class TestGraphSubmitAndQuery:
         metadata = self.sd_tools.get_core_metadata(
             file=invalid_file_record, user="main_account", expected_status=404
         )
-        self.sd_tools.see_metadata_error(
+        self.sd_tools.see_core_metadata_error(
             metadata=metadata, message='object_id "invalid_object_id" not found'
         )
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
-    def test_sheepdog_metadata_no_permission(self):
+    def test_sheepdog_core_metadata_no_permission(self):
         """
-        Scenario: Test sheepdog metadata no permission
+        Scenario: Test sheepdog core metadata no permission
         Steps:
             1. Submit graph data and verify they are added using main_account
             2. Add file record and verify it is added using main_account
@@ -408,7 +395,7 @@ class TestGraphSubmitAndQuery:
             expected_status=401,
             invalid_authorization=True,
         )
-        self.sd_tools.see_metadata_error(
+        self.sd_tools.see_core_metadata_error(
             metadata=metadata,
             message="Authentication Error: could not parse authorization header",
         )
