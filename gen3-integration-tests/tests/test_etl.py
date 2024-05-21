@@ -2,25 +2,26 @@ import pytest
 import os
 
 import utils.gen3_admin_tasks as gat
+from services.graph import GraphDataTools
 
+from gen3.auth import Gen3Auth
 from cdislogging import get_logger
+
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.tube
 class TestETL:
-    # TODO we may need to add `setup_method` with test data submission:
-    # auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    # sd_tools = GraphDataTools(
-    #     auth=auth, program_name="jnkns", project_code="jenkins"
-    # )
-    # NOTE may need to use a different project to avoid conflicts with other tests
-    # that use graph data, when running tests in parallel
-
     @classmethod
     def setup_class(cls):
         gat.clean_up_indices(pytest.namespace)
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins2"
+        )
+        logger.info("Submitting test records")
+        sd_tools.submit_all_test_records()
 
     @classmethod
     def teardown_class(cls):

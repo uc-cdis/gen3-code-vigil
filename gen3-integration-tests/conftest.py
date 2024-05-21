@@ -56,8 +56,6 @@ def pytest_configure(config):
     if not hasattr(config, "workerinput"):
         # Get configuration files
         setup.get_configuration_files()
-        # Generate test data (this does not submit it)
-        setup.generate_graph_data()
 
     # Compute root url for portal
     try:
