@@ -17,7 +17,7 @@ from datasimulator.main import (
     run_submission_order_generation,
 )
 
-
+from utils.misc import retry
 from utils import TEST_DATA_PATH_OBJECT
 from packaging.version import Version
 
@@ -147,6 +147,7 @@ class GraphDataTools:
         }
         self.sdk.create_project(self.program_name, project_record)
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def _load_test_records(self) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at
