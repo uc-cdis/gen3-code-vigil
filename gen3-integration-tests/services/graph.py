@@ -129,23 +129,33 @@ class GraphDataTools:
         Creates a program record and a project record. Uses the `program_name` and `project_code`
         set during the initialization of the `GraphDataTools` instance.
         """
-        logger.info(
-            f"Creating program '{self.program_name}' and project '{self.project_code}'"
-        )
-        program_record = {
-            "type": "program",
-            "name": self.program_name,
-            "dbgap_accession_number": self.program_name,
-        }
-        self.sdk.create_program(program_record)
+        # Check if program exists or not
+        if (
+            f"/v0/submission/{self.program_name}"
+            not in self.sdk.get_programs()["links"]
+        ):
+            logger.info(
+                f"Creating program '{self.program_name}' and project '{self.project_code}'"
+            )
+            program_record = {
+                "type": "program",
+                "name": self.program_name,
+                "dbgap_accession_number": self.program_name,
+            }
+            self.sdk.create_program(program_record)
 
-        project_record = {
-            "type": "project",
-            "code": self.project_code,
-            "name": self.project_code,
-            "dbgap_accession_number": self.project_code,
-        }
-        self.sdk.create_project(self.program_name, project_record)
+        # Check if project exists or not
+        if (
+            f"/v0/submission/{self.program_name}/{self.project_code}"
+            not in self.sdk.get_projects(self.program_name)["links"]
+        ):
+            project_record = {
+                "type": "project",
+                "code": self.project_code,
+                "name": self.project_code,
+                "dbgap_accession_number": self.project_code,
+            }
+            self.sdk.create_project(self.program_name, project_record)
 
     @retry(times=3, delay=10, exceptions=(AssertionError))
     def _load_test_records(self) -> None:
