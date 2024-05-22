@@ -6,6 +6,7 @@ import pytest
 import random
 import string
 import requests
+import time
 
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
@@ -70,6 +71,7 @@ class GraphDataTools:
         self.test_records = {}
         self._create_program_and_project()
         self._generate_graph_data()
+        time.sleep(1)
         self._load_test_records()
 
     def _generate_graph_data(self) -> None:
@@ -120,7 +122,7 @@ class GraphDataTools:
         logger.info("Done generating data:")
         for f_path in sorted(os.listdir(data_path)):
             with open(data_path / f_path, "r") as f:
-                logger.debug(f"{f_path}:\n{f.read()}")
+                logger.info(f"{f_path}:\n{f.read()}")
 
     def _create_program_and_project(self) -> None:
         """
@@ -167,7 +169,8 @@ class GraphDataTools:
             self.submission_order.append(node_name)
             file_path = self.test_data_path / f"{node_name}.json"
             try:
-                props = json.loads(file_path.read_text())
+                with file_path.open() as fp:
+                    props = json.load(fp)
             except Exception:
                 logger.error(f"Unable to load file '{node_name}.json'")
                 raise

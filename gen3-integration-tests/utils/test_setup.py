@@ -6,7 +6,6 @@ from cdislogging import get_logger
 from pathlib import Path
 
 from services.fence import Fence
-from services.graph import GraphDataTools
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
