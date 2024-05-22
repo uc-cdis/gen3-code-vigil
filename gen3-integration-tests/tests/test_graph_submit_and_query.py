@@ -36,7 +36,6 @@ class TestGraphSubmitAndQuery:
 
     @classmethod
     def setup_class(cls):
-        cls.sd_tools.create_program_and_project()
         cls.sd_tools.delete_all_records_in_test_project()
 
     def teardown_method(self, method):
