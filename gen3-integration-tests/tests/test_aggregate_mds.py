@@ -3,14 +3,12 @@ import os
 import uuid
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 
 from utils import TEST_DATA_PATH_OBJECT
 import utils.gen3_admin_tasks as gat
 
 from services.metadataservice import MetadataService
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.mds

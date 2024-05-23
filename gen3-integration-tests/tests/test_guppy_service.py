@@ -4,11 +4,8 @@ GUPPY SERVICE
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from services.guppy import Guppy
-
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.guppy

@@ -5,10 +5,8 @@ import requests
 
 from utils.misc import retry
 
-from cdislogging import get_logger
+from utils import logger
 from gen3.auth import Gen3Auth
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class Fence(object):

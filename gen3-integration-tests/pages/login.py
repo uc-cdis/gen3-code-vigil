@@ -2,13 +2,11 @@
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from playwright.sync_api import Page, expect
 
 from utils.test_execution import screenshot
 from utils.gen3_admin_tasks import get_portal_config
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class LoginPage(object):

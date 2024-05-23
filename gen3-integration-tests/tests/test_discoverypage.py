@@ -2,7 +2,7 @@ import json
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from uuid import uuid4
 
 from pages import login, discovery
@@ -11,8 +11,6 @@ from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks as gat
 from services.indexd import Indexd
 from services.metadataservice import MetadataService
 from utils.test_execution import screenshot
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.workspace

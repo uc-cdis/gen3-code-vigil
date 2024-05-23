@@ -5,9 +5,7 @@ import requests
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from uuid import uuid4
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 class Indexd(object):

@@ -8,7 +8,7 @@ import random
 import string
 import requests
 
-from cdislogging import get_logger
+from utils import logger
 from gen3.auth import Gen3Auth
 from gen3.submission import Gen3Submission
 from datasimulator.main import (
@@ -20,9 +20,6 @@ from datasimulator.main import (
 from utils.misc import retry
 from utils import TEST_DATA_PATH_OBJECT
 from packaging.version import Version
-
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class GraphRecord:
@@ -56,7 +53,6 @@ class GraphDataTools:
     def __init__(
         self, auth: Gen3Auth, program_name: str = "jnkns", project_code: str = "jenkins"
     ) -> None:
-        self.logger = logger
         self.sdk = Gen3Submission(auth_provider=auth)
         self.BASE_URL = "/api/v0/submission/"
         self.GRAPHQL_VERSION_ENDPOINT = "/api/search/_version"
@@ -74,7 +70,7 @@ class GraphDataTools:
         self._generate_graph_data()
         open_files = psutil.Process(os.getpid()).open_files()
         for open_file in open_files:
-            self.logger.info(f"Closing file: {open_file.path}")
+            logger.info(f"Closing file: {open_file.path}")
             os.close(open_file.fd)
         self._load_test_records()
 
@@ -88,7 +84,7 @@ class GraphDataTools:
                 (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
             )
         except FileNotFoundError:
-            self.logger.error(
+            logger.error(
                 "manifest.json not found. It should have been fetched by `get_configuration_files`..."
             )
             raise
@@ -123,10 +119,10 @@ class GraphDataTools:
             graph=graph, data_path=data_path, node_name=None
         )
 
-        self.logger.info("Done generating data:")
+        logger.info("Done generating data:")
         for f_path in sorted(os.listdir(data_path)):
             with open(data_path / f_path, "r") as f:
-                self.logger.info(f"{f_path}:\n{f.read()}")
+                logger.info(f"{f_path}:\n{f.read()}")
 
     def _create_program_and_project(self) -> None:
         """
@@ -187,7 +183,7 @@ class GraphDataTools:
                 with file_path.open() as fp:
                     props = json.load(fp)
             except Exception:
-                self.logger.error(f"Unable to load file '{node_name}.json'")
+                logger.error(f"Unable to load file '{node_name}.json'")
                 raise
             if type(props) == list:
                 if len(props) == 1:

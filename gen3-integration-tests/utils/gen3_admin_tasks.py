@@ -4,13 +4,11 @@ import requests
 import time
 
 from dotenv import load_dotenv
-from cdislogging import get_logger
+from utils import logger
 
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_portal_config(test_env_namespace):

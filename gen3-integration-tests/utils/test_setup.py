@@ -2,13 +2,11 @@ import json
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from pathlib import Path
 
 from services.fence import Fence
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_api_key_and_auth_header(user):

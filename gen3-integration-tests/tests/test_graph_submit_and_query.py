@@ -3,7 +3,7 @@ import os
 import pytest
 import requests
 
-from cdislogging import get_logger
+from utils import logger
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from gen3.submission import Gen3SubmissionQueryError
@@ -12,8 +12,6 @@ from services.indexd import Indexd
 from services.graph import GraphDataTools
 from pages.login import LoginPage
 from pages.files_landing_page import FilesLandingPage
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def skip_consent_code_test(gdt: GraphDataTools):

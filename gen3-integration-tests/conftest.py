@@ -2,7 +2,7 @@ import json
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 
 from utils import test_setup as setup
 from utils import TEST_DATA_PATH_OBJECT
@@ -11,8 +11,6 @@ from utils import TEST_DATA_PATH_OBJECT
 from dotenv import load_dotenv
 
 load_dotenv()
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def pytest_configure(config):
