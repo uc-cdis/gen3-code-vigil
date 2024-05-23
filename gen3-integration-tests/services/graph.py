@@ -75,6 +75,7 @@ class GraphDataTools:
         open_files = psutil.Process(os.getpid()).open_files()
         for open_file in open_files:
             self.logger.info(f"Closing file: {open_file.path}")
+            os.close(open_file.fd)
         self._load_test_records()
 
     def _generate_graph_data(self) -> None:
