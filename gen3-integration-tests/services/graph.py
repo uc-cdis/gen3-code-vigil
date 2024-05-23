@@ -2,11 +2,11 @@ import copy
 import json
 import os
 import uuid
+import psutil
 import pytest
 import random
 import string
 import requests
-import time
 
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
@@ -56,6 +56,7 @@ class GraphDataTools:
     def __init__(
         self, auth: Gen3Auth, program_name: str = "jnkns", project_code: str = "jenkins"
     ) -> None:
+        self.logger = logger
         self.sdk = Gen3Submission(auth_provider=auth)
         self.BASE_URL = "/api/v0/submission/"
         self.GRAPHQL_VERSION_ENDPOINT = "/api/search/_version"
@@ -71,7 +72,9 @@ class GraphDataTools:
         self.test_records = {}
         self._create_program_and_project()
         self._generate_graph_data()
-        time.sleep(1)
+        open_files = psutil.Process(os.getpid()).open_files()
+        for open_file in open_files:
+            self.logger.info(f"Closing file: {open_file.path}")
         self._load_test_records()
 
     def _generate_graph_data(self) -> None:
@@ -84,7 +87,7 @@ class GraphDataTools:
                 (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
             )
         except FileNotFoundError:
-            logger.error(
+            self.logger.error(
                 "manifest.json not found. It should have been fetched by `get_configuration_files`..."
             )
             raise
@@ -119,10 +122,10 @@ class GraphDataTools:
             graph=graph, data_path=data_path, node_name=None
         )
 
-        logger.info("Done generating data:")
+        self.logger.info("Done generating data:")
         for f_path in sorted(os.listdir(data_path)):
             with open(data_path / f_path, "r") as f:
-                logger.info(f"{f_path}:\n{f.read()}")
+                self.logger.info(f"{f_path}:\n{f.read()}")
 
     def _create_program_and_project(self) -> None:
         """
@@ -183,7 +186,7 @@ class GraphDataTools:
                 with file_path.open() as fp:
                     props = json.load(fp)
             except Exception:
-                logger.error(f"Unable to load file '{node_name}.json'")
+                self.logger.error(f"Unable to load file '{node_name}.json'")
                 raise
             if type(props) == list:
                 if len(props) == 1:
