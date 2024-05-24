@@ -4,7 +4,7 @@ from pathlib import Path
 import requests
 import time
 
-from cdislogging import get_logger
+from utils import logger
 from datetime import datetime
 
 from utils.jenkins import JenkinsJob
@@ -12,8 +12,6 @@ from utils.jenkins import JenkinsJob
 from dotenv import load_dotenv
 
 load_dotenv()
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def wait_for_quay_build(repo, tag):
