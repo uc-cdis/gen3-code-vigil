@@ -40,12 +40,6 @@ class FileNode:
 @pytest.mark.sheepdog
 class TestDataUpload:
     def setup_method(self, method):
-        # Delete local small file created in setup_method
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins"
-        )
-        sd_tools.delete_nodes()
         # Create a local small file to upload. Store its size and hash
         with open(file_path, "w") as file:
             file.write(file_content)
@@ -56,8 +50,14 @@ class TestDataUpload:
     def teardown_method(self, method):
         os.remove(file_path)
         os.remove(big_file_path)
+        # Delete all test records at the end of each test
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        sd_tools = GraphDataTools(
+            auth=auth, program_name="jnkns", project_code="jenkins"
+        )
+        sd_tools.delete_all_records_in_test_project()
 
-    '''def test_file_upload_and_download_via_api(self):
+    def test_file_upload_and_download_via_api(self):
         """
         Scenario: Test Upload and Download via api
         Steps:
@@ -91,9 +91,12 @@ class TestDataUpload:
             indexd.get_record(indexd_guid=file_node.did)
             # fail to submit metadata for this file without hash and size
             try:
-                metadata_response = sd_tools.submit_graph_and_file_metadata(
-                    file_guid, file_size, file_md5
-                )
+                file_record = sd_tools.get_file_record()
+                file_record.props["object_id"] = file_guid
+                file_record.props["file_size"] = file_size
+                file_record.props["md5sum"] = file_md5
+                sd_tools.submit_links_for_record(file_record)
+                sd_tools.submit_record(record=file_record)
             except Exception as e:
                 assert (
                     "400" in f"{e}"
@@ -118,9 +121,12 @@ class TestDataUpload:
                 id=file_guid, user="auxAcct1_account", expectedStatus=401
             )
             # submit metadata for this file
-            metadata_response = sd_tools.submit_graph_and_file_metadata(
-                file_guid, file_size, file_md5
-            )
+            file_record = sd_tools.get_file_record()
+            file_record.props["object_id"] = file_guid
+            file_record.props["file_size"] = file_size
+            file_record.props["md5sum"] = file_md5
+            sd_tools.submit_links_for_record(file_record)
+            sd_tools.submit_record(record=file_record)
             # a user who is not the uploader can now download the file
             signed_url_res = fence.createSignedUrl(
                 id=file_guid, user="auxAcct1_account", expectedStatus=200
@@ -198,9 +204,12 @@ class TestDataUpload:
             assert response == 204, f"File not deleted. Response : {response}"
             # no metadata linking after delete
             try:
-                metadata_response = sd_tools.submit_graph_and_file_metadata(
-                    file_guid, file_size, file_md5
-                )
+                file_record = sd_tools.get_file_record()
+                file_record.props["object_id"] = file_guid
+                file_record.props["file_size"] = file_size
+                file_record.props["md5sum"] = file_md5
+                sd_tools.submit_links_for_record(file_record)
+                sd_tools.submit_record(record=file_record)
             except Exception as e:
                 assert (
                     "400" in f"{e}"
@@ -208,7 +217,7 @@ class TestDataUpload:
             # no download after delete
             fence.createSignedUrl(id=file_guid, user="main_account", expectedStatus=404)
         finally:
-            indexd.delete_files(created_guids)'''
+            indexd.delete_files(created_guids)
 
     def test_upload_the_same_file_twice(self):
         """
@@ -248,9 +257,13 @@ class TestDataUpload:
             # wait for the indexd listener to add size, hashes and URL to the record
             data_upload.wait_upload_file_updated_from_indexd_listener(indexd, file_node)
             # submit metadata for this file
-            metadata_response = sd_tools.submit_graph_and_file_metadata(
-                file_guid, file_size, file_md5
-            )
+            file_record = sd_tools.get_file_record()
+            file_record.props["object_id"] = file_guid
+            file_record.props["file_size"] = file_size
+            file_record.props["md5sum"] = file_md5
+            sd_tools.submit_links_for_record(file_record)
+            sd_tools.submit_record(record=file_record)
+
             # check that the file can be downloaded
             signed_url_res = fence.createSignedUrl(
                 id=file_guid, user="auxAcct1_account", expectedStatus=200
@@ -269,14 +282,13 @@ class TestDataUpload:
             data_upload.wait_upload_file_updated_from_indexd_listener(indexd, file_node)
             # submit metadata for this file
             # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
-            sd_tools.submit_graph_and_file_metadata(
-                file_guid,
-                file_size,
-                file_md5,
-                "submitter_id_new_value",
-                None,
-                True,
-            )
+            file_record = sd_tools.get_file_record()
+            file_record.props["object_id"] = file_guid
+            file_record.props["file_size"] = file_size
+            file_record.props["md5sum"] = file_md5
+            file_record.props["submitter_id"] = "submitter_id_new_value"
+            sd_tools.submit_links_for_record(file_record, new_submitter_ids=True)
+            sd_tools.submit_record(record=file_record)
             # check that the file can be downloaded
             signed_url_res = fence.createSignedUrl(
                 id=file_guid, user="auxAcct1_account", expectedStatus=200
