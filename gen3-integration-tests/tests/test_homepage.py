@@ -1,11 +1,9 @@
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 
 from pages import home, login
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.portal

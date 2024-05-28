@@ -7,7 +7,7 @@ import pytest
 import math
 import datetime
 
-from cdislogging import get_logger
+from utils import logger
 
 from services.audit import Audit
 from services.indexd import Indexd
@@ -15,8 +15,6 @@ from services.fence import Fence
 from pages.login import LoginPage
 from utils.gen3_admin_tasks import update_audit_service_logging
 from playwright.sync_api import Page
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.audit

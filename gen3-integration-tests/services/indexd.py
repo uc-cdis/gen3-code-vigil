@@ -5,9 +5,7 @@ import requests
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from uuid import uuid4
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 class Indexd(object):
@@ -54,6 +52,7 @@ class Indexd(object):
             return record
         except Exception as e:
             logger.exception(msg=f"Cannot find indexd record {e}")
+            raise
 
     def get_rev(self, json_data: dict):
         """Get revision from indexd record"""
@@ -92,3 +91,32 @@ class Indexd(object):
                 index.delete_record(guid=guid)
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
+
+    def file_equals(self, res: dict, file_record: dict) -> None:
+        logger.info(f"Response data : {res}")
+        logger.info(f"File Node: {file_record.props}")
+        errors = []
+        if res["hashes"]["md5"] != file_record.props["md5sum"]:
+            errors.append(
+                f"md5 value mismatch: '{res['hashes']['md5']}' != '{file_record.props['md5sum']}'"
+            )
+        if res["size"] != file_record.props["file_size"]:
+            errors.append(
+                f"file_size value mismatch: '{res['size']}' != '{file_record.props['file_size']}'"
+            )
+        if "urls" not in res.keys():
+            errors.append(f"urls keyword missing in {res.keys()}")
+        if "urls" in file_record.props.keys():
+            if file_record.props["urls"] not in res["urls"]:
+                errors.append(
+                    f"urls value mismatch: {file_record.props['urls']} not in {res['urls']}"
+                )
+        if "authz" in file_record.props.keys():
+            for authz_val in file_record.props["authz"]:
+                if authz_val not in res["authz"]:
+                    errors.append(
+                        f"{authz_val} not found in authz list: {res['authz']}"
+                    )
+        if errors:
+            logger.error(f"indexd.file_equals(): files do not match: {errors}")
+        return len(errors) == 0, errors

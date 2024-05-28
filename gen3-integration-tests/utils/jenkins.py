@@ -2,9 +2,8 @@ import os
 import requests
 import time
 import traceback
-from cdislogging import get_logger
+from utils import logger
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 # Jobs listed on https://jenkins.planx-pla.net/view/CI%20Jobs/
 

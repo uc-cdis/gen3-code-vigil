@@ -3,9 +3,7 @@ import subprocess
 
 from pathlib import Path
 
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 def install_gen3_client(path):
