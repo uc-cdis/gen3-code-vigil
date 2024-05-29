@@ -34,11 +34,11 @@ class TestGraphSubmitAndQuery:
 
     @classmethod
     def setup_class(cls):
-        cls.sd_tools.delete_all_records_in_test_project()
+        cls.sd_tools.delete_nodes()
 
     def teardown_method(self, method):
         # Delete all test records at the end of each test
-        self.sd_tools.delete_all_records_in_test_project()
+        self.sd_tools.delete_nodes()
 
     @pytest.mark.graph_query
     def test_submit_query_and_delete_records(self):

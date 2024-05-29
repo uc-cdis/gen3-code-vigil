@@ -278,6 +278,18 @@ class GraphDataTools:
                 raise
         return result
 
+    def delete_nodes(self):
+        """
+        Delete a list of nodes from the graph data database.
+        """
+        try:
+            self.sdk.delete_nodes(
+                self.program_name, self.project_code, self.submission_order[::-1]
+            )
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"Error while deleting nodes: {e.response.text}")
+            raise
+
     def delete_all_records_in_test_project(self) -> None:
         """
         Following the order set by `self.submission_order`, delete all the records in
