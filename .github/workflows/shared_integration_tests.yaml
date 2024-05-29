@@ -222,14 +222,6 @@ jobs:
               SECONDS=$(( ($milliseconds / 1000) % 60 ))
               echo "DURATION=${MINUTES}m ${SECONDS}s" >> $GITHUB_ENV
 
-          - name: Render md report to the PR
-            id: generate_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
           - name: Upload allure report to S3
             id: upload_allure_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
@@ -240,29 +232,36 @@ jobs:
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
               AWS_DEFAULT_REGION: 'us-east-1'
 
-          - name: Publish allure report link to the PR
-            id: gh_comment_allure_link
-            if: ${{ env.SKIP_TESTS != 'true' && steps.upload_allure_report.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body "Please find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" -R $REPO_FN
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
-          - name: Publish pod logs url to the PR
-            id: gh_comment_pod_logs_link
-            if: ${{ env.SKIP_TESTS != 'true' && steps.archive_pod_logs.outcome == 'success' }}
+          - name: Generate markdown report
+            id: generate_md_report
+            continue-on-error: true
+            run: |
+              if [ ! -f "output/report.md" ]; then
+                touch "output/report.md"
+              fi
+              if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
+                echo "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
+              fi
+              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
+                echo "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+              fi
+
+          - name: Render report to the PR
+            id: publish_md_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body "Please find the ci env pod logs [here]($POD_LOGS_URL)" -R $REPO_FN
+            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          - name: Publish allure report and pod logs url to Slack
+
+          - name: Publish report to Slack
             id: slack_notify
             if: ${{ env.SKIP_TESTS != 'true' && steps.gh_comment_pod_logs_link.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
