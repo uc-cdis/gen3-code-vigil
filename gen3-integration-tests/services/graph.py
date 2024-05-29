@@ -278,7 +278,7 @@ class GraphDataTools:
                 raise
         return result
 
-    def delete_nodes(self):
+    def delete_all_records(self):
         """
         Delete a list of nodes from the graph data database.
         """
@@ -289,35 +289,6 @@ class GraphDataTools:
         except requests.exceptions.HTTPError as e:
             logger.error(f"Error while deleting nodes: {e.response.text}")
             raise
-
-    def delete_all_records_in_test_project(self) -> None:
-        """
-        Following the order set by `self.submission_order`, delete all the records in
-        `self.test_records`, in the right order.
-        This only deletes records in the test project, so that tests can be run locally safely
-        and keep other data untouched.
-        """
-        for node_name in self.submission_order[::-1]:
-            query = f'query {{ {node_name} (project_id: "{self.project_id}", first: 0) {{ id }} }}'
-            result = self.graphql_query(query).get("data", {}).get(node_name, [])
-            for record in result:
-                logger.info(
-                    f"Pre-test clean up: deleting '{node_name}' record '{record['id']}'"
-                )
-                self.delete_record(record["id"])
-
-    def delete_all_test_records(self) -> None:
-        """
-        Same as `delete_all_records_in_test_project()`, but only delete the records that were generated and loaded into memory by `_load_test_records()`.
-        YOU PROBABLY DON'T NEED THIS. JUST USE `delete_all_records_in_test_project`.
-        """
-        to_delete = []
-        for node_name in reversed(self.submission_order):
-            record = self.test_records[node_name]
-            if not record.unique_id:
-                continue  # this record was never submitted
-            to_delete.append(record.unique_id)
-        self.delete_records(to_delete)
 
     def graphql_query(self, query_text: str, variables: dict = None) -> dict:
         """
