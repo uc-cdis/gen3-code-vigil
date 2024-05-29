@@ -240,16 +240,21 @@ jobs:
 
           - name: Generate markdown report
             id: generate_md_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true
+            # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
-              if [ ! -f "output/report.md" ]; then
-                touch "output/report.md"
-              fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
+                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-                echo "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+                if [ ! -d output ]; then
+                  mkdir output
+                fi
+                if [ ! -f "output/report.md" ]; then
+                  touch "output/report.md"
+                fi
+                echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
               fi
 
           - name: Render report to the PR
@@ -259,7 +264,6 @@ jobs:
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 
           - name: Publish report to Slack
             id: slack_notify
