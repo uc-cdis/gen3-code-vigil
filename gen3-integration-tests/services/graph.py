@@ -406,6 +406,7 @@ class GraphDataTools:
                 linked_node = self.get_node_with_submitter_id(
                     record.props[prop]["submitter_id"]
                 )
+                logger.info(linked_node.node_name)
                 if not linked_node:
                     raise f"Record has a link to {record.props[prop]['submitter_id']} but we can't find that record"
 
