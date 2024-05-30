@@ -1,10 +1,5 @@
 import os
 import requests
-import json
-import time
-
-from botocore.exceptions import ClientError
-from botocore.config import Config
 
 from cdislogging import get_logger
 from utils.misc import retry
