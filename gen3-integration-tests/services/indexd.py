@@ -31,9 +31,14 @@ class Indexd(object):
                 "size": files[file]["size"],
                 "file_name": files[file]["filename"],
                 "did": files[file]["did"],
-                "urls": [files[file]["link"]],
-                "authz": files[file]["authz"],
             }
+
+            if "link" in files[file].keys():
+                data["urls"] = [files[file]["link"]]
+            if "authz" in files[file].keys():
+                data["authz"] = files[file]["authz"]
+            if "acl" in files[file].keys():
+                data["acl"] = files[file]["acl"]
 
             try:
                 logger.info(data)
