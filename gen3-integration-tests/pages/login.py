@@ -2,13 +2,11 @@
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from playwright.sync_api import Page, expect
 
 from utils.test_execution import screenshot
 from utils.gen3_admin_tasks import get_portal_config
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class LoginPage(object):
@@ -23,7 +21,7 @@ class LoginPage(object):
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
         self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
         self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
-        self.ORCID_USERNAME_INPUT = "//input[@id='username']"
+        self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
         self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
@@ -48,15 +46,12 @@ class LoginPage(object):
         )
         if idp == "ORCID":
             page.locator("//button[normalize-space()='ORCID Login']").click()
-            page.wait_for_timeout(3000)
             self.orcid_login(page)
         elif idp == "RAS":
             page.locator("//button[normalize-space()='Login from RAS']").click()
-            page.wait_for_timeout(3000)
             self.ras_login(page)
         else:
             page.locator(self.LOGIN_BUTTON).click()
-        page.wait_for_timeout(3000)
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
@@ -75,10 +70,6 @@ class LoginPage(object):
         ), "Access token cookie not found after login"
 
     def orcid_login(self, page: Page):
-        # Handle the Cookie Settings Pop-Up
-        if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
-            page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
-            page.wait_for_timeout(3000)
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -86,9 +77,11 @@ class LoginPage(object):
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
         )
-        page.screenshot(path="output/TempCheck.png", full_page=True)
+        # Handle the Cookie Settings Pop-Up
+        if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
+            page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
+        screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
-        page.wait_for_timeout(3000)
 
     def ras_login(self, page: Page):
         # Perform RAS Login
@@ -98,10 +91,8 @@ class LoginPage(object):
         page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
         ras_login_button.click()
         # Handle the Grant access button
-        page.wait_for_timeout(3000)
-        if page.locator(self.RAS_GRANT_BUTTON).is_visible():
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=3000):
             page.locator(self.RAS_GRANT_BUTTON).click()
-        page.wait_for_timeout(3000)
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
