@@ -2,12 +2,10 @@
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from playwright.sync_api import expect, Page
 from utils.test_execution import screenshot
 from utils import TEST_DATA_PATH_OBJECT
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class IndexingPage(object):
