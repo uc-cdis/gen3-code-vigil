@@ -2,9 +2,7 @@
 name: Integration Tests
 
 on:
-  pull_request:
-    paths-ignore:
-      - '**/README.md'
+  pull_request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
