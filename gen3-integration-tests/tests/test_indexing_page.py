@@ -2,15 +2,11 @@ import pytest
 import requests
 import os
 import utils.gen3_admin_tasks as gat
+from utils import logger
 
 from pages.login import LoginPage
 from pages.indexing_page import IndexingPage
 from services.indexd import Indexd
-from playwright.sync_api import expect
-
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG LEVEL", "info"))
 
 
 @pytest.mark.portal
@@ -22,6 +18,12 @@ class TestIndexingPage:
     expected_result = (
         f"{test_guid},s3://cdis-presigned-url-test/testdata,,jenkins2,{test_hash},13,"
     )
+
+    def teardown_class(cls):
+        # Delete the indexd record after the test
+        indexd = Indexd()
+        delete_record = indexd.delete_record(cls.test_guid)
+        assert delete_record == 200, f"Failed to delete record {cls.test_guid}"
 
     def test_indexing_upload_valid_manifest(self, page):
         """
@@ -48,8 +50,10 @@ class TestIndexingPage:
         # Get the indexd record and check if the hash value matches to the test_hash value
         index_record = indexd.get_record(self.test_guid)
         indexd_record_hash = index_record["hashes"]["md5"]
-        logger.debug(indexd_record_hash)
-        expect(indexd_record_hash).to.equal(self.test_hash)
+        logger.info(indexd_record_hash)
+        assert (
+            indexd_record_hash == self.test_hash
+        ), f"Expected MD5 hash {self.test_hash}, but got {indexd_record_hash}"
 
     def test_indexing_download(self, page):
         """
