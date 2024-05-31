@@ -9,7 +9,7 @@ import utils.gen3_admin_tasks as gat
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 # TODO : enable this test after the manifest PRs are ready to roll
-@pytest.mark.skip
+@pytest.mark.wip
 class TestDataGuids:
     variables = {}
     dataguids_url = "https://dataguids.org"
