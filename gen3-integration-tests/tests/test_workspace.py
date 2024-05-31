@@ -1,7 +1,7 @@
 """
 Hatchery Test
 """
-import os
+
 import pytest
 
 from utils import logger
@@ -33,10 +33,13 @@ class TestWorkspacePage:
         """navigates to workspace page and sees workspace_options"""
         workspace_page.go_to(page)
         """launches the workspace jupyter notebook"""
-        workspace_page.open_jupyter_workspace(page)
+        workspace_page.launch_workspace(page)
         """opens python kernel in notebook"""
-        workspace_page.open_python_kernel(page)
+        workspace_page.open_python_notebook(page)
         """executes gen3 --help command"""
-        workspace_page.run_command_notebook(page)
+        command = "!gen3 --help"
+        logger.info(f"Running command in jupyter notebook: {command}")
+        result = workspace_page.run_command_in_notebook(page)
+        logger.info(f"Result: {result}")
         """terminates the workspace after executing the command"""
         workspace_page.terminate_workspace(page)

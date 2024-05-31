@@ -4,7 +4,6 @@ import requests
 import time
 
 from dotenv import load_dotenv
-from utils import logger
 
 from utils.jenkins import JenkinsJob
 
@@ -44,6 +43,33 @@ def get_admin_vm_configurations(test_env_namespace: str):
             return {
                 "manifest.json": job.get_artifact_content(build_num, "manifest.json"),
             }
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):
+    """
+    Run gen3 job (e.g., metadata-aggregate-sync).
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-run-gen3-command",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+        "COMMAND": command,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return job.get_build_result(build_num)
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
