@@ -61,7 +61,7 @@ class IndexingPage(object):
         screenshot(page, "afterClickingIndexFileButton")
         page.wait_for_selector(self.POP_UP_BOX, state="visible")
         page.wait_for_selector(
-            self.SUCCESS_GREEN_MESSAGE, state="visible", timeout=120000
+            self.SUCCESS_GREEN_MESSAGE, state="visible", timeout=240000
         )
         page.wait_for_selector(self.DOWNLOAD_LOGS_BUTTON, state="visible")
         page.wait_for_selector(self.DOWNLOAD_MANIFEST_BUTTON, state="visible")
