@@ -1,13 +1,10 @@
 import os
 import time
 
-from cdislogging import get_logger
+from utils import logger
 from filelock import Timeout, FileLock
 
 from utils import TEST_DATA_PATH_OBJECT
-
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def one_worker_only(wait_secs=3, max_wait_minutes=1):

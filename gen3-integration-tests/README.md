@@ -32,8 +32,9 @@ CI_TEST_RAS_PASSWORD=<RAS Password>
 The Jenkins API token, ORCID creds and RAS creds can be obtained from Keeper.
 
 ## Running tests
-Switch to `gen3-code-vigil/gen3-integration-tests` and run the command:
+Switch to `gen3-code-vigil/gen3-integration-tests` and run the commands:
 ```
+mkdir output
 poetry install
 ```
 Then:

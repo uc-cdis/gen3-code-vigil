@@ -2,11 +2,9 @@ import os
 import requests
 import sys
 
-from cdislogging import get_logger
+from utils import logger
 
 from utils.jenkins import JenkinsJob
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def select_ci_environment(namespaces):

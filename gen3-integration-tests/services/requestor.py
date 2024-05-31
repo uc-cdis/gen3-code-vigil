@@ -6,9 +6,7 @@ import json
 from gen3.auth import Gen3Auth
 from services.fence import Fence
 
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 class Requestor(object):

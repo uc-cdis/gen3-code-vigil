@@ -1,15 +1,14 @@
 import os
 import pytest
 import requests
+import time
 
 from dotenv import load_dotenv
-from cdislogging import get_logger
+from utils import logger
 
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def get_portal_config(test_env_namespace):
@@ -290,6 +289,67 @@ def check_indices_after_etl(test_env_namespace: str):
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num, max_duration=300)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def create_access_token(test_env_namespace, service, expired, username):
+    """
+    Roll a give service pod
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "create-access-token",
+    )
+    if expired:
+        expiration = 1
+    else:
+        expiration = 300  # 5 min
+    params = {
+        "SERVICE": service,
+        "EXPIRATION": expiration,
+        "USERNAME": username,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num, max_duration=300)
+        if status == "Completed":
+            if expired:
+                time.sleep(expiration)
+            return job.get_artifact_content(build_num, "access_token.txt")
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+# TODO remove this if unused... in a while
+def kube_setup_service(test_env_namespace, servicename):
+    """
+    Runs jenkins job to kube setup service
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "kube-setup-service",
+    )
+    params = {
+        "SERVICENAME": servicename,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return True
         else:

@@ -1,10 +1,11 @@
 import os
 import requests
 import time
-import traceback
-from cdislogging import get_logger
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
+
+from utils.misc import retry
+
 
 # Jobs listed on https://jenkins.planx-pla.net/view/CI%20Jobs/
 
@@ -132,6 +133,7 @@ class JenkinsJob(object):
                 time.sleep(60)
         return status
 
+    @retry(times=2, delay=10, exceptions=(AssertionError,))
     def get_artifact_content(self, build_number, artifact_name):
         """Get the contents of an artifact archived for the specific run"""
         url = f"{self.job_url}/{build_number}/api/json"
