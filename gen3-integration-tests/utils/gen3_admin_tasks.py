@@ -79,11 +79,11 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
         raise Exception("Build number not found")
 
 
-def check_kube_pods(
+def check_pod(
     test_env_namespace: str,
     job_name: str,
     label_name: str,
-    ignore_failure: bool = False,
+    expect_failure: bool = False,
 ):
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
@@ -95,7 +95,7 @@ def check_kube_pods(
         "NAMESPACE": test_env_namespace,
         "JOBNAME": job_name,
         "LABELNAME": label_name,
-        "IGNOREFAILURE": ignore_failure,
+        "EXPECTFAILURE": expect_failure,
     }
     build_num = job.build_job(params)
     if build_num:
