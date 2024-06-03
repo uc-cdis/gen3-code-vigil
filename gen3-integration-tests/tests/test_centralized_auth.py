@@ -1,10 +1,13 @@
 """
 CENTRALIZED AUTH
 """
+
 import os
 import pytest
 
 from cdislogging import get_logger
+from uuid import uuid4
+from services.indexd import Indexd
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -18,11 +21,143 @@ NOTES:
 * dcf-user2 account: dcf-integration-test-2@gmail.com
 """
 
+indexed_files = {
+    "abc_foo_bar_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "authz": ["/abc/programs/foo/projects/bar"],
+        "size": 9,
+    },
+    "gen3_test_test_ile": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ad1",
+        "authz": ["/gen3/programs/test_program/projects/test_project"],
+        "size": 10,
+    },
+    "two_projects_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ad2",
+        "authz": [
+            "/abc/programs/test_program/projects/test_project1",
+            "/abc/programs/test_program2/projects/test_project3",
+        ],
+        "size": 11,
+    },
+    "gen3_hmb_research_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440af1",
+        "authz": [
+            "/gen3/programs/test_program/projects/test_project1",
+            "/consents/HMB",
+        ],
+        "size": 43,
+    },
+    "abc_hmb_research_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb90213ef0beed440af1",
+        "authz": [
+            "/abc/programs/test_program/projects/test_project1",
+            "/consents/HMB",
+        ],
+        "size": 44,
+    },
+    "gru_research_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d655ec3f4beb9020eef0beed440af1",
+        "authz": [
+            "/gen3/programs/test_program/projects/test_project1",
+            "/consents/GRU",
+        ],
+        "size": 45,
+    },
+    "open_access_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb90212ef0beed440af1",
+        "authz": [
+            "/open",
+        ],
+        "size": 46,
+    },
+}
+
+new_gen3_records = {
+    "foo_bar_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ad4",
+        "authz": ["/gen3/programs/test_program/projects/test_project"],
+        "size": 9,
+    },
+    "delete_me": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ac0",
+        "authz": ["/gen3/programs/test_program/projects/test_project"],
+        "size": 12,
+    },
+}
+
+new_abc_records = {
+    "foo_bar_file": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ad5",
+        "authz": ["/abc/programs/foo"],
+        "size": 9,
+    },
+    "delete_me": {
+        "filename": "testdata",
+        "link": "s3://cdis-presigned-url-test/testdata",
+        "md5": "73d643ec3f4beb9020eef0beed440ac1",
+        "authz": ["/abc/programs/foo/projects/bar"],
+        "size": 12,
+    },
+}
+
 
 @pytest.mark.indexd
 @pytest.mark.fence
 class TestCentralizedAuth:
-    def test_users_without_policies_cannot_crud(cls):
+    indexd = Indexd()
+    indexd_records = []
+
+    @classmethod
+    def setup_class(cls):
+        gen3_foo_bar_file_guid = str(uuid4())
+        gen3_delete_me = str(uuid4())
+        abc_foo_bar_file_guid = str(uuid4())
+        abc_delete_me = str(uuid4())
+
+        new_gen3_records["foo_bar_file"]["did"] = gen3_foo_bar_file_guid
+        new_gen3_records["delete_me"]["did"] = gen3_delete_me
+        new_abc_records["foo_bar_file"]["did"] = abc_foo_bar_file_guid
+        new_abc_records["delete_me"]["did"] = abc_delete_me
+
+    def setup_method(self):
+        # Removing test indexd records if they exist
+        self.indexd.delete_file_indices(records=indexed_files)
+        self.indexd.delete_file_indices(records=new_gen3_records)
+        self.indexd.delete_file_indices(records=new_abc_records)
+
+        # Adding indexd files used to test signed urls
+        self.indexd_records = self.indexd.create_files(indexed_files)
+
+    def teardown_method(self):
+        logger.info("Deleting Indexd Records")
+        for record in self.indexd_records:
+            logger.info(record)
+            rev = self.indexd.get_rev(record)
+            self.indexd.delete_record(guid=record["did"], rev=rev)
+        self.indexd_records = []
+
+    def test_users_without_policies_cannot_crud(self):
         """
         Scenario: User without policies cannot CRUD indexd records in /gen3 or /abc
         Steps:
@@ -38,9 +173,17 @@ class TestCentralizedAuth:
             10. Expect "The record WAS deleted from indexd!" wasn't returned in step 9 since dcf-user2 account cannot perform delete.
             11. Delete the indexd records using indexing account for cleanup.
         """
-        return
+        gen3_create_success = self.indexd.create_files(
+            files=new_gen3_records, user="user2_account"
+        )
+        abc_create_success = self.indexd.create_files(
+            files=new_abc_records, user="user2_account"
+        )
 
-    def test_user_with_access_can_crud_indexd_records_in_namespace(cls):
+        logger.info(gen3_create_success)
+        logger.info(abc_create_success)
+
+    '''def test_user_with_access_can_crud_indexd_records_in_namespace(cls):
         """
         Scenario: User with access can CRUD indexd records in namespace, not outside namespace
         Steps:
@@ -158,4 +301,4 @@ class TestCentralizedAuth:
             1. Create signed url with anonymous account for openAccessFile in Indexd files. (Indexd records created as part of setup)
             2. File contents should be accessible.
         """
-        return
+        return'''

@@ -97,6 +97,18 @@ class Indexd(object):
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
 
+    def delete_file_indices(self, records: dict):
+        for key, val in records.items():
+            try:
+                indexd_record = self.get_record(indexd_guid=val["did"])
+                indexd_rev = self.get_rev(json_data=indexd_record)
+                logger.info(f"{val["did"]} found, performing delete.")
+                self.delete_record(guid=indexd_record["did"], rev=indexd_rev)
+            except Exception as e:
+                if "404" not in f"{e}" and "did" not in f"{e}":
+                    logger.error(f"404 status code not returned. Exception : {e}")
+                logger.info("Indexd record not found, no need to perform delete.")
+
     def file_equals(self, res: dict, file_record: dict) -> None:
         logger.info(f"Response data : {res}")
         logger.info(f"File Node: {file_record.props}")
