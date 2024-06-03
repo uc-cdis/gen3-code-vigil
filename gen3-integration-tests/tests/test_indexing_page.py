@@ -15,12 +15,18 @@ from services.indexd import Indexd
 @pytest.mark.sower
 @pytest.mark.ssjdispatcher
 class TestIndexingPage:
-    test_guid = "c2da639f-aa25-4c4d-8e89-02a143788268"
-    test_hash = "73d643ec3f4beb9020eef0beed440ad4"  # pragma: allowlist secret
-    expected_result = (
-        f"{test_guid},s3://cdis-presigned-url-test/testdata,,jenkins2,{test_hash},13,"
-    )
-    indexd_record_rev = None
+    variables = {}
+
+    def setup_class(cls):
+        cls.variables["test_guid"] = "c2da639f-aa25-4c4d-8e89-02a143788268"
+        cls.variables["test_hash"] = (
+            "73d643ec3f4beb9020eef0beed440ad4"  # pragma: allowlist secret
+        )
+        cls.variables["expected_result"] = (
+            f"{cls.variables['test_guid']},"
+            "s3://cdis-presigned-url-test/testdata,,jenkins2,"
+            f"{cls.variables['test_hash']},13,"
+        )  # pragma: allowlist secret
 
     def teardown_class(cls):
         # Delete the indexd record after the test
@@ -28,10 +34,10 @@ class TestIndexingPage:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         indexd = Gen3Index(auth_provider=auth)
         try:
-            indexd.delete_record(guid=cls.test_guid)
+            indexd.delete_record(guid=cls.variables["test_guid"])
         except Exception as e:
             logger.exception(
-                msg=f"Failed to delete record for guid :{cls.test_guid}: {e}"
+                msg=f"Failed to delete record for guid {cls.test_guid}: {e}"
             )
 
     def test_indexing_upload_valid_manifest(self, page):
@@ -55,14 +61,14 @@ class TestIndexingPage:
         # Upload the valid manifest via indexing page
         indexing_page.upload_valid_indexing_manifest(page)
         # Check if the sowerjob pod for manifest-indexing has completed
-        gat.check_kube_pods(pytest.namespace, "manifest-indexing", "sowerjob")
+        gat.check_pod(pytest.namespace, "manifest-indexing", "sowerjob")
         # Get the indexd record and check if the hash value matches to the test_hash value
-        index_record = indexd.get_record(self.test_guid)
+        index_record = indexd.get_record(self.variables["test_guid"])
         indexd_record_hash = index_record["hashes"]["md5"]
         logger.info(indexd_record_hash)
         assert (
-            indexd_record_hash == self.test_hash
-        ), f"Expected MD5 hash {self.test_hash}, but got {indexd_record_hash}"
+            indexd_record_hash == self.variables["test_hash"]
+        ), f"Expected MD5 hash {self.variables['test_hash']}, but got {indexd_record_hash}"
 
     def test_indexing_download(self, page):
         """
@@ -83,13 +89,13 @@ class TestIndexingPage:
         indexing_page.go_to(page)
         manifest_link = indexing_page.download_manifest(page)
         logger.debug(f"Download Link : {manifest_link}")
-        gat.check_kube_pods(pytest.namespace, "indexd-manifest", "sowerjob")
+        gat.check_pod(pytest.namespace, "indexd-manifest", "sowerjob")
         # sending request with manifest_link to get manifest data
         manifest_link_resp = requests.get(manifest_link)
         logger.debug(manifest_link_resp.text)
         manifest_data = manifest_link_resp.text
         assert (
-            self.expected_result in manifest_data
+            self.variables["expected_result"] in manifest_data
         ), "Expected result not found in downloaded manifest"
 
     def test_indexing_upload_invalid_manifest(self, page):
@@ -111,4 +117,4 @@ class TestIndexingPage:
         # Upload the valid manifest via indexing page
         indexing_page.upload_invalid_indexing_manifest(page)
         # Check if the sowerjob pod for manifest-indexing has completed
-        gat.check_kube_pods(pytest.namespace, "manifest-indexing", "sowerjob", True)
+        gat.check_pod(pytest.namespace, "manifest-indexing", "sowerjob", True)

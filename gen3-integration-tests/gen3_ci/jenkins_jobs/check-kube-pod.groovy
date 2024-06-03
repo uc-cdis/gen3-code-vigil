@@ -1,11 +1,11 @@
 /*
-    String parameter JOB_NAME
+    String parameter JOBNAME
     eg - manifest-indexing
 
-    String parameter LABEL_NAME
+    String parameter LABELNAME
     eg - sowerjob
 
-    String parameter IGNORE_FAILURE
+    String parameter EXPECTFAILURE
     default value - False
 */
 pipeline {
@@ -67,7 +67,7 @@ pipeline {
                                         echo "The container from pod $latestPodName is ready! Proceed with the assertion checks..."
                                         break
                                     elif [ "$podStatus" == "Failed" ]; then
-                                        if [ "$IGNOREFAILURE" == "True" ]; then
+                                        if [ "$EXPECTFAILURE" == "True" ]; then
                                             echo "The container from pod $latestPodName failed as expected! Just ignore as this is part of a negative test."
                                             break
                                         else

@@ -40,7 +40,7 @@ class IndexingPage(object):
 
     def go_to(self, page: Page):
         page.goto(self.BASE_URL)
-        screenshot(page, "indexingPage")
+        screenshot(page, "IndexingPage")
         page.wait_for_selector(self.INDEXING_PAGE, state="visible")
         page.wait_for_selector(self.UPLOAD_MANIFEST, state="visible")
         page.wait_for_selector(self.DOWNLOAD_MANIFEST, state="visible")
@@ -48,39 +48,39 @@ class IndexingPage(object):
     def upload_valid_indexing_manifest(self, page: Page):
         form = page.locator(self.FILE_UPLOAD)
         expect(form).to_be_visible
-        screenshot(page, "beforeUploadManifest")
+        screenshot(page, "BeforeUploadManifest")
         valid_manifest = (
             TEST_DATA_PATH_OBJECT / "indexing_page" / "validTestManifest.tsv"
         )
         page.set_input_files(self.FILE_INPUT, valid_manifest)
-        screenshot(page, "afterUploadManifest")
+        screenshot(page, "AfterUploadManifest")
         index_files = page.locator(self.INDEX_FILE_BUTTON)
         index_files.click()
-        screenshot(page, "afterClickingIndexFileButton")
+        screenshot(page, "AfterClickingIndexFileButton")
         page.wait_for_selector(self.POP_UP_BOX, state="visible")
         page.wait_for_selector(
             self.SUCCESS_GREEN_MESSAGE, state="visible", timeout=240000
         )
         page.wait_for_selector(self.DOWNLOAD_LOGS_BUTTON, state="visible")
         page.wait_for_selector(self.DOWNLOAD_MANIFEST_BUTTON, state="visible")
-        screenshot(page, "afterUploadIsCompleted")
+        screenshot(page, "AfterUploadIsCompleted")
 
     def upload_invalid_indexing_manifest(self, page: Page):
         form = page.locator(self.FILE_UPLOAD)
         expect(form).to_be_visible
-        screenshot(page, "beforeUploadManifest")
+        screenshot(page, "BeforeUploadManifest")
         valid_manifest = (
             TEST_DATA_PATH_OBJECT / "indexing_page" / "invalidTestManifest.tsv"
         )
         page.set_input_files(self.FILE_INPUT, valid_manifest)
-        screenshot(page, "afterUploadManifest")
+        screenshot(page, "AfterUploadManifest")
         index_files = page.locator(self.INDEX_FILE_BUTTON)
         index_files.click()
-        screenshot(page, "afterClickingIndexFileButton")
+        screenshot(page, "AfterClickingIndexFileButton")
         page.wait_for_selector(self.POP_UP_BOX, state="visible")
         page.wait_for_selector(self.ERROR_IMAGE, state="visible", timeout=240000)
         failure_status = page.locator(self.FAILED_STATUS)
-        screenshot(page, "afterFailedStatus")
+        screenshot(page, "AfterFailedStatus")
         failure_status_text = failure_status.text_content()
         logger.info(f"Text :{failure_status_text}")
         expect(failure_status).to_contain_text("failed")
@@ -89,7 +89,7 @@ class IndexingPage(object):
         download_button = page.locator(self.DOWNLOAD_BUTTON)
         expect(download_button).to_be_visible
         download_button.click()
-        screenshot(page, "afterDownloadManifestClick")
+        screenshot(page, "AfterDownloadManifestClick")
         page.wait_for_selector(self.POP_UP_BOX, state="visible")
         page.wait_for_selector(
             self.SUCCESS_GREEN_MESSAGE, state="visible", timeout=120000
