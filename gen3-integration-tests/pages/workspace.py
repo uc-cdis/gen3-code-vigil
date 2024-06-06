@@ -3,6 +3,8 @@ import pytest
 
 from playwright.sync_api import expect, Page
 
+from utils import logger
+
 from utils.gen3_admin_tasks import run_gen3_command
 from utils.test_execution import screenshot
 
@@ -19,9 +21,8 @@ class WorkspacePage(object):
         self.WORKSPACE_SPINNER = (
             "//div[@class='workspace__spinner-container']"  # workspace loading spinner
         )
-        self.WORKSPACE_IFRAME = "//div[@class='workspace__iframe']"
+        self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
-        self.WORKSPACE_LAUNCHER_FRAME = 'iframe[title="Workspace"]'  # IFrame workspace
         self.NEW_NB = (
             "//button[@id='new-dropdown-button']"  # Dropdown to create new notebook
         )
@@ -32,7 +33,7 @@ class WorkspacePage(object):
             "//div[@aria-label='Edit code here']"  # Notebook code cell input
         )
         self.NB_RUN_CELL_BUTTON = (
-            "//div[@class='input_area']"  # Notebook button to run cell and select next
+            "//button[@aria-label='Run']"  # Notebook button to run cell and select next
         )
         self.NB_CELL_OUTPUT = "//div[@class='output_subarea output_text output_stream output_stdout']//pre"  # output after run command
         self.TERMINATE_BUTTON = (
@@ -56,61 +57,62 @@ class WorkspacePage(object):
         Launch the workspace with the given name
         Launches the first available one if `name` is not specified
         """
-        run_gen3_command(pytest.namespace, "gen3 ec2 asg-set-capacity jupyter +10")
+        logger.info("Increasing capacity to speed up the launch")
+        result = run_gen3_command(
+            pytest.namespace, "gen3 ec2 asg-set-capacity jupyter +10"
+        )
+        logger.info(f"Build result: {result}")
         expect(page.locator(self.WORKSPACE_OPTIONS)).to_be_visible()
-        # find the workspace option for Juptyer WS to launch
+        # launch the specified workspace option if the name is provided
+        logger.info(f"Launching workspace {name}")
         if name:
             launch_button_xpath = f"//h3[text()='{name}']/parent::div[@class='workspace-option']/button[text()='Launch']"
+        # launch the first available option if the name is not provided
         else:
             launch_button_xpath = (
                 "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
             )
+        logger.debug(f"Xpath: {launch_button_xpath}")
         launch_button = page.locator(launch_button_xpath)
         launch_button.click()
-        screenshot(page, "JupyterWorkspace")
+        screenshot(page, "WorkspaceLaunching")
         page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
-        # after launch, workspace takes around 5 mins to load and launch
-        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=300000)
+        # workspace can take a while to launch
+        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=600000)
 
     def open_python_notebook(self, page: Page):
         """Open Python notebook in the workspace"""
         # here the frame is on the page, so page.locator is used
-        workspace_iframe = page.locator(self.WORKSPACE_LAUNCHER_FRAME)
+        workspace_iframe = page.locator(self.WORKSPACE_IFRAME)
         expect(workspace_iframe).to_be_visible
-        python_nb = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.NEW_NB
-        )
+        python_nb = page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NEW_NB)
         python_nb.click()
-        python_kernel_nb = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
+        python_kernel_nb = page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NEW_NB_PYTHON
         )
         python_kernel_nb.click()
-        command_prompt = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
+        command_prompt = page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NB_CELL_INPUT
         )
         command_prompt.wait_for(state="visible")
         screenshot(page, "PythonNotebook")
 
     def run_command_in_notebook(self, page: Page, command: str = ""):
-        command_input = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
+        command_input = page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NB_CELL_INPUT
         )
         if command == "":
             command = "gen3 --help"
         command_input.press_sequentially(command)
         screenshot(page, "NotebookCellInput")
-        page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
+        page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NB_RUN_CELL_BUTTON
         ).click()
-        output = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.NB_CELL_OUTPUT
-        )
+        output = page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NB_CELL_OUTPUT)
         output.wait_for(state="visible")
         screenshot(page, "NotebookCellOutput")
         return output.text_content()
 
     def terminate_workspace(self, page: Page):
-        # page.get_by_role("button", name="Terminate Workspace").click()
         page.locator(self.TERMINATE_BUTTON).click()
-        # page.get_by_role("button", name="Yes").click()
         page.locator(self.YES_BUTTON).click()

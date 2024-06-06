@@ -52,7 +52,7 @@ def get_admin_vm_configurations(test_env_namespace: str):
 
 def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):
     """
-    Run gen3 job (e.g., metadata-aggregate-sync).
+    Run gen3 command (e.g., gen3 --help).
     Since this requires adminvm interaction we use jenkins.
     """
     job = JenkinsJob(
