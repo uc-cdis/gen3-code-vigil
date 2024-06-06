@@ -16,6 +16,7 @@ from utils.test_execution import screenshot
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
+@pytest.mark.wts
 class TestDiscoveryPage(object):
     variables = {}
 
