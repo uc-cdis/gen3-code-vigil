@@ -13,9 +13,6 @@ from services.metadataservice import MetadataService
 from utils.test_execution import screenshot
 
 
-@pytest.mark.xdist_group(
-    name="workspace"
-)  # Tests launching workspaces cannot run in parallel
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds

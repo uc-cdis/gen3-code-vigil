@@ -10,9 +10,6 @@ from pages.login import LoginPage
 from pages.workspace import WorkspacePage
 
 
-@pytest.mark.xdist_group(
-    name="workspace"
-)  # Tests launching workspaces cannot run in parallel
 @pytest.mark.workspace
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page):
