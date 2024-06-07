@@ -46,9 +46,6 @@ class CustomScheduling(LoadScopeScheduling):
 
 
 def pytest_configure(config):
-    # Register the custom distribution plugin defined above
-    config.pluginmanager.register(XDistCustomPlugin())
-
     # Compute hostname and namespace
     hostname = os.getenv("HOSTNAME")
     namespace = os.getenv("NAMESPACE")
@@ -104,3 +101,6 @@ def pytest_configure(config):
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:
         pytest.root_url_portal = pytest.root_url
+
+    # Register the custom distribution plugin defined above
+    config.pluginmanager.register(XDistCustomPlugin())
