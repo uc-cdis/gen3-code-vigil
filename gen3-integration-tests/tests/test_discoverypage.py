@@ -145,13 +145,17 @@ class TestDiscoveryPage(object):
             page, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
         )
         screenshot(page, "WorkspaceLaunched")
+
+        # Open Python notebook and run gen3 commands
         workspace_page.open_python_notebook(page)
-        command = "!pip install -U gen3"
+        command = "!pip install -U gen3==4.24.1"  # TODO: Fix the workspace image in jenkins envs, use jupyterlab
         logger.info(f"Running in jupyter notebook: {command}")
         result = workspace_page.run_command_in_notebook(page, command)
         command = f"!gen3 drs-pull object {self.variables['did']}"
         logger.info(f"Running in jupyter notebook: {command}")
         result = workspace_page.run_command_in_notebook(page, command)
         logger.info(f"Result: {result}")
+
+        # Terminate workspace
         workspace_page.terminate_workspace(page)
         screenshot(page, "WorkspaceTerminated")

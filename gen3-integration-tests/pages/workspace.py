@@ -18,9 +18,6 @@ class WorkspacePage(object):
         self.WORKSPACE_OPTIONS = (
             "//div[@class='workspace__options']"  # Workspace Options
         )
-        self.WORKSPACE_SPINNER = (
-            "//div[@class='workspace__spinner-container']"  # workspace loading spinner
-        )
         self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
         self.NEW_NB = (
@@ -76,9 +73,10 @@ class WorkspacePage(object):
         launch_button = page.locator(launch_button_xpath)
         launch_button.click()
         screenshot(page, "WorkspaceLaunching")
-        page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
         # workspace can take a while to launch
-        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=600000)
+        page.frame_locator(self.WORKSPACE_IFRAME).locator(
+            "//div[@aria-label='Top Menu']"
+        ).wait_for(timeout=60000)
 
     def open_python_notebook(self, page: Page):
         """Open Python notebook in the workspace"""
@@ -97,18 +95,18 @@ class WorkspacePage(object):
         command_prompt.wait_for(state="visible")
         screenshot(page, "PythonNotebook")
 
-    def run_command_in_notebook(self, page: Page, command: str = ""):
-        command_input = page.frame_locator(self.WORKSPACE_IFRAME).locator(
-            self.NB_CELL_INPUT
+    def run_command_in_notebook(self, page: Page, command: str = "!gen3 --help"):
+        command_input = (
+            page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NB_CELL_INPUT).last
         )
-        if command == "":
-            command = "gen3 --help"
         command_input.press_sequentially(command)
         screenshot(page, "NotebookCellInput")
         page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NB_RUN_CELL_BUTTON
         ).click()
-        output = page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NB_CELL_OUTPUT)
+        output = (
+            page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NB_CELL_OUTPUT).last
+        )
         output.wait_for(state="visible")
         screenshot(page, "NotebookCellOutput")
         return output.text_content()
@@ -116,3 +114,4 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
+        page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=300000)
