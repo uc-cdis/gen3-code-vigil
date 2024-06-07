@@ -36,13 +36,12 @@ class CustomScheduling(LoadScopeScheduling):
 
     def _split_scope(self, nodeid):
         node = self._nodes[nodeid]
-
         # Run all tests with marker workspace to run serially (same worker)
         if node.get_closest_marker("workspace"):
             return "__workspace__"
 
         # otherwise, each test is in its own scope
-        return nodeid
+        return nodeid.rsplit("::", 1)[0]
 
 
 def pytest_configure(config):
