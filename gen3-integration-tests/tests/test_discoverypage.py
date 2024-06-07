@@ -13,6 +13,9 @@ from services.metadataservice import MetadataService
 from utils.test_execution import screenshot
 
 
+@pytest.mark.xdist_group(
+    name="workspace"
+)  # Tests launching workspaces cannot run in parallel
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
@@ -143,9 +146,12 @@ class TestDiscoveryPage(object):
         )
         screenshot(page, "WorkspaceLaunched")
         workspace_page.open_python_notebook(page)
-        command = f"!gen3 drs-pull object --object_id {self.variables['did']}"
+        command = "!pip install -U gen3"
+        logger.info(f"Running in jupyter notebook: {command}")
+        result = workspace_page.run_command_in_notebook(page, command)
+        command = f"!gen3 drs-pull object {self.variables['did']}"
         logger.info(f"Running in jupyter notebook: {command}")
         result = workspace_page.run_command_in_notebook(page, command)
         logger.info(f"Result: {result}")
-        workspace_page.terminate_workspace()
+        workspace_page.terminate_workspace(page)
         screenshot(page, "WorkspaceTerminated")
