@@ -187,7 +187,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header ${{ env.TEST_LABEL }} --dist loadscope
+              poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
 
           - name: Run tests
             id: run_tests
@@ -217,6 +217,8 @@ jobs:
               echo "FAILED=$FAILED" >> $GITHUB_ENV
               BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
               echo "BROKEN=$BROKEN" >> $GITHUB_ENV
+              SKIPPED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.skipped')
+              echo "SKIPPED=$SKIPPED" >> $GITHUB_ENV
               DURATION_MS=$(cat ./allure-report/widgets/summary.json | jq -r '.time.duration')
               MINUTES=$(echo "$DURATION_MS / 60000" | bc)
               SECONDS=$(( ($milliseconds / 1000) % 60 ))
@@ -267,7 +269,7 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.gh_comment_pod_logs_link.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             uses: slackapi/slack-github-action@v1.25.0
             with:
@@ -295,7 +297,7 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
+                        "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :large_yellow_circle: Skipped  - ${{ env.SKIPPED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
                       }
                     },
                     {
