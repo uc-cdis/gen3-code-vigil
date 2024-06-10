@@ -18,6 +18,9 @@ class WorkspacePage(object):
         self.WORKSPACE_OPTIONS = (
             "//div[@class='workspace__options']"  # Workspace Options
         )
+        self.LAUNCH_FIRST_WORKSPACE = (
+            "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
+        )
         self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
         self.NEW_NB = (
@@ -66,9 +69,7 @@ class WorkspacePage(object):
             launch_button_xpath = f"//h3[text()='{name}']/parent::div[@class='workspace-option']/button[text()='Launch']"
         # launch the first available option if the name is not provided
         else:
-            launch_button_xpath = (
-                "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
-            )
+            launch_button_xpath = self.LAUNCH_FIRST_WORKSPACE
         logger.debug(f"Xpath: {launch_button_xpath}")
         launch_button = page.locator(launch_button_xpath)
         launch_button.click()
