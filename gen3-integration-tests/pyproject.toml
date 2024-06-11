@@ -16,7 +16,7 @@ allure-pytest = "^2.13.2"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.1"}
 filelock = "<4"
-gen3 = "<5"
+gen3 = {git = "https://github.com/uc-cdis/gen3sdk-python", branch = "fix/access-token"}
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
 pytest-env = "^1.0.0"

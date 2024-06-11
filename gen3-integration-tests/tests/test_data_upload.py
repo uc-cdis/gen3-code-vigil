@@ -1,6 +1,7 @@
 """
 DATA UPLOAD
 """
+
 import hashlib
 import os
 import pytest
@@ -77,7 +78,7 @@ class TestDataUpload:
         os.remove(file_path)
         os.remove(big_file_path)
         # Delete all test records at the end of each test
-        self.sd_tools.delete_all_records_in_test_project()
+        self.sd_tools.delete_all_records()
         # Delete all guids
         self.indexd.delete_files(self.created_guids)
         self.created_guids = []

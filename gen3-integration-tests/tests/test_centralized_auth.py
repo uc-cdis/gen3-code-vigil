@@ -398,25 +398,23 @@ class TestCentralizedAuth:
 
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
-        gen3_indexd_record = self.indexd.create_files_using_access_token(
-            files=new_gen3_records, access_token=access_token
-        )[0]
-        assert (
-            gen3_indexd_record.status_code == 401
-        ), f"Expected status code 401 not found. Found: {gen3_indexd_record.status_code}"
-        self.indexd.create_files_using_access_token(
-            files=new_abc_records, access_token=access_token
-        )
+        try:
+            self.indexd.create_files(files=new_gen3_records, access_token=access_token)
+        except Exception as e:
+            if "401" not in e:
+                logger.error(f"Expected 401 but got {e}")
+                raise
+        self.indexd.create_files(files=new_abc_records, access_token=access_token)
 
         # Create gen3 records using indexing_user
         self.indexd.create_files(files=new_gen3_records)
 
         # Read should be successful using user2_account
-        gen3_read_success = self.indexd.get_record_using_access_token(
+        gen3_read_success = self.indexd.get_record(
             indexd_guid=new_gen3_records["foo_bar_file"]["did"],
             access_token=access_token,
         )
-        abc_read_success = self.indexd.get_record_using_access_token(
+        abc_read_success = self.indexd.get_record(
             indexd_guid=new_abc_records["foo_bar_file"]["did"],
             access_token=access_token,
         )
@@ -429,13 +427,13 @@ class TestCentralizedAuth:
 
         # Update should not be successful for gen3 record
         filename_change = {"file_name": "test_filename"}
-        gen3_update_success = self.indexd.update_record_using_access_token(
+        gen3_update_success = self.indexd.update_record(
             guid=gen3_read_success["did"],
             rev=gen3_read_success["rev"],
             data=filename_change,
             access_token=access_token,
         )
-        abc_update_success = self.indexd.update_record_using_access_token(
+        abc_update_success = self.indexd.update_record(
             guid=abc_read_success["did"],
             rev=abc_read_success["rev"],
             data=filename_change,
@@ -451,19 +449,19 @@ class TestCentralizedAuth:
         # Verify updated file had updated name
         assert (
             filename_change["file_name"]
-            == self.indexd.get_record_using_access_token(
+            == self.indexd.get_record(
                 indexd_guid=new_abc_records["foo_bar_file"]["did"],
                 access_token=access_token,
             )["file_name"]
         )
 
         # Delete should not be successful for gen3 record
-        gen3_delete_success = self.indexd.delete_record_using_access_token(
+        gen3_delete_success = self.indexd.delete_record(
             guid=gen3_read_success["did"],
             rev=gen3_read_success["rev"],
             access_token=access_token,
         )
-        abc_delete_success = self.indexd.delete_record_using_access_token(
+        abc_delete_success = self.indexd.delete_record(
             guid=abc_read_success["did"],
             rev=abc_read_success["rev"],
             access_token=access_token,

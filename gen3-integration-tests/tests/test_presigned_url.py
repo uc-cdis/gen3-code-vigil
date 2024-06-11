@@ -1,6 +1,7 @@
 """
 PRESIGNED URL
 """
+
 import os
 import pytest
 
@@ -8,7 +9,6 @@ from services.indexd import Indexd
 from services.fence import Fence
 
 from cdislogging import get_logger
-from playwright.sync_api import Page
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -16,6 +16,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 @pytest.mark.indexd
 @pytest.mark.fence
 class TestPresignedURL:
+    indexd = Indexd()
+
     @classmethod
     def setup_class(cls):
         files = {
@@ -54,9 +56,8 @@ class TestPresignedURL:
                 "size": 9,
             },
         }
-        indexd = Indexd()
         logger.info("Creating Indexd Records")
-        cls.indexd_records = indexd.create_files(files=files)
+        cls.indexd_records = cls.indexd.create_files(files=files)
 
     @classmethod
     def teardown_class(cls):
@@ -68,7 +69,10 @@ class TestPresignedURL:
 
     def get_indexd_record(cls, filename):
         for record in cls.indexd_records:
-            if record["file_name"] == filename:
+            if (
+                cls.indexd.get_record(indexd_guid=record["did"])["file_name"]
+                == filename
+            ):
                 return record
         logger.error(f"No indexd record found for filename: {filename}")
         raise

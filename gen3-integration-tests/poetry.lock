@@ -670,39 +670,43 @@ files = [
 
 [[package]]
 name = "gen3"
-version = "4.24.1"
+version = "4.24.2"
 description = "Gen3 CLI and Python SDK"
 optional = false
-python-versions = "<4,>=3.9"
-files = [
-    {file = "gen3-4.24.1-py3-none-any.whl", hash = "sha256:3f4bbf9b15599727b5adcf91fa216e325b92e5325ab1d75b3a4a30016aea9a28"},
-    {file = "gen3-4.24.1.tar.gz", hash = "sha256:7e6007a556b5ad765866d18bf292aea92c542e1906b6b7473538dad2d1a3bd8e"},
-]
+python-versions = ">=3.9, <4"
+files = []
+develop = false
 
 [package.dependencies]
-aiofiles = ">=0.8.0,<0.9.0"
+aiofiles = "^0.8.0"
 aiohttp = "*"
 backoff = "*"
-cdislogging = ">=1.1.0,<2.0.0"
+cdislogging = "^1.1.0"
 click = "*"
 dataclasses-json = "<=0.5.9"
-drsclient = ">=0.2.3,<0.3.0"
+drsclient = "^0.2.3"
 gen3users = "*"
 httpx = "*"
 humanfriendly = "*"
-indexclient = ">=2.3.0,<3.0.0"
+indexclient = "^2.3.0"
 jsonschema = "*"
 pandas = ">=1.4.2"
-pypfb = ">=0.5.29,<0.6.0"
+pypfb = "^0.5.29"
 python-dateutil = "*"
 pyyaml = ">=6.0.1"
 requests = "*"
-tqdm = ">=4.61.2,<5.0.0"
+tqdm = "^4.61.2"
 urllib3 = ">2.0.0"
-xmltodict = ">=0.13.0,<0.14.0"
+xmltodict = "^0.13.0"
 
 [package.extras]
 fhir = ["fhirclient"]
+
+[package.source]
+type = "git"
+url = "https://github.com/uc-cdis/gen3sdk-python"
+reference = "fix/access-token"
+resolved_reference = "39404b9f20f2a9f2677ef427161daef40ac3b412"
 
 [[package]]
 name = "gen3datamodel"
@@ -2356,4 +2360,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "676efe27d9d6d0cc9f8ef935c4d0dd986a3e3d66220dd5e19454dae1fc1fe83a"
+content-hash = "f5bbdcb872db82f3dbec3e820531129dfb7246499ecf9ea550166c8954412efd"

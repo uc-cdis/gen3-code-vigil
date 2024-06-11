@@ -20,5 +20,5 @@ def upload_file_to_s3(presigned_url, file_path, file_size):
 @retry(times=12, delay=10, exceptions=(AssertionError))
 def wait_upload_file_updated_from_indexd_listener(indexd, file_node):
     response = indexd.get_record(file_node.did)
-    indexd.file_equals(res=response, file_node=file_node)
+    indexd.file_equals(res=response, file_record=file_node)
     return response
