@@ -49,6 +49,7 @@ markers = [
   "gen3_client: tests for gen3-client / cdis-data-client",
   "tube: tests for tube service",
   "guppy: tests for guppy-service",
+  "wts: tests for workspace-token-service",
   # features
   "agg_mds: tests for aggregate metadata service",
   "workspace: tests for workspace page",
