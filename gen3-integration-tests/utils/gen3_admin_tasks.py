@@ -79,6 +79,32 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
         raise Exception("Build number not found")
 
 
+def get_study_viewer_index(test_env_namespace: str):
+    """
+    Runs jenkins job to get study-viewer index from gitops.json config
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "get-study-viewer-index",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
 def create_fence_client(
     test_env_namespace: str,
     client_name: str,
