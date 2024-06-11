@@ -1,12 +1,14 @@
 import json
-import os
 import pytest
 import requests
+import base64
 
 from utils.misc import retry
 
 from utils import logger
+from pages.login import LoginPage
 from gen3.auth import Gen3Auth
+from playwright.sync_api import Page
 
 
 class Fence(object):
@@ -17,6 +19,11 @@ class Fence(object):
         self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
         self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
         self.USER_ENDPOINT = f"{self.BASE_URL}/user"
+        self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT = f"{self.BASE_URL}/oauth2/authorize"
+        self.TOKEN_OAUTH2_CLIENT_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
+        self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
+        self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
+        self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
 
     def get_access_token(self, api_key):
         """Generate access token from api key"""
@@ -33,7 +40,9 @@ class Fence(object):
                 f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
             )
 
-    def createSignedUrl(self, id, user, expectedStatus, file_type=None, params=[]):
+    def createSignedUrl(
+        self, id, user, expectedStatus, file_type=None, params=[], access_token=None
+    ):
         API_GET_FILE = "/data/download"
         url = API_GET_FILE + "/" + str(id)
         if len(params) > 0:
@@ -41,6 +50,14 @@ class Fence(object):
         if user:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
             response = auth.curl(path=url)
+        elif access_token:
+            response = requests.get(
+                self.BASE_URL + url,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"bearer {access_token}",
+                },
+            )
         else:
             # Perform GET requests without authorization code
             response = requests.get(self.BASE_URL + url, auth={})
@@ -105,11 +122,75 @@ class Fence(object):
         indexd.file_equals(res=response, file_node=file_node)
         return response
 
-    def get_user_info(self, user: str = "main_account"):
+    def get_user_info(self, user: str = "main_account", access_token=None):
         """Get user info"""
-        user_info_response = requests.get(
-            f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
-        )
+        if access_token:
+            user_info_response = requests.get(
+                f"{self.USER_ENDPOINT}",
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"bearer {access_token}",
+                },
+            )
+        else:
+            user_info_response = requests.get(
+                f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
+            )
         response_data = user_info_response.json()
         logger.debug(f"User info {response_data}")
         return response_data
+
+    def get_user_tokens_with_client(
+        self, page: Page, client_id: str, client_secret: str, user="main_account"
+    ):
+        scopes = (
+            "openid+user+data+google_credentials+google_service_account+google_link"
+        )
+        login_page = LoginPage()
+        logger.info("Logging in with mainAcct")
+        login_page.go_to(page)
+        login_page.login(page, user=user)
+
+        url = self.get_consent_code(
+            page=page, client_id=client_id, response_type="code", scopes=scopes
+        )
+        assert "code=" in url, f"{url} is missing code= substring"
+        code = url.split("code=")[-1]
+        response = self.get_token_with_auth_code(
+            client_id, client_secret, code, "authorization_code"
+        )
+        return response.json()["access_token"]
+
+    def get_consent_code(
+        self,
+        page: Page,
+        client_id,
+        response_type,
+        scopes,
+        consent="ok",
+        expect_code=True,
+    ):
+        url = f"{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
+        page.goto(url)
+        if expect_code:
+            if consent == "cancel":
+                page.locator(self.CONSENT_CANCEL_BUTTON).click()
+            else:
+                page.locator(self.CONSENT_AUTHORIZE_BUTTON).click()
+
+        page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
+        return page.url
+
+    def get_token_with_auth_code(self, client_id, client_secret, code, grant_type):
+        url = f"{self.TOKEN_OAUTH2_CLIENT_ENDPOINT}?code={code}&grant_type={grant_type}&redirect_uri=https%3A%2F%2F{pytest.hostname}"
+        data = {
+            "client_id": f"{client_id}",
+            "client_secret": f"{client_secret}",
+        }
+        auth = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Basic {auth}",
+        }
+        response = requests.post(url=url, data=json.dumps(data), headers=headers)
+        return response
