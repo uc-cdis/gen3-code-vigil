@@ -1,11 +1,11 @@
 /*
-    String parameter JOBNAME
+    String parameter JOB_NAME
     eg - manifest-indexing
 
-    String parameter LABELNAME
+    String parameter APP_LABEL
     eg - sowerjob
 
-    String parameter EXPECTFAILURE
+    String parameter EXPECT_FAILURE
     default value - False
 */
 pipeline {
@@ -47,40 +47,35 @@ pipeline {
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
 
-                            N_ATTEMPTS=10
                             echo "NAMESPACE : $KUBECTL_NAMESPACE"
-                            for (( i=1; i<=N_ATTEMPTS; i++ )); do
+                            while true; do
                                 sleep 10
-                                echo "Waiting for $JOBNAME job pod ..."
+                                echo "Waiting for $JOB_NAME job pod ..."
 
-                                # checking if there are pods with labelname mentioned in parameters
-                                podNames=$(g3kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$LABELNAME -o jsonpath="{.items[*].metadata.name}")
-                                if [[ -z "$podNames" ]]; then
-                                    echo "No pods found with label $LABELNAME"
+                                # checking if there are pods with APP_LABEL mentioned in parameters
+                                POD_NAMES=$(g3kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$APP_LABEL -o json | jq -r '.items[] | select(.metadata.name | test("^'"$JOB_NAME"'")) | .metadata.name')
+                                if [[ -z "$POD_NAMES" ]]; then
+                                    echo "No pods found with label $APP_LABEL"
                                 else
                                     # if pod/s found, get the status of the latest pod
-                                    latestPodName=$(echo "$podNames" | awk '{print $NF}')
-                                    echo "Pod found with label $LABELNAME: $latestPodName"
-                                    podStatus=$(g3kubectl -n $KUBECTL_NAMESPACE get pod $latestPodName -o jsonpath='{.status.phase}')
-
-                                    if [ "$podStatus" == "Succeeded" ]; then
-                                        echo "The container from pod $latestPodName is ready! Proceed with the assertion checks..."
+                                    LATEST_POD=$(echo "$POD_NAMES" | tail -n 1)
+                                    echo "Pod found with label $APP_LABEL: $LATEST_POD"
+                                    POD_STATUS=$(g3kubectl -n $KUBECTL_NAMESPACE get pod $LATEST_POD -o jsonpath='{.status.phase}')
+                                    echo "Pod status: $POD_STATUS"
+                                    if [ "$POD_STATUS" == "Succeeded" ]; then
+                                        echo "The container from pod $LATEST_POD is ready! Proceed with the assertion checks..."
                                         break
-                                    elif [ "$podStatus" == "Failed" ]; then
-                                        if [ "$EXPECTFAILURE" == "True" ]; then
-                                            echo "The container from pod $latestPodName failed as expected! Just ignore as this is part of a negative test."
+                                    elif [ "$POD_STATUS" == "Failed" ]; then
+                                        if [ "$EXPECT_FAILURE" == "True" ]; then
+                                            echo "The container from pod $LATEST_POD failed as expected! Just ignore as this is part of a negative test."
                                             break
                                         else
-                                            echo "THE POD FAILED ON ATTEMPT $i. GIVING UP."
-                                            pod_logs=$(kubectl logs $latestPodName -n $NAMESPACE)
-                                            echo "Logs:\n$pod_logs"
+                                            echo "THE POD FAILED. GIVING UP."
+                                            POD_LOGS=$(kubectl logs $LATEST_POD -n $NAMESPACE)
+                                            echo "Logs:\n$POD_LOGS"
                                             exit 1
                                         fi
                                     fi
-                                fi
-                                if [ $i -eq $N_ATTEMPTS ]; then
-                                    echo "Max number of attempts reached: $i. Test has failed."
-                                    exit 1
                                 fi
                             done
                             '''
