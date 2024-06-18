@@ -86,16 +86,35 @@ class Requestor(object):
         logger.debug(f"### {create_req.text}")
         return create_req
 
-    def get_request_id(self, policy: str, user: str):
+    def get_request_id(self, user: str):
         """Gets the request_id for the user"""
+        gen3auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+        url = f"{self.USER_ENDPOINT}?policy_id=programs.jnkns.projects.jenkins_accessor"
+        logger.info(url)
         id_res = requests.get(
-            f"{self.USER_ENDPOINT}?policy_id={policy}",
-            headers=pytest.auth_headers[user],
+            url,
+            headers={
+                "Authorization": f"Bearer {gen3auth.get_access_token()}",
+                "Content-Type": "application/json",
+            },
         )
-        response_data_json = id_res.json()
-        assert response_data_json, "Response data is empty"
-        req_id = response_data_json[0]["request_id"]
-        return req_id
+        logger.info(f"SC :{id_res.status_code}")
+        logger.info(f"Content :{id_res.content}")
+        logger.info(f"Text :{id_res.text}")
+        id_res.raise_for_status()
+        if id_res.status_code == 200:
+            response_data_json = id_res.json()
+            logger.info(response_data_json)
+            if len(response_data_json) > 0:
+                req_id = response_data_json[0]["request_id"]
+                logger.info(f"Request_id: {req_id}")
+                return req_id
+            else:
+                logger.info("Response data is empty")
+        else:
+            logger.info(
+                f"Request failed with status code: {id_res.status_code}, expected status code : 200"
+            )
 
     def get_request_status(self, request_id: str, user: str = "main_account"):
         """Gets the request_status for the user's request_id in requestor"""

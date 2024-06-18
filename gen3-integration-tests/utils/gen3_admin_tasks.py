@@ -97,7 +97,11 @@ def get_study_viewer_index(test_env_namespace: str):
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            return job.get_build_result(build_num)
+            return {
+                "study_viewer_index.txt": job.get_artifact_content(
+                    build_num, "study_viewer_index.txt"
+                ),
+            }
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")

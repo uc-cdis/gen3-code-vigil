@@ -2,7 +2,6 @@
   String parameter NAMESPACE
     e.g., jenkins-dcp
 
-  Archived artifacts -
 */
 pipeline {
     agent {
@@ -31,7 +30,7 @@ pipeline {
         }
         stage('get Study-Viewer Index') {
             steps {
-                dir("get=study-viewer-index"){
+                dir("get-study-viewer-index"){
                     script {
                         sh '''#!/bin/bash +x
                             set -e
@@ -39,12 +38,17 @@ pipeline {
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
 
-                            index=$(gen3 secrets decode portal-config gitops.json | jq '.studyViewerConfig[].dataType' | tr -d '"')
+                            INDEX=$(gen3 secrets decode portal-config gitops.json | jq '.studyViewerConfig[].dataType' | tr -d '"')
+                            echo $INDEX > study_viewer_index.txt
                         '''
                         }
                     }
                 }
             }
+        }
+    post {
+        always {
+            archiveArtifacts artifacts: 'get-study-viewer-index/study_viewer_index.txt'
         }
     }
 }
