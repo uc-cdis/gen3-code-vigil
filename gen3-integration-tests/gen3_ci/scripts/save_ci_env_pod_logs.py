@@ -1,13 +1,11 @@
 import os
 
-from cdislogging import get_logger
+from utils import logger
 from dotenv import load_dotenv
 
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def save_pod_logs(namespace):

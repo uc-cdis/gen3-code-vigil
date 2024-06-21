@@ -29,6 +29,7 @@ python-dotenv = "^1.0.0"
 requests = "^2.31.0"
 pypfb = "^0.5.29"
 fastavro = "^1.8.2"
+psutil = "^5.9.8"
 
 [build-system]
 requires = ["poetry-core"]
@@ -51,6 +52,8 @@ markers = [
   "gen3_client: tests for gen3-client / cdis-data-client",
   "tube: tests for tube service",
   "guppy: tests for guppy-service",
+  "wts: tests for workspace-token-service",
+  "sower: tests for sower jobs",
   # features
   "agg_mds: tests for aggregate metadata service",
   "workspace: tests for workspace page",

@@ -4,12 +4,8 @@ GUPPY SERVICE
 import os
 import pytest
 
-from cdislogging import get_logger
-from utils.gen3_admin_tasks import mutate_manifest_for_guppy_test
+from utils import logger
 from services.guppy import Guppy
-
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.guppy
@@ -17,7 +13,9 @@ class TestGuppyService:
     @classmethod
     def setup_class(cls):
         guppy = Guppy()
-        assert mutate_manifest_for_guppy_test(pytest.namespace)
+        # this may be needed once these new tests are used for manifest PRs
+        # TODO: remove if not needed
+        # assert mutate_manifest_for_guppy_test(pytest.namespace)
         assert guppy.validate_guppy_status("main_account", 200)
 
     def test_guppy_test_query_1(self):

@@ -3,14 +3,12 @@ import os
 import uuid
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 
 from utils import TEST_DATA_PATH_OBJECT
 import utils.gen3_admin_tasks as gat
 
 from services.metadataservice import MetadataService
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.mds
@@ -64,7 +62,7 @@ class TestAggregateMDS:
         logger.info("# Run metadata-aggregate-sync and verify")
         gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         for i in range(len(study_ids)):
-            study_metadata = mds.get_aggregate_metadata(study_ids[i])
+            study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
             assert (
                 study_metadata["commons_name"] == "HEAL"
             ), f"commons_name was set to {study_metadata['commons_name']}"
@@ -87,7 +85,7 @@ class TestAggregateMDS:
         logger.info("# Run metadata-aggregate-sync and verify")
         gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         for i in range(len(study_ids)):
-            study_metadata = mds.get_aggregate_metadata(study_ids[i])
+            study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
             assert (
                 study_metadata["project_title"]
                 == study_jsons[i]["gen3_discovery"]["project_title"]

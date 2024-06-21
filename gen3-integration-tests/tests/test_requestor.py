@@ -7,9 +7,7 @@ from services.fence import Fence
 from pages.login import LoginPage
 from services.requestor import Requestor
 
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 @pytest.mark.requestor
