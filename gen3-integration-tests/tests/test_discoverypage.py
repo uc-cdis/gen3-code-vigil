@@ -103,7 +103,9 @@ class TestDiscoveryPage(object):
 
         # Re-sync aggregate mds
         gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
-        study_metadata = mds.get_aggregate_metadata(self.variables["study_id"])
+        study_metadata = mds.get_aggregate_metadata(self.variables["study_id"])[
+            "gen3_discovery"
+        ]
         assert study_metadata["commons_name"] == "HEAL"
 
         # Navigate to discovery page

@@ -53,6 +53,7 @@ markers = [
   "ssjdispatcher: tests for ssjdispatcher service",
   "sower: tests for sower service",
   "wts: tests for workspace-token-service",
+  "sower: tests for sower jobs",
   # features
   "agg_mds: tests for aggregate metadata service",
   "workspace: tests for workspace page",
