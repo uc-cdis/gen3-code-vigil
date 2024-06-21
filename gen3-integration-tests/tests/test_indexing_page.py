@@ -123,7 +123,7 @@ class TestIndexingPage:
         # Get the indexd record and check if the hash value matches to the test_hash value
         index_record = indexd.get_record(self.variables["test_guid"])
         indexd_record_hash = index_record["hashes"]["md5"]
-        logger.debug(indexd_record_hash)
+        logger.debug(f"Indexd record md5sum : {indexd_record_hash}")
         assert (
             indexd_record_hash == self.variables["md5sum"]
         ), f"Expected MD5 hash {self.variables['md5sum']}, but got {indexd_record_hash}"
@@ -135,7 +135,7 @@ class TestIndexingPage:
         gat.check_pod(pytest.namespace, "indexd-manifest", "sowerjob")
         # Sending request with manifest_link to get manifest data
         manifest_link_resp = requests.get(manifest_link)
-        logger.debug(manifest_link_resp.text)
+        logger.debug(f"Text from manifest link response : {manifest_link_resp.text}")
         manifest_data = manifest_link_resp.text
         # Verify downloaded data if it consists the uploaded manifest record
         assert (
