@@ -10,10 +10,7 @@ from pages.login import LoginPage
 from pages.exploration import ExplorationPage
 from utils.test_execution import screenshot
 import utils.gen3_admin_tasks as gat
-
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 class TestPFBExport(object):
@@ -21,12 +18,12 @@ class TestPFBExport(object):
         """
         Scenario: Test PFB Export
         Steps:
-            1.
-            2. Run ETL job and roll Guppy service after the ETL is successful
-            3. Login with main_account and go to Exploration Page
-            4. Click on 'Export to PFB' button and check the footer for success message
-            5. Get the PreSigned URl and make a API call to get the content of the PFB file
-            6. Run PyPFB CLI command
+            1. Login with main_account user
+            2. Go to exploration page and check if 'Export to PFB' button is present
+            3. Click on 'Export to PFB' button and check if job footer comes up
+            4. Wait for sower job to finish - (can use check-kube-pod jenkins job)
+            5. Send request to PFB link and save the content to avro file to local avro file
+            6. Verify the node names from local avro file
         """
         login_page = LoginPage()
         exploration_page = ExplorationPage()
@@ -58,7 +55,7 @@ class TestPFBExport(object):
         # Print the content of pfb_file_path
         with open(pfb_file_path, "rb") as avro_file:
             pfb_content = avro_file.read()
-            logger.debug(f"Contents of {pfb_file_path}: {pfb_content}")
+            logger.info(f"Contents of {pfb_file_path}: {pfb_content}")
 
         # Convert content of avro file to json file
         with open(pfb_file_path, "rb") as avro_file:
@@ -86,7 +83,4 @@ class TestPFBExport(object):
         logger.debug(f"Node Names : {node_list}")
         assert "program" in node_list, "Program node not found in node list"
         assert "project" in node_list, "Project node not found in node list"
-        if "anvil" in pytest.namespace:
-            assert "subject" in node_list, "Subject node not found in node list"
-        else:
-            assert "study" in node_list, "Study node not found in node list"
+        assert "subject" in node_list, "Subject node not found in node list"
