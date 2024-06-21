@@ -22,7 +22,7 @@ class Requestor(object):
             json=data,
             headers={"Authorization": f"bearer {client_token}"},
         )
-        logger.debug(json.dumps(create_req.json(), indent=4))
+        logger.debug(f"Create Request Json : {json.dumps(create_req.json(), indent=4)}")
         assert (
             create_req.status_code == 201
         ), f"Expected status code 201, but got {create_req.status_code}"
@@ -83,7 +83,7 @@ class Requestor(object):
             json=data,
             headers={"Authorization": f"bearer {gen3auth.get_access_token()}"},
         )
-        logger.debug(f"### {create_req.text}")
+        logger.debug(f"Create Request Text : {create_req.text}")
         return create_req
 
     def get_request_id(self, user: str):
@@ -98,16 +98,14 @@ class Requestor(object):
                 "Content-Type": "application/json",
             },
         )
-        logger.info(f"SC :{id_res.status_code}")
-        logger.info(f"Content :{id_res.content}")
-        logger.info(f"Text :{id_res.text}")
+        logger.debug(f"Response Text: {id_res.text}")
         id_res.raise_for_status()
         if id_res.status_code == 200:
             response_data_json = id_res.json()
-            logger.info(response_data_json)
+            logger.info(f"User Request Response : {response_data_json}")
             if len(response_data_json) > 0:
                 req_id = response_data_json[0]["request_id"]
-                logger.info(f"Request_id: {req_id}")
+                logger.debug(f"Request_id: {req_id}")
                 return req_id
             else:
                 logger.info("Response data is empty")
