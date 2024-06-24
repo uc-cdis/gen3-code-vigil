@@ -358,3 +358,54 @@ def kube_setup_service(test_env_namespace, servicename):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+
+
+def create_link_google_test_buckets(test_env_namespace: str):
+    """
+    Runs jenkins job to execute command for creating and linking Google test buckets
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "create-link-google-test-buckets",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def run_usersync_job(test_env_namespace: str, cmd: str):
+    """
+    Runs jenkins job to usersync with certain parameters
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "run-usersync-job",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+        "CMD": cmd,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")

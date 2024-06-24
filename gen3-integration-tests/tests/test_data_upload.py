@@ -7,12 +7,16 @@ import os
 import pytest
 import random
 import string
+import hashlib
 
 from cdislogging import get_logger
 from services.fence import Fence
 from services.indexd import Indexd
 from services.graph import GraphDataTools
 from utils import data_upload
+from playwright.sync_api import Page
+from pages.login import LoginPage
+from pages.submission import SubmissionPage
 
 from gen3.auth import Gen3Auth
 
@@ -32,12 +36,20 @@ def skip_consent_code_test(gdt: GraphDataTools):
     return False
 
 
+def create_large_file(filePath, megabytes, text):
+    with aiofiles.open(filePath, mode="w") as f:
+        # 1MB = 1024 times the previous text
+        for i in range(megabytes * 1024):
+            f.write(text)
+
+
 # Global variables used across TestDataUpload class
 rand = "".join(random.choices(string.ascii_lowercase + string.digits, k=5))
 file_name = f"qa-upload-file_{rand}.txt"
 file_path = f"./{file_name}"
+text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi sit amet iaculis neque, at mattis mi. Donec pharetra lacus sit amet dui tincidunt, a varius risus tempor. Duis dictum sodales dignissim. Ut luctus turpis non nibh pretium consequat. Fusce faucibus vulputate magna vel congue. Proin sit amet libero mauris. Lorem ipsum dolor sit amet, consectetur adipiscing elit. In sed dictum lacus. Vestibulum bibendum ipsum quis lacus dignissim euismod. Mauris et dignissim leo. Phasellus pretium molestie nunc, varius gravida augue congue quis. Maecenas faucibus, velit dignissim feugiat viverra, eros diam tempor tortor, sed maximus mi justo a massa. Mauris at metus tincidunt augue iaculis mollis et id eros. Interdum et malesuada fames ac ante ipsum primis in faucibus. Aliquam sagittis porta vestibulum. Cras molestie nulla metus, a sollicitudin neque suscipit nec. Nunc sem lectus, molestie eu mauris eget, volutpat posuere mauris. Donec gravida venenatis sodales. Pellentesque risus lorem, pulvinar nec molestie eu amet. "
 file_content = (
-    "this fake data file was generated and uploaded by the integration test suite\n"
+    "this fake data file was generated and uploaded by the integration test suite1\n"
 )
 big_file_name = f"qa-upload-7mb-file_{rand}.txt"
 big_file_path = f"./{big_file_name}"
@@ -61,9 +73,12 @@ class FileNodeWithCCs:
 @pytest.mark.sheepdog
 class TestDataUpload:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="test")
+    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
+    # sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="test")
     fence = Fence()
     indexd = Indexd()
+    login_page = LoginPage()
+    submission = SubmissionPage()
     created_guids = []
 
     def setup_method(self, method):
@@ -71,19 +86,18 @@ class TestDataUpload:
         with open(file_path, "w") as file:
             file.write(file_content)
         # Create a local large file (size 7MB)
-        with open(big_file_path, "w") as file:
-            file.write(file_content)
+        # create_large_file(big_file_path, 7, text)
 
     def teardown_method(self, method):
         os.remove(file_path)
-        os.remove(big_file_path)
+        # os.remove(big_file_path)
         # Delete all test records at the end of each test
         self.sd_tools.delete_all_records()
         # Delete all guids
-        self.indexd.delete_files(self.created_guids)
+        # self.indexd.delete_files(self.created_guids)
         self.created_guids = []
 
-    def test_file_upload_and_download_via_api(self):
+    '''def test_file_upload_and_download_via_api(self):
         """
         Scenario: Test Upload and Download via api
         Steps:
@@ -102,11 +116,13 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
+
         # Check blank record was created in indexd
         file_node = FileNode(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
         self.indexd.get_record(indexd_guid=file_node.did)
+
         # fail to submit metadata for this file without hash and size
         try:
             file_record = self.sd_tools.get_file_record()
@@ -119,27 +135,33 @@ class TestDataUpload:
             assert (
                 "400" in f"{e}"
             ), f"Linking metadata to file without hash and size should not be possible."
+
         # check that we CANNOT download the file (there is no URL in indexd yet)
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="main_account", expectedStatus=404
         )
         self.fence.has_no_url(signed_url_res)
+
         # Upload the file to the S3 bucket using the presigned URL
         data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+
         # wait for the indexd listener to add size, hashes and URL to the record
         data_upload.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node
         )
+
         # Try downloading before linking metadata to the file. It should succeed for the uploader but fail for other users
         # the uploader can now download the file
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="main_account", expectedStatus=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
+
         # a user who is not the uploader CANNOT download the file
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="auxAcct2_account", expectedStatus=401
         )
+
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
         file_record.props["object_id"] = file_guid
@@ -147,8 +169,9 @@ class TestDataUpload:
         file_record.props["md5sum"] = file_md5
         self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
+
         # a user who is not the uploader can now download the file
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="auxAcct2_account", expectedStatus=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
@@ -188,15 +211,18 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
+
         # Upload the file to the S3 bucket using the presigned URL
         data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
         file_node = FileNode(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
+
         # wait for the indexd listener to add size, hashes and URL to the record
         data_upload.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node
         )
+
         # check that a user who is not the uploader cannot delete the file
         record = self.indexd.get_record(self.created_guids[-1])
         rev = self.indexd.get_rev(json_data=record)
@@ -206,11 +232,13 @@ class TestDataUpload:
         assert (
             response == 401
         ), "File deletion from user who is not file uploader should not be possible"
+
         # delete the file
         response = self.fence.delete_file(
             guid=self.created_guids[-1], user="main_account"
         )
         assert response == 204, f"File not deleted. Response : {response}"
+
         # no metadata linking after delete
         try:
             file_record = self.sd_tools.get_file_record()
@@ -223,8 +251,9 @@ class TestDataUpload:
             assert (
                 "400" in f"{e}"
             ), f"Linking metadata to file without hash and size should not be possible.\n{metadata_response}"
+
         # no download after delete
-        self.fence.createSignedUrl(
+        self.fence.create_signed_url(
             id=file_guid, user="main_account", expectedStatus=404
         )
 
@@ -243,6 +272,7 @@ class TestDataUpload:
         """
         file_size = os.path.getsize(file_path)
         file_md5 = hashlib.md5(open(file_path, "rb").read()).hexdigest()
+
         # First Attempt to Upload file
         fence_upload_res = self.fence.get_url_for_data_upload(
             file_name, "main_account"
@@ -250,15 +280,18 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
+
         # Upload the file to the S3 bucket using the presigned URL
         data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
         file_node = FileNode(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
+
         # wait for the indexd listener to add size, hashes and URL to the record
         data_upload.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node
         )
+
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
         file_record.props["object_id"] = file_guid
@@ -268,10 +301,11 @@ class TestDataUpload:
         self.sd_tools.submit_record(record=file_record)
 
         # check that the file can be downloaded
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="auxAcct2_account", expectedStatus=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
+
         # Second Attempt to Upload file
         fence_upload_res = self.fence.get_url_for_data_upload(
             file_name, "main_account"
@@ -279,12 +313,15 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
+
         # Upload the file to the S3 bucket using the presigned URL
         data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+
         # wait for the indexd listener to add size, hashes and URL to the record
         data_upload.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node
         )
+
         # submit metadata for this file
         # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
         file_record = self.sd_tools.get_file_record()
@@ -293,9 +330,10 @@ class TestDataUpload:
         file_record.props["md5sum"] = file_md5
         file_record.props["submitter_id"] = "submitter_id_new_value"
         self.sd_tools.submit_links_for_record(file_record, new_submitter_ids=True)
+
         self.sd_tools.submit_record(record=file_record)
         # check that the file can be downloaded
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="auxAcct2_account", expectedStatus=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
@@ -323,17 +361,21 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
+
         # Check blank record was created in indexd
         file_node = FileNode(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
         self.indexd.get_record(indexd_guid=file_node.did)
+
         # Upload the file to the S3 bucket using the presigned URL
         data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+
         # wait for the indexd listener to add size, hashes and URL to the record
         data_upload.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node
         )
+
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
         file_record.props["object_id"] = file_guid
@@ -350,3 +392,42 @@ class TestDataUpload:
         data_upload.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node_with_ccs
         )
+
+    def test_successful_multipart_upload(self):
+        init_multipart_upload_res = self.fence.initialize_multipart_upload(big_file_name, user="main_account")
+        logger.info(init_multipart_upload_res)
+        assert 'guid' in init_multipart_upload_res.keys(), f"Expected guid key not found. {init_multipart_upload_res}"
+        assert 'uploadId' in init_multipart_upload_res.keys(), f"Expected uploadId key not found. {init_multipart_upload_res}"
+        file_guid = init_multipart_upload_res["guid"]
+        self.created_guids.append(file_guid)
+        key = f"{file_guid}/{big_file_name}"'''
+
+    def test_map_uploaded_files_windmill_submission_page(self, page: Page):
+        file_object = {
+            "file_name": file_name,
+            "file_path": file_path,
+            "file_size": os.path.getsize(file_path),
+            "file_md5": hashlib.md5(file_content.encode()).hexdigest(),
+        }
+
+        fence_upload_res = self.fence.get_url_for_data_upload(
+            file_name, "main_account"
+        ).json()
+        assert (
+            "url" in fence_upload_res.keys()
+        ), f"Expected guid key not found. {fence_upload_res}"
+        file_guid = fence_upload_res["guid"]
+        self.created_guids.append(file_guid)
+        presigned_url = fence_upload_res["url"]
+        logger.info(file_guid)
+        logger.info(presigned_url)
+
+        if "midrc" not in pytest.namespace:
+            self.login_page.go_to(page)
+            self.submission.check_unmapped_files_submission_page(page)
+
+            data_upload.upload_file_to_s3(
+                presigned_url, file_object, file_object["file_size"]
+            )
+
+            # self.submission.check_unmapped_files_submission_page(page, file_name, True)

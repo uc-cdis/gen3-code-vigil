@@ -14,13 +14,16 @@ from playwright.sync_api import Page
 class Fence(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/user"
-        self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
-        self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
-        self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
-        self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
-        self.USER_ENDPOINT = f"{self.BASE_URL}/user"
-        self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT = f"{self.BASE_URL}/oauth2/authorize"
-        self.TOKEN_OAUTH2_CLIENT_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
+        self.API_CREDENTIALS_ENDPOINT = "/credentials/api"
+        self.OAUTH_TOKEN_ENDPOINT = "/oauth2/token"
+        self.DATA_UPLOAD_ENDPOINT = "/data/upload"
+        self.DATA_ENDPOINT = "/data"
+        self.DATA_DOWNLOAD_ENDPOINT = "/data/download"
+        self.USER_ENDPOINT = "/user"
+        self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT = "/oauth2/authorize"
+        self.TOKEN_OAUTH2_CLIENT_ENDPOINT = "/oauth2/token"
+        self.MULTIPART_UPLOAD_INIT_ENDPOINT = "/data/multipart/init"
+        self.MULTIPART_UPLOAD_ENDPOINT = "/data/multipart/upload"
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
@@ -28,7 +31,7 @@ class Fence(object):
     def get_access_token(self, api_key):
         """Generate access token from api key"""
         res = requests.post(
-            f"{self.API_CREDENTIALS_ENDPOINT}/access_token",
+            f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token",
             data=json.dumps({"api_key": api_key}),
         )
         logger.info(f"Status code: {res.status_code}")
@@ -37,13 +40,13 @@ class Fence(object):
         else:
             logger.info(f"Response: {res.text}")
             raise Exception(
-                f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
+                f"Failed to get access token from {self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token"
             )
 
-    def createSignedUrl(
+    def create_signed_url(
         self, id, user, expectedStatus, file_type=None, params=[], access_token=None
     ):
-        API_GET_FILE = "/data/download"
+        API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
         if len(params) > 0:
             url = url + "?" + "&".join(params)
@@ -73,11 +76,16 @@ class Fence(object):
             "Content-Type": "application/json",
         }
         response = requests.post(
-            url=self.DATA_UPLOAD_ENDPOINT,
+            url=f"{self.BASE_URL}{self.DATA_UPLOAD_ENDPOINT}",
             data=json.dumps({"file_name": file_name}),
             auth=auth,
             headers=headers,
         )
+        return response
+
+    def get_url_for_data_upload_for_existing_file(self, guid: str, user: str) -> dict:
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(path=f"{self.DATA_UPLOAD_ENDPOINT}/{guid}")
         return response
 
     def has_url(self, response: dict) -> None:
@@ -101,7 +109,7 @@ class Fence(object):
 
     def delete_file(self, guid: str, user: str) -> int:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        url = f"{self.DATA_ENDPOINT}/{guid}"
+        url = f"{self.BASE_URL}{self.DATA_ENDPOINT}/{guid}"
         response = requests.delete(url=url, auth=auth)
         return response.status_code
 
@@ -126,7 +134,7 @@ class Fence(object):
         """Get user info"""
         if access_token:
             user_info_response = requests.get(
-                f"{self.USER_ENDPOINT}",
+                f"{self.BASE_URL}{self.USER_ENDPOINT}",
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"bearer {access_token}",
@@ -134,7 +142,8 @@ class Fence(object):
             )
         else:
             user_info_response = requests.get(
-                f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
+                f"{self.BASE_URL}{self.USER_ENDPOINT}",
+                headers=pytest.auth_headers[user],
             )
         response_data = user_info_response.json()
         logger.debug(f"User info {response_data}")
@@ -170,7 +179,7 @@ class Fence(object):
         consent="ok",
         expect_code=True,
     ):
-        url = f"{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
+        url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
         page.goto(url)
         if expect_code:
             if consent == "cancel":
@@ -182,7 +191,7 @@ class Fence(object):
         return page.url
 
     def get_token_with_auth_code(self, client_id, client_secret, code, grant_type):
-        url = f"{self.TOKEN_OAUTH2_CLIENT_ENDPOINT}?code={code}&grant_type={grant_type}&redirect_uri=https%3A%2F%2F{pytest.hostname}"
+        url = f"{self.BASE_URL}{self.TOKEN_OAUTH2_CLIENT_ENDPOINT}?code={code}&grant_type={grant_type}&redirect_uri=https%3A%2F%2F{pytest.hostname}"
         data = {
             "client_id": f"{client_id}",
             "client_secret": f"{client_secret}",
@@ -194,3 +203,19 @@ class Fence(object):
         }
         response = requests.post(url=url, data=json.dumps(data), headers=headers)
         return response
+
+    def initialize_multipart_upload(self, file_name, user):
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.MULTIPART_UPLOAD_INIT_ENDPOINT}",
+            data=json.dumps({"file_name": file_name}),
+            auth=auth,
+            headers=headers,
+        )
+        assert (
+            response.status_code == 201
+        ), f"Expected status 201 but got {response.status_code}"
+        return response.json()

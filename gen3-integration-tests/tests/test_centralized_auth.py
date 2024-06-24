@@ -197,7 +197,7 @@ class TestCentralizedAuth:
         self.indexd.delete_file_indices(records=new_gen3_records)
         self.indexd.delete_file_indices(records=new_abc_records)
 
-        # Adding indexd files used to test signed urls
+        # Adding indexd files
         for key, val in indexed_files.items():
             indexd_record = self.indexd.create_files(files={key: val})
             indexed_files[key]["did"] = indexd_record[0]["did"]
@@ -491,13 +491,13 @@ class TestCentralizedAuth:
         )
 
         # Create Signed URLs for /abc and /gen3 project using access_token
-        signed_url_abc_res = self.fence.createSignedUrl(
+        signed_url_abc_res = self.fence.create_signed_url(
             id=indexed_files["abc_foo_bar_file"]["did"],
             user=None,
             expectedStatus=200,
             access_token=access_token,
         )
-        signed_url_gen3_res = self.fence.createSignedUrl(
+        signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expectedStatus=401,
@@ -533,7 +533,7 @@ class TestCentralizedAuth:
         )
 
         # Create Signed URLs for /gen3 project using access_token
-        signed_url_gen3_res = self.fence.createSignedUrl(
+        signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expectedStatus=401,
@@ -561,7 +561,7 @@ class TestCentralizedAuth:
         )
 
         # Create Signed URLs for /gen3 project using access_token
-        signed_url_gen3_res = self.fence.createSignedUrl(
+        signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expectedStatus=401,
@@ -580,12 +580,12 @@ class TestCentralizedAuth:
             2. File contents should only be accessible for file for /abc project since main account has access.
         """
         # Create Signed URLs for /abc and /gen3 project using main_account
-        signed_url_abc_res = self.fence.createSignedUrl(
+        signed_url_abc_res = self.fence.create_signed_url(
             id=indexed_files["abc_foo_bar_file"]["did"],
             user="main_account",
             expectedStatus=200,
         )
-        signed_url_gen3_res = self.fence.createSignedUrl(
+        signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user="main_account",
             expectedStatus=401,
@@ -644,7 +644,7 @@ class TestCentralizedAuth:
         )
 
         # Create Signed URL using access_token
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["two_projects_file"]["did"],
             user=None,
             expectedStatus=401,
@@ -672,7 +672,7 @@ class TestCentralizedAuth:
         )
 
         # Create Signed URL using access_token
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["two_projects_file"]["did"],
             user=None,
             expectedStatus=200,
@@ -692,7 +692,7 @@ class TestCentralizedAuth:
             2. File contents should be accessible.
         """
         # Create Signed URLs for open access file using dcf-user2 account
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["open_access_file"]["did"],
             user="user2_account",
             expectedStatus=200,
@@ -716,7 +716,7 @@ class TestCentralizedAuth:
             2. File contents should be accessible.
         """
         # Create Signed URLs for open access file
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["open_access_file"]["did"], user=None, expectedStatus=200
         )
 
@@ -732,7 +732,7 @@ class TestCentralizedAuth:
 
     def test_create_signed_url_consent_codes_multiple_policies(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (multiple policies).
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["gen3_hmb_research_file"]["did"],
             user="user0_account",
             expectedStatus=200,
@@ -750,7 +750,7 @@ class TestCentralizedAuth:
 
     def test_create_signed_url_consent_codes_single_policy(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (single policy).
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["gen3_hmb_research_file"]["did"],
             user="user1_account",
             expectedStatus=200,
@@ -768,7 +768,7 @@ class TestCentralizedAuth:
 
     def test_cannot_create_signed_url_unauthorized_consent_codes_(self):
         # Create Signed URLs for file in authorized namespace with UNauthorized consent code.
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["abc_hmb_research_file"]["did"],
             user="main_account",
             expectedStatus=401,
@@ -781,7 +781,7 @@ class TestCentralizedAuth:
 
     def test_create_signed_url_implied_authorized_consent_codes(self):
         # Create Signed URLs for file in authorized namespace with IMPLIED authorized consent code (based on DUO hierarchy).
-        signed_url_res = self.fence.createSignedUrl(
+        signed_url_res = self.fence.create_signed_url(
             id=indexed_files["gru_research_file"]["did"],
             user="user0_account",
             expectedStatus=200,

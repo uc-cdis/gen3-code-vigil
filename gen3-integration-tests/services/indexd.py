@@ -32,6 +32,8 @@ class Indexd(object):
                 "did": files[file]["did"],
             }
 
+            if "urls" in files[file].keys():
+                data["urls"] = files[file]["urls"]
             if "link" in files[file].keys():
                 data["urls"] = [files[file]["link"]]
             if "authz" in files[file].keys():

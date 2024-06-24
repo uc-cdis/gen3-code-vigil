@@ -9,9 +9,13 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 def upload_file_to_s3(presigned_url, file_path, file_size):
     headers = {"Content-Length": str(file_size)}
-    response = requests.put(
-        url=presigned_url, data=open(file_path, "rb"), headers=headers
-    )
+    if isinstance(file_path, dict):
+        response = requests.put(url=presigned_url, data=file_path, headers=headers)
+    else:
+        response = requests.put(
+            url=presigned_url, data=open(file_path, "rb"), headers=headers
+        )
+    logger.info(response.content)
     assert (
         response.status_code == 200
     ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
