@@ -29,3 +29,6 @@ class TestHomePage:
         assert page.locator(home_page.CARDS) is not None
         # Logout
         login_page.logout(page)
+
+    def test_fail(self):
+        assert 1 == 2

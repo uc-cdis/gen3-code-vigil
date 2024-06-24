@@ -52,7 +52,7 @@ def get_test_result_and_metrics():
             + int(statistic_json["broken"])
             + int(statistic_json["unknown"])
         )  # some broken tests are reported as Unknown
-        duration = int(time_json["duration"]) / 60000  # rounded to the minute
+        duration = round(int(time_json["duration"]) / 60000, 2)  # rounded to the minute
         if passed + skipped == total:
             test_result = "Successful"
         else:
@@ -61,7 +61,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Tests Executed* (ran for :stopwatch: *{duration}* minutes\n:white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}",
+                "text": f"Test Metrics:\n:white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Run Time - {duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
@@ -78,22 +78,12 @@ def generate_slack_report():
         f"Integration Test Result: https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
     )
     slack_report_json["blocks"] = []
-    # Header
-    header_block = {
-        "type": "header",
-        "text": {
-            "type": "plain_text",
-            "text": "Integration Test Results",
-            "emoji": True,
-        },
-    }
-    slack_report_json["blocks"].append(header_block)
     # Run summary
     summary_block = {
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result} for PR https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')} on :round_pushpin: *{os.getenv('NAMESPACE')}* {test_result_icons[test_result]}",
+            "text": f"{test_result} integration test run for PR https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')} on {os.getenv('NAMESPACE')} {test_result_icons[test_result]}",
         },
     }
     slack_report_json["blocks"].append(summary_block)
@@ -104,7 +94,7 @@ def generate_slack_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/index.html|click here>  _(login to https://qa.planx-pla.net first)_",
+                "text": f"Test Report: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/index.html|click here>  _(login to https://qa.planx-pla.net first)_",
             },
         }
         slack_report_json["blocks"].append(report_link_block)
