@@ -17,6 +17,16 @@ class MetadataService(object):
         self.AGG_MDS_ENDPOINT = f"{self.BASE_URL}/aggregate/metadata"
 
     @retry(times=3, delay=20, exceptions=(AssertionError))
+    def get_metadata(self, study_id, user="main_account"):
+        """Get mds record for the study id specified"""
+        res = requests.get(
+            f"{self.MDS_ENDPOINT}/{study_id}",
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
+        )
+        assert res.status_code == 200, f"Response status code was {res.status_code}"
+        return res.json()
+
+    @retry(times=3, delay=20, exceptions=(AssertionError))
     def get_aggregate_metadata(self, study_id, user="main_account"):
         """Get aggregate mds record for the study id specified"""
         res = requests.get(
@@ -24,7 +34,7 @@ class MetadataService(object):
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         assert res.status_code == 200, f"Response status code was {res.status_code}"
-        return res.json()["gen3_discovery"]
+        return res.json()
 
     def create_metadata(self, study_id, study_json, user="main_account"):
         """
