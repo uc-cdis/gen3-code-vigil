@@ -26,8 +26,8 @@ def get_failed_suites():
     if suite_report_path.exists:
         with open(suite_report_path) as f:
             suites_report_json = json.load(f)
-            logger.info("**** suites_report_json ****")
-            logger.info(suites_report_json)
+        logger.info("**** suites_report_json ****")
+        logger.info(suites_report_json)
         return find_failures(suites_report_json)
     else:
         return None
