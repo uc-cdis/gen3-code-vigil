@@ -16,11 +16,14 @@ def get_failed_suites():
         with open(suite_report_path) as f:
             csv_reader = csv.DictReader(f)
             for row in csv_reader:
-                if row["Status"] != "passed":
+                if row["Status"] not in ("passed", "skipped"):
                     failed_suites.add(row["Sub Suite"])
         failed_suites_block = {
             "type": "section",
-            "text": {"type": "mrkdwn", "text": f"Failed Suites: {list(failed_suites)}"},
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Failed Suites*: {list(failed_suites)}",
+            },
         }
         return failed_suites_block
     else:
@@ -68,7 +71,7 @@ def generate_slack_report():
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
-    test_result_icons = {"Successful": ":tada:", "Failed": ":facepalm:"}
+    test_result_icons = {"Successful": ":tada:", "Failed": ":fire:"}
     slack_report_json["text"] = (
         f"Integration Test Result: https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
     )
@@ -88,7 +91,7 @@ def generate_slack_report():
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result} run for https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')} on :round_pushpin:*{os.getenv('NAMESPACE')}* {test_result_icons[test_result]}",
+            "text": f"{test_result_icons[test_result]} {test_result} run for https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')} on :round_pushpin:*{os.getenv('NAMESPACE')}*",
         },
     }
     slack_report_json["blocks"].append(summary_block)
