@@ -194,6 +194,7 @@ class TestAuditService:
             # Create List and Dictionary to capture did information of the public and private files
             for record in records:
                 did_records.append(record["did"])
+                record["file_name"] = indexd.get_record(indexd_guid=record['did'])["file_name"]
                 did_mapping[record["file_name"]] = record["did"]
             logger.info(did_mapping)
 
