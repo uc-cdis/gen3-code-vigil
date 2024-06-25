@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 
@@ -6,29 +7,22 @@ from pathlib import Path
 from utils import logger
 
 
-def find_failures(data: dict):
-    failed_suites = []
-    # Check if 'children' exists and is a list
-    if "children" in data and isinstance(data["children"], list):
-        for child in data["children"]:
-            # If the child is a test case and it has failed
-            if "status" in child and child["status"] != "passed":
-                parent = data.get("name")
-                failed_suites.append(parent)
-            # Recursively search in the children
-            failed_suites.extend(find_failures(child))
-
-
 def get_failed_suites():
     suite_report_path = (
-        Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.json"
+        Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
     )
     if suite_report_path.exists:
+        failed_suites = set()
         with open(suite_report_path) as f:
-            suites_report_json = json.load(f)
-        logger.info("**** suites_report_json ****")
-        logger.info(suites_report_json)
-        return find_failures(suites_report_json)
+            csv_reader = csv.DictReader(f)
+            for row in csv_reader:
+                if row["Status"] != "passed":
+                    failed_suites.add(row["Sub Suite"])
+        failed_suites_block = {
+            "type": "section",
+            "text": {"type": "mrkdwn", "text": f"Failed Suites: {list(failed_suites)}"},
+        }
+        return failed_suites_block
     else:
         return None
 
@@ -107,7 +101,8 @@ def generate_slack_report():
     if test_result == "Failed":
         failed_suites_block = get_failed_suites()
         if failed_suites_block:
-            slack_report_json.append(failed_suites_block)
+            slack_report_json["blocks"].append(failed_suites_block)
+    # Pod logs url
     if test_result == "Failed" and os.getenv("POD_LOGS_URL"):
         pod_logs_url__block = {
             "type": "section",
@@ -121,7 +116,6 @@ def generate_slack_report():
         logger.info(
             "Pod logs were not archived. Skipping pod logs url block generation."
         )
-    print(slack_report_json)
     json.dump(slack_report_json, open("slack_report.json", "w"))
 
 
