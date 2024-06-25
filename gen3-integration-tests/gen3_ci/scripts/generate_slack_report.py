@@ -15,7 +15,6 @@ def find_failures(data: dict):
             if "status" in child and child["status"] != "passed":
                 parent = data.get("name")
                 failed_suites.append(parent)
-                break
             # Recursively search in the children
             failed_suites.extend(find_failures(child))
 
