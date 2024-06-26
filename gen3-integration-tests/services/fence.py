@@ -243,7 +243,7 @@ class Fence(object):
             return
         return response.json()
 
-    def upload_file_using_presigned_url(presigned_url, file_data, file_size):
+    def upload_file_using_presigned_url(self, presigned_url, file_data, file_size):
         headers = {"Content-Length": str(file_size)}
         if isinstance(file_data, dict):
             response = requests.put(url=presigned_url, data=file_data, headers=headers)
@@ -255,7 +255,7 @@ class Fence(object):
             response.status_code == 200
         ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
 
-    def upload_data_using_presigned_url(presigned_url, file_data):
+    def upload_data_using_presigned_url(self, presigned_url, file_data):
         response = requests.put(url=presigned_url, data=file_data)
         assert (
             response.status_code == 200
@@ -263,7 +263,7 @@ class Fence(object):
         return response.headers["ETag"].strip('"')
 
     @retry(times=12, delay=10, exceptions=(AssertionError))
-    def wait_upload_file_updated_from_indexd_listener(indexd, file_node):
+    def wait_upload_file_updated_from_indexd_listener(self, indexd, file_node):
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_record=file_node)
         return response
