@@ -1,7 +1,6 @@
 [tool.poetry]
 name = "gen3-integration-tests"
 version = "0.1.0"
-package-mode = false
 description = "Gen3 Integration Tests"
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -58,6 +57,7 @@ markers = [
   "client_credentials: tests for fence client credentials",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
+  "clever_safe: tests for clever safe",
 ]
 pythonpath = "."
 md_report = "true"

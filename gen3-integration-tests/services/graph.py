@@ -126,6 +126,7 @@ class GraphDataTools:
         """
         Creates a program record. Uses the `program_name` set during the initialization
         of the `GraphDataTools` instance.
+
         """
         # Check if program exists or not
         if (
@@ -161,6 +162,7 @@ class GraphDataTools:
             }
             self.sdk.create_project(self.program_name, project_record)
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def _load_test_records(self) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at

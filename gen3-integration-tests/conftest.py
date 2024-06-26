@@ -71,6 +71,12 @@ def pytest_configure(config):
     pytest.users["user0_account"] = (
         "dcf-integration-test-0@planx-pla.net"  # user0 dcf_integration_test
     )
+    pytest.users["user1_account"] = (
+        "dcf-integration-test-1@planx-pla.net"  # user1 dcf_integration_test
+    )
+    pytest.users["user2_account"] = (
+        "dcf-integration-test-2@planx-pla.net"  # user2 dcf_integration_test
+    )
 
     # Generate api key and auth headers
     pytest.api_keys = {}

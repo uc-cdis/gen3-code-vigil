@@ -1,4 +1,4 @@
-import os
+import json
 import pytest
 import requests
 
@@ -12,15 +12,16 @@ class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index/index"
 
-    def create_files(self, files: dict, user="indexing_account"):
+    def create_files(self, files: dict, user="indexing_account", access_token=None):
         """Create new indexd record"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+        if access_token:
+            auth = Gen3Auth(access_token=access_token)
+        else:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         index = Gen3Index(auth_provider=auth)
         indexed_files = []
         # Create record for each file
         for file in files:
-            logger.info(files[file])
-            logger.info(file)
             if "did" not in files[file]:
                 files[file]["did"] = str(uuid4())
             # Create data dictionary to provide as argument for Indexd create record function
@@ -29,21 +30,29 @@ class Indexd(object):
                 "size": files[file]["size"],
                 "file_name": files[file]["filename"],
                 "did": files[file]["did"],
-                "urls": [files[file]["link"]],
-                "authz": files[file]["authz"],
             }
 
+            if "urls" in files[file].keys():
+                data["urls"] = files[file]["urls"]
+            if "link" in files[file].keys():
+                data["urls"] = [files[file]["link"]]
+            if "authz" in files[file].keys():
+                data["authz"] = files[file]["authz"]
+            if "acl" in files[file].keys():
+                data["acl"] = files[file]["acl"]
             try:
-                logger.info(data)
                 record = index.create_record(**data)
                 indexed_files.append(record)
             except Exception:
                 logger.exception(msg="Failed indexd submission got exception")
         return indexed_files
 
-    def get_record(self, indexd_guid: str, user="indexing_account"):
+    def get_record(self, indexd_guid: str, user="indexing_account", access_token=None):
         """Get record from indexd"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+        if access_token:
+            auth = Gen3Auth(access_token=access_token)
+        else:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         indexd = Gen3Index(auth_provider=auth)
         try:
             logger.debug(indexd_guid)
@@ -63,20 +72,43 @@ class Indexd(object):
             logger.info("No rev found in the provided data")
             return None  # Or a suitable default value
 
-    def update_record(self, guid: str, rev: str, data: dict, user="indexing_account"):
+    def update_record(
+        self,
+        guid: str,
+        rev: str,
+        data: dict,
+        user="indexing_account",
+        access_token=None,
+    ):
         """Update indexd record"""
+        if access_token:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {access_token}",
+            }
+        else:
+            headers = pytest.auth_headers[user]
         update_res = requests.put(
             f"{self.BASE_URL}/{guid}?rev={rev}",
             json=data,
-            headers=pytest.auth_headers[user],
+            headers=headers,
         )
         return update_res.status_code
 
     # Use this if the indexd record is created/uploaded through gen3-client upload
-    def delete_record(self, guid: str, rev: str, user="indexing_account"):
+    def delete_record(
+        self, guid: str, rev: str, user="indexing_account", access_token=None
+    ):
         """Delete indexd record if upload is not happening through gen3-sdk"""
+        if access_token:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {access_token}",
+            }
+        else:
+            headers = pytest.auth_headers[user]
         delete_resp = requests.delete(
-            f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
+            f"{self.BASE_URL}/{guid}?rev={rev}", headers=headers
         )
         return delete_resp.status_code
 
@@ -91,6 +123,22 @@ class Indexd(object):
                 index.delete_record(guid=guid)
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
+
+    def delete_file_indices(self, records: dict):
+        for key, val in records.items():
+            try:
+                indexd_record = self.get_record(indexd_guid=val["did"])
+                indexd_rev = self.get_rev(json_data=indexd_record)
+                if indexd_rev is None:
+                    logger.info("Indexd record returned None")
+                    continue
+                logger.info(f"{val['did']} found, performing delete.")
+                self.delete_record(guid=indexd_record["did"], rev=indexd_rev)
+            except Exception as e:
+                if "404" not in f"{e}" and "did" not in f"{e}":
+                    logger.error(f"404 status code not returned. Exception : {e}")
+                    raise
+                logger.info("Indexd record not found, no need to perform delete.")
 
     def file_equals(self, res: dict, file_record: dict) -> None:
         logger.info(f"Response data : {res}")
