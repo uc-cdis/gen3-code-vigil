@@ -24,6 +24,7 @@ class Fence(object):
         self.TOKEN_OAUTH2_CLIENT_ENDPOINT = "/oauth2/token"
         self.MULTIPART_UPLOAD_INIT_ENDPOINT = "/data/multipart/init"
         self.MULTIPART_UPLOAD_ENDPOINT = "/data/multipart/upload"
+        self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
@@ -112,23 +113,6 @@ class Fence(object):
         url = f"{self.BASE_URL}{self.DATA_ENDPOINT}/{guid}"
         response = requests.delete(url=url, auth=auth)
         return response.status_code
-
-    def upload_file_to_s3_using_presigned_url(
-        self, presigned_url, file_path, file_size
-    ):
-        headers = {"Content-Length": str(file_size)}
-        response = requests.put(
-            url=presigned_url, data=open(file_path, "rb"), headers=headers
-        )
-        assert (
-            response.status_code == 200
-        ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
-
-    @retry(times=12, delay=10, exceptions=(AssertionError))
-    def wait_upload_file_updated_from_indexd_listener(indexd, file_node):
-        response = indexd.get_record(file_node.did)
-        indexd.file_equals(res=response, file_node=file_node)
-        return response
 
     def get_user_info(self, user: str = "main_account", access_token=None):
         """Get user info"""
@@ -219,3 +203,67 @@ class Fence(object):
             response.status_code == 201
         ), f"Expected status 201 but got {response.status_code}"
         return response.json()
+
+    def get_url_for_multipart_upload(self, key, upload_id, part_number, user):
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.MULTIPART_UPLOAD_ENDPOINT}",
+            data=json.dumps(
+                {"key": key, "uploadId": upload_id, "partNumber": part_number}
+            ),
+            auth=auth,
+            headers=headers,
+        )
+        assert (
+            response.status_code == 200
+        ), f"Expected status 200 but got {response.status_code}"
+        return response.json()
+
+    def complete_mulitpart_upload(
+        self, key, upload_id, parts, user, expected_status=200
+    ):
+        logger.info(parts)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT}",
+            data=json.dumps({"key": key, "uploadId": upload_id, "parts": parts}),
+            auth=auth,
+            headers=headers,
+        )
+        assert (
+            response.status_code == expected_status
+        ), f"Expected status 200 but got {response.status_code}"
+        if expected_status != 200:
+            return
+        return response.json()
+
+    def upload_file_using_presigned_url(presigned_url, file_data, file_size):
+        headers = {"Content-Length": str(file_size)}
+        if isinstance(file_data, dict):
+            response = requests.put(url=presigned_url, data=file_data, headers=headers)
+        else:
+            response = requests.put(
+                url=presigned_url, data=open(file_data, "rb"), headers=headers
+            )
+        assert (
+            response.status_code == 200
+        ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
+
+    def upload_data_using_presigned_url(presigned_url, file_data):
+        response = requests.put(url=presigned_url, data=file_data)
+        assert (
+            response.status_code == 200
+        ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
+        return response.headers["ETag"].strip('"')
+
+    @retry(times=12, delay=10, exceptions=(AssertionError))
+    def wait_upload_file_updated_from_indexd_listener(indexd, file_node):
+        response = indexd.get_record(file_node.did)
+        indexd.file_equals(res=response, file_record=file_node)
+        return response

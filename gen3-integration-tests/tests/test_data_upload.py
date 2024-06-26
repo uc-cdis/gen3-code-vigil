@@ -7,13 +7,12 @@ import os
 import pytest
 import random
 import string
-import hashlib
+import math
 
 from cdislogging import get_logger
 from services.fence import Fence
 from services.indexd import Indexd
 from services.graph import GraphDataTools
-from utils import data_upload
 from playwright.sync_api import Page
 from pages.login import LoginPage
 from pages.submission import SubmissionPage
@@ -37,7 +36,7 @@ def skip_consent_code_test(gdt: GraphDataTools):
 
 
 def create_large_file(filePath, megabytes, text):
-    with aiofiles.open(filePath, mode="w") as f:
+    with open(filePath, mode="w") as f:
         # 1MB = 1024 times the previous text
         for i in range(megabytes * 1024):
             f.write(text)
@@ -73,8 +72,7 @@ class FileNodeWithCCs:
 @pytest.mark.sheepdog
 class TestDataUpload:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-    # sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="test")
+    sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="test")
     fence = Fence()
     indexd = Indexd()
     login_page = LoginPage()
@@ -86,18 +84,18 @@ class TestDataUpload:
         with open(file_path, "w") as file:
             file.write(file_content)
         # Create a local large file (size 7MB)
-        # create_large_file(big_file_path, 7, text)
+        create_large_file(big_file_path, 7, text)
 
     def teardown_method(self, method):
         os.remove(file_path)
-        # os.remove(big_file_path)
+        os.remove(big_file_path)
         # Delete all test records at the end of each test
         self.sd_tools.delete_all_records()
         # Delete all guids
-        # self.indexd.delete_files(self.created_guids)
+        self.indexd.delete_files(self.created_guids)
         self.created_guids = []
 
-    '''def test_file_upload_and_download_via_api(self):
+    def test_file_upload_and_download_via_api(self):
         """
         Scenario: Test Upload and Download via api
         Steps:
@@ -143,12 +141,10 @@ class TestDataUpload:
         self.fence.has_no_url(signed_url_res)
 
         # Upload the file to the S3 bucket using the presigned URL
-        data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        data_upload.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_node
-        )
+        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
 
         # Try downloading before linking metadata to the file. It should succeed for the uploader but fail for other users
         # the uploader can now download the file
@@ -213,15 +209,13 @@ class TestDataUpload:
         presigned_url = fence_upload_res["url"]
 
         # Upload the file to the S3 bucket using the presigned URL
-        data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
         file_node = FileNode(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        data_upload.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_node
-        )
+        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
 
         # check that a user who is not the uploader cannot delete the file
         record = self.indexd.get_record(self.created_guids[-1])
@@ -282,15 +276,13 @@ class TestDataUpload:
         presigned_url = fence_upload_res["url"]
 
         # Upload the file to the S3 bucket using the presigned URL
-        data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
         file_node = FileNode(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        data_upload.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_node
-        )
+        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
 
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
@@ -315,12 +307,10 @@ class TestDataUpload:
         presigned_url = fence_upload_res["url"]
 
         # Upload the file to the S3 bucket using the presigned URL
-        data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        data_upload.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_node
-        )
+        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
 
         # submit metadata for this file
         # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
@@ -369,12 +359,10 @@ class TestDataUpload:
         self.indexd.get_record(indexd_guid=file_node.did)
 
         # Upload the file to the S3 bucket using the presigned URL
-        data_upload.upload_file_to_s3(presigned_url, file_path, file_size)
+        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        data_upload.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_node
-        )
+        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
 
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
@@ -389,20 +377,156 @@ class TestDataUpload:
             props={"md5sum": file_md5, "file_size": file_size},
             authz=["/consents/cc1", "/consents/cc_2"],
         )
-        data_upload.wait_upload_file_updated_from_indexd_listener(
+        self.fence.wait_upload_file_updated_from_indexd_listener(
             self.indexd, file_node_with_ccs
         )
 
     def test_successful_multipart_upload(self):
-        init_multipart_upload_res = self.fence.initialize_multipart_upload(big_file_name, user="main_account")
-        logger.info(init_multipart_upload_res)
-        assert 'guid' in init_multipart_upload_res.keys(), f"Expected guid key not found. {init_multipart_upload_res}"
-        assert 'uploadId' in init_multipart_upload_res.keys(), f"Expected uploadId key not found. {init_multipart_upload_res}"
+        """
+        Scenario: Successful multipart upload
+        Steps:
+            1. Generate a 7MB file.
+            2. Perform an initialize multipart upload for the file.
+            3. Split the file data into 2 parts.
+            4. Generate url for multipart upload.
+            5. Upload the data using the fence presigned url.
+            6. Complete the multipart upload.
+            7. Create a signed url using the same guid id as in previous steps.
+            8. Verify the contents of the file are correct.
+        """
+        # Generate a 7MB file.
+        file_size = os.path.getsize(big_file_path)
+        file_md5 = hashlib.md5(open(big_file_path, "rb").read()).hexdigest()
+        with open(big_file_path, "r") as file:
+            file_contents = file.read()
+        # Split the file data into 2 parts.
+        five_mb_length = math.floor(len(file_contents * 5) / 7)
+        big_file_parts = {
+            1: file_contents[0:five_mb_length],
+            2: file_contents[five_mb_length:],
+        }
+
+        # Perform an initialize multipart upload for the file.
+        init_multipart_upload_res = self.fence.initialize_multipart_upload(
+            big_file_name, user="main_account"
+        )
+        assert (
+            "guid" in init_multipart_upload_res.keys()
+        ), f"Expected guid key not found. {init_multipart_upload_res}"
+        assert (
+            "uploadId" in init_multipart_upload_res.keys()
+        ), f"Expected uploadId key not found. {init_multipart_upload_res}"
+
         file_guid = init_multipart_upload_res["guid"]
         self.created_guids.append(file_guid)
-        key = f"{file_guid}/{big_file_name}"'''
+        key = f"{file_guid}/{big_file_name}"
+        parts_summary = []
 
-    def test_map_uploaded_files_windmill_submission_page(self, page: Page):
+        for part_number, val in big_file_parts.items():
+            # Generate url for multipart upload.
+            multipart_upload_res = self.fence.get_url_for_multipart_upload(
+                key=key,
+                upload_id=init_multipart_upload_res["uploadId"],
+                part_number=part_number,
+                user="main_account",
+            )
+            # Upload the data using the fence presigned url.
+            upload_part_res = self.fence.upload_data_using_presigned_url(
+                presigned_url=multipart_upload_res["presigned_url"], file_data=val
+            )
+            parts_summary.append({"PartNumber": part_number, "ETag": upload_part_res})
+
+        # Complete the multipart upload.
+        self.fence.complete_mulitpart_upload(
+            key=key,
+            upload_id=init_multipart_upload_res["uploadId"],
+            parts=parts_summary,
+            user="main_account",
+        )
+
+        file_node = FileNode(
+            did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
+        )
+
+        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+
+        # Create a signed url using the same guid id as in previous steps.
+        signed_url_res = self.fence.create_signed_url(
+            id=file_guid, user="main_account", expectedStatus=200
+        )
+
+        # Verify the contents of the file are correct.
+        self.fence.check_file_equals(signed_url_res, file_contents)
+
+    def test_failed_multipart_upload(self):
+        """
+        Scenario: Failed multipart upload
+        Steps:
+            1. Generate a 7MB file.
+            2. Perform an initialize multipart upload for the file.
+            3. Split the file data into 2 parts.
+            4. Generate url for multipart upload.
+            5. Upload the data using the fence presigned url.
+            6. Complete the multipart upload using a fake ETag, which should fail.
+            7. Create a signed url using the same guid id as in previous steps, which shouldn't get created.
+        """
+        # Generate a 7MB file.
+        with open(big_file_path, "r") as file:
+            file_contents = file.read()
+        # Split the file data into 2 parts.
+        five_mb_length = math.floor(len(file_contents * 5) / 7)
+        big_file_parts = {
+            1: file_contents[0:five_mb_length],
+            2: file_contents[five_mb_length:],
+        }
+
+        # Perform an initialize multipart upload for the file.
+        init_multipart_upload_res = self.fence.initialize_multipart_upload(
+            big_file_name, user="main_account"
+        )
+        assert (
+            "guid" in init_multipart_upload_res.keys()
+        ), f"Expected guid key not found. {init_multipart_upload_res}"
+        assert (
+            "uploadId" in init_multipart_upload_res.keys()
+        ), f"Expected uploadId key not found. {init_multipart_upload_res}"
+
+        file_guid = init_multipart_upload_res["guid"]
+        self.created_guids.append(file_guid)
+        key = f"{file_guid}/{big_file_name}"
+        parts_summary = []
+
+        for part_number, val in big_file_parts.items():
+            # Generate url for multipart upload.
+            multipart_upload_res = self.fence.get_url_for_multipart_upload(
+                key=key,
+                upload_id=init_multipart_upload_res["uploadId"],
+                part_number=part_number,
+                user="main_account",
+            )
+            # Upload the data using the fence presigned url.
+            upload_part_res = self.fence.upload_data_using_presigned_url(
+                presigned_url=multipart_upload_res["presigned_url"], file_data=val
+            )
+            parts_summary.append(
+                {"PartNumber": part_number, "ETag": f"{upload_part_res}fake"}
+            )
+
+        # Complete the multipart upload using a fake ETag, which should fail.
+        self.fence.complete_mulitpart_upload(
+            key=key,
+            upload_id=init_multipart_upload_res["uploadId"],
+            parts=parts_summary,
+            user="main_account",
+            expected_status=504,
+        )
+
+        # Create a signed url using the same guid id as in previous steps, which shouldn't get created.
+        self.fence.create_signed_url(
+            id=file_guid, user="main_account", expectedStatus=404
+        )
+
+    """def test_map_uploaded_files_windmill_submission_page(self, page: Page):
         file_object = {
             "file_name": file_name,
             "file_path": file_path,
@@ -426,8 +550,8 @@ class TestDataUpload:
             self.login_page.go_to(page)
             self.submission.check_unmapped_files_submission_page(page)
 
-            data_upload.upload_file_to_s3(
+            self.fence.upload_file_using_presigned_url(
                 presigned_url, file_object, file_object["file_size"]
             )
 
-            # self.submission.check_unmapped_files_submission_page(page, file_name, True)
+            # self.submission.check_unmapped_files_submission_page(page, file_name, True)"""
