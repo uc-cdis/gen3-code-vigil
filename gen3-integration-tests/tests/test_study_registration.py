@@ -24,10 +24,10 @@ class TestStudyRegistration(object):
     def setup_class(cls):
         cls.variables["request_ids"] = []
         cls.variables["cedar_UUID"] = "c5891154-750a-4ed7-83b7-7cac3ddddae6"
-        # cls.variables["application_id"] = str(random.randint(10000000, 99999999))
         cls.variables["policy_id"] = (
             "study.9675420_mds_gateway_cedar_study_registrant_mds_user_cedar_user"
         )
+        cls.variables["application_id"] = str(random.randint(10000000, 99999999))
 
     def teardown_class(cls):
         requestor = Requestor()
@@ -133,8 +133,7 @@ class TestStudyRegistration(object):
         screenshot(page, "DiscoveryPage")
 
         # # Request access to register study by filling out registration form
-        # study_register.search_study(page, self.variables["application_id"])
-        study_register.search_study(page, "42053470")
+        study_register.search_study(page, self.variables["application_id"])
         study_register.click_request_access_to_register(page)
         study_register.fill_request_access_form(
             page, pytest.users["user2_account"], access_form_title
@@ -162,9 +161,8 @@ class TestStudyRegistration(object):
         # study_register.search_study(page, self.variables["application_id"])
         study_register.click_register_study(page)
 
-        application_id = "42053470"
         cedar_uuid = self.variables["cedar_UUID"]
-        # application_id = self.variables["application_id"]
+        application_id = self.variables["application_id"]
         study_name = f"{project_number} : TEST : {nih_application_id}"
         study_register.fill_registration_form(page, cedar_uuid, study_name)
 
