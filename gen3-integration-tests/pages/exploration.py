@@ -31,7 +31,7 @@ class ExplorationPage(object):
 
     def go_to_and_check_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
-        screenshot(page, "navigationBar")
+        screenshot(page, "NavigationBar")
         navbar_element = page.locator(self.NAV_BAR)
         exploration_link = (
             navbar_element.locator("a").filter(has_text="Exploration").first
@@ -40,12 +40,12 @@ class ExplorationPage(object):
         if exploration_link:
             logger.info("Navigating to exploration page...")
             page.goto(self.EXPLORATION_URL)
-            screenshot(page, "explorationPage")
+            screenshot(page, "ExplorationPage")
             self.check_pfbExport_button(page)
         elif files_link:
             logger.info("Navigating to files page...")
             page.goto(self.FILE_URL)
-            screenshot(page, "filePage")
+            screenshot(page, "FilePage")
             self.check_pfbExport_button(page)
         else:
             logger.error(
@@ -56,28 +56,32 @@ class ExplorationPage(object):
     def check_pfbExport_button(self, page: Page):
         page.wait_for_selector(self.GUPPY_TABS)
         page.wait_for_selector(self.GUPPY_FILTERS)
-        screenshot(page, "guppyExplorationPage")
+        screenshot(page, "GuppyExplorationPage")
         try:
             export_to_pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            export_to_pfb_button.wait_for()
+            export_to_pfb_button.wait_for(state="visible")
             print(
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
-            page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
+            pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            pfb_button.click()
+            screenshot(page, "ExportToPFBMessage")
         except TimeoutError:
             print(
                 "### The `Export to PFB` is disabled on the 'Data' tab. Let's switch to the 'File' tab..."
             )
             page.locator(self.FILE_TAB).click()
             page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
-            screenshot(page, "fileTabsPage")
+            screenshot(page, "FileTabsPage")
+            pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            pfb_button.click()
+            screenshot(page, "ExportToPFBMessage")
 
     def check_pfb_status(self, page: Page):
-        pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-        pfb_button.click()
-        screenshot(page, "exportToPFBMessage")
+        wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
+        wait_footer_locator.wait_for()
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
         success_footer_locator.wait_for(timeout=300000)
-        screenshot(page, "pfbSuccessMessageFooter")
+        screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = success_footer_locator.get_attribute("href")
         return pfb_link
