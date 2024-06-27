@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 import uuid
 
@@ -46,7 +47,7 @@ class TestMetadataIngestion:
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         jobs = Gen3Jobs(auth)
         job_input = {"URL": self.variables["TSV_URL"], "metadata_source": "dbgap"}
-        loop = get_or_create_event_loop_for_thread()
+        loop = asyncio.get_event_loop()
         loop.run_until_complete(
             jobs.async_run_job_and_wait(
                 job_name=INGEST_METADATA_JOB, job_input=job_input
