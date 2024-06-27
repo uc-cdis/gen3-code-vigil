@@ -24,6 +24,7 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
+        self.DEV_LOGIN_BUTTON = "//button[contains(text(), 'Dev login')]"
         self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
         self.USER_PROFILE_DROPDOWN = (
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
@@ -51,7 +52,11 @@ class LoginPage(object):
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
         else:
-            page.locator(self.LOGIN_BUTTON).click()
+            # We are doing this, as heal envs have both Dev login and Login from Google
+            if "heal" in pytest.namespace:
+                page.locator(self.DEV_LOGIN_BUTTON).click()
+            else:
+                page.locator(self.LOGIN_BUTTON).click()
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
