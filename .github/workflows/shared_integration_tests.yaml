@@ -211,18 +211,6 @@ jobs:
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
-              PASSED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.passed')
-              echo "PASSED=$PASSED" >> $GITHUB_ENV
-              FAILED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.failed')
-              echo "FAILED=$FAILED" >> $GITHUB_ENV
-              BROKEN=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.broken')
-              echo "BROKEN=$BROKEN" >> $GITHUB_ENV
-              SKIPPED=$(cat ./allure-report/widgets/summary.json | jq -r '.statistic.skipped')
-              echo "SKIPPED=$SKIPPED" >> $GITHUB_ENV
-              DURATION_MS=$(cat ./allure-report/widgets/summary.json | jq -r '.time.duration')
-              MINUTES=$(echo "$DURATION_MS / 60000" | bc)
-              SECONDS=$(( ($milliseconds / 1000) % 60 ))
-              echo "DURATION=${MINUTES}m ${SECONDS}s" >> $GITHUB_ENV
 
           - name: Upload allure report to S3
             id: upload_allure_report
@@ -261,11 +249,17 @@ jobs:
 
           - name: Render report to the PR
             id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Generate Slack report
+            id: generate_slack_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
           - name: Publish report to Slack
             id: slack_notify
@@ -274,48 +268,7 @@ jobs:
             uses: slackapi/slack-github-action@v1.25.0
             with:
               channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
-              payload: |
-                {
-                  "text": "Integration Test Result: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}",
-                  "blocks": [
-                    {
-                      "type": "header",
-                      "text": {
-                      "type": "plain_text",
-                        "text": "Integration Test Results",
-                        "emoji": true
-                      }
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "*PR*: https://github.com/${{ env.REPO_FN }}/pull/${{ env.PR_NUM }}"
-                      }
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "*Tests Executed* (ran for :stopwatch: *${{ env.DURATION || 'N/A' }}* on :round_pushpin: *${{ env.NAMESPACE || 'N/A' }}*)\n:white_check_mark: Passed - ${{ env.PASSED || '0' }}    :x: Failed  - ${{ env.FAILED || '0' }}    :large_yellow_circle: Skipped  - ${{ env.SKIPPED || '0' }}    :broken-wifi: Broken - ${{ env.BROKEN || '0' }}"
-                      }
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/${{ env.REPO }}/${{ env.PR_NUM }}/${{ env.RUN_NUM }}/index.html|click here>  _(login to https://qa.planx-pla.net first)_"
-                      }
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "*Pod Logs Archive*: <${{ env.POD_LOGS_URL || 'N/A' }}|click here>"
-                      }
-                    }
-                  ]
-                }
+              payload-file-path: "./gen3-integration-tests/slack_report.json"
             env:
               SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
 
