@@ -51,7 +51,7 @@ class ExplorationPage(object):
             logger.error(
                 f"{self.BASE_URL} does not have Exploration or Files button in navigation bar. The test should not run in {self.BASE_URL}"
             )
-            screenshot(page, "navbar")
+            screenshot(page, "Navbar")
 
     def check_pfbExport_button(self, page: Page):
         page.wait_for_selector(self.GUPPY_TABS)
