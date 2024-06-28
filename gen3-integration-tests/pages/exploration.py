@@ -3,12 +3,9 @@ import os
 import pytest
 import time
 
-from cdislogging import get_logger
+from utils import logger
 from playwright.sync_api import Page, expect
 from utils.test_execution import screenshot
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
-
 
 class ExplorationPage(object):
     def __init__(self):
