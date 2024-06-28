@@ -570,14 +570,19 @@ zstandard = ["zstandard"]
 [[package]]
 name = "filelock"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "3.15.4"
 =======
 version = "3.15.3"
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+version = "3.15.4"
+>>>>>>> 40f29e9 (Update poetry.lock)
 description = "A platform independent file lock."
 optional = false
 python-versions = ">=3.8"
 files = [
+<<<<<<< HEAD
 <<<<<<< HEAD
     {file = "filelock-3.15.4-py3-none-any.whl", hash = "sha256:6ca1fffae96225dab4c6eaf1c4f4f28cd2568d3ec2a44e15a08520504de468e7"},
     {file = "filelock-3.15.4.tar.gz", hash = "sha256:2207938cbc1844345cb01a5a95524dae30f0ce089eba5b00378295a17e3e90cb"},
@@ -585,6 +590,10 @@ files = [
     {file = "filelock-3.15.3-py3-none-any.whl", hash = "sha256:0151273e5b5d6cf753a61ec83b3a9b7d8821c39ae9af9d7ecf2f9e2f17404103"},
     {file = "filelock-3.15.3.tar.gz", hash = "sha256:e1199bf5194a2277273dacd50269f0d87d0682088a3c561c15674ea9005d8635"},
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+    {file = "filelock-3.15.4-py3-none-any.whl", hash = "sha256:6ca1fffae96225dab4c6eaf1c4f4f28cd2568d3ec2a44e15a08520504de468e7"},
+    {file = "filelock-3.15.4.tar.gz", hash = "sha256:2207938cbc1844345cb01a5a95524dae30f0ce089eba5b00378295a17e3e90cb"},
+>>>>>>> 40f29e9 (Update poetry.lock)
 ]
 
 [package.extras]
@@ -681,14 +690,19 @@ files = [
 [[package]]
 name = "gen3"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "4.25.1"
 =======
 version = "4.25.0"
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+version = "4.25.1"
+>>>>>>> 40f29e9 (Update poetry.lock)
 description = "Gen3 CLI and Python SDK"
 optional = false
 python-versions = "<4,>=3.9"
 files = [
+<<<<<<< HEAD
 <<<<<<< HEAD
     {file = "gen3-4.25.1-py3-none-any.whl", hash = "sha256:ee6303db0596e9e03e5b076eaef1cbec0cfdda48ab336d1e9ada21bf67b5e9f0"},
     {file = "gen3-4.25.1.tar.gz", hash = "sha256:9b02f5476af8edd8fe58f862ea615a79fdfdca9f4388dce4e37d234029e9cc9c"},
@@ -696,6 +710,10 @@ files = [
     {file = "gen3-4.25.0-py3-none-any.whl", hash = "sha256:5f20c1a72e8395902573abc79e2913901c4975428af83e5a227622a886f9193f"},
     {file = "gen3-4.25.0.tar.gz", hash = "sha256:de2ea174afed4b012369c91f90d2d3bea05b0030f597e791f656ee10af822adc"},
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+    {file = "gen3-4.25.1-py3-none-any.whl", hash = "sha256:ee6303db0596e9e03e5b076eaef1cbec0cfdda48ab336d1e9ada21bf67b5e9f0"},
+    {file = "gen3-4.25.1.tar.gz", hash = "sha256:9b02f5476af8edd8fe58f862ea615a79fdfdca9f4388dce4e37d234029e9cc9c"},
+>>>>>>> 40f29e9 (Update poetry.lock)
 ]
 
 [package.dependencies]
@@ -947,14 +965,19 @@ files = [
 [[package]]
 name = "importlib-metadata"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "8.0.0"
 =======
 version = "7.2.0"
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+version = "8.0.0"
+>>>>>>> 40f29e9 (Update poetry.lock)
 description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
+<<<<<<< HEAD
 <<<<<<< HEAD
     {file = "importlib_metadata-8.0.0-py3-none-any.whl", hash = "sha256:15584cf2b1bf449d98ff8a6ff1abef57bf20f3ac6454f431736cd3e660921b2f"},
     {file = "importlib_metadata-8.0.0.tar.gz", hash = "sha256:188bd24e4c346d3f0a933f275c2fec67050326a856b9a359881d7c2a697e8812"},
@@ -962,6 +985,10 @@ files = [
     {file = "importlib_metadata-7.2.0-py3-none-any.whl", hash = "sha256:04e4aad329b8b948a5711d394fa8759cb80f009225441b4f2a02bd4d8e5f426c"},
     {file = "importlib_metadata-7.2.0.tar.gz", hash = "sha256:3ff4519071ed42740522d494d04819b666541b9752c43012f85afb2cc220fcc6"},
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+    {file = "importlib_metadata-8.0.0-py3-none-any.whl", hash = "sha256:15584cf2b1bf449d98ff8a6ff1abef57bf20f3ac6454f431736cd3e660921b2f"},
+    {file = "importlib_metadata-8.0.0.tar.gz", hash = "sha256:188bd24e4c346d3f0a933f275c2fec67050326a856b9a359881d7c2a697e8812"},
+>>>>>>> 40f29e9 (Update poetry.lock)
 ]
 
 [package.dependencies]
@@ -1902,6 +1929,7 @@ files = [
     {file = "PyYAML-6.0.1-cp311-cp311-win_amd64.whl", hash = "sha256:bf07ee2fef7014951eeb99f56f39c9bb4af143d8aa3c21b1677805985307da34"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:855fb52b0dc35af121542a76b9a84f8d1cd886ea97c84703eaa6d88e37a2ad28"},
     {file = "PyYAML-6.0.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:40df9b996c2b73138957fe23a16a4f0ba614f4c0efce1e9406a184b6d07fa3a9"},
+    {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a08c6f0fe150303c1c6b71ebcd7213c2858041a7e01975da3a99aed1e7a378ef"},
     {file = "PyYAML-6.0.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c22bec3fbe2524cde73d7ada88f6566758a8f7227bfbf93a408a9d86bcc12a0"},
     {file = "PyYAML-6.0.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:8d4e9c88387b0f5c7d5f281e55304de64cf7f9c0021a3525bd3b1c542da3b0e4"},
     {file = "PyYAML-6.0.1-cp312-cp312-win32.whl", hash = "sha256:d483d2cdf104e7c9fa60c544d92981f12ad66a457afae824d146093b8c294c54"},
@@ -1988,14 +2016,19 @@ files = [
 [[package]]
 name = "setuptools"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "70.1.1"
 =======
 version = "70.1.0"
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+version = "70.1.1"
+>>>>>>> 40f29e9 (Update poetry.lock)
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
+<<<<<<< HEAD
 <<<<<<< HEAD
     {file = "setuptools-70.1.1-py3-none-any.whl", hash = "sha256:a58a8fde0541dab0419750bcc521fbdf8585f6e5cb41909df3a472ef7b81ca95"},
     {file = "setuptools-70.1.1.tar.gz", hash = "sha256:937a48c7cdb7a21eb53cd7f9b59e525503aa8abaf3584c730dc5f7a5bec3a650"},
@@ -2003,6 +2036,10 @@ files = [
     {file = "setuptools-70.1.0-py3-none-any.whl", hash = "sha256:d9b8b771455a97c8a9f3ab3448ebe0b29b5e105f1228bba41028be116985a267"},
     {file = "setuptools-70.1.0.tar.gz", hash = "sha256:01a1e793faa5bd89abc851fa15d0a0db26f160890c7102cd8dce643e886b47f5"},
 >>>>>>> 1e9ab4d (update poetry lock)
+=======
+    {file = "setuptools-70.1.1-py3-none-any.whl", hash = "sha256:a58a8fde0541dab0419750bcc521fbdf8585f6e5cb41909df3a472ef7b81ca95"},
+    {file = "setuptools-70.1.1.tar.gz", hash = "sha256:937a48c7cdb7a21eb53cd7f9b59e525503aa8abaf3584c730dc5f7a5bec3a650"},
+>>>>>>> 40f29e9 (Update poetry.lock)
 ]
 
 [package.extras]
@@ -2412,4 +2449,8 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
+<<<<<<< HEAD
 content-hash = "18ae3bd3b058cdef7d9c0d6564a90f5641324e913d2a9cdfaf0c8ed0938ecf95"
+=======
+content-hash = "dcac8961b2326a392c8c9c3ab34e7cd6933b202623a0d6d7eec66aaee9f9a2b2"
+>>>>>>> 40f29e9 (Update poetry.lock)
