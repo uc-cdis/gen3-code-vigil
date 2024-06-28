@@ -4,11 +4,14 @@ import uuid
 
 from gen3.auth import Gen3Auth
 from gen3.jobs import Gen3Jobs, INGEST_METADATA_JOB
-from gen3.utils import get_or_create_event_loop_for_thread
 
 from services.metadataservice import MetadataService
 
 from utils import logger
+
+import nest_asyncio
+
+nest_asyncio.apply()
 
 
 @pytest.mark.mds
