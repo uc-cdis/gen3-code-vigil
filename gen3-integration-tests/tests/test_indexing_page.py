@@ -119,7 +119,7 @@ class TestIndexingPage:
             page, self.variables["valid_output_path"]
         )
         # Check if the sowerjob pod for manifest-indexing has completed
-        gat.check_pod(pytest.namespace, "manifest-indexing", "sowerjob")
+        gat.check_job_pod(pytest.namespace, "manifest-indexing", "sowerjob")
         # Get the indexd record and check if the hash value matches to the test_hash value
         index_record = indexd.get_record(self.variables["test_guid"])
         indexd_record_hash = index_record["hashes"]["md5"]

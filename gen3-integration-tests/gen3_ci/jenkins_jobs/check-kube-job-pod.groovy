@@ -5,8 +5,10 @@
     String parameter APP_LABEL
     eg - sowerjob
 
-    String parameter EXPECT_FAILURE
+    String parameter EXPECT_FAILURE (parameter for negative sceanrio)
     default value - False
+    Note : This parameter is needed to be set to True if you want to test the negatve sceanrio
+    where you are expecting the job pod to fail.
 */
 pipeline {
     agent {

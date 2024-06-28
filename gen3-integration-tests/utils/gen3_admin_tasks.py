@@ -105,7 +105,7 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
         raise Exception("Build number not found")
 
 
-def check_pod(
+def check_job_pod(
     test_env_namespace: str,
     job_name: str,
     label_name: str,
