@@ -135,36 +135,6 @@ def check_job_pod(
         raise Exception("Build number not found")
         
 
-def generate_test_data(
-    test_env_namespace: str,
-    max_examples: int,
-):
-    """
-    Runs jenkins job to generate test data
-    Since this requires adminvm interaction we use jenkins
-    """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "generate-test-data",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "MAX_EXAMPLES": max_examples,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return job.get_build_result(build_num)
-        else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
-
-
 def create_fence_client(
     test_env_namespace: str,
     client_name: str,
