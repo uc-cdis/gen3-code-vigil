@@ -1,12 +1,12 @@
 import os
 import pytest
 import requests
+import json
 
-from cdislogging import get_logger
+from utils import logger, TEST_DATA_PATH_OBJECT
 from playwright.sync_api import expect
 import utils.gen3_admin_tasks as gat
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 # TODO : enable this test after the manifest PRs are ready to roll
 @pytest.mark.wip
@@ -22,12 +22,16 @@ class TestDataGuids:
     def setup_class(cls):
         cls.variables["guids"] = []
         logger.info("Getting all the hosts from manifest.json ...")
-        hosts_list = gat.get_dataguids_hosts
+        host_list_path = TEST_DATA_PATH_OBJECT / "dataguids" / "host_list.txt"
         logger.info("Getting the first guid fom hosts ...")
-        for host in hosts_list:
-            record = requests.get(f"{host}index?limit=1")
-            guid = record.text
-            cls.variables["guids"].append(guid)
+        with open(host_list_path, "r") as list:
+            for host in list:
+                record = requests.get(f"{host}index?limit=1")
+                record_data_json = record.json()
+                assert record_data_json, "Response is empty"
+                guid = record_data_json["did"]
+                cls.variables["guids"].append(guid)
+                logger.debug(f"GUID from {host}: {guid}")
 
     def test_resolve_prefixes(self, page):
         """

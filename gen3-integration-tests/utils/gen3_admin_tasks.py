@@ -79,31 +79,6 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
         raise Exception("Build number not found")
 
 
-def get_dataguids_hosts():
-    """
-    Returns list of dataguids host names
-    Since this requires adminvm interaction we us jenkins
-    """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "get-dataguids-hosts",
-    )
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return {
-                "hostlist.json": job.get_artifact_content(build_num, "hostlist.json"),
-            }
-        else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
-
-
 def create_fence_client(
     test_env_namespace: str,
     client_name: str,
