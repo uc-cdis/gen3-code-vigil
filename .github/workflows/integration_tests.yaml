@@ -20,7 +20,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           delete_user_name: github-actions[bot]
           issue_number: ${{ github.event.number }}  # remove comments from the current PR
-          body_regex: '.*'
+          body_regex: '.*Please find the detailed integration test report.*'
 
   integration_tests:
     name: Integration tests
