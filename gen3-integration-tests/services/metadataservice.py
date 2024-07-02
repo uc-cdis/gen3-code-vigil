@@ -26,7 +26,7 @@ class MetadataService(object):
         assert res.status_code == 200, f"Response status code was {res.status_code}"
         return res.json()
 
-    @retry(times=3, delay=20, exceptions=(AssertionError))
+    @retry(times=8, delay=30, exceptions=(AssertionError))
     def get_aggregate_metadata(self, study_id, user="main_account"):
         """Get aggregate mds record for the study id specified"""
         res = requests.get(
