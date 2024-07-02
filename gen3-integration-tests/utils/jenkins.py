@@ -47,18 +47,12 @@ class JenkinsJob(object):
         except Exception:
             return False
 
+    @retry(times=4, delay=15, exceptions=(AssertionError,))
     def get_build_result(self, build_number):
         """Get result of a run"""
-        retry = 0
-        while retry < 3:
-            time.sleep(10)
-            info = self.get_build_info(build_number)
-            result = info["result"]
-            if result:
-                return result
-            else:
-                retry += 1
-        raise Exception("Unable to get build results")
+        info = self.get_build_info(build_number)
+        assert "result" in info
+        return info["result"]
 
     def get_console_output(self, build_number):
         """Get the console logs of a run"""
