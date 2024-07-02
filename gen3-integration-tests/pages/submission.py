@@ -1,9 +1,10 @@
 # Submission page
 import os
 import pytest
+import time
 
 from cdislogging import get_logger
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
@@ -38,6 +39,17 @@ class SubmissionPage(object):
             "//div[normalize-space()='Back to Data Submission']"
         )
         self.NO_FILES_MSG = "No files have been uploaded."
+        self.MAPPED_FILES_COUNT_AND_SIZE = (
+            "//div[text()='Map My Files']/following-sibling::div[@class='h4-typo']"
+        )
+        self.SUBMISSION_PAGE_SELECT_FIRST_ITEM = '//*[contains(@class, "map-data-model__node-form-section")]//*[contains(@class, "Select-menu-outer") or contains(@class, "react-select__menu")]//*[contains(@class, "Select-option") or contains(@class, "react-select__option")][1]'
+        self.SUBMISSION_PAGE_PROJECT = "//div[@class='h4-typo'][normalize-space()='Project']/following-sibling::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_FILE_NODE = "//div[@class='h4-typo'][normalize-space()='File Node']/following-sibling::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_DATA_CATEGORY = "//div[@class='h4-typo'][normalize-space()='data_category']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_DATA_TYPE = "//div[@class='h4-typo'][normalize-space()='data_type']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_DATA_FORMAT = "//div[@class='h4-typo'][normalize-space()='data_format']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION = "//div[@class='h4-typo'][normalize-space()='core_metadata_collection']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_SUBMIT_BUTTON = "//button[@type='button']"
 
     def go_to(self, page: Page):
         """Goes to the submission page"""
@@ -88,13 +100,50 @@ class SubmissionPage(object):
         page.wait_for_selector(self.MAPPING_SUBMIT_BUTTON)
         page.click(self.MAPPING_SUBMIT_BUTTON)
 
-    def check_unmapped_files_submission_page(self, page: Page):
+    def check_unmapped_files_submission_page(self, page: Page, text):
         page.goto(f"{self.BASE_URL}")
-        page.locator(self.SUBMISSION_HEADER_CLASS)
-        screenshot(page, "CheckUnmappedFiles.png")
-        # page.locator(self.BACK_TO_DATA_SUBMISSION).is_visible()
-        logger.info(
-            page.locator(
-                '//*[@id="root"]/div/div/div[3]/div/div/div[1]/div[2]/div[2]/div[2]/div[2]'
-            )
-        )
+        page.wait_for_selector(self.SUBMISSION_HEADER_CLASS, state="visible")
+        time.sleep(5)
+        screenshot(page, "CheckUnmappedFiles")
+        text_from_page = page.locator(self.MAPPED_FILES_COUNT_AND_SIZE).text_content()
+        logger.info(text_from_page)
+        assert text_from_page == text, f"Expected {text}, but got {text_from_page}"
+
+    def map_files(self, page: Page):
+        page.goto(f"{self.BASE_URL}/files")
+        # Select all files
+        map_files_button = page.locator("//button[normalize-space()='Map Files']")
+        expect(map_files_button).to_be_visible(timeout=5000)
+        page.locator("//input[@id='0']").click()
+        page.locator("//button[normalize-space()='Map Files (1)']").click()
+        time.sleep(5)
+        screenshot(page, "MappingFile")
+
+    def select_submission_fields(self, page):
+        # Project Selection
+        page.locator(self.SUBMISSION_PAGE_PROJECT).click()
+        page.click("text=DEV-test")
+
+        # File Node Selection
+        page.locator(self.SUBMISSION_PAGE_FILE_NODE).click()
+        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+
+        # data_category Selection
+        page.click(self.SUBMISSION_PAGE_DATA_CATEGORY)
+        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+
+        # data_type Selection
+        page.click(self.SUBMISSION_PAGE_DATA_TYPE)
+        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+
+        # data_format Selection
+        page.click(self.SUBMISSION_PAGE_DATA_FORMAT)
+        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+
+        # core_metadata_collection Selection
+        page.click(self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION)
+        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+        screenshot(page, "BeforeSubmitMappingFile")
+
+        # Click on Submit field
+        page.locator(self.SUBMISSION_PAGE_SUBMIT_BUTTON).click()

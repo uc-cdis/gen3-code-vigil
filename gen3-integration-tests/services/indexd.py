@@ -168,3 +168,11 @@ class Indexd(object):
         if errors:
             logger.error(f"indexd.file_equals(): files do not match: {errors}")
         return len(errors) == 0, errors
+
+    def clear_previous_upload_files(self, user="main_account"):
+        """Delete indexd record if upload is not happening through gen3-sdk"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        url = f"/index/index/?acl=null&authz=null&uploader={pytest.users[user]}"
+        response = auth.curl(path=url)
+        logger.info(response.json())
+        self.delete_files(guids=response.json())

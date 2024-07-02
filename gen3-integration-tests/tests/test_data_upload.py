@@ -7,6 +7,7 @@ import os
 import pytest
 import random
 import string
+import time
 import math
 
 from cdislogging import get_logger
@@ -79,12 +80,31 @@ class TestDataUpload:
     submission = SubmissionPage()
     created_guids = []
 
+    @classmethod
+    def setup_class(cls):
+        # Create the graph record for core_metadata_collection
+        cls.sd_tools.delete_all_records()
+        node_name = "core_metadata_collection"
+        cls.sd_tools.submit_new_record(node_name)
+
+        # Clear previously uploaded files
+        cls.indexd.clear_previous_upload_files(user="main_account")
+        cls.indexd.clear_previous_upload_files(user="user1_account")
+        cls.indexd.clear_previous_upload_files(user="indexing_account")
+
+    @classmethod
+    def teardown_class(cls):
+        cls.sd_tools.delete_all_records()
+
     def setup_method(self, method):
         # Create a local small file to upload. Store its size and hash
         with open(file_path, "w") as file:
             file.write(file_content)
         # Create a local large file (size 7MB)
         create_large_file(big_file_path, 7, text)
+
+        node_name = "core_metadata_collection"
+        self.sd_tools.submit_new_record(node_name)
 
     def teardown_method(self, method):
         os.remove(file_path)
@@ -526,7 +546,17 @@ class TestDataUpload:
             id=file_guid, user="main_account", expectedStatus=404
         )
 
-    """def test_map_uploaded_files_windmill_submission_page(self, page: Page):
+    def test_map_uploaded_files_in_submission_page(self, page: Page):
+        """
+        Scenario: Map uploaded files in windmill submission page
+        Steps:
+            1. Create a presigned url for uploading the file with main_account
+            2. Goto submission page and verify "1 files | 0 B" entry is available under unmapped files section
+            3. Upload the file using the presigned url
+            4. Goto submission page and verify "1 files | 128 B" entry is available under unmapped files section
+            5. Perform mapping by going to submission/files endpoint
+            6. Verify no files are present under unmapped files section
+        """
         file_object = {
             "file_name": file_name,
             "file_path": file_path,
@@ -548,10 +578,65 @@ class TestDataUpload:
 
         if "midrc" not in pytest.namespace:
             self.login_page.go_to(page)
-            self.submission.check_unmapped_files_submission_page(page)
+            self.login_page.login(page)
+            # user should see 1 file, but not ready yet
+            self.submission.check_unmapped_files_submission_page(
+                page, text="1 files | 0 B"
+            )
 
             self.fence.upload_file_using_presigned_url(
                 presigned_url, file_object, file_object["file_size"]
             )
 
-            # self.submission.check_unmapped_files_submission_page(page, file_name, True)"""
+            # user should see 1 file ready
+            time.sleep(5)
+            self.login_page.go_to(page)
+            self.submission.check_unmapped_files_submission_page(
+                page, text=f"1 files | 128 B"
+            )
+
+            # Perform mapping
+            self.submission.map_files(page)
+            self.submission.select_submission_fields(page)
+
+            # user should see 0 file ready
+            self.submission.check_unmapped_files_submission_page(
+                page, text="0 files | 0 B"
+            )
+
+            self.login_page.logout(page)
+
+    def test_cannot_see_files_uploaded_by_other_users(self, page: Page):
+        """
+        Scenario: Cannot see files uploaded by other users
+        Steps:
+            1. Create a presigned url for uploading the file with user1_account
+            2. Upload the file using the presigned url
+            3. Goto submission page and verify no files are present under unmapped files.
+        """
+        file_object = {
+            "file_name": file_name,
+            "file_path": file_path,
+            "file_size": os.path.getsize(file_path),
+            "file_md5": hashlib.md5(file_content.encode()).hexdigest(),
+        }
+
+        fence_upload_res = self.fence.get_url_for_data_upload(
+            file_name, "user1_account"
+        ).json()
+        assert (
+            "url" in fence_upload_res.keys()
+        ), f"Expected guid key not found. {fence_upload_res}"
+        file_guid = fence_upload_res["guid"]
+        self.created_guids.append(file_guid)
+        presigned_url = fence_upload_res["url"]
+
+        # Upload the file using user1_accounts presgined url
+        self.fence.upload_file_using_presigned_url(
+            presigned_url, file_object, file_object["file_size"]
+        )
+
+        self.login_page.go_to(page)
+        self.login_page.login(page)
+        self.submission.check_unmapped_files_submission_page(page, text="0 files | 0 B")
+        self.login_page.logout(page)

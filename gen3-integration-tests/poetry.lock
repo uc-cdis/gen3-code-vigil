@@ -670,13 +670,13 @@ files = [
 
 [[package]]
 name = "gen3"
-version = "4.25.0"
+version = "4.25.1"
 description = "Gen3 CLI and Python SDK"
 optional = false
 python-versions = "<4,>=3.9"
 files = [
-    {file = "gen3-4.25.0-py3-none-any.whl", hash = "sha256:5f20c1a72e8395902573abc79e2913901c4975428af83e5a227622a886f9193f"},
-    {file = "gen3-4.25.0.tar.gz", hash = "sha256:de2ea174afed4b012369c91f90d2d3bea05b0030f597e791f656ee10af822adc"},
+    {file = "gen3-4.25.1-py3-none-any.whl", hash = "sha256:ee6303db0596e9e03e5b076eaef1cbec0cfdda48ab336d1e9ada21bf67b5e9f0"},
+    {file = "gen3-4.25.1.tar.gz", hash = "sha256:9b02f5476af8edd8fe58f862ea615a79fdfdca9f4388dce4e37d234029e9cc9c"},
 ]
 
 [package.dependencies]
