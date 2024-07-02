@@ -70,7 +70,7 @@
               "project_id": {
                   "type": "keyword"
               },
-              "subject_id": {
+              "_subject_id": {
                   "type": "keyword"
               },
               "submitter_id": {
