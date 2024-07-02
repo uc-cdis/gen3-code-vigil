@@ -103,8 +103,8 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
-
-
+        
+        
 def check_job_pod(
     test_env_namespace: str,
     job_name: str,
@@ -133,7 +133,7 @@ def check_job_pod(
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
-
+        
 
 def create_fence_client(
     test_env_namespace: str,
