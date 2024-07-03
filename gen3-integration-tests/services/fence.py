@@ -97,8 +97,10 @@ class Fence(object):
             "url" not in response.content.decode()
         ), f"URL key is missing.\n{response}"
 
+    @retry(times=6, delay=20, exceptions=(AssertionError,))
     def get_file(self, url: str) -> str:
         response = requests.get(url=url)
+        assert response.status_code == 200
         return response.content.decode()
 
     def check_file_equals(self, signed_url_res: dict, file_content: str):
