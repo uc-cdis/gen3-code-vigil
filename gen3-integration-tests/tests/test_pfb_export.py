@@ -5,16 +5,15 @@ import fastavro
 import json
 
 from datetime import datetime
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 from pages.login import LoginPage
 from pages.exploration import ExplorationPage
-from utils.test_execution import screenshot
-import utils.gen3_admin_tasks as gat
 from utils import logger
 
 
+@pytest.mark.pfb
 class TestPFBExport(object):
-    def test_pfb_export(self, page):
+    def test_pfb_export(self, page: Page):
         """
         Scenario: Test PFB Export
         Steps:
