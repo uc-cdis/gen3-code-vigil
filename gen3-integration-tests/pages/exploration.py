@@ -18,12 +18,9 @@ class ExplorationPage(object):
         self.FILE_TAB = "//h3[contains(text(), 'File')]"
         self.GUPPY_FILTERS = "//div[@class='guppy-data-explorer__filter']"
         self.EXPORT_TO_PFB_BUTTON = "//button[contains(text(), 'Export to PFB')]"
-        self.PFB_WAIT_FOOTER = "//div[contains(text(),'Your export is in progress')]"
-        self.PFB_ERROR_FOOTER = (
-            "//div[contains(text(),'There was an error exporting your cohort')]"
-        )
+        self.PFB_WAIT_FOOTER = "//div[text()='Your export is in progress.']"
         self.PFB_SUCCESS_FOOTER = (
-            "//div[contains(text(),'Your cohort has been exported to PFB')]"
+            "//div[text()='Your cohort has been exported to PFB.']"
         )
         self.PFB_DOWNLOAD_LINK = (
             "//a[contains(text(), 'Click here to download your PFB')]"
