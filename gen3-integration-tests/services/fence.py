@@ -89,6 +89,7 @@ class Fence(object):
         response = auth.curl(path=f"{self.DATA_UPLOAD_ENDPOINT}/{guid}")
         return response
 
+<<<<<<< HEAD
     def has_url(self, response: dict) -> None:
         assert "url" in response.keys(), f"URL key is missing.\n{response}"
 
@@ -98,13 +99,15 @@ class Fence(object):
         ), f"URL key is missing.\n{response}"
 
     @retry(times=6, delay=20, exceptions=(AssertionError,))
+=======
+>>>>>>> eceb95d (changes for submission page upload)
     def get_file(self, url: str) -> str:
         response = requests.get(url=url)
         assert response.status_code == 200
         return response.content.decode()
 
     def check_file_equals(self, signed_url_res: dict, file_content: str):
-        self.has_url(signed_url_res)
+        assert "url" in signed_url_res.keys(), f"URL key is missing.\n{signed_url_res}"
         contents = self.get_file(signed_url_res["url"])
         assert (
             contents == file_content

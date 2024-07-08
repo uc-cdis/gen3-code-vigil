@@ -106,7 +106,6 @@ class SubmissionPage(object):
         time.sleep(5)
         screenshot(page, "CheckUnmappedFiles")
         text_from_page = page.locator(self.MAPPED_FILES_COUNT_AND_SIZE).text_content()
-        logger.info(text_from_page)
         assert text_from_page == text, f"Expected {text}, but got {text_from_page}"
 
     def map_files(self, page: Page):
@@ -122,7 +121,7 @@ class SubmissionPage(object):
     def select_submission_fields(self, page):
         # Project Selection
         page.locator(self.SUBMISSION_PAGE_PROJECT).click()
-        page.click("text=DEV-test")
+        page.click("text='DEV-test'")
 
         # File Node Selection
         page.locator(self.SUBMISSION_PAGE_FILE_NODE).click()

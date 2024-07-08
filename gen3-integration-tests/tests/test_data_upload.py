@@ -158,7 +158,9 @@ class TestDataUpload:
         signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="main_account", expectedStatus=404
         )
-        self.fence.has_no_url(signed_url_res)
+        assert (
+            "url" not in signed_url_res.content.decode()
+        ), f"URL key is missing.\n{signed_url_res}"
 
         # Upload the file to the S3 bucket using the presigned URL
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
@@ -202,7 +204,9 @@ class TestDataUpload:
         fence_upload_res = self.fence.get_url_for_data_upload(
             file_name, "auxAcct1_account"
         )
-        self.fence.has_no_url(fence_upload_res)
+        assert (
+            "url" not in fence_upload_res.content.decode()
+        ), f"URL key is missing.\n{fence_upload_res}"
         assert (
             fence_upload_res.status_code == 403
         ), f"This user should not be able to download.\n{fence_upload_res.content}"
