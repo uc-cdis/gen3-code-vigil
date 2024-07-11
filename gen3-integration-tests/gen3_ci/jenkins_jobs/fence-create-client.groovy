@@ -75,7 +75,13 @@ pipeline {
                         echo "Running: ${FENCE_CMD}"
                         # execute the above fence command
                         FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > client_creds.txt))
-                        sed -n 's/.*\\x27\\([^\\x27]*\\)\\x27,\\s*\\x27\\([^\\x27]*\\)\\x27.*/\\1\\n\\2/p' client_creds.txt > temp_client_creds.txt
+                        case "$CLIENT_TYPE" in
+                            "implicit")
+                                sed -n 's/.*(\\x27\\(.*\\)\\x27, \\(None\\)).*/\\1\\n\\2/p' client_creds.txt > temp_client_creds.txt
+                                ;;
+                            *)
+                                sed -n 's/.*\\x27\\([^\\x27]*\\)\\x27,\\s*\\x27\\([^\\x27]*\\)\\x27.*/\\1\\n\\2/p' client_creds.txt > temp_client_creds.txt
+                        esac
                         mv temp_client_creds.txt client_creds.txt
                         '''
                     }
