@@ -3,7 +3,7 @@
     "gen3_discovery": {
         "tags": [],
         "authz": "",
-        "_hdp_uid": "47675953",
+        "_hdp_uid": "38687348",
         "__manifest": [
             {
                 "title": "Test CNA Data PDF",
@@ -29,7 +29,7 @@
         "year_awarded": "2018",
         "is_registered": false,
         "project_title": "StudyRegistration Test",
-        "project_number": "1K24AT011995-01",
+        "project_number": "95497262",
         "study_metadata": {
             "data": {
                 "data_type": [],
@@ -147,6 +147,6 @@
         "time_of_registration": "2023-03-24T14:00:03-07:00",
         "study_description_summary": "TEST DESCRIPTION",
         "time_of_last_cedar_updated": "2023-03-24T14:00:03-07:00",
-        "appl_id": "47675953"
+        "appl_id": "38687348"
     }
 }

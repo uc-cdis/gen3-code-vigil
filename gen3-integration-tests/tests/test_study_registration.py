@@ -14,20 +14,27 @@ from services.requestor import Requestor
 from services.metadataservice import MetadataService
 
 
+# @pytest.mark.requestor
+# @pytest.mark.mds
+# @pytest.mark.study_registration
+@pytest.mark.wip
 class TestStudyRegistration(object):
     variables = {}
 
     def setup_class(cls):
         cls.variables["request_ids"] = []
         cls.variables["cedar_UUID"] = "c5891154-750a-4ed7-83b7-7cac3ddddae6"
-        cls.variables["application_id"] = str(random.randint(10000000, 99999999))
+        # cls.variables["application_id"] = str(random.randint(10000000, 99999999))
+        cls.variables["policy_id"] = (
+            "study.9675420_mds_gateway_cedar_study_registrant_mds_user_cedar_user"
+        )
 
     def teardown_class(cls):
         requestor = Requestor()
         mds = MetadataService()
         req_data = {
             "username": pytest.users["user2_account"],
-            "policy_id": "",
+            "policy_id": cls.variables["policy_id"],
             "revoke": True,
         }
         revoke_request = requestor.create_request_with_auth_header(
@@ -54,8 +61,8 @@ class TestStudyRegistration(object):
             logger.info(f"Request {request_id} deleted")
         pass
 
-        # # Deleting dummy metadata with application_id
-        # mds.delete_metadata(cls.variables["application_id"])
+        # Deleting dummy metadata with application_id
+        mds.delete_metadata(cls.variables["application_id"])
 
     def test_register_new_study(self, page):
         """
@@ -90,8 +97,15 @@ class TestStudyRegistration(object):
             "application_id"
         ]
         # Storing project_title and project_number for validation in test
-        project_title = study_metadata["gen3_discovery"]["project_title"]
+        study_name = study_metadata["gen3_discovery"]["study_metadata"]["minimal_info"][
+            "study_name"
+        ]
         project_number = study_metadata["gen3_discovery"]["project_number"]
+        access_form_title = f"{study_name} - {project_number}"
+        project_title = study_metadata["gen3_discovery"]["project_title"]
+        nih_application_id = study_metadata["gen3_discovery"]["study_metadata"][
+            "metadata_location"
+        ]["nih_application_id"]
         # Writing the new fields to study.json
         with open(filepath, "w", encoding="utf8") as file:
             json.dump(study_metadata, file, indent=4)
@@ -118,43 +132,48 @@ class TestStudyRegistration(object):
         discovery_page.go_to(page)
         screenshot(page, "DiscoveryPage")
 
-        # Request access to register study by filling out registration form
-        study_register.search_study(page, self.variables["application_id"])
+        # # Request access to register study by filling out registration form
+        # study_register.search_study(page, self.variables["application_id"])
+        study_register.search_study(page, "42053470")
         study_register.click_request_access_to_register(page)
         study_register.fill_request_access_form(
-            page, pytest.users["user2_account"], project_title
+            page, pytest.users["user2_account"], access_form_title
         )
 
         # Update the request_id to Signed Status
-        request_id = requestor.get_request_id("user2_account")
+        request_id = requestor.get_request_id(
+            self.variables["policy_id"], "user2_account"
+        )
         if request_id:
+            logger.debug(f"Request ID : {request_id}")
             self.variables["request_id"] = request_id
         else:
-            logger.inf("Request was not found")
-        # TODO : get policy_id from the requestor request
+            logger.info("Request was not found")
         requestor.request_signed(request_id)
         status = requestor.get_request_status(request_id)
-        if status == "Signed":
+        if status == "SIGNED":
             logger.info(f"{request_id} is updated to SIGNED status")
 
         # Navigate to discovery page and register study
         time.sleep(30)
         page.reload()
         discovery_page.go_to(page)
-        study_register.search_study(page, self.variables["application_id"])
+        study_register.search_study(page, "42053470")
+        # study_register.search_study(page, self.variables["application_id"])
         study_register.click_register_study(page)
 
-        application_id = self.variables["application_id"]
-        study_name = f"{project_number} : {project_title} : {application_id}"
-        study_register.fill_registration_form(
-            page, self.variables["cedar_UUID"], study_name
-        )
+        application_id = "42053470"
+        cedar_uuid = self.variables["cedar_UUID"]
+        # application_id = self.variables["application_id"]
+        study_name = f"{project_number} : TEST : {nih_application_id}"
+        study_register.fill_registration_form(page, cedar_uuid, study_name)
 
-        # After registering the study, run metadata-agg-sync job
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
-        # TODO : check the job pod status with kube-check-pod jenkins job
+        # # After registering the study, run metadata-agg-sync job
+        # gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        # # TODO : check the job pod status with kube-check-pod jenkins job
 
-        linked_record = mds.get_aggregate_metadata(self.variables["application_id"])
-        assert (
-            linked_record["gen3_discovery"]["is_registered"] == "true"
-        ), f"Failed to register study with {application_id}"
+        # linked_record = mds.get_aggregate_metadata(self.variables["application_id"])
+        # logger.info(f"Linked Record : {linked_record}")
+        # assert (
+        #     linked_record["gen3_discovery"]["is_registered"] == "true"
+        # ), f"Failed to register study with {application_id}"

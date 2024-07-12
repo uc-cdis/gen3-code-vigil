@@ -59,6 +59,7 @@ markers = [
   "client_credentials: tests for fence client credentials",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
+  "study_registration: tests for study registration",
 ]
 pythonpath = "."
 md_report = "true"

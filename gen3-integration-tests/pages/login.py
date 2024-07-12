@@ -24,7 +24,9 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
-        self.DEV_LOGIN_BUTTON = "//button[contains(text(), 'Dev login')]"
+        self.DEV_LOGIN_BUTTON = (
+            "//button[@class='login-page__entry-button g3-button g3-button--default']"
+        )
         self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
         self.USER_PROFILE_DROPDOWN = (
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
@@ -41,6 +43,7 @@ class LoginPage(object):
         """
         Sets up Dev Cookie for main Account and logs in with Google
         Also checks if the access_token exists after login
+
         """
         page.context.add_cookies(
             [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
@@ -52,13 +55,10 @@ class LoginPage(object):
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
         else:
-            # We are doing this, as heal envs have both Dev login and Login from Google
-            if "heal" in pytest.namespace:
-                page.locator(self.DEV_LOGIN_BUTTON).click()
-            else:
-                page.locator(self.LOGIN_BUTTON).click()
-        screenshot(page, "AfterLogin")
+            page.locator(self.DEV_LOGIN_BUTTON).click()
+            # self.multiple_login_button(page)
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
+        screenshot(page, "AfterLogin")
 
         self.handle_popup(page)
         screenshot(page, "AfterPopUpAccept")
@@ -73,6 +73,23 @@ class LoginPage(object):
         assert (
             access_token_cookie is not None
         ), "Access token cookie not found after login"
+
+    def multiple_login_button(self, page: Page):
+        """
+        Check if the commons has multiple login buttons from self.LOGIN_BUTTON
+        If it returns two or more buttons, it will select the first element and click on it
+        """
+        login_buttons = page.locator(self.LOGIN_BUTTON)
+        # check if there are multiple login buttons
+        count = login_buttons.count()
+        logger.info(f"Count of buttons {count}")
+        # if more than one login button, click the first one
+        if count > 1:
+            first_button = login_buttons.nth(0)
+            first_button.click()
+        else:
+            # else click the one that is available
+            login_buttons.click()
 
     def orcid_login(self, page: Page):
         # Perform ORCID Login

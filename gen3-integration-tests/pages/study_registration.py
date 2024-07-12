@@ -17,11 +17,10 @@ class StudyRegistrationPage(object):
         self.SEARCH_BAR = "//input[@placeholder='Search studies by keyword...']"
         self.STUDY_TABLE = "//div[@class='discovery-studies-container']"
         self.STUDY_ROW = "(//tr[@class='ant-table-row ant-table-row-level-0 discovery-table__row'])[1]"
-        self.STUDY_CHECKBOX = "//td[@class='ant-table-cell ant-table-selection-column']//input[@type='checkbox']"
-        # //td[@class='ant-table-cell ant-table-selection-column']//span[@class='ant-checkbox ant-checkbox-disabled']
+        self.STUDY_CHECKBOX = ""
         self.STUDY_DRAWER = "//div[@class='ant-drawer-body']"
         self.REQUEST_ACCESS_REGISTER = (
-            "//span[normalize-space()='Request Access to Register This Study']"
+            "//button[@class='ant-btn ant-btn-text discovery-modal__request-button']"
         )
         self.REQUEST_ACCESS_FORM_PAGE = "//form[@id='generic-access-request-form']"
         self.PROJECT_TITLE = (
@@ -47,12 +46,14 @@ class StudyRegistrationPage(object):
     def search_study(self, page: Page, study_id: str):
         page.wait_for_selector(self.SEARCH_BAR)
         page.wait_for_selector(self.STUDY_TABLE)
-        page.wait_for_selector(self.STUDY_ROW, timeout=60000)
         screenshot(page, "LoadedStudyTable")
+        time.sleep(20)
         page.locator(self.SEARCH_BAR).fill(study_id)
+        page.keyboard.press("Enter")
+        time.sleep(10)
         screenshot(page, "SearchStudy")
-        checkbox = page.locator(self.STUDY_CHECKBOX)
-        checkbox.click()
+        first_study = page.locator(self.STUDY_ROW)
+        first_study.click()
         screenshot(page, "ClickedCheckedBox")
         page.wait_for_selector(self.STUDY_DRAWER)
         screenshot(page, "StudyDrawer")
@@ -68,11 +69,15 @@ class StudyRegistrationPage(object):
         assert (
             current_url == self.REQUEST_ACCESS_PATH
         ), f"Expected URL to be {self.REQUEST_ACCESS_PATH}, but got {current_url}"
-        screenshot(page, "RegistrationForm")
-        page.wait_for_selector(self.REQUEST_ACCESS_FORM_PAGE)
-        page.wait_for_selector(
-            self.PROJECT_TITLE, state=f"value={project_title}", timeout=10000
-        )
+        # adding sleep here,as form page takes sometime to load after you click on request access button.
+        time.sleep(30)
+        screenshot(page, "RequestAccessForm")
+        access_form = page.locator(self.REQUEST_ACCESS_FORM_PAGE)
+        access_form.wait_for(state="visible")
+        project_title_field = page.locator(self.PROJECT_TITLE).input_value()
+        assert (
+            project_title_field == project_title
+        ), f"Expect Project Title to be {project_title}, but got {project_title_field}"
         page.fill(self.FIRST_NAME, "Test")
         page.fill(self.LAST_NAME, "User")
         page.fill(self.EMAIL, email)
@@ -80,6 +85,8 @@ class StudyRegistrationPage(object):
         page.click(self.ROLE_RADIO_BUTTON)
         screenshot(page, "FilledRequestRegistrationForm")
         page.click(self.REQUEST_SUBMIT_BUTTON)
+        time.sleep(10)
+        screenshot(page, "SubmittedRequestAccessForm")
 
     def click_register_study(self, page: Page):
         register_button = page.locator(self.REGISTER_BUTTON)
@@ -87,13 +94,15 @@ class StudyRegistrationPage(object):
         screenshot(page, "RegisterButton")
         register_button.click()
 
-    def fill_registration_form(self, page: Page, uuid, study_name):
+    def fill_registration_form(self, page: Page, uuid: str, study_name: str):
         current_url = page.url
         assert (
             current_url == self.BASE_URL
         ), f"Expected URL to be {self.BASE_URL}, but got {current_url}"
         page.wait_for_selector(self.REGISTER_STUDY_FORM_PAGE, state="visible")
-        expect(self.STUDY_TITLE).to_have_attribute(study_name)
+        screenshot(page, "RegisterStudyForm")
+        study_title = page.locator(self.STUDY_TITLE)
+        expect(study_title).to_have_text(study_name)
         page.fill(self.CEDAR_UUID_FIELD, uuid)
         screenshot(page, "FilledRegistrationForm")
         page.click(self.REGISTER_SUBMIT_BUTTON)
