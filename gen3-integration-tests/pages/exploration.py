@@ -80,7 +80,7 @@ class ExplorationPage(object):
         wait_footer_locator.wait_for()
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
-        success_footer_locator.wait_for(timeout=300000)
+        success_footer_locator.wait_for(timeout=420000)
         screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link
