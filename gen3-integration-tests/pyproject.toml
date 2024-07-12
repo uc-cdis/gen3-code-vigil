@@ -62,7 +62,8 @@ markers = [
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
   "pfb: tests for pfb file handling",
-  "workspace: tests for workspace page",udy_registration: tests for study registration",
+  "workspace: tests for workspace page",
+  "study_registration: tests for study registration service"
 ]
 pythonpath = "."
 md_report = "true"
