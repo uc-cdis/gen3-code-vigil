@@ -44,25 +44,25 @@ markers = [
   # services
   "audit: tests for audit-service",
   "fence: test for fence service",
-  "requestor: tests for requestor service",
+  "frontend_framework: tests for frontend-framework",
+  "gen3_client: tests for gen3-client / cdis-data-client",
+  "guppy: tests for guppy-service",
   "indexd: tests for indexd service",
   "manifestservice: tests for manifest service",
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
-  "frontend_framework: tests for frontend-framework",
-  "gen3_client: tests for gen3-client / cdis-data-client",
-  "tube: tests for tube service",
-  "guppy: tests for guppy-service",
-  "ssjdispatcher: tests for ssjdispatcher service",
+  "requestor: tests for requestor service",
   "sower: tests for sower service",
+  "ssjdispatcher: tests for ssjdispatcher service",
+  "tube: tests for tube service",
   "wts: tests for workspace-token-service",
-  "sower: tests for sower jobs",
   # features
   "agg_mds: tests for aggregate metadata service",
-  "workspace: tests for workspace page",
   "client_credentials: tests for fence client credentials",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
+  "pfb: tests for pfb file handling",
+  "workspace: tests for workspace page",
 ]
 pythonpath = "."
 md_report = "true"

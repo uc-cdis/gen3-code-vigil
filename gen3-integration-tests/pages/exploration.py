@@ -1,11 +1,10 @@
 # Exploration Page
-import os
 import pytest
-import time
 
 from utils import logger
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 from utils.test_execution import screenshot
+
 
 class ExplorationPage(object):
     def __init__(self):
@@ -19,10 +18,12 @@ class ExplorationPage(object):
         self.FILE_TAB = "//h3[contains(text(), 'File')]"
         self.GUPPY_FILTERS = "//div[@class='guppy-data-explorer__filter']"
         self.EXPORT_TO_PFB_BUTTON = "//button[contains(text(), 'Export to PFB')]"
-        self.PFB_WAIT_FOOTER = "//div[@class='explorer-button-group__toaster-text']//div[contains(.,'Please do not navigate away from this page until your export is finished.')]"
-        self.PFB_ERROR_FOOTER = "//div[@class='explorer-button-group__toaster-text']//div[contains(.,'There was an error exporting your cohort.')]"
+        self.PFB_WAIT_FOOTER = "//div[text()='Your export is in progress.']"
         self.PFB_SUCCESS_FOOTER = (
-            "//a[contains(@class, 'explorer-button-group__toaster-dl-link')]"
+            "//div[text()='Your cohort has been exported to PFB.']"
+        )
+        self.PFB_DOWNLOAD_LINK = (
+            "//a[contains(text(), 'Click here to download your PFB')]"
         )
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
 
@@ -77,8 +78,9 @@ class ExplorationPage(object):
     def check_pfb_status(self, page: Page):
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
         wait_footer_locator.wait_for()
+        screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
-        success_footer_locator.wait_for(timeout=300000)
+        success_footer_locator.wait_for(timeout=420000)
         screenshot(page, "PfbSuccessMessageFooter")
-        pfb_link = success_footer_locator.get_attribute("href")
+        pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link
