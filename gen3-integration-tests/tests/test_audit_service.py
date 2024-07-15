@@ -109,14 +109,14 @@ class TestAuditService:
         login_page.logout(page)
 
         # Check the query results with auxAcct2 user
-        expectedResults = {
+        expected_results = {
             "username": "cdis.autotest@gmail.com",
             "idp": "google",
             "client_id": None,
             "status_code": 302,
         }
         assert audit.check_query_results(
-            "login", "auxAcct2_account", params, expectedResults
+            "login", "auxAcct2_account", params, expected_results
         )
 
     def test_audit_oidc_login_events(self, page: Page):
@@ -148,7 +148,7 @@ class TestAuditService:
         login_page.logout(page)
 
         # Check the query results with auxAcct2 user
-        expectedResults = {
+        expected_results = {
             "username": os.environ["CI_TEST_ORCID_USERID"],
             "idp": "fence",
             "fence_idp": "orcid",
@@ -156,7 +156,7 @@ class TestAuditService:
             "status_code": 302,
         }
         assert audit.check_query_results(
-            "login", "auxAcct2_account", params, expectedResults
+            "login", "auxAcct2_account", params, expected_results
         )
 
     @pytest.mark.indexd
@@ -200,7 +200,7 @@ class TestAuditService:
 
             file_type = "private_file"
             # Private File - mainAcct succeffully requests a presigned URL
-            expectedResults = {
+            expected_results = {
                 "action": "download",
                 "username": "cdis.autotest@gmail.com",
                 "guid": did_mapping[file_type],
@@ -210,13 +210,12 @@ class TestAuditService:
                 did_mapping[file_type],
                 "main_account",
                 200,
-                file_type,
                 "auxAcct1_account",
-                expectedResults,
+                expected_results,
             )
 
             # Private File - mainAcct fails to request a presigned URL with no authorization code
-            expectedResults = {
+            expected_results = {
                 "action": "download",
                 "username": "anonymous",
                 "guid": did_mapping[file_type],
@@ -226,13 +225,12 @@ class TestAuditService:
                 did_mapping[file_type],
                 None,
                 401,
-                file_type,
                 "auxAcct1_account",
-                expectedResults,
+                expected_results,
             )
 
             # Private File - mainAcct fails to request a presigned URL with a file that doesn't exists
-            expectedResults = {
+            expected_results = {
                 "action": "download",
                 "username": "cdis.autotest@gmail.com",
                 "guid": "123",
@@ -242,14 +240,13 @@ class TestAuditService:
                 "123",
                 "main_account",
                 404,
-                file_type,
                 "auxAcct1_account",
-                expectedResults,
+                expected_results,
             )
 
             file_type = "public_file"
             # Public File - mainAcct succeffully requests a presigned URL
-            expectedResults = {
+            expected_results = {
                 "action": "download",
                 "username": "anonymous",
                 "guid": did_mapping[file_type],
@@ -259,15 +256,14 @@ class TestAuditService:
                 did_mapping[file_type],
                 None,
                 200,
-                file_type,
                 "auxAcct1_account",
-                expectedResults,
+                expected_results,
             )
         finally:
             indexd.delete_files(did_records)
 
     def perform_presigned_check(
-        self, did, main_auth, expectedCode, file_type, dummy_auth, expectedResults
+        self, did, main_auth, expected_code, dummy_auth, expected_results
     ):
         """helper function to Create Signed URL and Query the audit logs for entry"""
         fence = Fence()
@@ -275,12 +271,12 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
-            "username={}".format(expectedResults["username"]),
+            "username={}".format(expected_results["username"]),
         ]
         # Create Signed URL record
-        fence.create_signed_url(did, main_auth, expectedCode, file_type)
+        fence.create_signed_url(did, main_auth, expected_code)
         assert audit.check_query_results(
-            "presigned_url", dummy_auth, params, expectedResults
+            "presigned_url", dummy_auth, params, expected_results
         )
 
     def test_audit_ras_login_events(self, page: Page):
@@ -311,12 +307,12 @@ class TestAuditService:
         login_page.logout(page)
 
         # Check the query results with auxAcct2 user
-        expectedResults = {
+        expected_results = {
             "username": str(os.environ["CI_TEST_RAS_USERID"]).lower(),
             "idp": "ras",
             "client_id": None,
             "status_code": 302,
         }
         assert audit.check_query_results(
-            "login", "auxAcct2_account", params, expectedResults
+            "login", "auxAcct2_account", params, expected_results
         )

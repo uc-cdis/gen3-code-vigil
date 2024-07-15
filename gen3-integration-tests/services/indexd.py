@@ -21,25 +21,24 @@ class Indexd(object):
         index = Gen3Index(auth_provider=auth)
         indexed_files = []
         # Create record for each file
-        for file in files:
-            if "did" not in files[file]:
-                files[file]["did"] = str(uuid4())
+        for file_info in files.values():
+            file_info.setdefault("did", str(uuid4()))
             # Create data dictionary to provide as argument for Indexd create record function
             data = {
-                "hashes": {"md5": files[file]["md5"]},
-                "size": files[file]["size"],
-                "file_name": files[file]["filename"],
-                "did": files[file]["did"],
+                "hashes": {"md5": file_info["md5"]},
+                "size": file_info["size"],
+                "file_name": file_info["filename"],
+                "did": file_info["did"],
             }
 
-            if "urls" in files[file].keys():
-                data["urls"] = files[file]["urls"]
-            if "link" in files[file].keys():
-                data["urls"] = [files[file]["link"]]
-            if "authz" in files[file].keys():
-                data["authz"] = files[file]["authz"]
-            if "acl" in files[file].keys():
-                data["acl"] = files[file]["acl"]
+            if "urls" in file_info:
+                data["urls"] = file_info["urls"]
+            if "link" in file_info:
+                data["urls"] = file_info["link"]
+            if "authz" in file_info:
+                data["authz"] = file_info["authz"]
+            if "acl" in file_info:
+                data["acl"] = file_info["acl"]
             try:
                 record = index.create_record(**data)
                 indexed_files.append(record)
@@ -55,22 +54,12 @@ class Indexd(object):
             auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         indexd = Gen3Index(auth_provider=auth)
         try:
-            logger.debug(indexd_guid)
             record = indexd.get_record(guid=indexd_guid)
             logger.info(f"Indexd Record found {record}")
             return record
         except Exception as e:
             logger.exception(msg=f"Cannot find indexd record {e}")
             raise
-
-    def get_rev(self, json_data: dict):
-        """Get revision from indexd record"""
-        if json_data is not None:
-            return json_data["rev"]
-        else:
-            # Handle case where json_data is None (optional)
-            logger.info("No rev found in the provided data")
-            return None  # Or a suitable default value
 
     def update_record(
         self,
@@ -128,9 +117,9 @@ class Indexd(object):
         for key, val in records.items():
             try:
                 indexd_record = self.get_record(indexd_guid=val["did"])
-                indexd_rev = self.get_rev(json_data=indexd_record)
+                indexd_rev = indexd_record.get("rev", None)
                 if indexd_rev is None:
-                    logger.info("Indexd record returned None")
+                    logger.info("Indexd record does not contain field rev")
                     continue
                 logger.info(f"{val['did']} found, performing delete.")
                 self.delete_record(guid=indexd_record["did"], rev=indexd_rev)

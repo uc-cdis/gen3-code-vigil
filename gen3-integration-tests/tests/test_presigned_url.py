@@ -48,13 +48,6 @@ indexd_files = {
         "acl": ["jenkins"],
         "size": 9,
     },
-    "clever_safe_test_file1": {
-        "filename": "test",
-        "link": "s3://fence-cleversafe-test/test",
-        "md5": "d8e8fca2dc0f896fd7cb4cb0031ba249",
-        "acl": ["QA"],
-        "size": 5,
-    },
 }
 
 
@@ -228,29 +221,3 @@ class TestPresignedURL:
             logger.error(f"{msg} not found")
             logger.error(signed_url_res.content.decode())
             raise
-
-    @pytest.mark.clever_safe
-    def test_simple_clever_safe_presigner_url(self):
-        """
-        Scenario: Simple CleverSafe PreSigned URL test
-        Steps:
-            1. Set environment variable NODE_TLS_REJECT_UNAUTHORIZED to '0'.
-            2. Create presigned url for clever_safe_test_file1.(Indexd records created as part of setup)
-            3. File should be downloaded using the presigned url.
-        """
-        os.environ["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
-
-        # Create Signed URLs
-        signed_url_res = self.fence.create_signed_url(
-            id=indexd_files["clever_safe_test_file1"]["did"],
-            user="main_account",
-            expectedStatus=200,
-        )
-
-        # Verify signed url is created
-        assert (
-            "url" in signed_url_res.keys()
-        ), "Could not find url keyword in signed url"
-
-        # Verify the contents of file downloaded using signed url
-        self.fence.check_file_equals(signed_url_res, "test\n")

@@ -55,13 +55,13 @@ big_file_name = f"qa-upload-7mb-file_{rand}.txt"
 big_file_path = f"./{big_file_name}"
 
 
-class FileNode:
+class FileRecord:
     def __init__(self, did: str, props: dict) -> None:
         self.did = did
         self.props = props
 
 
-class FileNodeWithCCs:
+class FileRecordWithCCs:
     def __init__(self, did: str, props: dict, authz: list) -> None:
         self.did = did
         self.props = props
@@ -136,10 +136,10 @@ class TestDataUpload:
         presigned_url = fence_upload_res["url"]
 
         # Check blank record was created in indexd
-        file_node = FileNode(
+        file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
-        self.indexd.get_record(indexd_guid=file_node.did)
+        self.indexd.get_record(indexd_guid=file_record.did)
 
         # fail to submit metadata for this file without hash and size
         try:
@@ -166,7 +166,9 @@ class TestDataUpload:
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
 
         # Try downloading before linking metadata to the file. It should succeed for the uploader but fail for other users
         # the uploader can now download the file
@@ -234,12 +236,14 @@ class TestDataUpload:
 
         # Upload the file to the S3 bucket using the presigned URL
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
-        file_node = FileNode(
+        file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
 
         # check that a user who is not the uploader cannot delete the file
         record = self.indexd.get_record(self.created_guids[-1])
@@ -301,12 +305,14 @@ class TestDataUpload:
 
         # Upload the file to the S3 bucket using the presigned URL
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
-        file_node = FileNode(
+        file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
 
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
@@ -334,7 +340,9 @@ class TestDataUpload:
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
 
         # submit metadata for this file
         # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
@@ -377,16 +385,18 @@ class TestDataUpload:
         presigned_url = fence_upload_res["url"]
 
         # Check blank record was created in indexd
-        file_node = FileNode(
+        file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
-        self.indexd.get_record(indexd_guid=file_node.did)
+        self.indexd.get_record(indexd_guid=file_record.did)
 
         # Upload the file to the S3 bucket using the presigned URL
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
 
         # wait for the indexd listener to add size, hashes and URL to the record
-        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
 
         # submit metadata for this file
         file_record = self.sd_tools.get_file_record()
@@ -396,13 +406,13 @@ class TestDataUpload:
         file_record.props["consent_codes"] = ["cc1", "cc_2"]
         self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
-        file_node_with_ccs = FileNodeWithCCs(
+        file_record_with_ccs = FileRecordWithCCs(
             did=file_guid,
             props={"md5sum": file_md5, "file_size": file_size},
             authz=["/consents/cc1", "/consents/cc_2"],
         )
         self.fence.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_node_with_ccs
+            self.indexd, file_record_with_ccs
         )
 
     def test_successful_multipart_upload(self):
@@ -455,10 +465,10 @@ class TestDataUpload:
                 user="main_account",
             )
             # Upload the data using the fence presigned url.
-            upload_part_res = self.fence.upload_data_using_presigned_url(
+            etag = self.fence.upload_data_using_presigned_url(
                 presigned_url=multipart_upload_res["presigned_url"], file_data=val
             )
-            parts_summary.append({"PartNumber": part_number, "ETag": upload_part_res})
+            parts_summary.append({"PartNumber": part_number, "ETag": etag})
 
         # Complete the multipart upload.
         self.fence.complete_mulitpart_upload(
@@ -468,11 +478,13 @@ class TestDataUpload:
             user="main_account",
         )
 
-        file_node = FileNode(
+        file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
         )
 
-        self.fence.wait_upload_file_updated_from_indexd_listener(self.indexd, file_node)
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
 
         # Create a signed url using the same guid id as in previous steps.
         signed_url_res = self.fence.create_signed_url(
@@ -529,12 +541,10 @@ class TestDataUpload:
                 user="main_account",
             )
             # Upload the data using the fence presigned url.
-            upload_part_res = self.fence.upload_data_using_presigned_url(
+            etag = self.fence.upload_data_using_presigned_url(
                 presigned_url=multipart_upload_res["presigned_url"], file_data=val
             )
-            parts_summary.append(
-                {"PartNumber": part_number, "ETag": f"{upload_part_res}fake"}
-            )
+            parts_summary.append({"PartNumber": part_number, "ETag": f"{etag}fake"})
 
         # Complete the multipart upload using a fake ETag, which should fail.
         self.fence.complete_mulitpart_upload(

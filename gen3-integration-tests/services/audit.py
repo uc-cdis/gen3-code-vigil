@@ -30,7 +30,7 @@ class Audit(object):
         assert expectedStatus == response.status_code
         return True
 
-    def check_query_results(self, logCategory, user, params, expectedResults):
+    def check_query_results(self, logCategory, user, params, expected_results):
         url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
         counter = 0
@@ -45,9 +45,9 @@ class Audit(object):
             # Counter to check response is recieved within 5 mins
             if len(data["data"]) != 0:
                 logger.info(data["data"])
-                for key, val in expectedResults.items():
+                for key, val in expected_results.items():
                     # Get the first entry of json data
-                    assert data["data"][0][key] == expectedResults[key]
+                    assert data["data"][0][key] == expected_results[key]
                 return True
             counter += 1
 

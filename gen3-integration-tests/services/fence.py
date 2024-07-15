@@ -44,9 +44,7 @@ class Fence(object):
                 f"Failed to get access token from {self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token"
             )
 
-    def create_signed_url(
-        self, id, user, expectedStatus, file_type=None, params=[], access_token=None
-    ):
+    def create_signed_url(self, id, user, expectedStatus, params=[], access_token=None):
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
         if len(params) > 0:
