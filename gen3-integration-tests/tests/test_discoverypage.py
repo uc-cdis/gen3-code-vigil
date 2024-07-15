@@ -68,16 +68,16 @@ class TestDiscoveryPage(object):
         # Create indexd record
         indexd_records = {
             "test": {
-                "filename": "discovery_test.csv",
+                "file_name": "discovery_test.csv",
                 "did": self.variables["did"],
-                "link": "s3://cdis-presigned-url-test/testdata/discovery_test.csv",
-                "md5": self.variables["md5sum"],
+                "urls": ["s3://cdis-presigned-url-test/testdata/discovery_test.csv"],
+                "hashes": {"md5": self.variables["md5sum"]},
                 "authz": ["/programs/QA"],
                 "size": 16,
             }
         }
         indexd = Indexd()
-        indexd.create_files(indexd_records)
+        indexd.create_records(indexd_records)
 
         # Create study metadata record
         mds = MetadataService()

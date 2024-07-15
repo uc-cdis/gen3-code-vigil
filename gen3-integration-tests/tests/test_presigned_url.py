@@ -15,36 +15,36 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 indexd_files = {
     "allowed": {
-        "filename": "test_valid",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
         "size": 9,
     },
     "not_allowed": {
-        "filename": "test_not_allowed",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "file_name": "test_not_allowed",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["acct"],
         "size": 9,
     },
     "no_link": {
-        "filename": "test_no_link",
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "file_name": "test_no_link",
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
         "size": 9,
     },
     "http_link": {
-        "filename": "test_protocol",
-        "link": "http://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "file_name": "test_protocol",
+        "urls": ["http://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
         "size": 9,
     },
     "invalid_protocol": {
-        "filename": "test_invalid_protocol",
-        "link": "s2://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "file_name": "test_invalid_protocol",
+        "urls": ["s2://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
         "size": 9,
     },
@@ -65,7 +65,7 @@ class TestPresignedURL:
         logger.info("Creating Indexd Records")
         # Adding indexd files used to test signed urls
         for key, val in indexd_files.items():
-            indexd_record = cls.indexd.create_files(files={key: val})
+            indexd_record = cls.indexd.create_records(files={key: val})
             indexd_files[key]["did"] = indexd_record[0]["did"]
             indexd_files[key]["rev"] = indexd_record[0]["rev"]
 

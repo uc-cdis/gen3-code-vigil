@@ -30,23 +30,23 @@ NOTES:
 
 indexed_files = {
     "abc_foo_bar_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "authz": ["/abc/programs/foo/projects/bar"],
         "size": 9,
     },
     "gen3_test_test_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad1",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad1"},
         "authz": ["/gen3/programs/test_program/projects/test_project"],
         "size": 10,
     },
     "two_projects_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad2",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad2"},
         "authz": [
             "/abc/programs/test_program/projects/test_project1",
             "/abc/programs/test_program2/projects/test_project3",
@@ -54,9 +54,9 @@ indexed_files = {
         "size": 11,
     },
     "gen3_hmb_research_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440af1",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440af1"},
         "authz": [
             "/gen3/programs/test_program/projects/test_project1",
             "/consents/HMB",
@@ -64,9 +64,9 @@ indexed_files = {
         "size": 43,
     },
     "abc_hmb_research_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb90213ef0beed440af1",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb90213ef0beed440af1"},
         "authz": [
             "/abc/programs/test_program/projects/test_project1",
             "/consents/HMB",
@@ -74,9 +74,9 @@ indexed_files = {
         "size": 44,
     },
     "gru_research_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d655ec3f4beb9020eef0beed440af1",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d655ec3f4beb9020eef0beed440af1"},
         "authz": [
             "/gen3/programs/test_program/projects/test_project1",
             "/consents/GRU",
@@ -84,9 +84,9 @@ indexed_files = {
         "size": 45,
     },
     "open_access_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb90212ef0beed440af1",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb90212ef0beed440af1"},
         "authz": [
             "/open",
         ],
@@ -96,16 +96,16 @@ indexed_files = {
 
 new_gen3_records = {
     "foo_bar_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad4",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad4"},
         "authz": ["/gen3/programs/test_program/projects/test_project"],
         "size": 9,
     },
     "delete_me": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ac0",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ac0"},
         "authz": ["/gen3/programs/test_program/projects/test_project"],
         "size": 12,
     },
@@ -113,16 +113,16 @@ new_gen3_records = {
 
 new_abc_records = {
     "foo_bar_file": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad5",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad5"},
         "authz": ["/abc/programs/foo"],
         "size": 9,
     },
     "delete_me": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ac1",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ac1"},
         "authz": ["/abc/programs/foo/projects/bar"],
         "size": 12,
     },
@@ -199,7 +199,7 @@ class TestCentralizedAuth:
 
         # Adding indexd files
         for key, val in indexed_files.items():
-            indexd_record = self.indexd.create_files(files={key: val})
+            indexd_record = self.indexd.create_records(files={key: val})
             indexed_files[key]["did"] = indexd_record[0]["did"]
             indexed_files[key]["rev"] = indexd_record[0]["rev"]
 
@@ -228,19 +228,19 @@ class TestCentralizedAuth:
         # Create indexd records using dcf-user2 account
         # Both indexd record creations should fail, as dcf-user2 doesn't have access to /gen3 or /abc project
         try:
-            self.indexd.create_files(files=new_gen3_records, user="user2_account")
+            self.indexd.create_records(files=new_gen3_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
         try:
-            self.indexd.create_files(files=new_abc_records, user="user2_account")
+            self.indexd.create_records(files=new_abc_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
 
         # Create indexd records using indexing_user
-        self.indexd.create_files(files=new_gen3_records)
-        self.indexd.create_files(files=new_abc_records)
+        self.indexd.create_records(files=new_gen3_records)
+        self.indexd.create_records(files=new_abc_records)
 
         # Read should be successful using user2_account
         gen3_read_success = self.indexd.get_record(
@@ -307,15 +307,15 @@ class TestCentralizedAuth:
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
-            self.indexd.create_files(files=new_gen3_records, user="main_account")
+            self.indexd.create_records(files=new_gen3_records, user="main_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
 
-        self.indexd.create_files(files=new_abc_records, user="main_account")
+        self.indexd.create_records(files=new_abc_records, user="main_account")
 
         # Create indexd records using indexing_user
-        self.indexd.create_files(files=new_gen3_records)
+        self.indexd.create_records(files=new_gen3_records)
 
         # Read should be successful using main_account
         gen3_read_success = self.indexd.get_record(
@@ -399,15 +399,17 @@ class TestCentralizedAuth:
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
-            self.indexd.create_files(files=new_gen3_records, access_token=access_token)
+            self.indexd.create_records(
+                files=new_gen3_records, access_token=access_token
+            )
         except Exception as e:
             if "401" not in e:
                 logger.error(f"Expected 401 but got {e}")
                 raise
-        self.indexd.create_files(files=new_abc_records, access_token=access_token)
+        self.indexd.create_records(files=new_abc_records, access_token=access_token)
 
         # Create gen3 records using indexing_user
-        self.indexd.create_files(files=new_gen3_records)
+        self.indexd.create_records(files=new_gen3_records)
 
         # Read should be successful using user2_account
         gen3_read_success = self.indexd.get_record(

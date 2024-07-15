@@ -21,8 +21,8 @@ indexd_files = {
     "Permission_test_user_should_have": {
         "acl": [],
         "authz": ["/programs/phs002409.c1"],
-        "filename": "ras_test_file",
-        "md5": "587efb5d96f695710a8df9c0dbb96eb0",  # pragma: allowlist secret
+        "file_name": "ras_test_file",
+        "hashes": {"md5": "587efb5d96f695710a8df9c0dbb96eb0"},
         "size": 15,
         "form": "object",
         "urls": [
@@ -33,8 +33,8 @@ indexd_files = {
     "Permission_test_user_should_not_have": {
         "acl": [],
         "authz": ["/programs/phs002410.c1"],
-        "filename": "ras_test_file",
-        "md5": "587efb5d96f695710a8df9c0dbb96eb0",  # pragma: allowlist secret
+        "file_name": "ras_test_file",
+        "hashes": {"md5": "587efb5d96f695710a8df9c0dbb96eb0"},
         "size": 15,
         "form": "object",
         "urls": [
@@ -64,7 +64,7 @@ class TestRasDrs:
         # Upload new Indexd records
         # Adding indexd files
         for key, val in indexd_files.items():
-            indexd_record = cls.indexd.create_files(
+            indexd_record = cls.indexd.create_records(
                 files={key: val}, access_token=cls.access_token
             )
             indexd_files[key]["did"] = indexd_record[0]["did"]

@@ -16,49 +16,49 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 indexd_files = {
     "phs000178File": {
-        "filename": "testdata",
+        "file_name": "testdata",
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://dcf-integration-test/file.txt",
         ],
-        "md5": "73d643ec3f4beb9020eef0beed440ad0",
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "authz": ["/programs/phs000178"],
         "size": 9,
     },
     "phs000179File": {
-        "filename": "testdata",
+        "file_name": "testdata",
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://dcf-integration-qa/file.txt",
         ],
-        "md5": "73d643ec3f4beb9020eef0beed440ad1",
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad1"},
         "authz": ["/orgA/programs/phs000179"],
         "size": 10,
     },
     "anotherPhs000179File": {
-        "filename": "testdata",
+        "file_name": "testdata",
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://dcf-integration-qa/file.txt",
         ],
-        "md5": "73d643ec3f4beb9020eef0beed440ad2",
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad2"},
         "authz": ["/orgB/programs/phs000179"],
         "size": 11,
     },
     "QAFile": {
-        "filename": "testdata",
+        "file_name": "testdata",
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://dcf-integration-qa/file.txt",
         ],
-        "md5": "73d643ec3f4beb9020eef0beed440ac5",
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ac5"},
         "authz": ["/gen3/programs/QA/projects/foobar"],
         "size": 12,
     },
     "project12345File": {
-        "filename": "testdata",
+        "file_name": "testdata",
         "size": 10,
-        "md5": "e5c9a0d417f65226f564f438120381c5",  # pragma: allowlist secret
+        "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://dcf-integration-test/file.txt",
@@ -71,9 +71,9 @@ indexd_files = {
 
 new_dbgap_records = {
     "fooBarFile": {
-        "filename": "testdata",
-        "link": "s3://cdis-presigned-url-test/testdata",
-        "md5": "73d643ec3f4beb9020eef0beed440ad4",
+        "file_name": "testdata",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad4"},
         "authz": ["/programs/phs000178"],
         "size": 13,
     },
@@ -97,7 +97,7 @@ class TestDbgap:
 
         # Adding indexd files
         for key, val in indexd_files.items():
-            indexd_record = cls.indexd.create_files(files={key: val})
+            indexd_record = cls.indexd.create_records(files={key: val})
             indexd_files[key]["did"] = indexd_record[0]["did"]
             indexd_files[key]["rev"] = indexd_record[0]["rev"]
 
@@ -242,7 +242,7 @@ class TestDbgap:
         new_dbgap_records["fooBarFile"]["did"] = str(uuid.uuid4())
         # Indexd record creation should fail with user2_account
         try:
-            self.indexd.create_files(files=new_dbgap_records, user="user2_account")
+            self.indexd.create_records(files=new_dbgap_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
@@ -255,7 +255,7 @@ class TestDbgap:
         ), f"Expected no record, but found {foo_bar_file_record}"
 
         # Create indexd record and retrieve record
-        self.indexd.create_files(files=new_dbgap_records)
+        self.indexd.create_records(files=new_dbgap_records)
         foo_bar_file_record = self.indexd.get_record(
             indexd_guid=new_dbgap_records["fooBarFile"]["did"], user="user2_account"
         )
@@ -298,7 +298,7 @@ class TestDbgap:
         new_dbgap_records["fooBarFile"]["did"] = str(uuid.uuid4())
         # Indexd record creation should fail with main_account
         try:
-            self.indexd.create_files(files=new_dbgap_records, user="main_account")
+            self.indexd.create_records(files=new_dbgap_records, user="main_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
@@ -311,7 +311,7 @@ class TestDbgap:
         ), f"Expected no record, but found {foo_bar_file_record}"
 
         # Create indexd record and retrieve record
-        self.indexd.create_files(files=new_dbgap_records)
+        self.indexd.create_records(files=new_dbgap_records)
         foo_bar_file_record = self.indexd.get_record(
             indexd_guid=new_dbgap_records["fooBarFile"]["did"], user="main_account"
         )

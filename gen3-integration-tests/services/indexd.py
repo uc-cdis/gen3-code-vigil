@@ -12,7 +12,7 @@ class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index/index"
 
-    def create_files(self, files: dict, user="indexing_account", access_token=None):
+    def create_records(self, records: dict, user="indexing_account", access_token=None):
         """Create new indexd record"""
         if access_token:
             auth = Gen3Auth(access_token=access_token)
@@ -21,29 +21,13 @@ class Indexd(object):
         index = Gen3Index(auth_provider=auth)
         indexed_files = []
         # Create record for each file
-        for file_info in files.values():
-            file_info.setdefault("did", str(uuid4()))
-            # Create data dictionary to provide as argument for Indexd create record function
-            data = {
-                "hashes": {"md5": file_info["md5"]},
-                "size": file_info["size"],
-                "file_name": file_info["filename"],
-                "did": file_info["did"],
-            }
-
-            if "urls" in file_info:
-                data["urls"] = file_info["urls"]
-            if "link" in file_info:
-                data["urls"] = file_info["link"]
-            if "authz" in file_info:
-                data["authz"] = file_info["authz"]
-            if "acl" in file_info:
-                data["acl"] = file_info["acl"]
+        for record_data in records.values():
+            record_data.setdefault("did", str(uuid4()))
             try:
-                record = index.create_record(**data)
+                record = index.create_record(record_data)
                 indexed_files.append(record)
-            except Exception:
-                logger.exception(msg="Failed indexd submission got exception")
+            except Exception as e:
+                logger.exception(msg=f"Failed indexd submission got exception {e}")
         return indexed_files
 
     def get_record(self, indexd_guid: str, user="indexing_account", access_token=None):
@@ -58,7 +42,7 @@ class Indexd(object):
             logger.info(f"Indexd Record found {record}")
             return record
         except Exception as e:
-            logger.exception(msg=f"Cannot find indexd record {e}")
+            logger.exception(msg=f"Cannot find indexd record: {e}")
             raise
 
     def update_record(

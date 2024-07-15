@@ -177,21 +177,25 @@ class TestAuditService:
         try:
             files = {
                 "private": {
-                    "filename": "private_file",
-                    "link": "s3://cdis-presigned-url-test/testdata",
-                    "md5": "73d643ec3f4beb9020eef0beed440ad0",  # pragma: allowlist secret
+                    "file_name": "private_file",
+                    "urls": ["s3://cdis-presigned-url-test/testdata"],
+                    "hashes": {
+                        "md5": "73d643ec3f4beb9020eef0beed440ad0"
+                    },  # pragma: allowlist secret
                     "authz": ["/programs/jnkns"],
                     "size": 9,
                 },
                 "public": {
-                    "filename": "public_file",
-                    "link": "s3://cdis-presigned-url-test/testdata",
-                    "md5": "73d643ec3f4beb9020eef0beed440ad1",  # pragma: allowlist secret
+                    "file_name": "public_file",
+                    "urls": ["s3://cdis-presigned-url-test/testdata"],
+                    "hashes": {
+                        "md5": "73d643ec3f4beb9020eef0beed440ad1"
+                    },  # pragma: allowlist secret
                     "authz": ["/open"],
                     "size": 9,
                 },
             }
-            records = indexd.create_files(files)
+            records = indexd.create_records(files)
             # Create List and Dictionary to capture did information of the public and private files
             for record in records:
                 did_records.append(record["did"])
