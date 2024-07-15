@@ -1,14 +1,12 @@
 # Workspace Page
-import os
 import pytest
-
-from cdislogging import get_logger
 
 from playwright.sync_api import expect, Page
 
-from utils.test_execution import screenshot
+from utils import logger
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils.gen3_admin_tasks import run_gen3_command
+from utils.test_execution import screenshot
 
 
 class WorkspacePage(object):
@@ -17,29 +15,27 @@ class WorkspacePage(object):
         self.BASE_URL = f"{pytest.root_url_portal}/workspace"
         # Locators
         self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
-        self.WORKSPACE_OPTION = (
+        self.WORKSPACE_OPTIONS = (
             "//div[@class='workspace__options']"  # Workspace Options
         )
-        self.NOTEBOOK_CARD = (
-            "(//div[@class='workspace-option'])[1]"  # workspace option first card
+        self.LAUNCH_FIRST_WORKSPACE = (
+            "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
         )
-        self.WORKSPACE_SPINNER = (
-            "//div[@class='workspace__spinner-container']"  # workspace loading spinner
-        )
-        self.WORKSPACE_IFRAME = "//div[@class='workspace__iframe']"
+        self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
-        self.WORKSPACE_LAUNCHER_FRAME = 'iframe[title="Workspace"]'  # IFrame workspace
-        self.NEW_PYTHON_NB = (
-            "//button[@id='new-dropdown-button']"  # Dropdown to select new notebook
+        self.NEW_NB = (
+            "//button[@id='new-dropdown-button']"  # Dropdown to create new notebook
         )
-        self.PYTHON_NB = "//a[@title='Create a new notebook with Python 3 (ipykernel)']"  # dropdown box python nb selection
-        self.PYTHON_COMMAND_FIELD = (
-            "//div[@aria-label='Edit code here']"  # command input field
+        self.NEW_NB_PYTHON = (
+            "//li[@id='kernel-python3']"  # Dropdown selection to create Python notebook
         )
-        self.RUN_COMMAND_BUTTON = (
-            "//button[@title='run cell, select below']"  # run command button
+        self.NB_CELL_INPUT = (
+            "//div[@aria-label='Edit code here']"  # Notebook code cell input
         )
-        self.RUN_COMMAND_OUTPUT = "//div[@class='output_subarea output_text output_stream output_stdout']//pre"  # output after run command
+        self.NB_RUN_CELL_BUTTON = (
+            "//button[@aria-label='Run']"  # Notebook button to run cell and select next
+        )
+        self.NB_CELL_OUTPUT = "//div[@class='output_subarea output_text output_stream output_stdout']//pre"  # output after run command
         self.TERMINATE_BUTTON = (
             "//button[contains(text(),'Terminate Workspace')]"  # terminate nb button
         )
@@ -49,61 +45,74 @@ class WorkspacePage(object):
         """Goes to workspace page and checks if loaded correctly"""
         page.goto(self.BASE_URL)
         page.wait_for_selector(self.READY_CUE, state="visible")
-        screenshot(page, "workspacePage")
+        screenshot(page, "WorkspacePage")
 
-    def open_jupyter_workspace(self, page: Page):
-        """Launch a jupyter workspace"""
-        expect(page.locator(self.WORKSPACE_OPTION)).to_be_visible()
-        # find the workspace option for Juptyer WS to launch
-        generic_card = page.locator(self.NOTEBOOK_CARD)
-        expect(generic_card).to_be_visible()
-        # click the launch button from the juptyer workspace card
-        launch_button_xpath = f"{self.NOTEBOOK_CARD}//button[text()='Launch']"
+    def assert_page_loaded(self, page: Page):
+        """Checks if workspace page loaded successfully"""
+        page.wait_for_selector(self.READY_CUE, state="visible")
+        screenshot(page, "WorkspacePageLoaded")
+
+    def launch_workspace(self, page: Page, name: str = ""):
+        """
+        Launch the workspace with the given name
+        Launches the first available one if `name` is not specified
+        """
+        logger.info("Increasing capacity to speed up the launch")
+        result = run_gen3_command(
+            pytest.namespace, "gen3 ec2 asg-set-capacity jupyter +10"
+        )
+        logger.info(f"Build result: {result}")
+        expect(page.locator(self.WORKSPACE_OPTIONS)).to_be_visible()
+        # launch the specified workspace option if the name is provided
+        logger.info(f"Launching workspace {name}")
+        if name:
+            launch_button_xpath = f"//h3[text()='{name}']/parent::div[@class='workspace-option']/button[text()='Launch']"
+        # launch the first available option if the name is not provided
+        else:
+            launch_button_xpath = self.LAUNCH_FIRST_WORKSPACE
+        logger.debug(f"Xpath: {launch_button_xpath}")
         launch_button = page.locator(launch_button_xpath)
         launch_button.click()
-        screenshot(page, "jupyterWorkspace")
-        page.wait_for_selector(self.WORKSPACE_SPINNER, state="visible")
-        # after launch, workspace takes around 6 mins to load and launc
-        page.wait_for_selector(self.WORKSPACE_IFRAME, state="visible", timeout=360000)
+        screenshot(page, "WorkspaceLaunching")
+        # workspace can take a while to launch
+        page.frame_locator(self.WORKSPACE_IFRAME).locator(
+            "//div[@aria-label='Top Menu']"
+        ).wait_for(timeout=60000)
 
-    def open_python_kernel(self, page: Page):
-        """perform drs pull in workspace page"""
+    def open_python_notebook(self, page: Page):
+        """Open Python notebook in the workspace"""
         # here the frame is on the page, so page.locator is used
-        workspace_iframe = page.locator(self.WORKSPACE_LAUNCHER_FRAME)
+        workspace_iframe = page.locator(self.WORKSPACE_IFRAME)
         expect(workspace_iframe).to_be_visible
-        python_nb = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.NEW_PYTHON_NB
-        )
+        python_nb = page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NEW_NB)
         python_nb.click()
-        python_kernel_nb = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.PYTHON_NB
+        python_kernel_nb = page.frame_locator(self.WORKSPACE_IFRAME).locator(
+            self.NEW_NB_PYTHON
         )
         python_kernel_nb.click()
-        commandPrompt = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.PYTHON_COMMAND_FIELD
+        command_prompt = page.frame_locator(self.WORKSPACE_IFRAME).locator(
+            self.NB_CELL_INPUT
         )
-        commandPrompt.wait_for(timeout=60000, state="visible")
-        screenshot(page, "pythonKernel")
+        command_prompt.wait_for(state="visible")
+        screenshot(page, "PythonNotebook")
 
-    def run_command_notebook(self, page: Page):
-        screenshot(page, "gen3CommandOutput1")
-        command_input = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.PYTHON_COMMAND_FIELD
+    def run_command_in_notebook(self, page: Page, command: str = "!gen3 --help"):
+        command_input = (
+            page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NB_CELL_INPUT).last
         )
-        command_input.press_sequentially("!gen3 --help")
-        screenshot(page, "fillCommand")
-        page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.RUN_COMMAND_BUTTON
+        command_input.press_sequentially(command)
+        screenshot(page, "NotebookCellInput")
+        page.frame_locator(self.WORKSPACE_IFRAME).locator(
+            self.NB_RUN_CELL_BUTTON
         ).click()
-        screenshot(page, "gen3CommandOutput1")
-        output = page.frame_locator(self.WORKSPACE_LAUNCHER_FRAME).locator(
-            self.RUN_COMMAND_OUTPUT
+        output = (
+            page.frame_locator(self.WORKSPACE_IFRAME).locator(self.NB_CELL_OUTPUT).last
         )
-        output.wait_for(timeout=60000, state="visible")
-        screenshot(page, "gen3CommandOutput")
+        output.wait_for(state="visible")
+        screenshot(page, "NotebookCellOutput")
+        return output.text_content()
 
     def terminate_workspace(self, page: Page):
-        # page.get_by_role("button", name="Terminate Workspace").click()
         page.locator(self.TERMINATE_BUTTON).click()
-        # page.get_by_role("button", name="Yes").click()
         page.locator(self.YES_BUTTON).click()
+        page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=300000)

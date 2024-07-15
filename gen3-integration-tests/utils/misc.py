@@ -1,13 +1,10 @@
 import os
 import time
 
-from cdislogging import get_logger
+from utils import logger
 from filelock import Timeout, FileLock
 
 from utils import TEST_DATA_PATH_OBJECT
-
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 def one_worker_only(wait_secs=3, max_wait_minutes=1):
@@ -80,3 +77,28 @@ def one_worker_only(wait_secs=3, max_wait_minutes=1):
         return run_with_lock
 
     return one_worker_only_decorator
+
+
+def retry(times, delay, exceptions):
+    """
+    Decorator that retries the wrapped function/method `times` times if the exceptions
+    listed in ``exceptions`` are thrown waiting for `delay` seconds between retries
+    """
+
+    def decorator(func):
+        def newfn(*args, **kwargs):
+            attempt = 1
+            while attempt <= times:
+                time.sleep(delay)
+                try:
+                    return func(*args, **kwargs)
+                except exceptions:
+                    print(
+                        f"Errored when trying to run {func}, attempt {attempt} of {times}"
+                    )
+                    attempt += 1
+            return func(*args, **kwargs)
+
+        return newfn
+
+    return decorator

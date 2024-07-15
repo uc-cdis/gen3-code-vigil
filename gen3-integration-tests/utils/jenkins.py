@@ -1,10 +1,11 @@
 import os
 import requests
 import time
-import traceback
-from cdislogging import get_logger
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
+
+from utils.misc import retry
+
 
 # Jobs listed on https://jenkins.planx-pla.net/view/CI%20Jobs/
 
@@ -46,18 +47,12 @@ class JenkinsJob(object):
         except Exception:
             return False
 
+    @retry(times=4, delay=15, exceptions=(AssertionError,))
     def get_build_result(self, build_number):
         """Get result of a run"""
-        retry = 0
-        while retry < 3:
-            time.sleep(10)
-            info = self.get_build_info(build_number)
-            result = info["result"]
-            if result:
-                return result
-            else:
-                retry += 1
-        raise Exception("Unable to get build results")
+        info = self.get_build_info(build_number)
+        assert "result" in info
+        return info["result"]
 
     def get_console_output(self, build_number):
         """Get the console logs of a run"""
@@ -105,7 +100,7 @@ class JenkinsJob(object):
         else:
             raise Exception(f"Failed to get jenkins job output: {response.status_code}")
 
-    def wait_for_build_completion(self, build_number, max_duration=600):
+    def wait_for_build_completion(self, build_number, max_duration=1200):
         """
         Wait for a run to complete.
         Default maximum wait time is 10 minutes, and can be configured.
@@ -132,6 +127,7 @@ class JenkinsJob(object):
                 time.sleep(60)
         return status
 
+    @retry(times=2, delay=10, exceptions=(AssertionError,))
     def get_artifact_content(self, build_number, artifact_name):
         """Get the contents of an artifact archived for the specific run"""
         url = f"{self.job_url}/{build_number}/api/json"

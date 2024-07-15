@@ -2,10 +2,8 @@
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from playwright.sync_api import Page
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 class HomePage(object):

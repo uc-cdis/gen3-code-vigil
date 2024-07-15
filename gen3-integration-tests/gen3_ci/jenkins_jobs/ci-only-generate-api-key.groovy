@@ -49,7 +49,7 @@ spec:
     resources:
       requests:
         cpu: 500m
-        memory: 500Mi
+        memory: 1Gi
         ephemeral-storage: 1Gi
   - name: shell
     image: quay.io/cdis/gen3-ci-worker:master

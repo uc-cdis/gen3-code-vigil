@@ -3,9 +3,7 @@ import pytest
 
 from services.manifestservice import ManifestService
 
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 @pytest.mark.manifestservice

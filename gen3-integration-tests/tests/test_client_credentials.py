@@ -5,12 +5,9 @@ import json
 
 from gen3.auth import Gen3Auth
 from services.requestor import Requestor
-from services.fence import Fence
 import utils.gen3_admin_tasks as gat
 
-from cdislogging import get_logger
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 @pytest.mark.client_credentials
@@ -56,16 +53,18 @@ class TestClientCredentials:
         gat.run_gen3_job(pytest.namespace, "usersync")
         # TODO : wait for usersync pod to finish and completed
 
-        client_access_token_response = Gen3Auth(
+        gen3auth = Gen3Auth(
             endpoint=pytest.root_url,
             client_credentials=(client_id, client_secret),
         )
-        client_access_token = client_access_token_response._access_token
+        client_access_token = gen3auth.get_access_token()
 
         # Creating data for request
         data = {"username": username, "policy_id": policy}
 
-        request_id = requestor.create_request(data, client_access_token)
+        request_id = requestor.create_request_with_client_token(
+            data, client_access_token
+        )
 
         # Getting the status of the request_id
         req_status = requestor.get_request_status(request_id)

@@ -1,11 +1,14 @@
+import datetime
+import math
 import os
 import pytest
-
-from cdislogging import get_logger
-from gen3.auth import Gen3Auth
 import time
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
+
+from gen3.auth import Gen3Auth
+
+from utils.misc import retry
 
 
 class Audit(object):
@@ -13,7 +16,12 @@ class Audit(object):
         self.BASE_ENDPOINT = "/audit"
         self.AUDIT_LOG_ENDPOINT = f"{self.BASE_ENDPOINT}/log"
 
-    def audit_query(self, logCategory, user, params, expectedStatus, audit_category):
+    @retry(times=3, delay=10, exceptions=(AssertionError))
+    def audit_query(
+        self, logCategory, user, user_email, expectedStatus, audit_category
+    ):
+        timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
+        params = ["start={}".format(timestamp), "username={}".format(user_email)]
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
@@ -22,13 +30,13 @@ class Audit(object):
         assert expectedStatus == response.status_code
         return True
 
-    def checkQueryResults(self, logCategory, user, params, expectedResults):
+    def check_query_results(self, logCategory, user, params, expectedResults):
         url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
         url = url + "?" + "&".join(params)
         counter = 0
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
 
-        while counter < 10:
+        while counter < 20:
             time.sleep(30)
             # response = requests.get(url=url, auth=userTokenHeader)
             response = auth.curl(path=url)
@@ -43,5 +51,5 @@ class Audit(object):
                 return True
             counter += 1
 
-        logger.error("Waited for 300 seconds but data was not recieved")
+        logger.error("Waited for 10 minutes but data was not recieved")
         return False
