@@ -24,7 +24,7 @@ class Indexd(object):
         for record_data in records.values():
             record_data.setdefault("did", str(uuid4()))
             try:
-                record = index.create_record(record_data)
+                record = index.create_record(**record_data)
                 indexed_files.append(record)
             except Exception as e:
                 logger.exception(msg=f"Failed indexd submission got exception {e}")
