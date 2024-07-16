@@ -24,6 +24,8 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
+        # user for heal env as heal as both Google login and dev login
+        # TODO : implement multiple login function below in login function
         self.DEV_LOGIN_BUTTON = (
             "//button[@class='login-page__entry-button g3-button g3-button--default']"
         )
@@ -55,7 +57,7 @@ class LoginPage(object):
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
         else:
-            page.locator(self.DEV_LOGIN_BUTTON).click()
+            page.locator(self.LOGIN_BUTTON).click()
             # self.multiple_login_button(page)
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
         screenshot(page, "AfterLogin")

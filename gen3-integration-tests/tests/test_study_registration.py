@@ -171,7 +171,7 @@ class TestStudyRegistration(object):
         gat.check_job_pod(pytest.namespace, "metadata-aggregate-sync", "gen3job")
 
         linked_record = mds.get_aggregate_metadata(self.variables["application_id"])
-        logger.info(f"Linked Record : {linked_record}")
+        logger.debug(f"Linked Record : {linked_record}")
         is_registered = linked_record["gen3_discovery"].get("is_registered")
         assert (
             is_registered is True

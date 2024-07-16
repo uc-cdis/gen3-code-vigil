@@ -31,8 +31,6 @@ pypfb = "^0.5.29"
 fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
-pypfb = "^0.5.29"
-fastavro = "^1.8.2"
 
 [build-system]
 requires = ["poetry-core"]
