@@ -106,5 +106,5 @@ class StudyRegistrationPage(object):
         page.fill(self.CEDAR_UUID_FIELD, uuid)
         screenshot(page, "FilledRegistrationForm")
         page.click(self.REGISTER_SUBMIT_BUTTON)
-        time.sleep(30)
+        time.sleep(10)
         screenshot(page, "AfterRegisterSubmitClick")

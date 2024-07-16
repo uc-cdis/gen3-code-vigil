@@ -146,7 +146,7 @@ class TestStudyRegistration(object):
         )
         if request_id:
             logger.debug(f"Request ID : {request_id}")
-            self.variables["request_id"] = request_id
+            self.variables["request_ids"].append(request_id)
         else:
             logger.info("Request was not found")
         requestor.request_signed(request_id)
@@ -158,12 +158,10 @@ class TestStudyRegistration(object):
         time.sleep(30)
         page.reload()
         discovery_page.go_to(page)
-        # study_register.search_study(page, "42053470")
         study_register.search_study(page, self.variables["application_id"])
         study_register.click_register_study(page)
 
         cedar_uuid = self.variables["cedar_UUID"]
-        application_id = self.variables["application_id"]
         study_name = f"{project_number} : TEST : {nih_application_id}"
         study_register.fill_registration_form(page, cedar_uuid, study_name)
 
@@ -176,5 +174,5 @@ class TestStudyRegistration(object):
         logger.info(f"Linked Record : {linked_record}")
         is_registered = linked_record["gen3_discovery"].get("is_registered")
         assert (
-            is_registered == "True"
+            is_registered is True
         ), f"Failed to register study with {self.variables["application_id"]}"
