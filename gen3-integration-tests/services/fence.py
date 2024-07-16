@@ -255,7 +255,11 @@ class Fence(object):
         return response.headers["ETag"].strip('"')
 
     @retry(times=12, delay=10, exceptions=(AssertionError))
-    def wait_upload_file_updated_from_indexd_listener(self, indexd, file_node):
-        response = indexd.get_record(file_node.did)
-        indexd.file_equals(res=response, file_record=file_node)
+    def wait_upload_file_updated_from_indexd_listener(self, indexd, file_record):
+        print("**********##############*********")
+        print(file_record)
+        print(file_record.__dict__)
+        print("**********##############*********")
+        response = indexd.get_record(file_record.did)
+        indexd.file_equals(res=response, file_record=file_record)
         return response

@@ -70,7 +70,7 @@ class FileRecordWithCCs:
 
 @pytest.mark.fence
 @pytest.mark.indexd
-@pytest.mark.sheepdog
+@pytest.mark.graph_submission
 class TestDataUpload:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="test")

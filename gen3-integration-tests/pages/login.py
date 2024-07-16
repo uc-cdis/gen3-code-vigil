@@ -83,17 +83,12 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
 
-    def ras_login(
-        self,
-        page: Page,
-        username=os.environ["CI_TEST_RAS_USERID"],
-        password=os.environ["CI_TEST_RAS_PASSWORD"],
-    ):
+    def ras_login(self, page: Page):
         # Perform RAS Login
         ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
         expect(ras_login_button).to_be_visible(timeout=5000)
-        page.locator(self.RAS_USERNAME_INPUT).fill(username)
-        page.locator(self.RAS_PASSWORD_INPUT).fill(password)
+        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_USERID"])
+        page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
         ras_login_button.click()
         # Handle the Grant access button
         if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=3000):
