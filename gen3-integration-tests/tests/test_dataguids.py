@@ -22,16 +22,25 @@ class TestDataGuids:
     def setup_class(cls):
         cls.variables["guids"] = []
         logger.info("Getting all the hosts from manifest.json ...")
-        host_list_path = TEST_DATA_PATH_OBJECT / "dataguids" / "host_list.txt"
+        try:
+            manifest_json = TEST_DATA_PATH_OBJECT / "configuration/manifest.json"
+        except FileNotFoundError:
+            logger.error("manifest.json not found")
+            raise
+        nested_json_str = manifest_json.get("data", {}).get("json")
+        if nested_json_str:
+            nested_json = json.loads(nested_json_str)
+            indexd_dist = nested_json.get("indexd", {}).get("dist", [])
+            host_list = [entry.get("host") for entry in indexd_dist]
+
         logger.info("Getting the first guid fom hosts ...")
-        with open(host_list_path, "r") as list:
-            for host in list:
-                record = requests.get(f"{host}index?limit=1")
-                record_data_json = record.json()
-                assert record_data_json, "Response is empty"
-                guid = record_data_json["did"]
-                cls.variables["guids"].append(guid)
-                logger.debug(f"GUID from {host}: {guid}")
+        for host in host_list:
+            record = requests.get(f"{host}index?limit=1")
+            record_data_json = record.json()
+            assert record_data_json, "Response is empty"
+            guid = record_data_json["did"]
+            cls.variables["guids"].append(guid)
+            logger.debug(f"GUID from {host}: {guid}")
 
     def test_resolve_prefixes(self, page):
         """

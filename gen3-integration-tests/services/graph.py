@@ -86,8 +86,14 @@ class GraphDataTools:
             )
             raise
 
-        dictionary_url = manifest.get("data", {}).get("dictionary_url")
-        assert dictionary_url, "No dictionary URL in manifest.json"
+        nested_json_str = manifest.get("data", {}).get("json")
+        if nested_json_str:
+            # Parse the nested JSON string
+            nested_json = json.loads(nested_json_str)
+            # Extract the dictionary URL
+            dictionary_url = nested_json.get("global", {}).get("dictionary_url")
+            # dictionary_url = manifest.get("data", {}).get("dictionary_url")
+            assert dictionary_url, "No dictionary URL in manifest.json"
 
         data_path = self.test_data_path
         data_path.mkdir(parents=True, exist_ok=True)
