@@ -175,4 +175,4 @@ class TestStudyRegistration(object):
         is_registered = linked_record["gen3_discovery"].get("is_registered")
         assert (
             is_registered is True
-        ), f"Failed to register study with {self.variables["application_id"]}"
+        ), f"Failed to register study with {self.variables[\"application_id\"]}"
