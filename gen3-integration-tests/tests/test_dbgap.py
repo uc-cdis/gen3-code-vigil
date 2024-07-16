@@ -97,7 +97,7 @@ class TestDbgap:
 
         # Adding indexd files
         for key, val in indexd_files.items():
-            indexd_record = cls.indexd.create_records(files={key: val})
+            indexd_record = cls.indexd.create_records(records={key: val})
             indexd_files[key]["did"] = indexd_record[0]["did"]
             indexd_files[key]["rev"] = indexd_record[0]["rev"]
 
