@@ -21,6 +21,7 @@ from services.metadataservice import MetadataService
 class TestStudyRegistration(object):
     variables = {}
 
+    @classmethod
     def setup_class(cls):
         cls.variables["request_ids"] = []
         cls.variables["cedar_UUID"] = "c5891154-750a-4ed7-83b7-7cac3ddddae6"
@@ -29,6 +30,7 @@ class TestStudyRegistration(object):
         )
         cls.variables["application_id"] = str(random.randint(10000000, 99999999))
 
+    @classmethod
     def teardown_class(cls):
         requestor = Requestor()
         mds = MetadataService()
@@ -59,7 +61,6 @@ class TestStudyRegistration(object):
         for request_id in cls.variables["request_ids"]:
             requestor.request_delete(request_id)
             logger.info(f"Request {request_id} deleted")
-        pass
 
         # Deleting dummy metadata with application_id
         mds.delete_metadata(cls.variables["application_id"])
@@ -157,8 +158,8 @@ class TestStudyRegistration(object):
         time.sleep(30)
         page.reload()
         discovery_page.go_to(page)
-        study_register.search_study(page, "42053470")
-        # study_register.search_study(page, self.variables["application_id"])
+        # study_register.search_study(page, "42053470")
+        study_register.search_study(page, self.variables["application_id"])
         study_register.click_register_study(page)
 
         cedar_uuid = self.variables["cedar_UUID"]
@@ -166,12 +167,14 @@ class TestStudyRegistration(object):
         study_name = f"{project_number} : TEST : {nih_application_id}"
         study_register.fill_registration_form(page, cedar_uuid, study_name)
 
-        # # After registering the study, run metadata-agg-sync job
-        # gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        # After registering the study, run metadata-agg-sync job
+        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         # # TODO : check the job pod status with kube-check-pod jenkins job
+        gat.check_job_pod(pytest.namespace, "metadata-aggregate-sync", "gen3job")
 
-        # linked_record = mds.get_aggregate_metadata(self.variables["application_id"])
-        # logger.info(f"Linked Record : {linked_record}")
-        # assert (
-        #     linked_record["gen3_discovery"]["is_registered"] == "true"
-        # ), f"Failed to register study with {application_id}"
+        linked_record = mds.get_aggregate_metadata(self.variables["application_id"])
+        logger.info(f"Linked Record : {linked_record}")
+        is_registered = linked_record["gen3_discovery"].get("is_registered")
+        assert (
+            is_registered == "True"
+        ), f"Failed to register study with {self.variables["application_id"]}"

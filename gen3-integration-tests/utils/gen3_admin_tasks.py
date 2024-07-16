@@ -119,9 +119,9 @@ def check_job_pod(
     )
     params = {
         "NAMESPACE": test_env_namespace,
-        "JOBNAME": job_name,
-        "LABELNAME": label_name,
-        "EXPECTFAILURE": expect_failure,
+        "JOB_NAME": job_name,
+        "LABEL_NAME": label_name,
+        "EXPECT_FAILURE": expect_failure,
     }
     build_num = job.build_job(params)
     if build_num:
