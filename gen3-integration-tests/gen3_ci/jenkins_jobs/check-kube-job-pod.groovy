@@ -53,7 +53,7 @@ pipeline {
                             while true; do
                                 sleep 10
                                 echo "Waiting for $JOB_NAME job pod ..."
-
+                                
                                 # checking if there are pods with LABEL_NAME mentioned in parameters
                                 POD_NAMES=$(g3kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$LABEL_NAME -o json | jq -r '.items[] | select(.metadata.name | test("^'"$JOB_NAME"'")) | .metadata.name')
                                 if [[ -z "$POD_NAMES" ]]; then
