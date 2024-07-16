@@ -413,7 +413,7 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        rev = indexd.get_rev(record)
+        rev = record.get("rev", None)
 
         # Deleting file record and indexd record
         self.sd_tools.delete_record(unique_id=file_record.unique_id)
@@ -442,7 +442,7 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        rev = indexd.get_rev(record)
+        rev = record.get("rev", None)
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
@@ -472,7 +472,7 @@ class TestGraphSubmitAndQuery:
         self.sd_tools.submit_record(record=file_record)
         did = self.sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
         record = indexd.get_record(indexd_guid=did)
-        rev = indexd.get_rev(record)
+        rev = record.get("rev", None)
 
         # Add URL to the record data and update it
         file_record.props["urls"] = test_url
@@ -481,7 +481,7 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        rev = indexd.get_rev(record)
+        rev = record.get("rev", None)
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
