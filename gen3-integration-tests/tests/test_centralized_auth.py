@@ -135,6 +135,8 @@ class TestCentralizedAuth:
     indexd = Indexd()
     fence = Fence()
     page = Page
+    variables = {}
+    variables["created_indexd_dids"] = []
 
     def create_fence_client(client_name, user_name):
         client_creds = create_fence_client(
@@ -159,17 +161,11 @@ class TestCentralizedAuth:
 
     @classmethod
     def setup_class(cls):
-        # Generate did using uuid4
-        gen3_foo_bar_file_guid = str(uuid4())
-        gen3_delete_me = str(uuid4())
-        abc_foo_bar_file_guid = str(uuid4())
-        abc_delete_me = str(uuid4())
-
         # Assign the did to new_gen3_records and new_abc_records
-        new_gen3_records["foo_bar_file"]["did"] = gen3_foo_bar_file_guid
-        new_gen3_records["delete_me"]["did"] = gen3_delete_me
-        new_abc_records["foo_bar_file"]["did"] = abc_foo_bar_file_guid
-        new_abc_records["delete_me"]["did"] = abc_delete_me
+        new_gen3_records["foo_bar_file"]["did"] = str(uuid4())
+        new_gen3_records["delete_me"]["did"] = str(uuid4())
+        new_abc_records["foo_bar_file"]["did"] = str(uuid4())
+        new_abc_records["delete_me"]["did"] = str(uuid4())
 
         # Generate Client id and secrets
         cls.basic_test_client_id, cls.basic_test_client_secret = (
@@ -185,29 +181,29 @@ class TestCentralizedAuth:
         )
         run_gen3_job(pytest.namespace, "usersync")
 
+        # Create indexd records
+        for key, val in indexed_files.items():
+            indexd_record = cls.indexd.create_records(records={key: val})
+            cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
+
     @classmethod
     def teardown_class(cls):
         # Delete the client from the fence db
         logger.info("Deleting client from the fence db ...")
         delete_fence_client(pytest.namespace, "basic-test-client")
         delete_fence_client(pytest.namespace, "basic-test-abc-client")
+        # Delete indexd records created in class setup
+        cls.indexd.delete_files(cls.variables["created_indexd_dids"])
 
     def setup_method(self):
         # Removing test indexd records if they exist
         self.indexd.delete_file_indices(records=new_gen3_records)
         self.indexd.delete_file_indices(records=new_abc_records)
 
-        # Adding indexd files
-        for key, val in indexed_files.items():
-            indexd_record = self.indexd.create_records(files={key: val})
-            indexed_files[key]["did"] = indexd_record[0]["did"]
-            indexed_files[key]["rev"] = indexd_record[0]["rev"]
-
     def teardown_method(self):
         logger.info("Deleting Indexd Records")
         self.indexd.delete_file_indices(records=new_gen3_records)
         self.indexd.delete_file_indices(records=new_abc_records)
-        self.indexd.delete_file_indices(records=indexed_files)
 
     def test_users_without_policies_cannot_crud(self):
         """
@@ -228,19 +224,19 @@ class TestCentralizedAuth:
         # Create indexd records using dcf-user2 account
         # Both indexd record creations should fail, as dcf-user2 doesn't have access to /gen3 or /abc project
         try:
-            self.indexd.create_records(files=new_gen3_records, user="user2_account")
+            self.indexd.create_records(records=new_gen3_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
         try:
-            self.indexd.create_records(files=new_abc_records, user="user2_account")
+            self.indexd.create_records(records=new_abc_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
 
         # Create indexd records using indexing_user
-        self.indexd.create_records(files=new_gen3_records)
-        self.indexd.create_records(files=new_abc_records)
+        self.indexd.create_records(records=new_gen3_records)
+        self.indexd.create_records(records=new_abc_records)
 
         # Read should be successful using user2_account
         gen3_read_success = self.indexd.get_record(
@@ -307,15 +303,15 @@ class TestCentralizedAuth:
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
-            self.indexd.create_records(files=new_gen3_records, user="main_account")
+            self.indexd.create_records(records=new_gen3_records, user="main_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise f"401 status code not returned. Exception : {e}"
 
-        self.indexd.create_records(files=new_abc_records, user="main_account")
+        self.indexd.create_records(records=new_abc_records, user="main_account")
 
         # Create indexd records using indexing_user
-        self.indexd.create_records(files=new_gen3_records)
+        self.indexd.create_records(records=new_gen3_records)
 
         # Read should be successful using main_account
         gen3_read_success = self.indexd.get_record(
@@ -400,16 +396,16 @@ class TestCentralizedAuth:
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
             self.indexd.create_records(
-                files=new_gen3_records, access_token=access_token
+                records=new_gen3_records, access_token=access_token
             )
         except Exception as e:
             if "401" not in e:
                 logger.error(f"Expected 401 but got {e}")
                 raise
-        self.indexd.create_records(files=new_abc_records, access_token=access_token)
+        self.indexd.create_records(records=new_abc_records, access_token=access_token)
 
         # Create gen3 records using indexing_user
-        self.indexd.create_records(files=new_gen3_records)
+        self.indexd.create_records(records=new_gen3_records)
 
         # Read should be successful using user2_account
         gen3_read_success = self.indexd.get_record(

@@ -98,19 +98,20 @@ class Indexd(object):
 
     def delete_file_indices(self, records: dict):
         for key, val in records.items():
-            try:
-                indexd_record = self.get_record(indexd_guid=val["did"])
-                if indexd_record:
-                    indexd_rev = indexd_record.get("rev", None)
+            indexd_record = self.get_record(indexd_guid=val["did"])
+            if indexd_record:
+                indexd_rev = indexd_record.get("rev", None)
                 if indexd_rev is None:
                     logger.info("Indexd record does not contain field rev")
                     continue
                 logger.info(f"{val['did']} found, performing delete.")
-                self.delete_record(guid=indexd_record["did"], rev=indexd_rev)
-            except Exception as e:
-                if "404" not in f"{e}" and "did" not in f"{e}":
-                    logger.error(f"404 status code not returned. Exception : {e}")
-                    raise
+                try:
+                    self.delete_record(guid=indexd_record["did"], rev=indexd_rev)
+                except Exception as e:
+                    raise Exception(
+                        f"Indexd record was found but could not be deleted. Exception : {e}"
+                    )
+            else:
                 logger.info("Indexd record not found, no need to perform delete.")
 
     def file_equals(self, res: dict, file_record: dict) -> None:
