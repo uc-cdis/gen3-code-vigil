@@ -84,6 +84,9 @@ new_dbgap_records = {
 class TestDbgap:
     indexd = Indexd()
     fence = Fence()
+    variables = {}
+    variables["created_indexd_dids"] = []
+    variables["created_dbgap_dids"] = []
 
     @classmethod
     def setup_class(cls):
@@ -91,16 +94,13 @@ class TestDbgap:
         create_link_google_test_buckets(pytest.namespace)
 
         # Removing test indexd records if they exist
-        cls.indexd.delete_file_indices(records=indexd_files)
-        cls.indexd.delete_file_indices(records=new_dbgap_records)
+        cls.indexd.delete_files(cls.variables["created_indexd_dids"])
+        cls.indexd.delete_files(cls.variables["created_dbgap_dids"])
 
         # Adding indexd files
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
-            indexd_files[key]["did"] = indexd_record[0]["did"]
-            indexd_files[key]["rev"] = indexd_record[0]["rev"]
-
-        logger.info(indexd_files)
+            cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
         # Run usersync job with "FORCE true ONLY_DBGAP true"
         run_gen3_command(
@@ -111,14 +111,18 @@ class TestDbgap:
     @classmethod
     def teardown_setup(cls):
         # Removing test indexd records
-        cls.indexd.delete_file_indices(records=indexd_files)
-        cls.indexd.delete_file_indices(records=new_dbgap_records)
+        cls.indexd.delete_files(cls.variables["created_indexd_dids"])
+        cls.indexd.delete_files(cls.variables["created_dbgap_dids"])
 
         # Run usersync job with "FORCE true ONLY_DBGAP true"
         run_gen3_command(
             test_env_namespace=pytest.namespace,
             command="gen3 job run usersync -w FORCE true",
         )
+
+        # Reset the list
+        cls.variables["created_indexd_dids"] = []
+        cls.variables["created_dbgap_dids"] = []
 
     def test_created_signed_urls_upload_urls(self):
         """
@@ -261,9 +265,10 @@ class TestDbgap:
         ), f"Expected no record, but found {foo_bar_file_record}"
 
         # Create indexd record and retrieve record
-        self.indexd.create_records(records=new_dbgap_records)
+        indexd_record = self.indexd.create_records(records=new_dbgap_records)
+        self.variables["created_dbgap_dids"].append(indexd_record[0]["did"])
         foo_bar_file_record = self.indexd.get_record(
-            indexd_guid=new_dbgap_records["fooBarFile"]["did"], user="user2_account"
+            indexd_guid=indexd_record[0]["did"], user="user2_account"
         )
         assert (
             "did" in foo_bar_file_record.keys()
@@ -317,9 +322,10 @@ class TestDbgap:
         ), f"Expected no record, but found {foo_bar_file_record}"
 
         # Create indexd record and retrieve record
-        self.indexd.create_records(records=new_dbgap_records)
+        indexd_record = self.indexd.create_records(records=new_dbgap_records)
+        self.variables["created_dbgap_dids"].append(indexd_record[0]["did"])
         foo_bar_file_record = self.indexd.get_record(
-            indexd_guid=new_dbgap_records["fooBarFile"]["did"], user="main_account"
+            indexd_guid=indexd_record[0]["did"], user="main_account"
         )
         assert (
             "did" in foo_bar_file_record.keys()
