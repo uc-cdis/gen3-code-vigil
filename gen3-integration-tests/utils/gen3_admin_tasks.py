@@ -398,7 +398,7 @@ def create_link_google_test_buckets(test_env_namespace: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "create-link-google-test-buckets",
+        "ci-only-create-link-google-test-buckets",
     )
     params = {
         "NAMESPACE": test_env_namespace,
