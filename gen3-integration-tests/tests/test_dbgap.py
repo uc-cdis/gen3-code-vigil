@@ -109,7 +109,7 @@ class TestDbgap:
         )
 
     @classmethod
-    def teardown_setup(cls):
+    def teardown_class(cls):
         # Removing test indexd records
         cls.indexd.delete_files(cls.variables["created_indexd_dids"])
         cls.indexd.delete_files(cls.variables["created_dbgap_dids"])
@@ -119,10 +119,6 @@ class TestDbgap:
             test_env_namespace=pytest.namespace,
             command="gen3 job run usersync -w FORCE true",
         )
-
-        # Reset the list
-        cls.variables["created_indexd_dids"] = []
-        cls.variables["created_dbgap_dids"] = []
 
     def test_created_signed_urls_upload_urls(self):
         """
