@@ -9,7 +9,7 @@ import uuid
 from cdislogging import get_logger
 from services.indexd import Indexd
 from services.fence import Fence
-from utils.gen3_admin_tasks import create_link_google_test_buckets, run_gen3_job
+from utils.gen3_admin_tasks import create_link_google_test_buckets, run_gen3_command
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -103,8 +103,9 @@ class TestDbgap:
         logger.info(indexd_files)
 
         # Run usersync job with "FORCE true ONLY_DBGAP true"
-        run_gen3_job(
-            test_env_namespace=pytest.namespace, cmd="FORCE true ONLY_DBGAP true"
+        run_gen3_command(
+            test_env_namespace=pytest.namespace,
+            command="gen3 job run usersync -w FORCE true ONLY_DBGAP true",
         )
 
     @classmethod
@@ -114,7 +115,10 @@ class TestDbgap:
         cls.indexd.delete_file_indices(records=new_dbgap_records)
 
         # Run usersync job with "FORCE true ONLY_DBGAP true"
-        run_usersync_job(test_env_namespace=pytest.namespace, cmd="FORCE true")
+        run_gen3_command(
+            test_env_namespace=pytest.namespace,
+            command="gen3 job run usersync -w FORCE true",
+        )
 
     def test_created_signed_urls_upload_urls(self):
         """
@@ -204,8 +208,9 @@ class TestDbgap:
         """
         # Run usersync job and add dbgap sync to yaml sync
         # Run usersync job with "FORCE true ADD_DBGAP true"
-        run_usersync_job(
-            test_env_namespace=pytest.namespace, cmd="ADD_DBGAP true FORCE true"
+        run_gen3_command(
+            test_env_namespace=pytest.namespace,
+            command="gen3 job run usersync -w ADD_DBGAP true FORCE true",
         )
 
         # Create S3 signed url. main_account has access to phs000178 through dbgap
@@ -246,7 +251,7 @@ class TestDbgap:
             self.indexd.create_records(files=new_dbgap_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+                raise Exception(f"401 status code not returned. Exception : {e}")
 
         foo_bar_file_record = self.indexd.get_record(
             indexd_guid=new_dbgap_records["fooBarFile"]["did"]
@@ -302,7 +307,7 @@ class TestDbgap:
             self.indexd.create_records(files=new_dbgap_records, user="main_account")
         except Exception as e:
             if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+                raise Exception(f"401 status code not returned. Exception : {e}")
 
         foo_bar_file_record = self.indexd.get_record(
             indexd_guid=new_dbgap_records["fooBarFile"]["did"]
