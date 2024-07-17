@@ -100,7 +100,8 @@ class Indexd(object):
         for key, val in records.items():
             try:
                 indexd_record = self.get_record(indexd_guid=val["did"])
-                indexd_rev = indexd_record.get("rev", None)
+                if indexd_record:
+                    indexd_rev = indexd_record.get("rev", None)
                 if indexd_rev is None:
                     logger.info("Indexd record does not contain field rev")
                     continue

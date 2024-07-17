@@ -315,12 +315,12 @@ class TestDataUpload:
         )
 
         # submit metadata for this file
-        file_record = self.sd_tools.get_file_record()
-        file_record.props["object_id"] = file_guid
-        file_record.props["file_size"] = file_size
-        file_record.props["md5sum"] = file_md5
-        self.sd_tools.submit_links_for_record(file_record)
-        self.sd_tools.submit_record(record=file_record)
+        file_type_node = self.sd_tools.get_file_record()
+        file_type_node.props["object_id"] = file_guid
+        file_type_node.props["file_size"] = file_size
+        file_type_node.props["md5sum"] = file_md5
+        self.sd_tools.submit_links_for_record(file_type_node)
+        self.sd_tools.submit_record(record=file_type_node)
 
         # check that the file can be downloaded
         signed_url_res = self.fence.create_signed_url(
@@ -346,14 +346,14 @@ class TestDataUpload:
 
         # submit metadata for this file
         # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
-        file_record = self.sd_tools.get_file_record()
-        file_record.props["object_id"] = file_guid
-        file_record.props["file_size"] = file_size
-        file_record.props["md5sum"] = file_md5
-        file_record.props["submitter_id"] = "submitter_id_new_value"
-        self.sd_tools.submit_links_for_record(file_record, new_submitter_ids=True)
+        file_type_node = self.sd_tools.get_file_record()
+        file_type_node.props["object_id"] = file_guid
+        file_type_node.props["file_size"] = file_size
+        file_type_node.props["md5sum"] = file_md5
+        file_type_node.props["submitter_id"] = "submitter_id_new_value"
+        self.sd_tools.submit_links_for_record(file_type_node, new_submitter_ids=True)
 
-        self.sd_tools.submit_record(record=file_record)
+        self.sd_tools.submit_record(record=file_type_node)
         # check that the file can be downloaded
         signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="auxAcct2_account", expected_status=200
@@ -399,13 +399,13 @@ class TestDataUpload:
         )
 
         # submit metadata for this file
-        file_record = self.sd_tools.get_file_record()
-        file_record.props["object_id"] = file_guid
-        file_record.props["file_size"] = file_size
-        file_record.props["md5sum"] = file_md5
-        file_record.props["consent_codes"] = ["cc1", "cc_2"]
-        self.sd_tools.submit_links_for_record(file_record)
-        self.sd_tools.submit_record(record=file_record)
+        file_type_node = self.sd_tools.get_file_record()
+        file_type_node.props["object_id"] = file_guid
+        file_type_node.props["file_size"] = file_size
+        file_type_node.props["md5sum"] = file_md5
+        file_type_node.props["consent_codes"] = ["cc1", "cc_2"]
+        self.sd_tools.submit_links_for_record(file_type_node)
+        self.sd_tools.submit_record(record=file_type_node)
         file_record_with_ccs = FileRecordWithCCs(
             did=file_guid,
             props={"md5sum": file_md5, "file_size": file_size},
