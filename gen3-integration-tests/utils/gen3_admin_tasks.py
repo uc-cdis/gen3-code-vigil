@@ -77,7 +77,12 @@ def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = Fal
         raise Exception("Build number not found")
 
 
-def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False):
+def run_gen3_job(
+    test_env_namespace: str,
+    job_name: str,
+    cmd_line_params: str = "",
+    roll_all: bool = False,
+):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     Since this requires adminvm interaction we use jenkins.
@@ -91,6 +96,7 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
     params = {
         "NAMESPACE": test_env_namespace,
         "JOB_NAME": job_name,
+        "CMD_LINE_PARAMS": cmd_line_params,
         "GEN3_ROLL_ALL": roll_all,
     }
     build_num = job.build_job(params)
@@ -402,32 +408,6 @@ def create_link_google_test_buckets(test_env_namespace: str):
     )
     params = {
         "NAMESPACE": test_env_namespace,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return True
-        else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
-
-
-def run_usersync_job(test_env_namespace: str, cmd: str):
-    """
-    Runs jenkins job to usersync with certain parameters
-    """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "run-usersync-job",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "CMD": cmd,
     }
     build_num = job.build_job(params)
     if build_num:

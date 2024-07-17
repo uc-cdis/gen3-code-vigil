@@ -9,7 +9,7 @@ import uuid
 from cdislogging import get_logger
 from services.indexd import Indexd
 from services.fence import Fence
-from utils.gen3_admin_tasks import create_link_google_test_buckets, run_usersync_job
+from utils.gen3_admin_tasks import create_link_google_test_buckets, run_gen3_job
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -65,7 +65,6 @@ indexd_files = {
         ],
         "authz": ["/programs/PROJECT-12345"],
         "acl": ["PROJECT-12345"],
-        "form": "object",
     },
 }
 
@@ -104,7 +103,9 @@ class TestDbgap:
         logger.info(indexd_files)
 
         # Run usersync job with "FORCE true ONLY_DBGAP true"
-        # run_usersync_job(test_env_namespace=pytest.namespace, cmd="FORCE true ONLY_DBGAP true")
+        run_gen3_job(
+            test_env_namespace=pytest.namespace, cmd="FORCE true ONLY_DBGAP true"
+        )
 
     @classmethod
     def teardown_setup(cls):
