@@ -90,6 +90,7 @@ class GraphDataTools:
         if nested_json_str:
             # Parse the nested JSON string
             nested_json = json.loads(nested_json_str)
+            manifest["data"]["json"] = nested_json
             # Extract the dictionary URL
             dictionary_url = nested_json.get("global", {}).get("dictionary_url")
             # dictionary_url = manifest.get("data", {}).get("dictionary_url")
