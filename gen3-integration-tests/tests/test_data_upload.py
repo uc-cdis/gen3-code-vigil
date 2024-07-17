@@ -156,7 +156,7 @@ class TestDataUpload:
 
         # check that we CANNOT download the file (there is no URL in indexd yet)
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="main_account", expectedStatus=404
+            id=file_guid, user="main_account", expected_status=404
         )
         assert (
             "url" not in signed_url_res.content.decode()
@@ -173,13 +173,13 @@ class TestDataUpload:
         # Try downloading before linking metadata to the file. It should succeed for the uploader but fail for other users
         # the uploader can now download the file
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="main_account", expectedStatus=200
+            id=file_guid, user="main_account", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
         # a user who is not the uploader CANNOT download the file
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expectedStatus=401
+            id=file_guid, user="auxAcct2_account", expected_status=401
         )
 
         # submit metadata for this file
@@ -192,7 +192,7 @@ class TestDataUpload:
 
         # a user who is not the uploader can now download the file
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expectedStatus=200
+            id=file_guid, user="auxAcct2_account", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
@@ -276,7 +276,7 @@ class TestDataUpload:
 
         # no download after delete
         self.fence.create_signed_url(
-            id=file_guid, user="main_account", expectedStatus=404
+            id=file_guid, user="main_account", expected_status=404
         )
 
     def test_upload_the_same_file_twice(self):
@@ -324,7 +324,7 @@ class TestDataUpload:
 
         # check that the file can be downloaded
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expectedStatus=200
+            id=file_guid, user="auxAcct2_account", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
@@ -356,7 +356,7 @@ class TestDataUpload:
         self.sd_tools.submit_record(record=file_record)
         # check that the file can be downloaded
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expectedStatus=200
+            id=file_guid, user="auxAcct2_account", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
@@ -488,7 +488,7 @@ class TestDataUpload:
 
         # Create a signed url using the same guid id as in previous steps.
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="main_account", expectedStatus=200
+            id=file_guid, user="main_account", expected_status=200
         )
 
         # Verify the contents of the file are correct.
@@ -557,7 +557,7 @@ class TestDataUpload:
 
         # Create a signed url using the same guid id as in previous steps, which shouldn't get created.
         self.fence.create_signed_url(
-            id=file_guid, user="main_account", expectedStatus=404
+            id=file_guid, user="main_account", expected_status=404
         )
 
     def test_map_uploaded_files_in_submission_page(self, page: Page):

@@ -95,7 +95,7 @@ class TestPresignedURL:
         """
         indexd_record = indexd_files["allowed"]
         signed_url_res = self.fence.create_signed_url(
-            id=indexd_record["did"], user="main_account", expectedStatus=200
+            id=indexd_record["did"], user="main_account", expected_status=200
         )
         self.fence.check_file_equals(
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
@@ -112,7 +112,7 @@ class TestPresignedURL:
         """
         indexd_record = indexd_files["not_allowed"]
         signed_url_res = self.fence.create_signed_url(
-            id=indexd_record["did"], user="main_account", expectedStatus=401
+            id=indexd_record["did"], user="main_account", expected_status=401
         )
         msg = "You don&#39;t have access permission on this file"
         if msg not in signed_url_res.content.decode():
@@ -132,7 +132,7 @@ class TestPresignedURL:
         signed_url_res = self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
-            expectedStatus=400,
+            expected_status=400,
             params=["protocol=s2"],
         )
         msg = "The specified protocol s2 is not supported"
@@ -153,7 +153,7 @@ class TestPresignedURL:
         signed_url_res = self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
-            expectedStatus=404,
+            expected_status=404,
             params=["protocol=s2"],
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s2."
@@ -174,7 +174,7 @@ class TestPresignedURL:
         signed_url_res = self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
-            expectedStatus=404,
+            expected_status=404,
             params=["protocol=s3"],
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
@@ -195,7 +195,7 @@ class TestPresignedURL:
         signed_url_res = self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
-            expectedStatus=404,
+            expected_status=404,
             params=["protocol=s3"],
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
@@ -214,7 +214,7 @@ class TestPresignedURL:
         """
         indexd_record = indexd_files["no_link"]
         signed_url_res = self.fence.create_signed_url(
-            id=indexd_record["did"], user="main_account", expectedStatus=404
+            id=indexd_record["did"], user="main_account", expected_status=404
         )
         msg = "Can&#39;t find any file locations."
         if msg not in signed_url_res.content.decode():

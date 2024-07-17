@@ -12,7 +12,7 @@ class Guppy(object):
     def __init__(self):
         self.BASE_ENDPOINT = "/guppy"
 
-    def validate_guppy_status(self, user, expectedStatus):
+    def validate_guppy_status(self, user, expected_status):
         """
         Validate the status of Guppy
         user - pick one from conftest.py - main_account / indexing_account / auxAcct1_account /
@@ -22,7 +22,7 @@ class Guppy(object):
         url = self.BASE_ENDPOINT + "/_status"
         response = auth.curl(path=url)
         logger.info("Guppy status code : " + str(response.status_code))
-        assert expectedStatus == response.status_code
+        assert expected_status == response.status_code
         data = response.json()
         assert "jenkins_subject_1" in data["indices"]
         assert "jenkins_file_1" in data["indices"]
@@ -34,7 +34,7 @@ class Guppy(object):
         responseFile,
         queryType,
         user,
-        expectedStatus,
+        expected_status,
         endpoint="/graphql",
     ):
         """
@@ -60,7 +60,7 @@ class Guppy(object):
             url=pytest.root_url + url, data=queryToSubmit, headers=headers
         )
         logger.info(f"Status code: {response.status_code}")
-        assert expectedStatus == response.status_code
+        assert expected_status == response.status_code
 
         # Check queryType and call function accordingly
         if queryType == "mapping":

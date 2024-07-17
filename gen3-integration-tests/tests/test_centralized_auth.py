@@ -496,13 +496,13 @@ class TestCentralizedAuth:
         signed_url_abc_res = self.fence.create_signed_url(
             id=indexed_files["abc_foo_bar_file"]["did"],
             user=None,
-            expectedStatus=200,
+            expected_status=200,
             access_token=access_token,
         )
         signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
-            expectedStatus=401,
+            expected_status=401,
             access_token=access_token,
         )
 
@@ -538,7 +538,7 @@ class TestCentralizedAuth:
         signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
-            expectedStatus=401,
+            expected_status=401,
             access_token=access_token,
         )
 
@@ -566,7 +566,7 @@ class TestCentralizedAuth:
         signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
-            expectedStatus=401,
+            expected_status=401,
             access_token=access_token,
         )
 
@@ -585,12 +585,12 @@ class TestCentralizedAuth:
         signed_url_abc_res = self.fence.create_signed_url(
             id=indexed_files["abc_foo_bar_file"]["did"],
             user="main_account",
-            expectedStatus=200,
+            expected_status=200,
         )
         signed_url_gen3_res = self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user="main_account",
-            expectedStatus=401,
+            expected_status=401,
         )
 
         # Verify signed url is created only for /abc project and not /gen3.
@@ -649,7 +649,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["two_projects_file"]["did"],
             user=None,
-            expectedStatus=401,
+            expected_status=401,
             access_token=access_token,
         )
 
@@ -677,7 +677,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["two_projects_file"]["did"],
             user=None,
-            expectedStatus=200,
+            expected_status=200,
             access_token=access_token,
         )
 
@@ -697,7 +697,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["open_access_file"]["did"],
             user="user2_account",
-            expectedStatus=200,
+            expected_status=200,
         )
 
         # Verify signed url is created only for open access file.
@@ -719,7 +719,7 @@ class TestCentralizedAuth:
         """
         # Create Signed URLs for open access file
         signed_url_res = self.fence.create_signed_url(
-            id=indexed_files["open_access_file"]["did"], user=None, expectedStatus=200
+            id=indexed_files["open_access_file"]["did"], user=None, expected_status=200
         )
 
         # Verify signed url is created only for open access file.
@@ -737,7 +737,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["gen3_hmb_research_file"]["did"],
             user="user0_account",
-            expectedStatus=200,
+            expected_status=200,
         )
 
         # Verify signed url is created only for file in authorized namespace with authorized consent code (multiple policies).
@@ -755,7 +755,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["gen3_hmb_research_file"]["did"],
             user="user1_account",
-            expectedStatus=200,
+            expected_status=200,
         )
 
         # Verify signed url is created only for file in authorized namespace with authorized consent code (single policy).
@@ -773,7 +773,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["abc_hmb_research_file"]["did"],
             user="main_account",
-            expectedStatus=401,
+            expected_status=401,
         )
 
         # Verify signed url is not created for file in authorized namespace with UNauthorized consent code.
@@ -786,7 +786,7 @@ class TestCentralizedAuth:
         signed_url_res = self.fence.create_signed_url(
             id=indexed_files["gru_research_file"]["did"],
             user="user0_account",
-            expectedStatus=200,
+            expected_status=200,
         )
 
         # Verify signed url is created only for file in authorized namespace with IMPLIED authorized consent code (based on DUO hierarchy).

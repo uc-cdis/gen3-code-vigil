@@ -128,13 +128,13 @@ class TestDbgap:
             id=indexd_files["phs000178File"]["did"],
             params=["protocol=s3"],
             user="main_account",
-            expectedStatus=200,
+            expected_status=200,
         )
         phs000178_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000178File"]["did"],
             params=["protocol=gs"],
             user="main_account",
-            expectedStatus=200,
+            expected_status=200,
         )
 
         phs000178_s3_file_contents = self.fence.get_file(phs000178_s3_signed_url["url"])
@@ -151,25 +151,25 @@ class TestDbgap:
             id=indexd_files["phs000179File"]["did"],
             params=["protocol=s3"],
             user="main_account",
-            expectedStatus=401,
+            expected_status=401,
         )
         phs000179_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000179File"]["did"],
             params=["protocol=gs"],
             user="main_account",
-            expectedStatus=401,
+            expected_status=401,
         )
         another_phs000179_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["anotherPhs000179File"]["did"],
             params=["protocol=s3"],
             user="main_account",
-            expectedStatus=401,
+            expected_status=401,
         )
         another_phs000179_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["anotherPhs000179File"]["did"],
             params=["protocol=gs"],
             user="main_account",
-            expectedStatus=401,
+            expected_status=401,
         )
 
         assert (
@@ -212,13 +212,13 @@ class TestDbgap:
             id=indexd_files["phs000178File"]["did"],
             params=["protocol=s3"],
             user="main_account",
-            expectedStatus=200,
+            expected_status=200,
         )
         qa_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["QAFile"]["did"],
             params=["protocol=s3"],
             user="main_account",
-            expectedStatus=200,
+            expected_status=200,
         )
 
         # File should get downloaded. Verify the contents of the file.

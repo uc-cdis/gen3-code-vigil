@@ -44,7 +44,9 @@ class Fence(object):
                 f"Failed to get access token from {self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token"
             )
 
-    def create_signed_url(self, id, user, expectedStatus, params=[], access_token=None):
+    def create_signed_url(
+        self, id, user, expected_status, params=[], access_token=None
+    ):
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
         if len(params) > 0:
@@ -64,7 +66,7 @@ class Fence(object):
             # Perform GET requests without authorization code
             response = requests.get(self.BASE_URL + url, auth={})
         logger.info("Status code : " + str(response.status_code))
-        assert expectedStatus == response.status_code
+        assert expected_status == response.status_code
         if response.status_code == 200:
             return response.json()
         return response
