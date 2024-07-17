@@ -248,7 +248,7 @@ class TestDbgap:
         new_dbgap_records["fooBarFile"]["did"] = str(uuid.uuid4())
         # Indexd record creation should fail with user2_account
         try:
-            self.indexd.create_records(files=new_dbgap_records, user="user2_account")
+            self.indexd.create_records(records=new_dbgap_records, user="user2_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise Exception(f"401 status code not returned. Exception : {e}")
@@ -261,7 +261,7 @@ class TestDbgap:
         ), f"Expected no record, but found {foo_bar_file_record}"
 
         # Create indexd record and retrieve record
-        self.indexd.create_records(files=new_dbgap_records)
+        self.indexd.create_records(records=new_dbgap_records)
         foo_bar_file_record = self.indexd.get_record(
             indexd_guid=new_dbgap_records["fooBarFile"]["did"], user="user2_account"
         )
@@ -304,7 +304,7 @@ class TestDbgap:
         new_dbgap_records["fooBarFile"]["did"] = str(uuid.uuid4())
         # Indexd record creation should fail with main_account
         try:
-            self.indexd.create_records(files=new_dbgap_records, user="main_account")
+            self.indexd.create_records(records=new_dbgap_records, user="main_account")
         except Exception as e:
             if "401" not in f"{e}":
                 raise Exception(f"401 status code not returned. Exception : {e}")
@@ -317,7 +317,7 @@ class TestDbgap:
         ), f"Expected no record, but found {foo_bar_file_record}"
 
         # Create indexd record and retrieve record
-        self.indexd.create_records(files=new_dbgap_records)
+        self.indexd.create_records(records=new_dbgap_records)
         foo_bar_file_record = self.indexd.get_record(
             indexd_guid=new_dbgap_records["fooBarFile"]["did"], user="main_account"
         )
