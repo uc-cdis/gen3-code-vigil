@@ -143,12 +143,12 @@ class TestDataUpload:
 
         # fail to submit metadata for this file without hash and size
         try:
-            file_record = self.sd_tools.get_file_record()
-            file_record.props["object_id"] = file_guid
-            file_record.props["file_size"] = file_size
-            file_record.props["md5sum"] = file_md5
-            self.sd_tools.submit_links_for_record(file_record)
-            self.sd_tools.submit_record(record=file_record)
+            file_type_node = self.sd_tools.get_file_record()
+            file_type_node.props["object_id"] = file_guid
+            file_type_node.props["file_size"] = file_size
+            file_type_node.props["md5sum"] = file_md5
+            self.sd_tools.submit_links_for_record(file_type_node)
+            self.sd_tools.submit_record(record=file_type_node)
         except Exception as e:
             assert (
                 "400" in f"{e}"
@@ -183,12 +183,12 @@ class TestDataUpload:
         )
 
         # submit metadata for this file
-        file_record = self.sd_tools.get_file_record()
-        file_record.props["object_id"] = file_guid
-        file_record.props["file_size"] = file_size
-        file_record.props["md5sum"] = file_md5
-        self.sd_tools.submit_links_for_record(file_record)
-        self.sd_tools.submit_record(record=file_record)
+        file_type_node = self.sd_tools.get_file_record()
+        file_type_node.props["object_id"] = file_guid
+        file_type_node.props["file_size"] = file_size
+        file_type_node.props["md5sum"] = file_md5
+        self.sd_tools.submit_links_for_record(file_type_node)
+        self.sd_tools.submit_record(record=file_type_node)
 
         # a user who is not the uploader can now download the file
         signed_url_res = self.fence.create_signed_url(

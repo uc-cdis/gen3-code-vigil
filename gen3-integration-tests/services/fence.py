@@ -66,7 +66,9 @@ class Fence(object):
             # Perform GET requests without authorization code
             response = requests.get(self.BASE_URL + url, auth={})
         logger.info("Status code : " + str(response.status_code))
-        assert expected_status == response.status_code
+        assert (
+            expected_status == response.status_code
+        ), f"Expected response {expected_status}, but got {response.status_code}"
         if response.status_code == 200:
             return response.json()
         return response
