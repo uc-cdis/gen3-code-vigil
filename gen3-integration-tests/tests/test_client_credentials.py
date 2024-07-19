@@ -30,24 +30,12 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
-        client_creds = gat.create_fence_client(
+        client_id, client_secret = gat.create_fence_client(
             pytest.namespace,
             "jenkinsClientTester",
             username,
             "client_credentials",
         )
-
-        # access the client_creds.txt and retrieving the client_creds
-        credsFile = client_creds["client_creds.txt"].splitlines()
-        if len(credsFile) < 2:
-            raise Exception(
-                "Client credentials file does not contain expected data format (2 lines)"
-            )
-
-        # assigning first line to client_id
-        # and assigning second line to client_secret
-        client_id = credsFile[0]
-        client_secret = credsFile[1]
 
         # Running usersync to sync the newly created client
         gat.run_gen3_job(pytest.namespace, "usersync")

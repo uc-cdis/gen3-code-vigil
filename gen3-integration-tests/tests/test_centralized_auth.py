@@ -138,27 +138,6 @@ class TestCentralizedAuth:
     variables = {}
     variables["created_indexd_dids"] = []
 
-    def create_fence_client(client_name, user_name):
-        client_creds = create_fence_client(
-            test_env_namespace=pytest.namespace,
-            client_name=client_name,
-            user_name=user_name,
-            client_type="basic",
-        )
-
-        # access the client_creds.txt and retrieving the client_creds
-        credsFile = client_creds["client_creds.txt"].splitlines()
-        if len(credsFile) < 2:
-            raise Exception(
-                "Client credentials file does not contain expected data format (2 lines)"
-            )
-
-        # assigning first line to client_id
-        client_id = credsFile[0]
-        client_secret = credsFile[1]
-
-        return client_id, client_secret
-
     @classmethod
     def setup_class(cls):
         # Assign the did to new_gen3_records and new_abc_records
@@ -167,16 +146,24 @@ class TestCentralizedAuth:
         new_abc_records["foo_bar_file"]["did"] = str(uuid4())
         new_abc_records["delete_me"]["did"] = str(uuid4())
 
+        # Delete the client from the fence db
+        logger.info("Deleting client from the fence db ...")
+        delete_fence_client(pytest.namespace, "basic-test-client")
+        delete_fence_client(pytest.namespace, "basic-test-abc-client")
+
         # Generate Client id and secrets
-        cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.create_fence_client(
-                client_name="basic-test-client", user_name="test-client@example.com"
-            )
+        cls.basic_test_client_id, cls.basic_test_client_secret = create_fence_client(
+            test_env_namespace=pytest.namespace,
+            client_name="basic-test-client",
+            user_name="test-client@example.com",
+            client_type="basic",
         )
         cls.basic_test_abc_client_id, cls.basic_test_abc_client_secret = (
-            cls.create_fence_client(
+            create_fence_client(
+                test_env_namespace=pytest.namespace,
                 client_name="basic-test-abc-client",
                 user_name="test-abc-client@example.com",
+                client_type="basic",
             )
         )
         run_gen3_job(pytest.namespace, "usersync")

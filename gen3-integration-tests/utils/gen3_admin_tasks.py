@@ -171,11 +171,18 @@ def create_fence_client(
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            return {
-                "client_creds.txt": job.get_artifact_content(
-                    build_num, "client_creds.txt"
-                ),
-            }
+            creds_data = job.get_artifact_content(
+                build_num, "client_creds.txt"
+            ).splitlines()
+            if len(creds_data) < 2:
+                raise Exception(
+                    "Client credentials file does not contain expected data format (2 lines)"
+                )
+
+            # assigning first line to client_id and second line to client secret
+            client_id = creds_data[0]
+            client_secret = creds_data[1]
+            return client_id, client_secret
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
