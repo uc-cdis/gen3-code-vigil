@@ -137,7 +137,6 @@ class Fence(object):
             "Content-Type": "application/json",
             "Authorization": f"bearer {token}",
         }
-        logger.info(token)
         res = requests.delete(
             url=f"{self.API_CREDENTIALS_ENDPOINT}/{api_key}", headers=headers
         )
