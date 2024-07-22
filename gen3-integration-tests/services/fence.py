@@ -13,7 +13,6 @@ class Fence(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/user"
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
-        self.DELETE_API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api/cdis"
         self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
         self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
         self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
@@ -138,10 +137,9 @@ class Fence(object):
             "Content-Type": "application/json",
             "Authorization": f"bearer {token}",
         }
-        logger.info(f"{self.DELETE_API_CREDENTIALS_ENDPOINT}/{api_key}")
         logger.info(token)
         res = requests.delete(
-            url=f"{self.DELETE_API_CREDENTIALS_ENDPOINT}/{api_key}", headers=headers
+            url=f"{self.API_CREDENTIALS_ENDPOINT}/{api_key}", headers=headers
         )
         assert (
             res.status_code == 204
