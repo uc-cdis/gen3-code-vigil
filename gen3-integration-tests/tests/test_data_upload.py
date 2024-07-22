@@ -112,7 +112,7 @@ class TestDataUpload:
         # Delete all test records at the end of each test
         self.sd_tools.delete_all_records()
         # Delete all guids
-        self.indexd.delete_files(self.created_guids)
+        self.indexd.delete_records(self.created_guids)
         self.created_guids = []
 
     def test_file_upload_and_download_via_api(self):

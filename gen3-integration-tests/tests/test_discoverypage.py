@@ -34,7 +34,7 @@ class TestDiscoveryPage(object):
         logger.info("Tearing down - delete indexd record and study metadata")
         indexd = Indexd()
         mds = MetadataService()
-        indexd.delete_files([cls.variables["did"]])
+        indexd.delete_records([cls.variables["did"]])
         mds.delete_metadata(cls.variables["study_id"])
 
     def test_study_publish_search_export(self, page):

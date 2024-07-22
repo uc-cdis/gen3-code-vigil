@@ -40,8 +40,8 @@ class Indexd(object):
             record = indexd.get_record(guid=indexd_guid)
             logger.info(f"Indexd Record found {record}")
             return record
-        except Exception as e:
-            logger.exception(msg=f"Cannot find indexd record: {e}")
+        except Exception:
+            logger.exception(msg=f"Cannot find indexd record with did {indexd_guid}")
             raise
 
     def update_record(
@@ -85,7 +85,7 @@ class Indexd(object):
         return delete_resp.status_code
 
     # Use this if indexd record is created with the sdk client
-    def delete_files(self, guids: list, user="indexing_account"):
+    def delete_records(self, guids: list, user="indexing_account"):
         """Delete indexd records list via gen3-sdk"""
         for guid in guids:
             user = "indexing_account"
@@ -95,24 +95,6 @@ class Indexd(object):
                 index.delete_record(guid=guid)
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
-
-    def delete_file_indices(self, records: dict):
-        for key, val in records.items():
-            indexd_record = self.get_record(indexd_guid=val["did"])
-            if indexd_record:
-                indexd_rev = indexd_record.get("rev", None)
-                if indexd_rev is None:
-                    logger.info("Indexd record does not contain field rev")
-                    continue
-                logger.info(f"{val['did']} found, performing delete.")
-                try:
-                    self.delete_record(guid=indexd_record["did"], rev=indexd_rev)
-                except Exception as e:
-                    raise Exception(
-                        f"Indexd record was found but could not be deleted. Exception : {e}"
-                    )
-            else:
-                logger.info("Indexd record not found, no need to perform delete.")
 
     def file_equals(self, res: dict, file_record: dict) -> None:
         logger.info(f"Response data : {res}")
@@ -149,4 +131,4 @@ class Indexd(object):
         url = f"/index/index/?acl=null&authz=null&uploader={pytest.users[user]}"
         response = auth.curl(path=url)
         logger.info(response.json())
-        self.delete_files(guids=response.json())
+        self.delete_records(guids=response.json())

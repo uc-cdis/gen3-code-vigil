@@ -56,23 +56,21 @@ indexd_files = {
 class TestPresignedURL:
     indexd = Indexd()
     fence = Fence()
+    variables = {}
+    variables["created_indexd_dids"] = []
 
     @classmethod
     def setup_class(cls):
-        # Removing test indexd records if they exist
-        cls.indexd.delete_file_indices(records=indexd_files)
-
         logger.info("Creating Indexd Records")
         # Adding indexd files used to test signed urls
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
-            indexd_files[key]["did"] = indexd_record[0]["did"]
-            indexd_files[key]["rev"] = indexd_record[0]["rev"]
+            cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
     @classmethod
     def teardown_class(cls):
         logger.info("Deleting Indexd Records")
-        cls.indexd.delete_file_indices(records=indexd_files)
+        cls.indexd.delete_records(guids=cls.variables["created_indexd_dids"])
 
     def get_indexd_record(cls, filename):
         for record in cls.indexd_records:

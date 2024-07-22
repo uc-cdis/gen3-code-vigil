@@ -180,17 +180,25 @@ class TestCentralizedAuth:
         delete_fence_client(pytest.namespace, "basic-test-client")
         delete_fence_client(pytest.namespace, "basic-test-abc-client")
         # Delete indexd records created in class setup
-        cls.indexd.delete_files(cls.variables["created_indexd_dids"])
+        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     def setup_method(self):
         # Removing test indexd records if they exist
-        self.indexd.delete_file_indices(records=new_gen3_records)
-        self.indexd.delete_file_indices(records=new_abc_records)
+        self.indexd.delete_records(
+            guids=[record["did"] for record in new_gen3_records.values()]
+        )
+        self.indexd.delete_records(
+            guids=[record["did"] for record in new_abc_records.values()]
+        )
 
     def teardown_method(self):
         logger.info("Deleting Indexd Records")
-        self.indexd.delete_file_indices(records=new_gen3_records)
-        self.indexd.delete_file_indices(records=new_abc_records)
+        self.indexd.delete_records(
+            guids=[record["did"] for record in new_gen3_records.values()]
+        )
+        self.indexd.delete_records(
+            guids=[record["did"] for record in new_abc_records.values()]
+        )
 
     def test_users_without_policies_cannot_crud(self):
         """

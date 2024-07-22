@@ -264,7 +264,7 @@ class TestAuditService:
                 expected_results,
             )
         finally:
-            indexd.delete_files(did_records)
+            indexd.delete_records(did_records)
 
     def perform_presigned_check(
         self, did, main_auth, expected_code, dummy_auth, expected_results

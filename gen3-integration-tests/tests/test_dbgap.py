@@ -94,8 +94,8 @@ class TestDbgap:
         create_link_google_test_buckets(pytest.namespace)
 
         # Removing test indexd records if they exist
-        cls.indexd.delete_files(cls.variables["created_indexd_dids"])
-        cls.indexd.delete_files(cls.variables["created_dbgap_dids"])
+        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
+        cls.indexd.delete_records(cls.variables["created_dbgap_dids"])
 
         # Adding indexd files
         for key, val in indexd_files.items():
@@ -111,8 +111,8 @@ class TestDbgap:
     @classmethod
     def teardown_class(cls):
         # Removing test indexd records
-        cls.indexd.delete_files(cls.variables["created_indexd_dids"])
-        cls.indexd.delete_files(cls.variables["created_dbgap_dids"])
+        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
+        cls.indexd.delete_records(cls.variables["created_dbgap_dids"])
 
         # Run usersync job with "FORCE true ONLY_DBGAP true"
         run_gen3_command(
