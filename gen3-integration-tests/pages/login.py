@@ -68,6 +68,7 @@ class LoginPage(object):
         assert (
             access_token_cookie is not None
         ), "Access token cookie not found after login"
+        return access_token_cookie
 
     def orcid_login(self, page: Page):
         # Perform ORCID Login

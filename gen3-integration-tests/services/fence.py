@@ -13,12 +13,13 @@ class Fence(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/user"
         self.API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api"
+        self.DELETE_API_CREDENTIALS_ENDPOINT = f"{self.BASE_URL}/credentials/api/cdis"
         self.OAUTH_TOKEN_ENDPOINT = f"{self.BASE_URL}/oauth2/token"
         self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
         self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
         self.USER_ENDPOINT = f"{self.BASE_URL}/user"
 
-    def get_access_token(self, api_key):
+    def get_access_token(self, api_key, raise_exception=True):
         """Generate access token from api key"""
         res = requests.post(
             f"{self.API_CREDENTIALS_ENDPOINT}/access_token",
@@ -29,9 +30,12 @@ class Fence(object):
             return res.json()["access_token"]
         else:
             logger.info(f"Response: {res.text}")
-            raise Exception(
-                f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
-            )
+            if raise_exception:
+                raise Exception(
+                    f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
+                )
+            else:
+                return res
 
     def createSignedUrl(self, id, user, expectedStatus, file_type=None, params=[]):
         API_GET_FILE = "/data/download"
@@ -113,3 +117,32 @@ class Fence(object):
         response_data = user_info_response.json()
         logger.debug(f"User info {response_data}")
         return response_data
+
+    def create_api_key(self, scope, token):
+        data = {
+            "scope": scope,
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        res = requests.post(
+            url=f"{self.API_CREDENTIALS_ENDPOINT}/", json=data, headers=headers
+        )
+        return res
+
+    def delete_api_key(self, api_key, token):
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        logger.info(f"{self.DELETE_API_CREDENTIALS_ENDPOINT}/{api_key}")
+        logger.info(token)
+        res = requests.delete(
+            url=f"{self.DELETE_API_CREDENTIALS_ENDPOINT}/{api_key}", headers=headers
+        )
+        assert (
+            res.status_code == 204
+        ), f"Expected status code 204 but got {res.status_code}"
