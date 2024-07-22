@@ -249,13 +249,13 @@ class TestCentralizedAuth:
 
         # Update should not be successful using user2_account
         filename_change = {"file_name": "test_filename"}
-        assert 401 == self.indexd.update_record(
+        assert 401 == self.indexd.update_record_via_api(
             guid=gen3_read_success["did"],
             rev=gen3_read_success["rev"],
             data=filename_change,
             user="user2_account",
         ), "Update should not have been possible using dcf-user2 account"
-        assert 401 == self.indexd.update_record(
+        assert 401 == self.indexd.update_record_via_api(
             guid=abc_read_success["did"],
             rev=abc_read_success["rev"],
             data=filename_change,
@@ -269,12 +269,12 @@ class TestCentralizedAuth:
         abc_read_success = self.indexd.get_record(
             indexd_guid=new_abc_records["delete_me"]["did"], user="user2_account"
         )
-        assert 401 == self.indexd.delete_record(
+        assert 401 == self.indexd.delete_record_via_api(
             guid=gen3_read_success["did"],
             rev=gen3_read_success["rev"],
             user="user2_account",
         ), "Delete should not have been possible using dcf-user2 account"
-        assert 401 == self.indexd.delete_record(
+        assert 401 == self.indexd.delete_record_via_api(
             guid=abc_read_success["did"],
             rev=abc_read_success["rev"],
             user="user2_account",
@@ -324,13 +324,13 @@ class TestCentralizedAuth:
 
         # Update should not be successful using main_account
         filename_change = {"file_name": "test_filename"}
-        assert 401 == self.indexd.update_record(
+        assert 401 == self.indexd.update_record_via_api(
             guid=new_gen3_records["foo_bar_file"]["did"],
             rev=gen3_read_success["rev"],
             data=filename_change,
             user="main_account",
         ), "Update should not have been possible using dcf-user2 account"
-        assert 200 == self.indexd.update_record(
+        assert 200 == self.indexd.update_record_via_api(
             guid=new_abc_records["foo_bar_file"]["did"],
             rev=abc_read_success["rev"],
             data=filename_change,
@@ -352,12 +352,12 @@ class TestCentralizedAuth:
         abc_read_success = self.indexd.get_record(
             indexd_guid=new_abc_records["delete_me"]["did"], user="main_account"
         )
-        assert 401 == self.indexd.delete_record(
+        assert 401 == self.indexd.delete_record_via_api(
             guid=new_gen3_records["delete_me"]["did"],
             rev=gen3_read_success["rev"],
             user="main_account",
         ), "Delete should not have been possible using main_account"
-        assert 200 == self.indexd.delete_record(
+        assert 200 == self.indexd.delete_record_via_api(
             guid=new_abc_records["delete_me"]["did"],
             rev=abc_read_success["rev"],
             user="main_account",
@@ -420,13 +420,13 @@ class TestCentralizedAuth:
 
         # Update should not be successful for gen3 record
         filename_change = {"file_name": "test_filename"}
-        gen3_update_success = self.indexd.update_record(
+        gen3_update_success = self.indexd.update_record_via_api(
             guid=gen3_read_success["did"],
             rev=gen3_read_success["rev"],
             data=filename_change,
             access_token=access_token,
         )
-        abc_update_success = self.indexd.update_record(
+        abc_update_success = self.indexd.update_record_via_api(
             guid=abc_read_success["did"],
             rev=abc_read_success["rev"],
             data=filename_change,
@@ -449,12 +449,12 @@ class TestCentralizedAuth:
         )
 
         # Delete should not be successful for gen3 record
-        gen3_delete_success = self.indexd.delete_record(
+        gen3_delete_success = self.indexd.delete_record_via_api(
             guid=gen3_read_success["did"],
             rev=gen3_read_success["rev"],
             access_token=access_token,
         )
-        abc_delete_success = self.indexd.delete_record(
+        abc_delete_success = self.indexd.delete_record_via_api(
             guid=abc_read_success["did"],
             rev=abc_read_success["rev"],
             access_token=access_token,

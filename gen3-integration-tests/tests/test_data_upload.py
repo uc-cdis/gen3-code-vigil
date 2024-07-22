@@ -248,7 +248,7 @@ class TestDataUpload:
         # check that a user who is not the uploader cannot delete the file
         record = self.indexd.get_record(self.created_guids[-1])
         rev = record.get("rev", None)
-        response = self.indexd.delete_record(
+        response = self.indexd.delete_record_via_api(
             guid=self.created_guids[-1], rev=rev, user="auxAcct2_account"
         )
         assert (

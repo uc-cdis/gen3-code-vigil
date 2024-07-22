@@ -44,7 +44,7 @@ class Indexd(object):
             logger.exception(msg=f"Cannot find indexd record with did {indexd_guid}")
             raise
 
-    def update_record(
+    def update_record_via_api(
         self,
         guid: str,
         rev: str,
@@ -68,7 +68,7 @@ class Indexd(object):
         return update_res.status_code
 
     # Use this if the indexd record is created/uploaded through gen3-client upload
-    def delete_record(
+    def delete_record_via_api(
         self, guid: str, rev: str, user="indexing_account", access_token=None
     ):
         """Delete indexd record if upload is not happening through gen3-sdk"""

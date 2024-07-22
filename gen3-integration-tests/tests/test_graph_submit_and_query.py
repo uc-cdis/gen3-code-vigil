@@ -417,7 +417,9 @@ class TestGraphSubmitAndQuery:
 
         # Deleting file record and indexd record
         self.sd_tools.delete_record(unique_id=file_record.unique_id)
-        delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
+        delete_record = indexd.delete_record_via_api(
+            guid=file_record.indexd_guid, rev=rev
+        )
         assert (
             delete_record == 200
         ), f"Failed to delete record {file_record.indexd_guid}"
@@ -448,7 +450,9 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(record, file_record)
 
         # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
-        delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
+        delete_record = indexd.delete_record_via_api(
+            guid=file_record.indexd_guid, rev=rev
+        )
         assert (
             delete_record == 200
         ), f"Failed to delete record {file_record.indexd_guid}"
@@ -487,7 +491,9 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(record, file_record)
 
         # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
-        delete_record = indexd.delete_record(guid=file_record.indexd_guid, rev=rev)
+        delete_record = indexd.delete_record_via_api(
+            guid=file_record.indexd_guid, rev=rev
+        )
         assert (
             delete_record == 200
         ), f"Failed to delete record {file_record.indexd_guid}"

@@ -131,7 +131,7 @@ class TestGen3Client:
             logger.info(f"The file {file_name} does not exist")
 
         # Delete the indexd record
-        delete_record = indexd.delete_record(guid, rev)
+        delete_record = indexd.delete_record_via_api(guid, rev)
         assert delete_record == 200, f"Failed to delete record {guid}"
 
         # Deleting the folder src from filesystem

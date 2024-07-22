@@ -274,7 +274,7 @@ class TestDbgap:
         filename_change = {
             "file_name": "test_filename",
         }
-        foo_bar_file_updated_record = self.indexd.update_record(
+        foo_bar_file_updated_record = self.indexd.update_record_via_api(
             guid=foo_bar_file_record["did"],
             rev=foo_bar_file_record["rev"],
             data=filename_change,
@@ -285,7 +285,7 @@ class TestDbgap:
         ), f"Expected 401 status, but got {foo_bar_file_updated_record}"
 
         # Delete the record
-        foo_bar_file_deleted_record = self.indexd.delete_record(
+        foo_bar_file_deleted_record = self.indexd.delete_record_via_api(
             guid=foo_bar_file_record["did"],
             rev=foo_bar_file_record["rev"],
             user="user2_account",
@@ -331,7 +331,7 @@ class TestDbgap:
         filename_change = {
             "file_name": "test_filename",
         }
-        foo_bar_file_updated_record = self.indexd.update_record(
+        foo_bar_file_updated_record = self.indexd.update_record_via_api(
             guid=foo_bar_file_record["did"],
             rev=foo_bar_file_record["rev"],
             data=filename_change,
@@ -342,7 +342,7 @@ class TestDbgap:
         ), f"Expected 401 status, but got {foo_bar_file_updated_record}"
 
         # Delete the record
-        foo_bar_file_deleted_record = self.indexd.delete_record(
+        foo_bar_file_deleted_record = self.indexd.delete_record_via_api(
             guid=foo_bar_file_record["did"],
             rev=foo_bar_file_record["rev"],
             user="main_account",
