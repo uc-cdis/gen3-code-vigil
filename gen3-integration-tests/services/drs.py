@@ -23,6 +23,7 @@ class Drs(object):
         return response
 
     def get_drs_signed_url(self, file, user="main_account"):
+        """Get Drs signed url"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         try:
             id = file.get("did") or file.get("id")
@@ -33,6 +34,7 @@ class Drs(object):
         return response
 
     def get_drs_signed_url_without_header(self, file, user="main_account"):
+        """Get Drs signed url without header"""
         try:
             id = file.get("did") or file.get("id")
         except Exception:
