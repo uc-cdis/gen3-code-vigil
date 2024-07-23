@@ -1,4 +1,3 @@
-import os
 import pytest
 import requests
 
@@ -12,76 +11,81 @@ class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index/index"
 
-    def create_files(self, files: dict, user="indexing_account"):
+    def create_records(self, records: dict, user="indexing_account", access_token=None):
         """Create new indexd record"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+        if access_token:
+            auth = Gen3Auth(access_token=access_token)
+        else:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         index = Gen3Index(auth_provider=auth)
         indexed_files = []
         # Create record for each file
-        for file in files:
-            logger.info(files[file])
-            logger.info(file)
-            if "did" not in files[file]:
-                files[file]["did"] = str(uuid4())
-            # Create data dictionary to provide as argument for Indexd create record function
-            data = {
-                "hashes": {"md5": files[file]["md5"]},
-                "size": files[file]["size"],
-                "file_name": files[file]["filename"],
-                "did": files[file]["did"],
-                "urls": [files[file]["link"]],
-                "authz": files[file]["authz"],
-            }
-
+        for record_data in records.values():
+            record_data.setdefault("did", str(uuid4()))
             try:
-                logger.info(data)
-                record = index.create_record(**data)
+                record = index.create_record(**record_data)
                 indexed_files.append(record)
-            except Exception:
-                logger.exception(msg="Failed indexd submission got exception")
+            except Exception as e:
+                logger.exception(msg=f"Failed indexd submission got exception {e}")
         return indexed_files
 
-    def get_record(self, indexd_guid: str, user="indexing_account"):
+    def get_record(self, indexd_guid: str, user="indexing_account", access_token=None):
         """Get record from indexd"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
+        if access_token:
+            auth = Gen3Auth(access_token=access_token)
+        else:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         indexd = Gen3Index(auth_provider=auth)
         try:
-            logger.debug(indexd_guid)
             record = indexd.get_record(guid=indexd_guid)
             logger.info(f"Indexd Record found {record}")
             return record
-        except Exception as e:
-            logger.exception(msg=f"Cannot find indexd record {e}")
+        except Exception:
+            logger.exception(msg=f"Cannot find indexd record with did {indexd_guid}")
             raise
 
-    def get_rev(self, json_data: dict):
-        """Get revision from indexd record"""
-        if json_data is not None:
-            return json_data["rev"]
-        else:
-            # Handle case where json_data is None (optional)
-            logger.info("No rev found in the provided data")
-            return None  # Or a suitable default value
-
-    def update_record(self, guid: str, rev: str, data: dict, user="indexing_account"):
+    def update_record_via_api(
+        self,
+        guid: str,
+        rev: str,
+        data: dict,
+        user="indexing_account",
+        access_token=None,
+    ):
         """Update indexd record"""
+        if access_token:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {access_token}",
+            }
+        else:
+            headers = pytest.auth_headers[user]
         update_res = requests.put(
             f"{self.BASE_URL}/{guid}?rev={rev}",
             json=data,
-            headers=pytest.auth_headers[user],
+            headers=headers,
         )
         return update_res.status_code
 
     # Use this if the indexd record is created/uploaded through gen3-client upload
-    def delete_record(self, guid: str, rev: str, user="indexing_account"):
+    def delete_record_via_api(
+        self, guid: str, rev: str, user="indexing_account", access_token=None
+    ):
         """Delete indexd record if upload is not happening through gen3-sdk"""
+        if access_token:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {access_token}",
+            }
+        else:
+            headers = pytest.auth_headers[user]
         delete_resp = requests.delete(
-            f"{self.BASE_URL}/{guid}?rev={rev}", headers=pytest.auth_headers[user]
+            f"{self.BASE_URL}/{guid}?rev={rev}", headers=headers
         )
         return delete_resp.status_code
 
     # Use this if indexd record is created with the sdk client
-    def delete_files(self, guids: list, user="indexing_account"):
+    def delete_records(self, guids: list, user="indexing_account"):
         """Delete indexd records list via gen3-sdk"""
         for guid in guids:
             user = "indexing_account"
@@ -120,3 +124,11 @@ class Indexd(object):
         if errors:
             logger.error(f"indexd.file_equals(): files do not match: {errors}")
         return len(errors) == 0, errors
+
+    def clear_previous_upload_files(self, user="main_account"):
+        """Delete indexd record if upload is not happening through gen3-sdk"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        url = f"/index/index/?acl=null&authz=null&uploader={pytest.users[user]}"
+        response = auth.curl(path=url)
+        logger.info(response.json())
+        self.delete_records(guids=response.json())

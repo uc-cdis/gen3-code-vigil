@@ -17,6 +17,7 @@ class Fence(object):
         self.DATA_UPLOAD_ENDPOINT = f"{self.BASE_URL}/data/upload"
         self.DATA_ENDPOINT = f"{self.BASE_URL}/data"
         self.USER_ENDPOINT = f"{self.BASE_URL}/user"
+        self.VERSION_ENDPOINT = f"/_version"
 
     def get_access_token(self, api_key):
         """Generate access token from api key"""
@@ -113,3 +114,13 @@ class Fence(object):
         response_data = user_info_response.json()
         logger.debug(f"User info {response_data}")
         return response_data
+
+    def get_version(self, user="main_account"):
+        """Get fence version"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(path=f"{self.VERSION_ENDPOINT}")
+        assert (
+            response.status_code == 200
+        ), f"Expected status code 200 but got {response.status_code}"
+        assert "version" in response.json().keys()
+        return response.json()["version"]
