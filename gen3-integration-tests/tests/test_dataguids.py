@@ -12,7 +12,7 @@ from requests.exceptions import RequestException, ConnectionError, Timeout
 
 
 # TODO : enable this test after the manifest PRs are ready to roll
-# @pytest.mark.wip
+@pytest.mark.wip
 class TestDataGuids(object):
     variables = {}
     # dataguids_url = "https://dataguids.org"
