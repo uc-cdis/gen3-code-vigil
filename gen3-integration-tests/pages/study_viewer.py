@@ -4,13 +4,12 @@ from utils import logger
 import utils.gen3_admin_tasks as gat
 
 from utils.test_execution import screenshot
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
-get_index = gat.get_study_viewer_index(pytest.namespace)
-indexFile = get_index["study_viewer_index.txt"].splitlines()
-if len(indexFile) < 1:
-    raise Exception("Index File does not contain expected data format (1 lines)")
-study_viewer_index = indexFile[0]
+portal_config = gat.get_portal_config(pytest.tested_env)
+study_viewer_config = portal_config.get("studyViewerConfig", [])
+if study_viewer_config:
+    study_viewer_index = study_viewer_config[0].get("dataType")
 
 
 class StudyViewerPage(object):
