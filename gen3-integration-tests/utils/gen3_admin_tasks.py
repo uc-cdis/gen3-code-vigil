@@ -33,7 +33,7 @@ def get_admin_vm_configurations(test_env_namespace: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "fetch-all-config",
+        "ci-only-fetch-configs",
     )
     params = {"NAMESPACE": test_env_namespace}
     build_num = job.build_job(params)
