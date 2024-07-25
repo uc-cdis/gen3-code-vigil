@@ -86,8 +86,8 @@ class GraphDataTools:
             )
             raise
             
-            dictionary_url = manifest.get("global", {}).get("dictionary_url")
-            assert dictionary_url, "No dictionary URL in manifest.json"
+        dictionary_url = manifest.get("global", {}).get("dictionary_url")
+        assert dictionary_url, "No dictionary URL in manifest.json"
 
         data_path = self.test_data_path
         data_path.mkdir(parents=True, exist_ok=True)
