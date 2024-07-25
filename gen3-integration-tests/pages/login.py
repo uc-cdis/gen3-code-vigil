@@ -11,11 +11,11 @@ from utils.gen3_admin_tasks import get_portal_config
 
 class LoginPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/login"
+        self.BASE_URL = f"{pytest.root_url_portal}/portal/login"
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
-        self.POP_UP_BOX = "//div[@id='popup']"  # pop_up_box
+        self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -50,6 +50,10 @@ class LoginPage(object):
         page.context.add_cookies(
             [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
         )
+        cookies = page.context.cookies()
+        # printing cookies if needed for debugging purposes
+        for cookie in cookies:
+            logger.debug(f"{cookie['name']}={cookie['value']}")
         if idp == "ORCID":
             page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
