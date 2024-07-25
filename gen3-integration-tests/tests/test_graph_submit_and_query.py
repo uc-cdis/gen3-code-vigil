@@ -413,16 +413,9 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        rev = record.get("rev", None)
 
         # Deleting file record and indexd record
-        self.sd_tools.delete_record(unique_id=file_record.unique_id)
-        delete_record = indexd.delete_record_via_api(
-            guid=file_record.indexd_guid, rev=rev
-        )
-        assert (
-            delete_record == 200
-        ), f"Failed to delete record {file_record.indexd_guid}"
+        indexd.delete_records([file_record.indexd_guid])
 
     @pytest.mark.indexd
     def test_submit_file_with_url(self):
@@ -444,18 +437,12 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        rev = record.get("rev", None)
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
 
         # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
-        delete_record = indexd.delete_record_via_api(
-            guid=file_record.indexd_guid, rev=rev
-        )
-        assert (
-            delete_record == 200
-        ), f"Failed to delete record {file_record.indexd_guid}"
+        indexd.delete_records([file_record.indexd_guid])
 
     @pytest.mark.indexd
     def test_submit_file_then_update_with_url(self):
@@ -476,7 +463,6 @@ class TestGraphSubmitAndQuery:
         self.sd_tools.submit_record(record=file_record)
         did = self.sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
         record = indexd.get_record(indexd_guid=did)
-        rev = record.get("rev", None)
 
         # Add URL to the record data and update it
         file_record.props["urls"] = test_url
@@ -485,15 +471,9 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        rev = record.get("rev", None)
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
 
         # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
-        delete_record = indexd.delete_record_via_api(
-            guid=file_record.indexd_guid, rev=rev
-        )
-        assert (
-            delete_record == 200
-        ), f"Failed to delete record {file_record.indexd_guid}"
+        indexd.delete_records([file_record.indexd_guid])
