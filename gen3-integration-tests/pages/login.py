@@ -25,6 +25,8 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
+        # from the list below, the LOGIN_BUTTON is selected in order of preference
+        # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
         self.LOGIN_BUTTONS = [
             "//button[contains(text(), 'Dev login')]",
             "//button[contains(text(), 'Google')]",
@@ -62,9 +64,9 @@ class LoginPage(object):
             self.ras_login(page)
         else:
             for login_button in self.LOGIN_BUTTONS:
-                buttons = page.locator(login_button)
-                if buttons.count() > 0 and buttons.first.is_visible():
-                    buttons.first.click()
+                button = page.locator(login_button)
+                if button.is_enabled():
+                    button.click()
                     logger.info(f"Clicked on login button : {login_button}")
                     break
         screenshot(page, "AfterLogin")
