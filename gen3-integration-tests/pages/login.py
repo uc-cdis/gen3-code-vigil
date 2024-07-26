@@ -15,7 +15,8 @@ class LoginPage(object):
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
-        self.POP_UP_BOX = "//div[@id='popup__box']"  # pop_up_box
+        self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
+        self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
         self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -24,12 +25,11 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
-        # user for heal env as heal as both Google login and dev login
-        # TODO : implement multiple login function below in login function
-        self.DEV_LOGIN_BUTTON = (
-            "//button[@class='login-page__entry-button g3-button g3-button--default']"
-        )
-        self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
+        self.LOGIN_BUTTONS = [
+            "//button[contains(text(), 'Dev login')]",
+            "//button[contains(text(), 'Google')]",
+            "//button[contains(text(), 'BioData Catalyst Developer Login')]",
+        ]
         self.USER_PROFILE_DROPDOWN = (
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
         )
@@ -61,8 +61,12 @@ class LoginPage(object):
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
         else:
-            page.locator(self.LOGIN_BUTTON).click()
-            # self.multiple_login_button(page)
+            for login_button in self.LOGIN_BUTTONS:
+                buttons = page.locator(login_button)
+                if buttons.count() > 0 and buttons.first.is_visible():
+                    buttons.first.click()
+                    logger.info(f"Clicked on login button : {login_button}")
+                    break
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
@@ -79,23 +83,6 @@ class LoginPage(object):
         assert (
             access_token_cookie is not None
         ), "Access token cookie not found after login"
-
-    def multiple_login_button(self, page: Page):
-        """
-        Check if the commons has multiple login buttons from self.LOGIN_BUTTON
-        If it returns two or more buttons, it will select the first element and click on it
-        """
-        login_buttons = page.locator(self.LOGIN_BUTTON)
-        # check if there are multiple login buttons
-        count = login_buttons.count()
-        logger.info(f"Count of buttons {count}")
-        # if more than one login button, click the first one
-        if count > 1:
-            first_button = login_buttons.nth(0)
-            first_button.click()
-        else:
-            # else click the one that is available
-            login_buttons.click()
 
     def orcid_login(self, page: Page):
         # Perform ORCID Login
@@ -147,7 +134,7 @@ class LoginPage(object):
                 popup_message,
             )
             screenshot(page, "DataUsePopup")
-            accept_button = page.get_by_role("button", name="Accept")
+            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
             if accept_button:
                 accept_button.click()
         else:
