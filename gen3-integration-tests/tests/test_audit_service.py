@@ -1,6 +1,7 @@
 """
 AUDIT SERVICE
 """
+
 import os
 import time
 import pytest
@@ -277,7 +278,7 @@ class TestAuditService:
             "username={}".format(expectedResults["username"]),
         ]
         # Create Signed URL record
-        fence.createSignedUrl(did, main_auth, expectedCode, file_type)
+        fence.create_signed_url(did, main_auth, expectedCode, file_type)
         assert audit.check_query_results(
             "presigned_url", dummy_auth, params, expectedResults
         )
