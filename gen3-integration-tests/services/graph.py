@@ -85,8 +85,8 @@ class GraphDataTools:
                 "manifest.json not found. It should have been fetched by `get_configuration_files`..."
             )
             raise
-
-        dictionary_url = manifest.get("data", {}).get("dictionary_url")
+            
+        dictionary_url = manifest.get("global", {}).get("dictionary_url")
         assert dictionary_url, "No dictionary URL in manifest.json"
 
         data_path = self.test_data_path
