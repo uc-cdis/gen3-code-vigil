@@ -96,7 +96,7 @@ def pytest_configure(config):
             "manifest.json not found. It should have been fetched by `get_configuration_files`..."
         )
         raise
-    if manifest.get("data", {}).get("frontend_root", "") == "gen3ff":
+    if manifest.get("global", {}).get("frontend_root", "") == "gen3ff":
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:
         pytest.root_url_portal = pytest.root_url
