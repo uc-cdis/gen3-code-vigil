@@ -64,11 +64,16 @@ class LoginPage(object):
             self.ras_login(page)
         else:
             for login_button in self.LOGIN_BUTTONS:
-                button = page.locator(login_button)
-                if button.is_enabled():
-                    button.click()
-                    logger.info(f"Clicked on login button : {login_button}")
-                    break
+                try:
+                    if page.locator(login_button).is_visible:
+                        button = page.locator(login_button)
+                        if button.is_enabled():
+                            button.click()
+                            logger.info(f"Clicked on login button : {login_button}")
+                            break
+                except TimeoutError:
+                    logger.info(f"Login Button {login_button) not found or not enabled")
+                    
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
