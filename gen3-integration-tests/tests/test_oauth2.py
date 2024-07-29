@@ -22,38 +22,18 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class TestOauth2:
     fence = Fence()
 
-    def generate_fence_client(client_name, user_name, client_type="basic"):
-        client_creds = create_fence_client(
-            test_env_namespace=pytest.namespace,
-            client_name=client_name,
-            user_name=user_name,
-            client_type=client_type,
-        )
-
-        # access the client_creds.txt and retrieving the client_creds
-        credsFile = client_creds["client_creds.txt"].splitlines()
-        if len(credsFile) < 2:
-            raise Exception(
-                "Client credentials file does not contain expected data format (2 lines)"
-            )
-
-        # assigning first line to client_id
-        client_id = credsFile[0]
-        client_secret = credsFile[1]
-
-        return client_id, client_secret
-
     @classmethod
     def setup_class(cls):
         # Generate Client id and secrets
-        cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.generate_fence_client(
-                client_name="basic-test-client", user_name="test-client@example.com"
-            )
+        cls.basic_test_client_id, cls.basic_test_client_secret = create_fence_client(
+            test_env_namespace=pytest.namespace,
+            client_name="basic-test-client",
+            user_name="test-client@example.com",
+            client_type="basic",
         )
-        # Implicit test client secret is always None
         cls.implicit_test_client_id, cls.implicit_test_client_secret = (
-            cls.generate_fence_client(
+            create_fence_client(
+                test_env_namespace=pytest.namespace,
                 client_name="implicit-test-client",
                 user_name="test@example.com",
                 client_type="implicit",

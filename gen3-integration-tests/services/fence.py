@@ -163,7 +163,7 @@ class Fence(object):
         response = self.get_token_with_auth_code(
             client_id, client_secret, code, "authorization_code"
         )
-        return response.json()["access_token"]
+        return response.json()
 
     def get_consent_code(
         self,
