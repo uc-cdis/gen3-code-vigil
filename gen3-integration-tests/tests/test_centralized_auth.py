@@ -385,7 +385,7 @@ class TestCentralizedAuth:
             page=page,
             client_id=self.basic_test_client_id,
             client_secret=self.basic_test_client_secret,
-        )["access_token"]
+        ).json()["access_token"]
 
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
@@ -481,7 +481,7 @@ class TestCentralizedAuth:
             page=page,
             client_id=self.basic_test_abc_client_id,
             client_secret=self.basic_test_abc_client_secret,
-        )["access_token"]
+        ).json()["access_token"]
 
         # Create Signed URLs for /abc and /gen3 project using access_token
         signed_url_abc_res = self.fence.create_signed_url(
@@ -523,7 +523,7 @@ class TestCentralizedAuth:
             page=page,
             client_id=self.basic_test_client_id,
             client_secret=self.basic_test_client_secret,
-        )["access_token"]
+        ).json()["access_token"]
 
         # Create Signed URLs for /gen3 project using access_token
         signed_url_gen3_res = self.fence.create_signed_url(
@@ -551,7 +551,7 @@ class TestCentralizedAuth:
             client_id=self.basic_test_abc_client_id,
             client_secret=self.basic_test_abc_client_secret,
             user="user0_account",
-        )["access_token"]
+        ).json()["access_token"]
 
         # Create Signed URLs for /gen3 project using access_token
         signed_url_gen3_res = self.fence.create_signed_url(
@@ -609,7 +609,7 @@ class TestCentralizedAuth:
             page=page,
             client_id=self.basic_test_client_id,
             client_secret=self.basic_test_client_secret,
-        )["access_token"]
+        ).json()["access_token"]
 
         # Get resources field from Get User Info
         resources_of_user = self.fence.get_user_info(access_token=access_token)[
@@ -634,7 +634,7 @@ class TestCentralizedAuth:
             client_id=self.basic_test_abc_client_id,
             client_secret=self.basic_test_abc_client_secret,
             user="auxAcct1_account",
-        )["access_token"]
+        ).json()["access_token"]
 
         # Create Signed URL using access_token
         signed_url_res = self.fence.create_signed_url(
@@ -662,7 +662,7 @@ class TestCentralizedAuth:
             client_id=self.basic_test_abc_client_id,
             client_secret=self.basic_test_abc_client_secret,
             user="main_account",
-        )["access_token"]
+        ).json()["access_token"]
 
         # Create Signed URL using access_token
         signed_url_res = self.fence.create_signed_url(
