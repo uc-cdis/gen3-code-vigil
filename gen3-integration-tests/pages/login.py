@@ -65,7 +65,7 @@ class LoginPage(object):
         else:
             for login_button in self.LOGIN_BUTTONS:
                 try:
-                    if page.locator(login_button).is_visible:
+                    if page.locator(login_button).is_visible():
                         button = page.locator(login_button)
                         if button.is_enabled():
                             button.click()
