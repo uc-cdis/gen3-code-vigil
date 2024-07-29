@@ -72,7 +72,7 @@ class LoginPage(object):
                             logger.info(f"Clicked on login button : {login_button}")
                             break
                 except TimeoutError:
-                    logger.info(f"Login Button {login_button) not found or not enabled")
+                    logger.info(f"Login Button {login_button} not found or not enabled")
                     
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
