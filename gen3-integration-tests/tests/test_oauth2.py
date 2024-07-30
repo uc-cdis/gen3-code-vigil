@@ -19,6 +19,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.fence
+@pytest.mark.requires_basic_client
 class TestOauth2:
     fence = Fence()
 

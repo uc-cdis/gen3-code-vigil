@@ -131,6 +131,7 @@ new_abc_records = {
 
 @pytest.mark.indexd
 @pytest.mark.fence
+@pytest.mark.requires_basic_client
 class TestCentralizedAuth:
     indexd = Indexd()
     fence = Fence()
