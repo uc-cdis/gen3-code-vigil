@@ -147,17 +147,9 @@ class TestCentralizedAuth:
         new_abc_records["foo_bar_file"]["did"] = str(uuid4())
         new_abc_records["delete_me"]["did"] = str(uuid4())
 
-        # Delete the client from the fence db
-        logger.info("Deleting client from the fence db ...")
-        delete_fence_client(pytest.namespace, "basic-test-client")
-        delete_fence_client(pytest.namespace, "basic-test-abc-client")
-
         # Generate Client id and secrets
-        cls.basic_test_client_id, cls.basic_test_client_secret = create_fence_client(
-            test_env_namespace=pytest.namespace,
-            client_name="basic-test-client",
-            user_name="test-client@example.com",
-            client_type="basic",
+        cls.basic_test_client_id, cls.basic_test_client_secret = (
+            cls.fence.required_fence_client_info(client_name="basic-test-client")
         )
         cls.basic_test_abc_client_id, cls.basic_test_abc_client_secret = (
             create_fence_client(
@@ -176,10 +168,6 @@ class TestCentralizedAuth:
 
     @classmethod
     def teardown_class(cls):
-        # Delete the client from the fence db
-        logger.info("Deleting client from the fence db ...")
-        delete_fence_client(pytest.namespace, "basic-test-client")
-        delete_fence_client(pytest.namespace, "basic-test-abc-client")
         # Delete indexd records created in class setup
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 

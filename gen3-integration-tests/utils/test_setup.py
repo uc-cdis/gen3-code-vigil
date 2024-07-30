@@ -42,3 +42,22 @@ def get_configuration_files():
     for file_name, contents in configs.items():
         with (path / file_name).open("w", encoding="utf-8") as f:
             f.write(contents)
+
+
+def get_fence_client_info(client_name, user_name, client_type):
+    # Make sure the client doesn't exists
+    gen3_admin_tasks.delete_fence_client(pytest.namespace, client_name)
+
+    # Create the client and return the client information
+    client_id, client_secret = gen3_admin_tasks.create_fence_client(
+        test_env_namespace=pytest.namespace,
+        client_name=client_name,
+        user_name=user_name,
+        client_type=client_type,
+    )
+    path = TEST_DATA_PATH_OBJECT / "fence_client"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    with open(f"{path}/basic-test-client.txt", "w") as outfile:
+        outfile.write(f"{client_id}\n")
+        outfile.write(f"{client_secret}")

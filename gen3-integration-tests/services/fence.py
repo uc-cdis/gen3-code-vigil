@@ -2,6 +2,7 @@ import json
 import pytest
 import requests
 import base64
+import os
 
 from utils.misc import retry
 
@@ -10,6 +11,7 @@ from pages.login import LoginPage
 from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 from utils.test_execution import screenshot
+from utils import TEST_DATA_PATH_OBJECT
 
 
 class Fence(object):
@@ -358,3 +360,12 @@ class Fence(object):
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_record=file_node)
         return response
+
+    def required_fence_client_info(self, client_name):
+        """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
+        path = TEST_DATA_PATH_OBJECT / "fence_client" / f"{client_name}.txt"
+        assert os.path.exists(path), f"{path} doesn't exists."
+        with open(path, "r") as infile:
+            client_id = infile.readline().strip()
+            client_secret = infile.readline()
+        return client_id, client_secret

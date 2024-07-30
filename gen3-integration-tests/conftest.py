@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import shutil
 
 from xdist import is_xdist_controller
 from xdist.scheduler import LoadScopeScheduling
@@ -13,6 +14,8 @@ from utils import TEST_DATA_PATH_OBJECT
 from dotenv import load_dotenv
 
 load_dotenv()
+
+collected_items = []
 
 
 class XDistCustomPlugin:
@@ -45,6 +48,22 @@ class CustomScheduling(LoadScopeScheduling):
 
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
+
+
+def pytest_collection_finish(session):
+    # Iterate through the collected test items
+    if not hasattr(session.config, "workerinput"):
+        for item in session.items:
+            # Access the markers for each test item
+            markers = item.keywords
+            for marker_name, marker in markers.items():
+                if marker_name == "requires_basic_client":
+                    setup.get_fence_client_info(
+                        client_name="basic-test-client",
+                        user_name="test-client@example.com",
+                        client_type="basic",
+                    )
+                    return
 
 
 def pytest_configure(config):
@@ -112,3 +131,9 @@ def pytest_configure(config):
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+
+
+def pytest_unconfigure(config):
+    directory_path = TEST_DATA_PATH_OBJECT / "fence_client"
+    if os.path.exists(directory_path):
+        shutil.rmtree(directory_path)

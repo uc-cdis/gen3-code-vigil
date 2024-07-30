@@ -15,6 +15,7 @@ from utils.gen3_admin_tasks import create_fence_client, delete_fence_client
 from cdislogging import get_logger
 from playwright.sync_api import Page
 
+
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
@@ -26,11 +27,8 @@ class TestOauth2:
     @classmethod
     def setup_class(cls):
         # Generate Client id and secrets
-        cls.basic_test_client_id, cls.basic_test_client_secret = create_fence_client(
-            test_env_namespace=pytest.namespace,
-            client_name="basic-test-client",
-            user_name="test-client@example.com",
-            client_type="basic",
+        cls.basic_test_client_id, cls.basic_test_client_secret = (
+            cls.fence.required_fence_client_info(client_name="basic-test-client")
         )
         cls.implicit_test_client_id, cls.implicit_test_client_secret = (
             create_fence_client(
@@ -40,13 +38,6 @@ class TestOauth2:
                 client_type="implicit",
             )
         )
-
-    @classmethod
-    def teardown_class(cls):
-        # Delete the client from the fence db
-        logger.info("Deleting client from the fence db ...")
-        delete_fence_client(pytest.namespace, "basic-test-client")
-        delete_fence_client(pytest.namespace, "implicit-test-client")
 
     def test_authorization_code_no_user_consent_fail_code_generation(self, page: Page):
         """

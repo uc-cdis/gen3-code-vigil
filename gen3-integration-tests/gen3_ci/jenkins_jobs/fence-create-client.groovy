@@ -47,6 +47,10 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
 
+                        DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
+                        echo "Running: ${DELETE_CMD}"
+                        bash -c "${DELETE_CMD}"
+
                         # construct fence-create command depending on the parameters provided by the run
                         FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create"
                         echo "${FENCE_CMD}"
