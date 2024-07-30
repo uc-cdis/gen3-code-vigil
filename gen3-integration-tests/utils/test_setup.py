@@ -52,9 +52,7 @@ def get_fence_client_info(client_name, user_name, client_type):
         user_name=user_name,
         client_type=client_type,
     )
-    path = TEST_DATA_PATH_OBJECT / "fence_client"
-    if not os.path.exists(path):
-        os.makedirs(path)
-    with open(f"{path}/basic-test-client.txt", "w") as outfile:
+    path = TEST_DATA_PATH_OBJECT / "fence_client" / f"{client_name}.txt"
+    with open(path, "w") as outfile:
         outfile.write(f"{client_id}\n")
         outfile.write(f"{client_secret}")
