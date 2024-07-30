@@ -45,9 +45,6 @@ def get_configuration_files():
 
 
 def get_fence_client_info(client_name, user_name, client_type):
-    # Make sure the client doesn't exists
-    gen3_admin_tasks.delete_fence_client(pytest.namespace, client_name)
-
     # Create the client and return the client information
     client_id, client_secret = gen3_admin_tasks.create_fence_client(
         test_env_namespace=pytest.namespace,
