@@ -143,7 +143,7 @@ class TestOIDCClient:
         logger.info(f"Rotating creds for client {client_name} ...")
         client_rotate_creds = gat.fence_client_rotate(pytest.namespace, client_name)
         rotate_client = client_rotate_creds["client_rotate_creds.txt"].splitlines()
-        if len(client_rotate_creds) < 2:
+        if len(rotate_client) < 2:
             raise Exception(
                 "Client Rotation creds file does not contain expected data format (2 lines)"
             )
@@ -183,25 +183,27 @@ class TestOIDCClient:
             "authz": ["/programs/jnkns/projects/jenkins"],
         }
         # sending indexd request with access_token before running client-fence-rotate
-        index = Gen3Index(auth_provider=gen3auth_before)
-        record1 = index.create_record(
+        index_before = Gen3Index(auth_provider=gen3auth_before)
+        record1 = index_before.create_record(
             hashes=data["hashes"],
             urls=data["urls"],
             file_name=data["file_name"],
             size=data["size"],
             authz=data["authz"],
         )
+        logger.debug(f"Indexd Record created with did : {record1["did"]}")
         assert record1["did"], "Indexd record not created successfully"
 
         # sending indexd request with access_token after running client-fence-rotate
-        index = Gen3Index(auth_provider=gen3auth_after)
-        record2 = index.create_record(
+        index_after = Gen3Index(auth_provider=gen3auth_after)
+        record2 = index_after.create_record(
             hashes=data["hashes"],
             urls=data["urls"],
             file_name=data["file_name"],
             size=data["size"],
             authz=data["authz"],
         )
+        logger.debug(f"Indexd Record created with did : {record2["did"]}")
         assert record2["did"], "Indexd record not created successfully"
 
         # deleting client after the test
