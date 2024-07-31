@@ -336,7 +336,9 @@ class Fence(object):
             "Authorization": f"bearer {token}",
         }
         res = requests.post(
-            url=f"{self.API_CREDENTIALS_ENDPOINT}/", json=data, headers=headers
+            url=f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/",
+            json=data,
+            headers=headers,
         )
         return res
 
@@ -347,7 +349,8 @@ class Fence(object):
             "Authorization": f"bearer {token}",
         }
         res = requests.delete(
-            url=f"{self.API_CREDENTIALS_ENDPOINT}/{api_key}", headers=headers
+            url=f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/{api_key}",
+            headers=headers,
         )
         assert (
             res.status_code == 204
