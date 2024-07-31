@@ -2,7 +2,7 @@
     String parameter NAMESPACE
         e.g. jenkins-blood
 
-    Artifact archived -
+    Artifact archived - client_creds.txt
 */
 pipeline {
     agent {
