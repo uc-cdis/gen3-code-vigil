@@ -2,7 +2,7 @@
     String parameter JOB_NAME
     eg - manifest-indexing
 
-    String parameter APP_LABEL
+    String parameter LABEL_NAME
     eg - sowerjob
 
     String parameter EXPECT_FAILURE (parameter for negative sceanrio)
@@ -54,14 +54,14 @@ pipeline {
                                 sleep 10
                                 echo "Waiting for $JOB_NAME job pod ..."
 
-                                # checking if there are pods with APP_LABEL mentioned in parameters
-                                POD_NAMES=$(g3kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$APP_LABEL -o json | jq -r '.items[] | select(.metadata.name | test("^'"$JOB_NAME"'")) | .metadata.name')
+                                # checking if there are pods with LABEL_NAME mentioned in parameters
+                                POD_NAMES=$(g3kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$LABEL_NAME -o json | jq -r '.items[] | select(.metadata.name | test("^'"$JOB_NAME"'")) | .metadata.name')
                                 if [[ -z "$POD_NAMES" ]]; then
-                                    echo "No pods found with label $APP_LABEL"
+                                    echo "No pods found with label $LABEL_NAME"
                                 else
                                     # if pod/s found, get the status of the latest pod
                                     LATEST_POD=$(echo "$POD_NAMES" | tail -n 1)
-                                    echo "Pod found with label $APP_LABEL: $LATEST_POD"
+                                    echo "Pod found with label $LABEL_NAME: $LATEST_POD"
                                     POD_STATUS=$(g3kubectl -n $KUBECTL_NAMESPACE get pod $LATEST_POD -o jsonpath='{.status.phase}')
                                     echo "Pod status: $POD_STATUS"
                                     if [ "$POD_STATUS" == "Succeeded" ]; then
