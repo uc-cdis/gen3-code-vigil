@@ -10,7 +10,7 @@
     String parameter EXPIRES_IN
         e.g. NONE
 
-    Artifact archived -
+    Artifact archived - client_creds.txt
 */
 pipeline {
     agent {

@@ -119,15 +119,15 @@ def check_job_pod(
     )
     params = {
         "NAMESPACE": test_env_namespace,
-        "JOBNAME": job_name,
-        "LABELNAME": label_name,
-        "EXPECTFAILURE": expect_failure,
+        "JOB_NAME": job_name,
+        "LABEL_NAME": label_name,
+        "EXPECT_FAILURE": expect_failure,
     }
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            return job.get_build_result(build_num)
+            return {"logs.txt": job.get_artifact_content(build_num, "logs.txt")}
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
@@ -168,6 +168,42 @@ def create_fence_client(
             return {
                 "client_creds.txt": job.get_artifact_content(
                     build_num, "client_creds.txt"
+                ),
+            }
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def fence_client_rotate(
+    test_env_namespace: str,
+    client_name: str,
+    expires_in: str = "",
+):
+    """
+    Runs jenkins job to create a fence client
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "fence-client-rotate",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+        "CLIENT_NAME": client_name,
+        "EXPIRES_IN": expires_in,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return {
+                "client_rotate_creds.txt": job.get_artifact_content(
+                    build_num, "client_rotate_creds.txt"
                 ),
             }
         else:
