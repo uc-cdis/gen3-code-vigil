@@ -305,48 +305,7 @@ class Fence(object):
             )
         assert (
             response.status_code == 200
-        ), f"Expected status 200 but got {response.status_code}"
-        return response.json()
-
-    def complete_mulitpart_upload(
-        self, key, upload_id, parts, user, expected_status=200
-    ):
-        logger.info(parts)
-        headers = {
-            "Content-Type": "application/json",
-        }
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = requests.post(
-            url=f"{self.BASE_URL}{self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT}",
-            data=json.dumps({"key": key, "uploadId": upload_id, "parts": parts}),
-            auth=auth,
-            headers=headers,
-        )
-        assert (
-            response.status_code == expected_status
-        ), f"Expected status 200 but got {response.status_code}"
-        if expected_status != 200:
-            return
-        return response.json()
-
-    def upload_file_using_presigned_url(self, presigned_url, file_data, file_size):
-        headers = {"Content-Length": str(file_size)}
-        if isinstance(file_data, dict):
-            response = requests.put(url=presigned_url, data=file_data, headers=headers)
-        else:
-            response = requests.put(
-                url=presigned_url, data=open(file_data, "rb"), headers=headers
-            )
-        assert (
-            response.status_code == 200
         ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
-
-    def upload_data_using_presigned_url(self, presigned_url, file_data):
-        response = requests.put(url=presigned_url, data=file_data)
-        assert (
-            response.status_code == 200
-        ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
-        return response.headers["ETag"].strip('"')
 
     def upload_data_using_presigned_url(self, presigned_url, file_data):
         response = requests.put(url=presigned_url, data=file_data)

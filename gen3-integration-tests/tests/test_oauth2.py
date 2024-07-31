@@ -343,7 +343,7 @@ class TestOauth2:
             scopes="openid+user",
         )
         logger.info(url)
-        access_token = re.findall("access_token=[a-zA-z\d.-]*&", url)[0]
+        access_token = re.findall("access_token=[a-zA-z0-9.-]*&", url)[0]
         access_token = access_token.split("=")[-1]
         access_token = access_token.replace("&", "")
         logger.info(access_token)
