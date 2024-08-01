@@ -325,5 +325,6 @@ class Fence(object):
         assert (
             client_name in pytest.clients.keys()
         ), f"{client_name} not found in {pytest.clients.keys()}"
-        client_id, client_secret = pytest.clients[client_name].split(",")
+        client_info = pytest.clients[client_name].split(",")
+        client_id, client_secret = client_info[0], client_info[1]
         return client_id, client_secret
