@@ -20,7 +20,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.fence
-@pytest.mark.requires_basic_client
+@pytest.mark.requires_fence_client
 class TestOauth2:
     fence = Fence()
 
@@ -28,15 +28,10 @@ class TestOauth2:
     def setup_class(cls):
         # Generate Client id and secrets
         cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.fence.required_fence_client_info(client_name="basic-test-client")
+            cls.fence.get_client_id_secret(client_name="basic-test-client")
         )
         cls.implicit_test_client_id, cls.implicit_test_client_secret = (
-            create_fence_client(
-                test_env_namespace=pytest.namespace,
-                client_name="implicit-test-client",
-                user_name="test@example.com",
-                client_type="implicit",
-            )
+            cls.fence.get_client_id_secret(client_name="implicit-test-client")
         )
 
     def test_authorization_code_no_user_consent_fail_code_generation(self, page: Page):

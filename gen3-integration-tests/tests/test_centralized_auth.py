@@ -131,7 +131,7 @@ new_abc_records = {
 
 @pytest.mark.indexd
 @pytest.mark.fence
-@pytest.mark.requires_basic_client
+@pytest.mark.requires_fence_client
 class TestCentralizedAuth:
     indexd = Indexd()
     fence = Fence()
@@ -149,17 +149,11 @@ class TestCentralizedAuth:
 
         # Generate Client id and secrets
         cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.fence.required_fence_client_info(client_name="basic-test-client")
+            cls.fence.get_client_id_secret(client_name="basic-test-client")
         )
-        cls.basic_test_abc_client_id, cls.basic_test_abc_client_secret = (
-            create_fence_client(
-                test_env_namespace=pytest.namespace,
-                client_name="basic-test-abc-client",
-                user_name="test-abc-client@example.com",
-                client_type="basic",
-            )
+        cls.implicit_test_client_id, cls.implicit_test_client_secret = (
+            cls.fence.get_client_id_secret(client_name="basic-test-abc-client")
         )
-        run_gen3_job(pytest.namespace, "usersync")
 
         # Create indexd records
         for key, val in indexed_files.items():

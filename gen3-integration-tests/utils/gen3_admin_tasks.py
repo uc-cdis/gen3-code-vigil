@@ -2,6 +2,7 @@ import os
 import pytest
 import requests
 import time
+import json
 
 from dotenv import load_dotenv
 
@@ -143,11 +144,6 @@ def check_job_pod(
 
 def create_fence_client(
     test_env_namespace: str,
-    client_name: str,
-    user_name: str,
-    client_type: str,
-    arborist_policies: str = None,
-    expires_in: str = "",
 ):
     """
     Runs jenkins job to create a fence client
@@ -160,29 +156,15 @@ def create_fence_client(
         "fence-create-client",
     )
     params = {
-        "CLIENT_NAME": client_name,
-        "USER_NAME": user_name,
-        "CLIENT_TYPE": client_type,
-        "ARBORIST_POLICIES": arborist_policies,
-        "EXPIRES_IN": expires_in,
         "NAMESPACE": test_env_namespace,
     }
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            creds_data = job.get_artifact_content(
-                build_num, "client_creds.txt"
-            ).splitlines()
-            if len(creds_data) < 2:
-                raise Exception(
-                    "Client credentials file does not contain expected data format (2 lines)"
-                )
-
-            # assigning first line to client_id and second line to client secret
-            client_id = creds_data[0]
-            client_secret = creds_data[1]
-            return client_id, client_secret
+            pytest.clients = json.load(
+                job.get_artifact_content(build_num, "clients_creds.json")
+            )
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")

@@ -57,12 +57,8 @@ def pytest_collection_finish(session):
             # Access the markers for each test item
             markers = item.keywords
             for marker_name, marker in markers.items():
-                if marker_name == "requires_basic_client":
-                    setup.get_fence_client_info(
-                        client_name="basic-test-client",
-                        user_name="test-client@example.com",
-                        client_type="basic",
-                    )
+                if marker_name == "requires_fence_client":
+                    setup.get_fence_client_info()
                     return
 
 
@@ -84,6 +80,8 @@ def pytest_configure(config):
     # Compute root_url
     pytest.root_url = f"https://{hostname}"
 
+    # Accounts used for testing
+    pytest.clients = {}
     # Accounts used for testing
     pytest.users = {}
     pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user

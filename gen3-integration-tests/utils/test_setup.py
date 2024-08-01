@@ -44,17 +44,8 @@ def get_configuration_files():
             f.write(contents)
 
 
-def get_fence_client_info(client_name, user_name, client_type):
+def get_fence_client_info():
     # Create the client and return the client information
     client_id, client_secret = gen3_admin_tasks.create_fence_client(
-        test_env_namespace=pytest.namespace,
-        client_name=client_name,
-        user_name=user_name,
-        client_type=client_type,
+        test_env_namespace=pytest.namespace
     )
-    path = TEST_DATA_PATH_OBJECT / "fence_client"
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / f"{client_name}.txt"
-    with open(file_path, "w") as outfile:
-        outfile.write(f"{client_id}\n")
-        outfile.write(f"{client_secret}")

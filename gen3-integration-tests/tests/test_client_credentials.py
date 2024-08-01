@@ -5,6 +5,7 @@ import json
 
 from gen3.auth import Gen3Auth
 from services.requestor import Requestor
+from services.fence import Fence
 import utils.gen3_admin_tasks as gat
 
 from utils import logger
@@ -13,6 +14,7 @@ from utils import logger
 @pytest.mark.client_credentials
 @pytest.mark.fence
 @pytest.mark.requestor
+@pytest.mark.requires_fence_client
 class TestClientCredentials:
     def test_client_credentials(self):
         """
@@ -23,6 +25,7 @@ class TestClientCredentials:
             3. Create a new Requestor request with client_access_token
             4. Update the request to SIGNED status
         """
+        fence = Fence()
         client_access_token = None
         request_id = None
         username = pytest.users["user0_account"]
@@ -30,11 +33,8 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
-        client_id, client_secret = gat.create_fence_client(
-            pytest.namespace,
-            "jenkinsClientTester",
-            username,
-            "client_credentials",
+        client_id, client_secret = fence.get_client_id_secret(
+            client_name="jenkinsClientTester"
         )
 
         # Running usersync to sync the newly created client

@@ -320,11 +320,10 @@ class Fence(object):
         indexd.file_equals(res=response, file_record=file_node)
         return response
 
-    def required_fence_client_info(self, client_name):
+    def get_client_id_secret(self, client_name):
         """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
-        path = TEST_DATA_PATH_OBJECT / "fence_client" / f"{client_name}.txt"
-        assert os.path.exists(path), f"{path} doesn't exists."
-        with open(path, "r") as infile:
-            client_id = infile.readline().strip()
-            client_secret = infile.readline()
+        assert (
+            client_name in pytest.clients.keys()
+        ), f"{client_name} not found in {pytest.clients.keys()}"
+        client_id, client_secret = pytest.clients[client_name].split(",")
         return client_id, client_secret
