@@ -94,7 +94,7 @@ pipeline {
 
                             case "$CLIENT_TYPE" in
                                 "implicit")
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), None)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/\\2,\\3/")
+                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\),\\x27None\\27)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/\\2,\\3/")
                                     ;;
                                 *)
                                     CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), '\\(.*\\)')/\\2,\\3/")

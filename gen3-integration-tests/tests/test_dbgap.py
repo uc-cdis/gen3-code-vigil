@@ -102,24 +102,15 @@ class TestDbgap:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-        # Run usersync job with "FORCE true ONLY_DBGAP true"
-        run_gen3_command(
-            test_env_namespace=pytest.namespace,
-            command="gen3 job run usersync -w FORCE true ONLY_DBGAP true",
-        )
-
     @classmethod
     def teardown_class(cls):
         # Removing test indexd records
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
         cls.indexd.delete_records(cls.variables["created_dbgap_dids"])
 
-        # Run usersync job with "FORCE true ONLY_DBGAP true"
-        run_gen3_command(
-            test_env_namespace=pytest.namespace,
-            command="gen3 job run usersync -w FORCE true",
-        )
-
+    @pytest.mark.wip(
+        "To avoid running usersync multiple times and since ONLY_DBGAP is not used in real time."
+    )
     def test_created_signed_urls_upload_urls(self):
         """
         Scenario: dbGaP Sync: created signed urls (from s3 and gs) to download, try creating urls to upload
@@ -206,13 +197,6 @@ class TestDbgap:
             2. Create S3 signed url. main_account has access to phs000178 through dbgap
             3. File should get downloaded. Verify the contents of the file.
         """
-        # Run usersync job and add dbgap sync to yaml sync
-        # Run usersync job with "FORCE true ADD_DBGAP true"
-        run_gen3_command(
-            test_env_namespace=pytest.namespace,
-            command="gen3 job run usersync -w ADD_DBGAP true FORCE true",
-        )
-
         # Create S3 signed url. main_account has access to phs000178 through dbgap
         phs000178_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000178File"]["did"],

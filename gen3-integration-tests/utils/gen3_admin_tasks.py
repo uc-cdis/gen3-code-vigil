@@ -162,7 +162,7 @@ def create_fence_client(
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            pytest.clients = json.load(
+            pytest.clients = json.loads(
                 job.get_artifact_content(build_num, "clients_creds.json")
             )
         else:
