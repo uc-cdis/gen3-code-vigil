@@ -162,9 +162,7 @@ def create_fence_client(
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            pytest.clients = json.loads(
-                job.get_artifact_content(build_num, "clients_creds.json")
-            )
+            return job.get_artifact_content(build_num, "clients_creds.txt")
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")

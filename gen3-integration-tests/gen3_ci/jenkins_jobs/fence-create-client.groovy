@@ -89,20 +89,18 @@ pipeline {
 
                             echo "Running: ${FENCE_CMD}"
                             # execute the above fence command
-                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > client_creds.txt))
-                            file_content=$(cat client_creds.txt)
+                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > temp_client_cred.txt))
+                            file_content=$(cat temp_client_cred.txt)
 
                             case "$CLIENT_TYPE" in
                                 "implicit")
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\),None)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/\\x27\\2\\x27,\\x27\\3\\x27/")
+                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\),None)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/$CLIENT_NAME: \\2,\\3/")
                                     ;;
                                 *)
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), '\\(.*\\)')/\\x27\\2\\x27,\\x27\\3\\x27/")
+                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), '\\(.*\\)')/$CLIENT_NAME: \\2,\\3/")
                             esac
-                            json_output=$(jq -n --arg name "$CLIENT_NAME" --arg value "$CLIENT_CREDS" '{($name): $value}')
-                            combined=$(jq --argjson new "$json_output" '. * $new' <<< "$combined")
+                            echo $CLIENT_CREDS >> clients_creds.txt
                         done
-                        echo "$combined" > clients_creds.json
 
                         # Run usersync
                         gen3 job run usersync -w ADD_DBGAP true
@@ -117,7 +115,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'create-fence-client/clients_creds.json'
+            archiveArtifacts artifacts: 'create-fence-client/clients_creds.txt'
         }
     }
 }
