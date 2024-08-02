@@ -13,7 +13,6 @@ from playwright.sync_api import Page
 from utils.gen3_admin_tasks import (
     create_fence_client,
     run_gen3_job,
-    delete_fence_client,
 )
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))

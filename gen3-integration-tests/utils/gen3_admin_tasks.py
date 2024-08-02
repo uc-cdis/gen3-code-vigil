@@ -170,7 +170,7 @@ def create_fence_client(
         raise Exception("Build number not found")
 
 
-def delete_fence_client(test_env_namespace: str, client_name: str):
+def delete_fence_client(test_env_namespace: str):
     """
     Runs jenkins job to delete client
     Since this requires adminvm interaction we use jenkins.
@@ -182,7 +182,6 @@ def delete_fence_client(test_env_namespace: str, client_name: str):
         "fence-delete-client",
     )
     params = {
-        "CLIENT_NAME": client_name,
         "NAMESPACE": test_env_namespace,
     }
     build_num = job.build_job(params)

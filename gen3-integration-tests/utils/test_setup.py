@@ -52,3 +52,7 @@ def get_fence_client_info():
     file_path = path / "clients_creds.txt"
     with open(file_path, "w") as outfile:
         outfile.write(data)
+
+
+def delete_all_fence_clients():
+    gen3_admin_tasks.delete_fence_client(pytest.namespace)

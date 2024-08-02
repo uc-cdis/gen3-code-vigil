@@ -132,6 +132,8 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
-    directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
-    if os.path.exists(directory_path):
-        shutil.rmtree(directory_path)
+    if not hasattr(config, "workerinput"):
+        directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)
+        setup.delete_all_fence_clients()

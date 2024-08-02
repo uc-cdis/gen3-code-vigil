@@ -10,7 +10,7 @@ import json
 
 from services.fence import Fence
 from pages.login import LoginPage
-from utils.gen3_admin_tasks import create_fence_client, delete_fence_client
+from utils.gen3_admin_tasks import create_fence_client
 
 from cdislogging import get_logger
 from playwright.sync_api import Page

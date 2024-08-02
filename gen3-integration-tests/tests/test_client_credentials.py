@@ -68,9 +68,5 @@ class TestClientCredentials:
         if request_id:
             requestor.request_delete(request_id)
 
-        # Delete the client from the fence db
-        logger.info("Deleting client from the fence db ...")
-        gat.delete_fence_client(pytest.namespace, "jenkinsClientTester")
-
         logger.info("Revoking arborist policy for the user ...")
         gat.revoke_arborist_policy(pytest.namespace, username, policy)
