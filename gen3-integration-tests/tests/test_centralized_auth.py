@@ -151,7 +151,7 @@ class TestCentralizedAuth:
         cls.basic_test_client_id, cls.basic_test_client_secret = (
             cls.fence.get_client_id_secret(client_name="basic-test-client")
         )
-        cls.implicit_test_client_id, cls.implicit_test_client_secret = (
+        cls.basic_test_abc_client_id, cls.basic_test_abc_client_secret = (
             cls.fence.get_client_id_secret(client_name="basic-test-abc-client")
         )
 
