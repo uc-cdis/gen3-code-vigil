@@ -339,7 +339,6 @@ class Fence(object):
                     value = value.strip()
 
                     clients_dict[key] = value
-        logger.info(clients_dict)
         assert (
             client_name in clients_dict.keys()
         ), f"{client_name} not found in {clients_dict.keys()}"
