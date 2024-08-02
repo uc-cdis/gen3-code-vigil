@@ -37,8 +37,6 @@ class TestClientCredentials:
             client_name="jenkinsClientTester"
         )
 
-        # Running usersync to sync the newly created client
-        gat.run_gen3_job(pytest.namespace, "usersync")
         # TODO : wait for usersync pod to finish and completed
 
         gen3auth = Gen3Auth(
