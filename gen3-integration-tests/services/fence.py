@@ -31,24 +31,6 @@ class Fence(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
 
-    def get_access_token(self, api_key, raise_exception=True):
-        """Generate access token from api key"""
-        res = requests.post(
-            f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token",
-            data=json.dumps({"api_key": api_key}),
-        )
-        logger.info(f"Status code: {res.status_code}")
-        if res.status_code == 200:
-            return res.json()["access_token"]
-        else:
-            logger.info(f"Response: {res.text}")
-            if raise_exception:
-                raise Exception(
-                    f"Failed to get access token from {self.API_CREDENTIALS_ENDPOINT}/access_token"
-                )
-            else:
-                return res
-
     def create_signed_url(self, id, user, expectedStatus, params=[], access_token=None):
         """Creates a signed url for the requested id"""
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT

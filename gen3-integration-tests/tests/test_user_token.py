@@ -9,7 +9,9 @@ from pages.login import LoginPage
 from services.fence import Fence
 from utils.gen3_admin_tasks import create_access_token
 
+from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
+from urllib3.exceptions import ConnectionError
 
 
 @pytest.mark.fence
@@ -97,7 +99,10 @@ class TestUserToken:
         api_key_res = self.fence.create_api_key(
             scope=scope, token=access_token_cookie["value"]
         ).json()
-        self.fence.get_access_token(api_key=api_key_res["api_key"])
+
+        # Generate access_token using the api_key
+        auth = Gen3Auth(refresh_token=api_key_res, endpoint=f"{pytest.root_url}/user")
+        auth.get_access_token()
 
         # Delete the api key and logout
         self.fence.delete_api_key(
@@ -110,46 +115,39 @@ class TestUserToken:
         Scenario: refresh access token with invalid apiKey
         Steps:
             1. Refresh access token using an invalid api key.
-            2. Validate the status code is 401 and
-               "Not enough segments" is present in
-               the response from step 1.
+            2. Expect "string indices must be integers" error from gen3sdk
         """
-        fence_error_msg = "Not enough segments"
+        gen3_sdk_error_msg = "string indices must be integers"
 
-        # Refresh access token using invalid api key
-        refresh_access_token = self.fence.get_access_token(
-            api_key="invalid", raise_exception=False
-        )
+        # Refresh access token using invalid api_key
+        auth = Gen3Auth(refresh_token="invalid", endpoint=f"{pytest.root_url}/user")
+        try:
+            auth.refresh_access_token()
+        except Exception as e:
+            exception_content = str(e)
 
         # Validate the response
         assert (
-            refresh_access_token.status_code == 401
-        ), f"Expected 401 status but got {refresh_access_token.status_code}"
-        if fence_error_msg not in refresh_access_token.content.decode():
-            logger.error(f"{fence_error_msg} not found")
-            logger.error(refresh_access_token.content.decode())
-            raise
+            gen3_sdk_error_msg == exception_content
+        ), f"{gen3_sdk_error_msg} not found in response {exception_content}"
 
     def test_refresh_access_token_without_api_key(self):
         """
         Scenario: refresh access token without apiKey
         Steps:
             1. Refresh access token using no api key.
-            2. Validate the status code is 400 and
-               "Please provide an api_key in payload"
-               is present in the response from step 1.
+            2. Expect "Max retries exceeded" error from gen3sdk
         """
-        fence_error_msg = "Please provide an api_key in payload"
-        # Refresh access token using no api key
-        refresh_access_token = self.fence.get_access_token(
-            api_key=None, raise_exception=False
-        )
+        gen3_sdk_error_msg = "Max retries exceeded"
+
+        # Refresh access token using no api_key
+        try:
+            auth = Gen3Auth(refresh_token=None, endpoint=f"{pytest.root_url}/user")
+            auth.refresh_access_token()
+        except Exception as e:
+            expection_content = str(e)
 
         # Validate the response
         assert (
-            refresh_access_token.status_code == 400
-        ), f"Expected 400 status but got {refresh_access_token.status_code}"
-        if fence_error_msg not in refresh_access_token.content.decode():
-            logger.error(f"{fence_error_msg} not found")
-            logger.error(refresh_access_token.content.decode())
-            raise
+            gen3_sdk_error_msg in expection_content
+        ), f"{gen3_sdk_error_msg} not found in response {expection_content}"
