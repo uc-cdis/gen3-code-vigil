@@ -66,6 +66,7 @@ pipeline {
                                     echo "Pod status: $POD_STATUS"
                                     if [ "$POD_STATUS" == "Succeeded" ]; then
                                         echo "The container from pod $LATEST_POD is ready! Proceed with the assertion checks..."
+                                        kubectl logs $LATEST_POD -n $NAMESPACE > logs.txt
                                         break
                                     elif [ "$POD_STATUS" == "Failed" ]; then
                                         if [ "$EXPECT_FAILURE" == "True" ]; then
@@ -89,6 +90,11 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+    post {
+        always {
+            archiveArtifacts artifacts: 'check-kube-pod/logs.txt'
         }
     }
 }
