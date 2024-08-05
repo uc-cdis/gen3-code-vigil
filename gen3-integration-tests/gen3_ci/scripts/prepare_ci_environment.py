@@ -122,6 +122,7 @@ def generate_api_keys_for_test_users(namespace):
         "auxAcct1_account": "dummy-one@planx-pla.net",  # auxAcct1 user
         "auxAcct2_account": "smarty-two@planx-pla.net",  # auxAcct2 user
         "user0_account": "dcf-integration-test-0@planx-pla.net",  # user0 dcf_integration_test
+        "user2_account": "dcf-integration-test-2@planx-pla.net",  # user2 dcf_integration_test
     }
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),

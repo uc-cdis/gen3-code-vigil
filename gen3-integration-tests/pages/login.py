@@ -15,7 +15,8 @@ class LoginPage(object):
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
-        self.POP_UP_BOX = "//div[@id='popup']"  # pop_up_box
+        self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
+        self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
         self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -24,7 +25,13 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
-        self.LOGIN_BUTTON = "//button[contains(text(), 'Dev login') or contains(text(), 'Google') or contains(text(), 'BioData Catalyst Developer Login')]"
+        # from the list below, the LOGIN_BUTTON is selected in order of preference
+        # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
+        self.LOGIN_BUTTONS = [
+            "//button[contains(text(), 'Dev login')]",
+            "//button[contains(text(), 'Google')]",
+            "//button[contains(text(), 'BioData Catalyst Developer Login')]",
+        ]
         self.USER_PROFILE_DROPDOWN = (
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
         )
@@ -44,6 +51,11 @@ class LoginPage(object):
         page.context.add_cookies(
             [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
         )
+        # printing cookies if needed for debugging purposes
+        cookies = page.context.cookies()
+        for cookie in cookies:
+            logger.debug(f"{cookie['name']}={cookie['value']}")
+
         if idp == "ORCID":
             page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
@@ -51,7 +63,17 @@ class LoginPage(object):
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
         else:
-            page.locator(self.LOGIN_BUTTON).click()
+            for login_button in self.LOGIN_BUTTONS:
+                try:
+                    if page.locator(login_button).is_visible():
+                        button = page.locator(login_button)
+                        if button.is_enabled():
+                            button.click()
+                            logger.info(f"Clicked on login button : {login_button}")
+                            break
+                except TimeoutError:
+                    logger.info(f"Login Button {login_button} not found or not enabled")
+                    
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
@@ -120,7 +142,7 @@ class LoginPage(object):
                 popup_message,
             )
             screenshot(page, "DataUsePopup")
-            accept_button = page.get_by_role("button", name="Accept")
+            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
             if accept_button:
                 accept_button.click()
         else:
