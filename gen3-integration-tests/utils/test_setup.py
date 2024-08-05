@@ -42,3 +42,17 @@ def get_configuration_files():
     for file_name, contents in configs.items():
         with (path / file_name).open("w", encoding="utf-8") as f:
             f.write(contents)
+
+
+def get_fence_client_info():
+    # Create the client and return the client information
+    data = gen3_admin_tasks.create_fence_client(test_env_namespace=pytest.namespace)
+    path = TEST_DATA_PATH_OBJECT / "fence_clients"
+    path.mkdir(parents=True, exist_ok=True)
+    file_path = path / "clients_creds.txt"
+    with open(file_path, "w") as outfile:
+        outfile.write(data)
+
+
+def delete_all_fence_clients():
+    gen3_admin_tasks.delete_fence_client(pytest.namespace)

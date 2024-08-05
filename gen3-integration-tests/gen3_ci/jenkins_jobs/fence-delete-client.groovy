@@ -1,6 +1,6 @@
 /*
-    String parameter CLIENT_NAME
-        e.g. jenkinsClientTester
+    String parameter NAMESPACE
+        e.g. jenkins-blood
 */
 pipeline {
     agent {
@@ -37,9 +37,25 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source \$GEN3_HOME/gen3/gen3setup.sh
 
-                        DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
-                        echo "Running: ${DELETE_CMD}"
-                        bash -c "${DELETE_CMD}"
+
+                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN
+                        client_details=(
+                            "basic-test-client"
+                            "implicit-test-client"
+                            "basic-test-abc-client"
+                            "jenkinsClientTester"
+                            "jenkinsClientNoExpiration"
+                            "jenkinsClientShortExpiration"
+                            "jenkinsClientMediumExpiration"
+                            "jenkinsClientLongExpiration"
+                        )
+
+                        combined='{}'
+                        for CLIENT_NAME in "${client_details[@]}"; do
+                            DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
+                            echo "Running: ${DELETE_CMD}"
+                            bash -c "${DELETE_CMD}"
+                        done
                         '''
                     }
                 }
