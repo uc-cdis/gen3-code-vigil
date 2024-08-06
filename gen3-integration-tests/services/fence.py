@@ -33,7 +33,9 @@ class Fence(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
 
-    def create_signed_url(self, id, user, expectedStatus, params=[], access_token=None):
+    def create_signed_url(
+        self, id, user, expected_status, params=[], access_token=None
+    ):
         """Creates a signed url for the requested id"""
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
@@ -303,16 +305,13 @@ class Fence(object):
         indexd.file_equals(res=response, file_record=file_node)
         return response
 
-    def get_user_info(self, user: str = "main_account"):
-        """Get user info"""
-        user_info_response = requests.get(
-            f"{self.USER_ENDPOINT}", headers=pytest.auth_headers[user]
-        )
-        response_data = user_info_response.json()
-        logger.debug(f"User info {response_data}")
-        return response_data
-
-    def create_api_key(self, scope, token):
+    def create_api_key(self, scope, page, token=None):
+        login_page = LoginPage()
+        if not token:
+            # Login with main_account user and get the access_token
+            logger.info("Logging in with mainAcct")
+            login_page.go_to(page)
+            token = login_page.login(page)["value"]
         data = {
             "scope": scope,
         }
@@ -326,9 +325,10 @@ class Fence(object):
             json=data,
             headers=headers,
         )
-        return res
+        return res, token
 
-    def delete_api_key(self, api_key, token):
+    def delete_api_key(self, api_key, token, page):
+        login_page = LoginPage()
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -341,6 +341,7 @@ class Fence(object):
         assert (
             res.status_code == 204
         ), f"Expected status code 204 but got {res.status_code}"
+        login_page.logout(page)
 
     def get_client_id_secret(self, client_name):
         """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""

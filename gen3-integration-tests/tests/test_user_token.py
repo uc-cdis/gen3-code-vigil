@@ -5,7 +5,6 @@ USER TOKEN
 import pytest
 
 from utils import logger
-from pages.login import LoginPage
 from services.fence import Fence
 from utils.gen3_admin_tasks import create_access_token
 
@@ -17,7 +16,6 @@ from urllib3.exceptions import ConnectionError
 @pytest.mark.fence
 class TestUserToken:
     fence = Fence()
-    login_page = LoginPage()
 
     def test_create_api_key_success(self, page: Page):
         """
@@ -30,26 +28,18 @@ class TestUserToken:
         """
         scope = ["data", "user"]
 
-        # Login with main_account user and get the access_token
-        logger.info("Logging in with mainAcct")
-        self.login_page.go_to(page)
-        access_token_cookie = self.login_page.login(page)
-
         # Create the api key using the access_token
-        api_key_res = self.fence.create_api_key(
-            scope=scope, token=access_token_cookie["value"]
-        ).json()
+        api_key_res, access_token = self.fence.create_api_key(scope=scope, page=page)
         assert (
-            "api_key" in api_key_res.keys()
-        ), f"Expected api_key key but got {api_key_res}"
+            "api_key" in api_key_res.json().keys()
+        ), f"Expected api_key key but got {api_key_res.json()}"
 
         # Delete the api key and logout
         self.fence.delete_api_key(
-            api_key=api_key_res["key_id"], token=access_token_cookie["value"]
+            api_key=api_key_res.json()["key_id"], token=access_token, page=page
         )
-        self.login_page.logout(page)
 
-    def test_create_api_key_with_expired_access_token(self):
+    def test_create_api_key_with_expired_access_token(self, page: Page):
         """
         Scenario: create APIKey with expired access token
         Steps:
@@ -69,7 +59,9 @@ class TestUserToken:
         access_token = res.splitlines()[-1].strip()
 
         # Create the api key using the access_token
-        api_key_res = self.fence.create_api_key(scope=scope, token=access_token)
+        api_key_res, access_token = self.fence.create_api_key(
+            scope=scope, page=page, token=access_token
+        )
         assert (
             api_key_res.status_code == 401
         ), f"Expected 401 status but got {api_key_res.status_code}"
@@ -90,25 +82,19 @@ class TestUserToken:
         """
         scope = ["data", "user"]
 
-        # Login with main_account user and get the access_token
-        logger.info("Logging in with mainAcct")
-        self.login_page.go_to(page)
-        access_token_cookie = self.login_page.login(page)
-
         # Create the api key using the access_token
-        api_key_res = self.fence.create_api_key(
-            scope=scope, token=access_token_cookie["value"]
-        ).json()
+        api_key_res, access_token = self.fence.create_api_key(scope=scope, page=page)
 
         # Generate access_token using the api_key
-        auth = Gen3Auth(refresh_token=api_key_res, endpoint=f"{pytest.root_url}/user")
+        auth = Gen3Auth(
+            refresh_token=api_key_res.json(), endpoint=f"{pytest.root_url}/user"
+        )
         auth.get_access_token()
 
         # Delete the api key and logout
         self.fence.delete_api_key(
-            api_key=api_key_res["key_id"], token=access_token_cookie["value"]
+            api_key=api_key_res.json()["key_id"], token=access_token, page=page
         )
-        self.login_page.logout(page)
 
     def test_refresh_access_token_with_invalid_api_key(self):
         """
