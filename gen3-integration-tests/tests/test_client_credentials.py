@@ -5,6 +5,7 @@ import json
 
 from gen3.auth import Gen3Auth
 from services.requestor import Requestor
+from services.fence import Fence
 import utils.gen3_admin_tasks as gat
 
 from utils import logger
@@ -13,6 +14,7 @@ from utils import logger
 @pytest.mark.client_credentials
 @pytest.mark.fence
 @pytest.mark.requestor
+@pytest.mark.requires_fence_client
 class TestClientCredentials:
     def test_client_credentials(self):
         """
@@ -23,6 +25,7 @@ class TestClientCredentials:
             3. Create a new Requestor request with client_access_token
             4. Update the request to SIGNED status
         """
+        fence = Fence()
         client_access_token = None
         request_id = None
         username = pytest.users["user0_account"]
@@ -30,27 +33,10 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
-        client_creds = gat.create_fence_client(
-            pytest.namespace,
-            "jenkinsClientTester",
-            username,
-            "client_credentials",
+        client_id, client_secret = fence.get_client_id_secret(
+            client_name="jenkinsClientTester"
         )
 
-        # access the client_creds.txt and retrieving the client_creds
-        credsFile = client_creds["client_creds.txt"].splitlines()
-        if len(credsFile) < 2:
-            raise Exception(
-                "Client credentials file does not contain expected data format (2 lines)"
-            )
-
-        # assigning first line to client_id
-        # and assigning second line to client_secret
-        client_id = credsFile[0]
-        client_secret = credsFile[1]
-
-        # Running usersync to sync the newly created client
-        gat.run_gen3_job(pytest.namespace, "usersync")
         # TODO : wait for usersync pod to finish and completed
 
         gen3auth = Gen3Auth(
@@ -79,10 +65,6 @@ class TestClientCredentials:
         logger.info(f"Deleting the request id {request_id} from requestor db ...")
         if request_id:
             requestor.request_delete(request_id)
-
-        # Delete the client from the fence db
-        logger.info("Deleting client from the fence db ...")
-        gat.delete_fence_client(pytest.namespace, "jenkinsClientTester")
 
         logger.info("Revoking arborist policy for the user ...")
         gat.revoke_arborist_policy(pytest.namespace, username, policy)

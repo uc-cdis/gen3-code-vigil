@@ -34,7 +34,7 @@ class TestDiscoveryPage(object):
         logger.info("Tearing down - delete indexd record and study metadata")
         indexd = Indexd()
         mds = MetadataService()
-        indexd.delete_files([cls.variables["did"]])
+        indexd.delete_records([cls.variables["did"]])
         mds.delete_metadata(cls.variables["study_id"])
 
     def test_study_publish_search_export(self, page):
@@ -68,16 +68,16 @@ class TestDiscoveryPage(object):
         # Create indexd record
         indexd_records = {
             "test": {
-                "filename": "discovery_test.csv",
+                "file_name": "discovery_test.csv",
                 "did": self.variables["did"],
-                "link": "s3://cdis-presigned-url-test/testdata/discovery_test.csv",
-                "md5": self.variables["md5sum"],
+                "urls": ["s3://cdis-presigned-url-test/testdata/discovery_test.csv"],
+                "hashes": {"md5": self.variables["md5sum"]},
                 "authz": ["/programs/QA"],
                 "size": 16,
             }
         }
         indexd = Indexd()
-        indexd.create_files(indexd_records)
+        indexd.create_records(indexd_records)
 
         # Create study metadata record
         mds = MetadataService()

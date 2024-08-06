@@ -10,62 +10,29 @@ import json
 
 from services.fence import Fence
 from pages.login import LoginPage
-from utils.gen3_admin_tasks import create_fence_client, delete_fence_client
+from utils.gen3_admin_tasks import create_fence_client
 
 from cdislogging import get_logger
 from playwright.sync_api import Page
+
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.fence
+@pytest.mark.requires_fence_client
 class TestOauth2:
     fence = Fence()
-
-    def generate_fence_client(client_name, user_name, client_type="basic"):
-        client_creds = create_fence_client(
-            test_env_namespace=pytest.namespace,
-            client_name=client_name,
-            user_name=user_name,
-            client_type=client_type,
-        )
-
-        # access the client_creds.txt and retrieving the client_creds
-        credsFile = client_creds["client_creds.txt"].splitlines()
-        if len(credsFile) < 2:
-            raise Exception(
-                "Client credentials file does not contain expected data format (2 lines)"
-            )
-
-        # assigning first line to client_id
-        client_id = credsFile[0]
-        client_secret = credsFile[1]
-
-        return client_id, client_secret
 
     @classmethod
     def setup_class(cls):
         # Generate Client id and secrets
         cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.generate_fence_client(
-                client_name="basic-test-client", user_name="test-client@example.com"
-            )
+            cls.fence.get_client_id_secret(client_name="basic-test-client")
         )
-        # Implicit test client secret is always None
         cls.implicit_test_client_id, cls.implicit_test_client_secret = (
-            cls.generate_fence_client(
-                client_name="implicit-test-client",
-                user_name="test@example.com",
-                client_type="implicit",
-            )
+            cls.fence.get_client_id_secret(client_name="implicit-test-client")
         )
-
-    @classmethod
-    def teardown_class(cls):
-        # Delete the client from the fence db
-        logger.info("Deleting client from the fence db ...")
-        delete_fence_client(pytest.namespace, "basic-test-client")
-        delete_fence_client(pytest.namespace, "implicit-test-client")
 
     def test_authorization_code_no_user_consent_fail_code_generation(self, page: Page):
         """
@@ -371,7 +338,7 @@ class TestOauth2:
             scopes="openid+user",
         )
         logger.info(url)
-        access_token = re.findall("access_token=[a-zA-z\d.-]*&", url)[0]
+        access_token = re.findall("access_token=[a-zA-z0-9.-]*&", url)[0]
         access_token = access_token.split("=")[-1]
         access_token = access_token.replace("&", "")
         logger.info(access_token)

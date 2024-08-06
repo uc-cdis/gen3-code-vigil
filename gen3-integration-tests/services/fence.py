@@ -2,6 +2,7 @@ import json
 import pytest
 import requests
 import base64
+import os
 
 from utils.misc import retry
 
@@ -10,6 +11,7 @@ from pages.login import LoginPage
 from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 from utils.test_execution import screenshot
+from utils import TEST_DATA_PATH_OBJECT
 
 
 class Fence(object):
@@ -52,7 +54,9 @@ class Fence(object):
             # Perform GET requests without authorization code
             response = requests.get(self.BASE_URL + url, auth={})
         logger.info("Status code : " + str(response.status_code))
-        assert expectedStatus == response.status_code
+        assert (
+            expected_status == response.status_code
+        ), f"Expected response {expected_status}, but got {response.status_code}"
         if response.status_code == 200:
             return response.json()
         return response
@@ -337,3 +341,29 @@ class Fence(object):
         assert (
             res.status_code == 204
         ), f"Expected status code 204 but got {res.status_code}"
+
+    def get_client_id_secret(self, client_name):
+        """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
+        path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
+        clients_dict = {}
+
+        with open(path, "r") as file:
+            for line in file:
+                # Strip whitespace and skip empty lines
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Split line into key and value
+                if ":" in line:
+                    key, value = line.split(":", 1)
+                    key = key.strip()
+                    value = value.strip()
+
+                    clients_dict[key] = value
+        assert (
+            client_name in clients_dict.keys()
+        ), f"{client_name} not found in {clients_dict.keys()}"
+        client_info = clients_dict[client_name].split(",")
+        client_id, client_secret = client_info[0], client_info[1]
+        return client_id, client_secret
