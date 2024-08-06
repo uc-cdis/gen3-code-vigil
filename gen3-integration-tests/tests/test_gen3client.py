@@ -96,7 +96,7 @@ class TestGen3Client:
         time.sleep(20)
 
         record = indexd.get_record(guid)
-        rev = indexd.get_rev(record)
+        rev = record.get("rev", None)
 
         # Create a temporary directory for downloading the file via gen3-client
         download_path = f"tmpDownload_{current_time}"
@@ -131,7 +131,7 @@ class TestGen3Client:
             logger.info(f"The file {file_name} does not exist")
 
         # Delete the indexd record
-        delete_record = indexd.delete_record(guid, rev)
+        delete_record = indexd.delete_record_via_api(guid, rev)
         assert delete_record == 200, f"Failed to delete record {guid}"
 
         # Deleting the folder src from filesystem

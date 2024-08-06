@@ -1,7 +1,6 @@
 [tool.poetry]
 name = "gen3-integration-tests"
 version = "0.1.0"
-package-mode = false
 description = "Gen3 Integration Tests"
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -41,6 +40,7 @@ addopts = "--log-cli-level=ERROR"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
+  "requires_fence_client: tests for basic_test_client",
   # services
   "audit: tests for audit-service",
   "fence: test for fence service",
@@ -63,6 +63,7 @@ markers = [
   "graph_query: tests for querying graph data",
   "pfb: tests for pfb file handling",
   "workspace: tests for workspace page",
+  "study_registration: tests for study registration service"
 ]
 pythonpath = "."
 md_report = "true"

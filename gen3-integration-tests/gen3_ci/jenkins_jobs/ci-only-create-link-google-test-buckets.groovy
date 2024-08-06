@@ -1,16 +1,15 @@
 /*
-  String parameter NAMESPACE
-    e.g., qa-anvil
-  String parameter JENKINS_NAMESPACE
-    Default value - default
-
-  Archived artifacts - manifest.json
+    String parameter NAMESPACE
+        e.g., qa-anvil
+    String parameter JENKINS_NAMESPACE
+      Default value - default
+    Artifact archived - None
 */
 pipeline {
     agent {
       kubernetes {
-          namespace "${JENKINS_NAMESPACE}"
-          yaml '''
+            namespace "${JENKINS_NAMESPACE}"
+            yaml '''
 apiVersion: v1
 kind: Pod
 metadata:
@@ -87,7 +86,7 @@ spec:
                 cleanWs()
             }
         }
-        stage('Initial setup') {
+        stage('Initial Setup') {
             steps {
                 // cloud-automation
                 checkout([
@@ -100,26 +99,27 @@ spec:
                 ])
             }
         }
-        stage('Fetch manifest') {
+        stage('Create Link Google Test Buckets') {
             steps {
-                dir("fetch-manifest") {
+                dir("create-link-google-test-buckets"){
                     script {
                         sh '''#!/bin/bash +x
-                            set -e
-                            export GEN3_HOME=\$WORKSPACE/cloud-automation
-                            export KUBECTL_NAMESPACE=\${NAMESPACE}
-                            source \$GEN3_HOME/gen3/gen3setup.sh
-                            RESULT=`g3kubectl get configmaps manifest-all -o json | jq -r '.data.json'`
-                            echo "\$RESULT" > manifest.json
+                        set -e
+                        export GEN3_HOME=\$WORKSPACE/cloud-automation
+                        export KUBECTL_NAMESPACE=\${NAMESPACE}
+                        source $GEN3_HOME/gen3/gen3setup.sh
+
+                        # Create Google Test Buckets
+                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-qa --google-project-id dcf-integration --project-auth-id QA --public False
+                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-test --google-project-id dcf-integration --project-auth-id test --public False
+
+                        # Link phs ids to existing buckets
+                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000179 --bucket_id dcf-integration-qa --bucket_provider google
+                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000178 --bucket_id dcf-integration-test --bucket_provider google
                         '''
                     }
                 }
             }
-        }
-    }
-    post {
-        always {
-            archiveArtifacts artifacts: 'fetch-manifest/manifest.json'
         }
     }
 }

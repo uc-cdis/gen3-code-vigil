@@ -2,6 +2,7 @@ import os
 import pytest
 import requests
 import time
+import json
 
 from dotenv import load_dotenv
 
@@ -77,7 +78,12 @@ def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = Fal
         raise Exception("Build number not found")
 
 
-def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False):
+def run_gen3_job(
+    test_env_namespace: str,
+    job_name: str,
+    cmd_line_params: str = "",
+    roll_all: bool = False,
+):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     Since this requires adminvm interaction we use jenkins.
@@ -91,6 +97,7 @@ def run_gen3_job(test_env_namespace: str, job_name: str, roll_all: bool = False)
     params = {
         "NAMESPACE": test_env_namespace,
         "JOB_NAME": job_name,
+        "CMD_LINE_PARAMS": cmd_line_params,
         "GEN3_ROLL_ALL": roll_all,
     }
     build_num = job.build_job(params)
@@ -119,9 +126,9 @@ def check_job_pod(
     )
     params = {
         "NAMESPACE": test_env_namespace,
-        "JOBNAME": job_name,
-        "LABELNAME": label_name,
-        "EXPECTFAILURE": expect_failure,
+        "JOB_NAME": job_name,
+        "LABEL_NAME": label_name,
+        "EXPECT_FAILURE": expect_failure,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -137,11 +144,6 @@ def check_job_pod(
 
 def create_fence_client(
     test_env_namespace: str,
-    client_name: str,
-    user_name: str,
-    client_type: str,
-    arborist_policies: str = None,
-    expires_in: str = "",
 ):
     """
     Runs jenkins job to create a fence client
@@ -154,22 +156,13 @@ def create_fence_client(
         "fence-create-client",
     )
     params = {
-        "CLIENT_NAME": client_name,
-        "USER_NAME": user_name,
-        "CLIENT_TYPE": client_type,
-        "ARBORIST_POLICIES": arborist_policies,
-        "EXPIRES_IN": expires_in,
         "NAMESPACE": test_env_namespace,
     }
     build_num = job.build_job(params)
     if build_num:
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
-            return {
-                "client_creds.txt": job.get_artifact_content(
-                    build_num, "client_creds.txt"
-                ),
-            }
+            return job.get_artifact_content(build_num, "clients_creds.txt")
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
@@ -177,7 +170,7 @@ def create_fence_client(
         raise Exception("Build number not found")
 
 
-def delete_fence_client(test_env_namespace: str, client_name: str):
+def delete_fence_client(test_env_namespace: str):
     """
     Runs jenkins job to delete client
     Since this requires adminvm interaction we use jenkins.
@@ -189,7 +182,6 @@ def delete_fence_client(test_env_namespace: str, client_name: str):
         "fence-delete-client",
     )
     params = {
-        "CLIENT_NAME": client_name,
         "NAMESPACE": test_env_namespace,
     }
     build_num = job.build_job(params)
@@ -376,6 +368,31 @@ def kube_setup_service(test_env_namespace, servicename):
     )
     params = {
         "SERVICENAME": servicename,
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def create_link_google_test_buckets(test_env_namespace: str):
+    """
+    Runs jenkins job to execute command for creating and linking Google test buckets
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-create-link-google-test-buckets",
+    )
+    params = {
         "NAMESPACE": test_env_namespace,
     }
     build_num = job.build_job(params)

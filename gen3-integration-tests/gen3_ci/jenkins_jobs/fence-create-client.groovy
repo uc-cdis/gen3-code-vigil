@@ -1,14 +1,6 @@
 /*
-    String parameter CLIENT_NAME
-        e.g. jenkinsClientTester
-    String parameter USER_NAME
-        e.g. dcf-integration-test-0@planx-pla.net
-    String parameter CLIENT_TYPE
-        e.g. client_credentials or implicit
-    String parameter ARBORIST_POLICIES
-        e.g. NONE
-    String parameter EXPIRES_IN
-        e.g. NONE
+    String parameter NAMESPACE
+        e.g. jenkins-blood
 
     Artifact archived -
 */
@@ -47,36 +39,74 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
 
-                        # construct fence-create command depending on the parameters provided by the run
-                        FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create"
-                        echo "${FENCE_CMD}"
 
-                        if [ -n "$ARBORIST_POLICIES" ]; then
-                            FENCE_CMD="${FENCE_CMD} client-create --policies ${ARBORIST_POLICIES}"
-                        else
-                            FENCE_CMD="${FENCE_CMD} client-create"
-                        fi
+                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN
+                        client_details=(
+                            "basic-test-client,test-client@example.com,basic,None,"
+                            "implicit-test-client,test@example.com,implicit,None,"
+                            "basic-test-abc-client,test-abc-client@example.com,basic,None,"
+                            "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+                            "jenkinsClientNoExpiration,test-user,client_credentials,None,"
+                            "jenkinsClientShortExpiration,test-user,client_credentials,None,0.00000000001"
+                            "jenkinsClientMediumExpiration,test-user,client_credentials,None,4"
+                            "jenkinsClientLongExpiration,test-user,client_credentials,None,30"
+                        )
 
-                        case "$CLIENT_TYPE" in
-                            "client_credentials")
-                                FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --grant-types client_credentials"
-                                ;;
-                            "implicit")
-                                FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net --grant-types implicit --public"
-                                ;;
-                            *)
-                                FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net"
-                        esac
+                        combined='{}'
+                        for value in "${client_details[@]}"; do
+                            # Split the variable into an array using comma as the delimiter
+                            IFS=',' read -r CLIENT_NAME USER_NAME CLIENT_TYPE ARBORIST_POLICIES EXPIRES_IN <<< "${value}"
+                            echo "Creating client: ${CLIENT_NAME}"
 
-                        if [[ -n $EXPIRES_IN ]]; then
-                            FENCE_CMD="${FENCE_CMD} --expires-in ${EXPIRES_IN}"
-                        fi
+                            DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
+                            echo "Running: ${DELETE_CMD}"
+                            bash -c "${DELETE_CMD}"
 
-                        echo "Running: ${FENCE_CMD}"
-                        # execute the above fence command
-                        FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > client_creds.txt))
-                        sed -n 's/.*\\x27\\([^\\x27]*\\)\\x27,\\s*\\x27\\([^\\x27]*\\)\\x27.*/\\1\\n\\2/p' client_creds.txt > temp_client_creds.txt
-                        mv temp_client_creds.txt client_creds.txt
+                            # construct fence-create command depending on the parameters provided by the run
+                            FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create"
+                            echo "${FENCE_CMD}"
+
+                            if [ -n "$ARBORIST_POLICIES" ]; then
+                                FENCE_CMD="${FENCE_CMD} client-create --policies ${ARBORIST_POLICIES}"
+                            else
+                                FENCE_CMD="${FENCE_CMD} client-create"
+                            fi
+
+                            case "$CLIENT_TYPE" in
+                                "client_credentials")
+                                    FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --grant-types client_credentials"
+                                    ;;
+                                "implicit")
+                                    FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net --grant-types implicit --public"
+                                    ;;
+                                *)
+                                    FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net"
+                            esac
+
+                            if [[ -n $EXPIRES_IN ]]; then
+                                FENCE_CMD="${FENCE_CMD} --expires-in ${EXPIRES_IN}"
+                            fi
+
+                            echo "Running: ${FENCE_CMD}"
+                            # execute the above fence command
+                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > temp_client_cred.txt))
+                            file_content=$(cat temp_client_cred.txt)
+
+                            case "$CLIENT_TYPE" in
+                                "implicit")
+                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\),None)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/$CLIENT_NAME: \\2,\\3/")
+                                    ;;
+                                *)
+                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), '\\(.*\\)')/$CLIENT_NAME: \\2,\\3/")
+                            esac
+                            echo $CLIENT_CREDS >> clients_creds.txt
+                        done
+
+                        # Run usersync
+                        gen3 job run usersync -w ADD_DBGAP true
+
+                        # Validate pods to roll up
+                        gen3 kube-wait4-pods || true
                         '''
                     }
                 }
@@ -85,7 +115,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'create-fence-client/client_creds.txt'
+            archiveArtifacts artifacts: 'create-fence-client/clients_creds.txt'
         }
     }
 }

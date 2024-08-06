@@ -85,8 +85,8 @@ class GraphDataTools:
                 "manifest.json not found. It should have been fetched by `get_configuration_files`..."
             )
             raise
-
-        dictionary_url = manifest.get("data", {}).get("dictionary_url")
+            
+        dictionary_url = manifest.get("global", {}).get("dictionary_url")
         assert dictionary_url, "No dictionary URL in manifest.json"
 
         data_path = self.test_data_path
@@ -126,6 +126,7 @@ class GraphDataTools:
         """
         Creates a program record. Uses the `program_name` set during the initialization
         of the `GraphDataTools` instance.
+
         """
         # Check if program exists or not
         if (
@@ -161,6 +162,7 @@ class GraphDataTools:
             }
             self.sdk.create_project(self.program_name, project_record)
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def _load_test_records(self) -> None:
         """
         Load into `self.test_records` all the test records as generated and saved at

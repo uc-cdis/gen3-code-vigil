@@ -18,20 +18,20 @@ class Audit(object):
 
     @retry(times=3, delay=10, exceptions=(AssertionError))
     def audit_query(
-        self, logCategory, user, user_email, expectedStatus, audit_category
+        self, log_category, user, user_email, expected_status, audit_category
     ):
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = ["start={}".format(timestamp), "username={}".format(user_email)]
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
+        url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
         url = url + "?" + "&".join(params)
         response = auth.curl(path=url)
         logger.info(audit_category + " status code : " + str(response.status_code))
-        assert expectedStatus == response.status_code
+        assert expected_status == response.status_code
         return True
 
-    def check_query_results(self, logCategory, user, params, expectedResults):
-        url = self.AUDIT_LOG_ENDPOINT + "/" + logCategory
+    def check_query_results(self, log_category, user, params, expected_results):
+        url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
         url = url + "?" + "&".join(params)
         counter = 0
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
@@ -45,9 +45,9 @@ class Audit(object):
             # Counter to check response is recieved within 5 mins
             if len(data["data"]) != 0:
                 logger.info(data["data"])
-                for key, val in expectedResults.items():
+                for key, val in expected_results.items():
                     # Get the first entry of json data
-                    assert data["data"][0][key] == expectedResults[key]
+                    assert data["data"][0][key] == expected_results[key]
                 return True
             counter += 1
 
