@@ -16,8 +16,9 @@ def get_failed_suites():
         with open(suite_report_path) as f:
             csv_reader = csv.DictReader(f)
             for row in csv_reader:
-                if row["Status"] not in ("passed", "skipped"):
-                    failed_suites.add(row["Sub Suite"])
+                row = {k.upper(): v for k, v in row.items()}
+                if row["STATUS"] not in ("passed", "skipped"):
+                    failed_suites.add(row["SUB SUITE"])
         failed_suites_block = {
             "type": "section",
             "text": {

@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import shutil
 
 from xdist import is_xdist_controller
 from xdist.scheduler import LoadScopeScheduling
@@ -13,6 +14,8 @@ from utils import TEST_DATA_PATH_OBJECT
 from dotenv import load_dotenv
 
 load_dotenv()
+
+collected_items = []
 
 
 class XDistCustomPlugin:
@@ -40,8 +43,23 @@ class CustomScheduling(LoadScopeScheduling):
         if node.get_closest_marker("workspace"):
             return "__workspace__"
 
+        if node.get_closest_marker("requires_basic_client"):
+            return "__requires_basic_client__"
+
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
+
+
+def pytest_collection_finish(session):
+    # Iterate through the collected test items
+    if not hasattr(session.config, "workerinput"):
+        for item in session.items:
+            # Access the markers for each test item
+            markers = item.keywords
+            for marker_name, marker in markers.items():
+                if marker_name == "requires_fence_client":
+                    setup.get_fence_client_info()
+                    return
 
 
 def pytest_configure(config):
@@ -63,6 +81,8 @@ def pytest_configure(config):
     pytest.root_url = f"https://{hostname}"
 
     # Accounts used for testing
+    pytest.clients = {}
+    # Accounts used for testing
     pytest.users = {}
     pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user
     pytest.users["indexing_account"] = "ctds.indexing.test@gmail.com"  # indexing admin
@@ -70,6 +90,9 @@ def pytest_configure(config):
     pytest.users["auxAcct2_account"] = "smarty-two@planx-pla.net"  # auxAcct2 user
     pytest.users["user0_account"] = (
         "dcf-integration-test-0@planx-pla.net"  # user0 dcf_integration_test
+    )
+    pytest.users["user1_account"] = (
+        "dcf-integration-test-1@planx-pla.net"  # user1 dcf_integration_test
     )
     pytest.users["user2_account"] = (
         "dcf-integration-test-2@planx-pla.net"  # user2 dcf_integration_test
@@ -106,3 +129,11 @@ def pytest_configure(config):
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+
+
+def pytest_unconfigure(config):
+    if not hasattr(config, "workerinput"):
+        directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)
+        setup.delete_all_fence_clients()
