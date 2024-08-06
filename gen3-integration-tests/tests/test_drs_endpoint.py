@@ -87,6 +87,7 @@ class TestDrsEndpoints:
         assert (
             res.status_code == 404
         ), f"Expected status code 404, but got {res.status_code}"
+        logger.info(res.content)
 
     def test_get_drs_presigned_url(self):
         """
@@ -117,8 +118,8 @@ class TestDrsEndpoints:
             signed_url_res.status_code == 400
         ), f"Expected status 400 but got {signed_url_res.status_code}"
         assert (
-            expected_msg in signed_url_res.content
-        ), f"{expected_msg} not found in {signed_url_res.content}"
+            expected_msg in signed_url_res.content.decode()
+        ), f"{expected_msg} not found in {signed_url_res.content.decode()}"
 
     def test_get_drs_presigned_url_no_auth_header(self):
         """

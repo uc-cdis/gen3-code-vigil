@@ -2,7 +2,6 @@ import pytest
 import requests
 
 from gen3.auth import Gen3Auth
-from gen3.index import Gen3Index
 from uuid import uuid4
 from utils import logger
 
