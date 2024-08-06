@@ -37,10 +37,13 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page):
+    def go_to(self, page: Page, url=None):
         """Goes to the login page"""
-        page.goto(self.BASE_URL)
-        page.wait_for_selector(self.READY_CUE, state="visible")
+        if url:
+            page.goto(url)
+        else:
+            page.goto(self.BASE_URL)
+            page.wait_for_selector(self.READY_CUE, state="visible")
         screenshot(page, "LoginPage")
 
     def login(self, page: Page, user="main_account", idp="Google"):
@@ -73,7 +76,7 @@ class LoginPage(object):
                             break
                 except TimeoutError:
                     logger.info(f"Login Button {login_button} not found or not enabled")
-                    
+
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
@@ -105,16 +108,23 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
 
-    def ras_login(self, page: Page):
+    def ras_login(
+        self,
+        page: Page,
+        username=os.environ["CI_TEST_RAS_USERID"],
+        password=os.environ["CI_TEST_RAS_PASSWORD"],
+    ):
         # Perform RAS Login
         ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
         expect(ras_login_button).to_be_visible(timeout=5000)
-        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_USERID"])
-        page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
+        page.locator(self.RAS_USERNAME_INPUT).fill(username)
+        page.locator(self.RAS_PASSWORD_INPUT).fill(password)
+        screenshot(page, "BeforeRASLogin")
         ras_login_button.click()
         # Handle the Grant access button
         if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=3000):
             page.locator(self.RAS_GRANT_BUTTON).click()
+        screenshot(page, "AfterRASLogin")
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""

@@ -50,6 +50,7 @@ pipeline {
                             "jenkinsClientShortExpiration,test-user,client_credentials,None,0.00000000001"
                             "jenkinsClientMediumExpiration,test-user,client_credentials,None,4"
                             "jenkinsClientLongExpiration,test-user,client_credentials,None,30"
+                            "ras-test-client,UCtestuser128,basic,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,"
                         )
 
                         combined='{}'
