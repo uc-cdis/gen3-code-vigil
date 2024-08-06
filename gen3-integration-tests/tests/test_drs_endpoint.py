@@ -108,6 +108,7 @@ class TestDrsEndpoints:
             1. Get the drs presgined url for indexd record (invalid_protocol).
             2. Validate the response is 400 since the s2 protocol used here is not supported.
         """
+        expected_msg = "The specified protocol s2 is not supported"
         signed_url_res = self.drs.get_drs_signed_url(
             file=indexd_files["invalid_protocol"]
         )
@@ -115,6 +116,9 @@ class TestDrsEndpoints:
         assert (
             signed_url_res.status_code == 400
         ), f"Expected status 400 but got {signed_url_res.status_code}"
+        assert (
+            expected_msg in signed_url_res.content
+        ), f"{expected_msg} not found in {signed_url_res.content}"
 
     def test_get_drs_presigned_url_no_auth_header(self):
         """
