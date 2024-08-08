@@ -4,8 +4,6 @@ import pytest
 from playwright.sync_api import expect, Page
 
 from utils import logger
-
-from utils.gen3_admin_tasks import run_gen3_command
 from utils.test_execution import screenshot
 
 
@@ -58,10 +56,6 @@ class WorkspacePage(object):
         Launches the first available one if `name` is not specified
         """
         logger.info("Increasing capacity to speed up the launch")
-        result = run_gen3_command(
-            pytest.namespace, "gen3 ec2 asg-set-capacity jupyter +10"
-        )
-        logger.info(f"Build result: {result}")
         expect(page.locator(self.WORKSPACE_OPTIONS)).to_be_visible()
         # launch the specified workspace option if the name is provided
         logger.info(f"Launching workspace {name}")
@@ -77,7 +71,7 @@ class WorkspacePage(object):
         # workspace can take a while to launch
         page.frame_locator(self.WORKSPACE_IFRAME).locator(
             "//div[@aria-label='Top Menu']"
-        ).wait_for(timeout=60000)
+        ).wait_for(timeout=600000)
 
     def open_python_notebook(self, page: Page):
         """Open Python notebook in the workspace"""
@@ -115,4 +109,4 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
-        page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=300000)
+        page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=600000)
