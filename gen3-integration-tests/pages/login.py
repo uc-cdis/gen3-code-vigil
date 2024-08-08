@@ -37,16 +37,22 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page, url=None):
+    def go_to(
+        self,
+        page: Page,
+    ):
         """Goes to the login page"""
-        if url:
-            page.goto(url)
-        else:
-            page.goto(self.BASE_URL)
-            page.wait_for_selector(self.READY_CUE, state="visible")
+        page.goto(self.BASE_URL)
+        page.wait_for_selector(self.READY_CUE, state="visible")
         screenshot(page, "LoginPage")
 
-    def login(self, page: Page, user="main_account", idp="Google"):
+    def login(
+        self,
+        page: Page,
+        user="main_account",
+        idp="Google",
+        validate_username_locator=True,
+    ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
         Also checks if the access_token exists after login
@@ -78,7 +84,8 @@ class LoginPage(object):
                     logger.info(f"Login Button {login_button} not found or not enabled")
 
         screenshot(page, "AfterLogin")
-        page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
+        if validate_username_locator:
+            page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
         self.handle_popup(page)
         screenshot(page, "AfterPopUpAccept")

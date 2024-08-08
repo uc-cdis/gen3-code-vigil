@@ -49,7 +49,7 @@ class TestRasAuthN:
         NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
         secrets to be configured with RAS credentials
         """
-        self.login_page.go_to(page=page, url=self.url)
+        page.goto(self.url)
         self.login_page.ras_login(
             page=page, password="THIS_IS_AN_INVALID_PASSWORD_FOR_RAS_USER"
         )
