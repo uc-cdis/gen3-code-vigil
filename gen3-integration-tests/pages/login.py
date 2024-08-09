@@ -1,7 +1,6 @@
 # Login Page
 import os
 import pytest
-import time
 
 from utils import logger
 from playwright.sync_api import Page, expect
@@ -113,9 +112,8 @@ class LoginPage(object):
         page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_USERID"])
         page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
         ras_login_button.click()
-        time.sleep(3)
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=3000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_enabled(timeout=5000):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
