@@ -73,7 +73,7 @@ class LoginPage(object):
                             break
                 except TimeoutError:
                     logger.info(f"Login Button {login_button} not found or not enabled")
-                    
+
         screenshot(page, "AfterLogin")
         page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
 
@@ -114,7 +114,8 @@ class LoginPage(object):
         page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
         ras_login_button.click()
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=3000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_enabled(timeout=5000):
+            logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
     def logout(self, page: Page):
