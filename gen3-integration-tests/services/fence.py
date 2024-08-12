@@ -390,7 +390,7 @@ class Fence(object):
             logger.info(f"Google account with user {user} is unlinked successfully")
         else:
             logger.info(
-                f"Unlinking was unsuccessful with status code {delete_res.status_status}"
+                f"Unlinking was unsuccessful with status code {delete_res.status_code}"
             )
             return delete_res.status_code
 

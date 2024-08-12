@@ -15,7 +15,9 @@ class TestLinkGoogleAccount:
         """
         Scenario:
         Steps:
-            1.
+            1. Linking the google account for user main_account
+            2. Check the status of the linking is 200
+            3. Unlink the google account for user main_account
         """
         self.fence.link_google_account(user="main_account")
         self.fence.unlink_google_account(user="main_account")
@@ -24,7 +26,9 @@ class TestLinkGoogleAccount:
         """
         Scenario:
         Steps:
-            1.
+            1. Linking the google account for user main_account
+            2. Extend the expiration time for the linking and check if it got applied
+            3. Unlink the google account for user main_account
         """
         self.fence.link_google_account(user="main_account")
         self.fence.extend_expiration(user="main_account", expires_in=5)
@@ -34,7 +38,11 @@ class TestLinkGoogleAccount:
         """
         Scenario:
         Steps:
-            1.
+            1. Linking the google account for user main_account with expires_in parameter of 5secs
+            2. Get the 'exp' form the url and validate the expiration time
+            3. Wait for 5 secs so that expiration time lapses
+            4. Then try to extend the expiration on the link and validate the expiration time
+            5. Unlink the google account for user main_account
         """
         expires_in = 5
         request_time = datetime.datetime.now()
@@ -67,27 +75,30 @@ class TestLinkGoogleAccount:
         """
         Scenario:
         Steps:
-            1.
+            1. Unlink the account which does not have any linked account
+            2. Expect 404 status_code
         """
-        linking_url, status_code = self.fence.unlink_google_account(
-            user="auxAcct2_account"
-        )
+        status_code = self.fence.unlink_google_account(user="auxAcct2_account")
         assert status_code == 404
 
     def test_extend_link_unlinked_account(self):
         """
         Scenario:
         Steps:
-            1.
+            1. Try to extend the expiration time of unlinked_account
+            2. Expect 404 status_code
         """
-        linking_url, status_code = self.fence.extend_expiration(user="main_account")
+        status_code = self.fence.extend_expiration(user="main_account")
         assert status_code == 404
 
     def test_link_already_linked_account(self):
         """
         Scenario:
         Steps:
-            1.
+            1. Linking the google account for user main_account
+            2. Check the status of the linking is 200
+            3. Again try to link the google account for user main_account and expect error message
+            4. Unlink the google account for user main_account
         """
         # linking the google account for the first time
         self.fence.link_google_account(user="main_account")
@@ -108,10 +119,14 @@ class TestLinkGoogleAccount:
         """
         Scenario:
         Steps:
-            1.
+            1. Linking the google account for user auxAcct1
+            2. Run the jenkins job to force-link auxAcct1 with main_account email id
+            3. Then try to link google account with user main_account with main_account email id
+            4. Expect an error saying "The account specified is already linked to a different user."
+            . Unlink the google account for user auxAcct1
         """
         # linking the google account to ensure a proxy group is created for the user
-        # self.fence.link_google_account(user="auxAcct1_account")
+        self.fence.link_google_account(user="auxAcct1_account")
 
         # send a force-link-google command to link user dummy-one with email cdis.autotest@gmail.com
         self.fence.force_linking(
