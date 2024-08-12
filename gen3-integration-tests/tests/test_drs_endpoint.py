@@ -138,6 +138,7 @@ class TestDrsEndpoints:
 
         # Get the fence version
         sem_ver_version = self.fence.get_version()
+        sem_ver_version = sem_ver_version.split("-")[0]
 
         # Verify which version to use
         if Version(sem_ver_version) >= Version(min_monthly_release) or (
