@@ -5,10 +5,11 @@ from utils import logger
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 import utils.gen3_admin_tasks as gat
-from services.indexd import Indexd
+from services.fence import Fence
 
 
 @pytest.mark.fence
+@pytest.mark.requires_fence_client
 class TestOIDCClient:
     def test_oidc_client_expiration(self):
         """
@@ -18,35 +19,17 @@ class TestOIDCClient:
             2. Get client_id and client_secrets after each create request and store it
             3. Run `fence-delete-expired-clients` gen3job and check the logs for confirmation
         """
-        client_info = [
-            ["jenkinsClientNoExpiration", ""],  # not in logs
-            ["jenkinsClientShortExpiration", "0.00000000001"],  # in the logs
-            ["jenkinsClientMediumExpiration", 4],  # in the logs
-            ["jenkinsClientLongExpiration", 30],  # not in logs
+        fence = Fence()
+        clients = [
+            ["jenkinsClientNoExpiration"],  # not in logs
+            ["jenkinsClientShortExpiration"],  # in the logs
+            ["jenkinsClientMediumExpiration"],  # in the logs
+            ["jenkinsClientLongExpiration"],  # not in logs
         ]
-        for client in client_info:
-            client_name, expires_in = client
-            logger.info(
-                f"Creating client {client_name} expiring in {expires_in} days ..."
-            )
-            client_creds = gat.create_fence_client(
-                pytest.namespace,
-                client_name,
-                "test-user",
-                "client_credentials",
-                None,
-                expires_in,
-            )
-            credsFile = client_creds["client_creds.txt"].splitlines()
-            if len(credsFile) < 2:
-                raise Exception(
-                    "Client credentials file does not contain expected data format (2 lines)"
-                )
-            client_id = credsFile[0]
-            client_secret = credsFile[1]
-
-            client.append(client_id)
-            client.append(client_secret)
+        for client in clients:
+            logger.info(f"Getting client_id and client_secret for {client[0]} ...")
+            client_id, client_secret = fence.get_client_id_secret(client_name=client[0])
+            client.extend([client_id, client_secret])
 
             # checking if the access_token is created with client_id and client_secret
             gen3auth = Gen3Auth(
@@ -54,7 +37,7 @@ class TestOIDCClient:
                 client_credentials=(client_id, client_secret),
             )
             client_access_token = gen3auth.get_access_token()
-            logger.debug(f"Client Access Token : {client_access_token}")
+            logger.info(f"Client Access Token : {client_access_token}")
             assert client_access_token, "Client access token was not created"
 
         # running fence-delete-expired-clients job
@@ -64,7 +47,7 @@ class TestOIDCClient:
             pytest.namespace, "fence-delete-expired-clients", "gen3job"
         )
         logs_contents = job_logs["logs.txt"]
-        logger.debug(f"Logs: {logs_contents}")
+        logger.info(f"Logs: {logs_contents}")
 
         # assertion from logs
         assert (
@@ -87,8 +70,8 @@ class TestOIDCClient:
         ), "jenkinsClientLongExpiration found in logs"
 
         # Testing if the non-expired clients still work properly
-        for client in client_info:
-            client_name, _, client_id, client_secret = client
+        for client in clients:
+            client_name, client_id, client_secret = client
             # you shouldnt be able to get access_token for client jenkinsClientShortExpiration
             if client_name != "jenkinsClientShortExpiration":
                 gen3auth = Gen3Auth(
@@ -96,7 +79,7 @@ class TestOIDCClient:
                     client_credentials=(client_id, client_secret),
                 )
                 client_token = gen3auth.get_access_token()
-                logger.debug(
+                logger.info(
                     f"Access Token for client {client_name} after running fence job : {client_token}"
                 )
                 assert (
@@ -105,12 +88,6 @@ class TestOIDCClient:
             else:
                 # expected result for client jenkinsClientShortExpiration
                 logger.info("Access Token is not found")
-
-        # Deleting clients after the test is done
-        for client in client_info:
-            client_name, _, client_id, client_secret = client
-            logger.info(f"Deleting {client_name} from fence DB ...")
-            gat.delete_fence_client(pytest.namespace, client_name)
 
     def test_oidc_client_rotation(self):
         """
@@ -122,22 +99,10 @@ class TestOIDCClient:
             4. Get access_token with help of client_credentials creds1 and cred2
             5. Send indexd post request to add indexd record and check if it successful request
         """
+        fence = Fence()
         client_name = "jenkinsClientTester"
-        logger.info(f"Creating client {client_name} ...")
-        client_creds = gat.create_fence_client(
-            pytest.namespace,
-            client_name,
-            "test-user",
-            "client_credentials",
-        )
-        # Get credentials before run client-rotate command in fence pod for client
-        credsFile = client_creds["client_creds.txt"].splitlines()
-        if len(credsFile) < 2:
-            raise Exception(
-                "Client credentials file does not contain expected data format (2 lines)"
-            )
-        client_id = credsFile[0]
-        client_secret = credsFile[1]
+        logger.info(f"Getting client_id and client_secret for client {client_name} ...")
+        client_id, client_secret = fence.get_client_id_secret(client_name=client_name)
 
         # Run client-rotate command in fence pod for client
         logger.info(f"Rotating creds for client {client_name} ...")
@@ -184,6 +149,9 @@ class TestOIDCClient:
         }
         # sending indexd request with access_token before running client-fence-rotate
         index_before = Gen3Index(auth_provider=gen3auth_before)
+        logger.info(
+            "Creating index record with client creds before client rotation ... "
+        )
         record1 = index_before.create_record(
             hashes=data["hashes"],
             urls=data["urls"],
@@ -191,11 +159,14 @@ class TestOIDCClient:
             size=data["size"],
             authz=data["authz"],
         )
-        logger.debug(f"Indexd Record created with did : {record1["did"]}")
+        logger.debug(f'Indexd Record created with did : {record1["did"]}')
         assert record1["did"], "Indexd record not created successfully"
 
         # sending indexd request with access_token after running client-fence-rotate
         index_after = Gen3Index(auth_provider=gen3auth_after)
+        logger.info(
+            "Creating index record with client creds after client rotation ... "
+        )
         record2 = index_after.create_record(
             hashes=data["hashes"],
             urls=data["urls"],
@@ -203,9 +174,5 @@ class TestOIDCClient:
             size=data["size"],
             authz=data["authz"],
         )
-        logger.debug(f"Indexd Record created with did : {record2["did"]}")
+        logger.debug(f'Indexd Record created with did : {record2["did"]}')
         assert record2["did"], "Indexd record not created successfully"
-
-        # deleting client after the test
-        logger.info(f"Deleting client jenkinsClientTester from fence DB ...")
-        gat.delete_fence_client(pytest.namespace, "jenkinsClientTester")
