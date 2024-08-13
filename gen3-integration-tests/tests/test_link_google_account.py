@@ -13,7 +13,7 @@ class TestLinkGoogleAccount:
 
     def test_link_unlink_google_account(self):
         """
-        Scenario:
+        Scenario: Link and Unlink Google Account
         Steps:
             1. Linking the google account for user main_account
             2. Check the status of the linking is 200
@@ -24,7 +24,7 @@ class TestLinkGoogleAccount:
 
     def test_extend_expiration_before_expiration(self):
         """
-        Scenario:
+        Scenario: Extending expiration time on link before expiration time
         Steps:
             1. Linking the google account for user main_account
             2. Extend the expiration time for the linking and check if it got applied
@@ -36,7 +36,7 @@ class TestLinkGoogleAccount:
 
     def test_extend_expiration_after_expiration(self):
         """
-        Scenario:
+        Scenario: Extending expiration time on link after expiration time
         Steps:
             1. Linking the google account for user main_account with expires_in parameter of 5secs
             2. Get the 'exp' form the url and validate the expiration time
@@ -73,7 +73,7 @@ class TestLinkGoogleAccount:
 
     def test_unlink_unlinked_account(self):
         """
-        Scenario:
+        Scenario: Unlinking unlinked account
         Steps:
             1. Unlink the account which does not have any linked account
             2. Expect 404 status_code
@@ -83,7 +83,7 @@ class TestLinkGoogleAccount:
 
     def test_extend_link_unlinked_account(self):
         """
-        Scenario:
+        Scenario: Extend expiration time on unlinked account
         Steps:
             1. Try to extend the expiration time of unlinked_account
             2. Expect 404 status_code
@@ -93,7 +93,7 @@ class TestLinkGoogleAccount:
 
     def test_link_already_linked_account(self):
         """
-        Scenario:
+        Scenario: Linking already linked account
         Steps:
             1. Linking the google account for user main_account
             2. Check the status of the linking is 200
@@ -117,7 +117,7 @@ class TestLinkGoogleAccount:
 
     def test_link_already_linked_account_with_diff_user(self):
         """
-        Scenario:
+        Scenario: Linking account with email address linked to different account
         Steps:
             1. Linking the google account for user auxAcct1
             2. Run the jenkins job to force-link auxAcct1 with main_account email id

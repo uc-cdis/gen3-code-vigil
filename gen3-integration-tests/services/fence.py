@@ -363,17 +363,17 @@ class Fence(object):
             url = f"{self.GOOGLE_LINK_REDIRECT}&expires_in={expires_in}"
         else:
             url = self.GOOGLE_LINK_REDIRECT
-        logger.info(f"URL: {url}")
+        logger.debug(f"URL: {url}")
         linking_res = requests.get(
             url=url,
             auth=auth,
             headers=headers,
         )
-        logger.info(f"Linking Response: {linking_res.status_code}")
-        logger.info(f"Linking Response Text: {linking_res.text}")
+        logger.debug(f"Linking Response: {linking_res.status_code}")
+        logger.debug(f"Linking Response Text: {linking_res.text}")
         if linking_res.status_code == 200:
             logger.info(f"Google account with user {user} is linked successfully")
-            logger.info(f"Redirect URL : {linking_res.url}")
+            logger.debug(f"Redirect URL : {linking_res.url}")
             return linking_res.url, linking_res.status_code
         else:
             return linking_res.status_code
@@ -389,6 +389,15 @@ class Fence(object):
         if delete_res.status_code == 200:
             logger.info(f"Google account with user {user} is unlinked successfully")
         else:
+            response_json = delete_res.json()
+            logger.debug(f"Response JSON : {response_json}")
+            error_description = response_json.get(
+                "error_description", "No description provided"
+            )
+            assert (
+                error_description
+                == "Couldn't unlink account for user, no linked Google account found."
+            ), f"Unexpected error description: {error_description}"
             logger.info(
                 f"Unlinking was unsuccessful with status code {delete_res.status_code}"
             )
@@ -397,7 +406,7 @@ class Fence(object):
     def check_extend_success(self, expires_in, request_time, expiration_time):
         buffer_time = datetime.timedelta(seconds=60)
         expiration_time_timestamp = datetime.datetime.fromtimestamp(expiration_time)
-        logger.info(f"Expiration time from timestamp: {expiration_time_timestamp}")
+        logger.debug(f"Expiration time from timestamp: {expiration_time_timestamp}")
         # Calculate expected expiration time
         expected_expiration_time = request_time + datetime.timedelta(seconds=expires_in)
         min_expires = expected_expiration_time - buffer_time
@@ -426,7 +435,7 @@ class Fence(object):
         )
         if extend_res.status_code == 200:
             response_json = extend_res.json()
-            logger.info(f"Response JSON : {response_json}")
+            logger.debug(f"Response JSON : {response_json}")
             assert "exp" in response_json, "Expiration key 'exp' not found in response"
             expiration_time = response_json["exp"]
             self.check_extend_success(expires_in, request_time, expiration_time)
