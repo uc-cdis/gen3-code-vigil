@@ -131,29 +131,27 @@ def generate_api_keys_for_test_users(namespace):
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-generate-api-key",
     )
-    for user in test_users:
-        logger.info(f"Generating API key for {test_users[user]}")
-        params = {
-            "NAMESPACE": namespace,
-            "USERNAME": test_users[user],
-        }
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                res = job.get_build_result(build_num)
-                if res.lower() == "success":
+    params = {
+        "NAMESPACE": namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            res = job.get_build_result(build_num)
+            if res.lower() == "success":
+                for user in test_users:
                     api_key = json.loads(
-                        job.get_artifact_content(build_num, "api_key.json")
+                        job.get_artifact_content(build_num, f"{namespace}_{user}.json")
                     )
                     with open(
                         Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
                     ) as key_file:
                         json.dump(api_key, key_file)
-            else:
-                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            raise Exception("Build number not found")
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
     return "SUCCESS"
 
 
