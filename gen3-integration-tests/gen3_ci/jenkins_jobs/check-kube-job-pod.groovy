@@ -71,9 +71,11 @@ pipeline {
                                     elif [ "$POD_STATUS" == "Failed" ]; then
                                         if [ "$EXPECT_FAILURE" == "True" ]; then
                                             echo "The container from pod $LATEST_POD failed as expected! Just ignore as this is part of a negative test."
+                                            kubectl logs $LATEST_POD -n $NAMESPACE > logs.txt
                                             break
                                         else
                                             echo "THE POD FAILED. GIVING UP."
+                                            kubectl logs $LATEST_POD -n $NAMESPACE > logs.txt
                                             POD_LOGS=$(kubectl logs $LATEST_POD -n $NAMESPACE)
                                             echo "Logs:\n$POD_LOGS"
                                             exit 1
