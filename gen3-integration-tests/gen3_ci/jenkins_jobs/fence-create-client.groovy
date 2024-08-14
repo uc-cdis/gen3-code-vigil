@@ -103,10 +103,8 @@ pipeline {
                         done
 
                         # Run usersync
-                        gen3 job run usersync -w ADD_DBGAP true
-
-                        # Validate pods to roll up
-                        gen3 kube-wait4-pods || true
+                        gen3 job run usersync ADD_DBGAP true
+                        g3kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }
