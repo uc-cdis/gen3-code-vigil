@@ -12,7 +12,6 @@ from services.indexd import Indexd
 from services.fence import Fence
 from services.ras import RAS
 
-from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
@@ -51,6 +50,8 @@ class TestRasDrs:
     indexd = Indexd()
     fence = Fence()
     ras = RAS()
+    variables = {}
+    variables["created_indexd_dids"] = []
 
     env_vars = ["CI_TEST_RAS_USERID", "CI_TEST_RAS_PASSWORD", "CLIENT_ID", "SECRET_ID"]
     scope = "openid profile email ga4gh_passport_v1"
@@ -58,22 +59,16 @@ class TestRasDrs:
 
     @classmethod
     def setup_class(cls):
-        auth = Gen3Auth(refresh_token=pytest.api_keys["indexing_account"])
-        cls.access_token = auth.get_access_token()
-
         # Upload new Indexd records
         # Adding indexd files
         for key, val in indexd_files.items():
-            indexd_record = cls.indexd.create_records(
-                files={key: val}, access_token=cls.access_token
-            )
-            indexd_files[key]["did"] = indexd_record[0]["did"]
-            indexd_files[key]["rev"] = indexd_record[0]["rev"]
+            indexd_record = cls.indexd.create_records(records={key: val})
+            cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
     @classmethod
     def teardown_class(cls):
         # Deleting indexd records
-        cls.indexd.delete_file_indices(records=indexd_files)
+        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     # TODO: Need to finish test case, once passports can be retrieved for RAS
     @pytest.mark.wip("RAS Passport creation is broken")
