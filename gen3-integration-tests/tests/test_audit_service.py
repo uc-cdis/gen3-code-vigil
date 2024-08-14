@@ -297,7 +297,7 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
-            "username={}".format(os.environ["CI_TEST_RAS_USERID"]),
+            "username={}".format(os.environ["CI_TEST_RAS_USERID"].lower()),
         ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
@@ -312,7 +312,7 @@ class TestAuditService:
 
         # Check the query results with auxAcct2 user
         expected_results = {
-            "username": str(os.environ["CI_TEST_RAS_USERID"]),
+            "username": str(os.environ["CI_TEST_RAS_USERID"]).lower(),
             "idp": "ras",
             "client_id": None,
             "status_code": 302,
