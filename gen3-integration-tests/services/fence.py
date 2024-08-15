@@ -363,7 +363,7 @@ class Fence(object):
             url = f"{self.GOOGLE_LINK_REDIRECT}&expires_in={expires_in}"
         else:
             url = self.GOOGLE_LINK_REDIRECT
-        logger.debug(f"URL: {url}")
+        logger.info(f"URL: {url}")
         linking_res = requests.get(
             url=url,
             auth=auth,
@@ -376,10 +376,10 @@ class Fence(object):
             logger.debug(f"Redirect URL : {linking_res.url}")
             return linking_res.url, linking_res.status_code
         else:
-            return linking_res.status_code
+            return None, linking_res.status_code
 
     def unlink_google_account(self, user: str):
-        """Unlink / Delete google account with user account"""
+        """Unlink / Delete google account link with user account"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         delete_res = requests.delete(
             url=f"{self.GOOGLE_LINK_URL}",
@@ -388,6 +388,7 @@ class Fence(object):
         logger.debug(f"Unlinking Response: {delete_res.status_code}")
         if delete_res.status_code == 200:
             logger.info(f"Google account with user {user} is unlinked successfully")
+            return delete_res.status_code
         else:
             response_json = delete_res.json()
             logger.debug(f"Response JSON : {response_json}")
@@ -439,6 +440,7 @@ class Fence(object):
             assert "exp" in response_json, "Expiration key 'exp' not found in response"
             expiration_time = response_json["exp"]
             self.check_extend_success(expires_in, request_time, expiration_time)
+            return extend_res.status_code
         else:
             logger.info(
                 f"Status code of the Extend link request: {extend_res.status_code}"
