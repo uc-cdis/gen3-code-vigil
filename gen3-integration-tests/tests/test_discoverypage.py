@@ -30,12 +30,19 @@ class TestDiscoveryPage(object):
         )
 
     @classmethod
-    def teardown_class(cls):
-        logger.info("Tearing down - delete indexd record and study metadata")
+    def teardown_class(cls, request):
+        logger.info(
+            "Tearing down - delete indexd record and study metadata, and terminate workspace"
+        )
         indexd = Indexd()
         mds = MetadataService()
         indexd.delete_records([cls.variables["did"]])
         mds.delete_metadata(cls.variables["study_id"])
+        workspace = WorkspacePage()
+        page = request.getfixturevalue("page")
+        if page.locator(workspace.TERMINATE_BUTTON).is_visible():
+            workspace.terminate_workspace(page)
+            screenshot(page, "WorkspaceTerminatedInTearDown")
 
     def test_study_publish_search_export(self, page):
         """

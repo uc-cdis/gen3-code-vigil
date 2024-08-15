@@ -87,7 +87,7 @@ class WorkspacePage(object):
         command_prompt = page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NB_CELL_INPUT
         )
-        command_prompt.wait_for(state="visible")
+        command_prompt.wait_for(state="visible", timeout=60000)
         screenshot(page, "PythonNotebook")
 
     def run_command_in_notebook(self, page: Page, command: str = "!gen3 --help"):
