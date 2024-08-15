@@ -23,6 +23,7 @@ class Fence(object):
         self.DATA_ENDPOINT = "/data"
         self.DATA_DOWNLOAD_ENDPOINT = "/data/download"
         self.USER_ENDPOINT = "/user"
+        self.VERSION_ENDPOINT = f"/_version"
         self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT = "/oauth2/authorize"
         self.TOKEN_OAUTH2_CLIENT_ENDPOINT = "/oauth2/token"
         self.MULTIPART_UPLOAD_INIT_ENDPOINT = "/data/multipart/init"
@@ -320,6 +321,16 @@ class Fence(object):
         indexd.file_equals(res=response, file_record=file_node)
         return response
 
+    def get_version(self, user="main_account"):
+        """Get fence version"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(path=f"{self.VERSION_ENDPOINT}")
+        assert (
+            response.status_code == 200
+        ), f"Expected status code 200 but got {response.status_code}"
+        assert "version" in response.json().keys()
+        return response.json()["version"]
+
     def get_client_id_secret(self, client_name):
         """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
         path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
@@ -345,3 +356,4 @@ class Fence(object):
         client_info = clients_dict[client_name].split(",")
         client_id, client_secret = client_info[0], client_info[1]
         return client_id, client_secret
+
