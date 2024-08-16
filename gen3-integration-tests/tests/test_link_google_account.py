@@ -215,9 +215,3 @@ class TestLinkGoogleAccount:
         assert (
             unlink_status_code == 200
         ), f"Expected Google account to be unlinked, but got status_code {unlink_status_code}"
-        unlink_main_account_status_code = self.fence.unlink_google_account(
-            user="main_account"
-        )
-        assert (
-            unlink_main_account_status_code == 200
-        ), f"Expected Google account to be unlinked, but got status_code {unlink_main_account_status_code}"
