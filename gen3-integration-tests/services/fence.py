@@ -374,17 +374,13 @@ class Fence(object):
             url = f"{self.GOOGLE_LINK_REDIRECT}&expires_in={expires_in}"
         else:
             url = self.GOOGLE_LINK_REDIRECT
-        logger.info(f"URL: {url}")
         linking_res = requests.get(
             url=url,
             auth=auth,
             headers=headers,
         )
-        logger.debug(f"Linking Response: {linking_res.status_code}")
-        logger.debug(f"Linking Response Text: {linking_res.text}")
         if linking_res.status_code == 200:
             logger.info(f"Google account with user {user} is linked successfully")
-            logger.debug(f"Redirect URL : {linking_res.url}")
             return linking_res.url, linking_res.status_code
         else:
             return None, linking_res.status_code
@@ -402,7 +398,6 @@ class Fence(object):
             return delete_res.status_code
         else:
             response_json = delete_res.json()
-            logger.debug(f"Response JSON : {response_json}")
             error_description = response_json.get(
                 "error_description", "No description provided"
             )
@@ -447,7 +442,6 @@ class Fence(object):
         )
         if extend_res.status_code == 200:
             response_json = extend_res.json()
-            logger.debug(f"Response JSON : {response_json}")
             assert "exp" in response_json, "Expiration key 'exp' not found in response"
             expiration_time = response_json["exp"]
             self.check_extend_success(expires_in, request_time, expiration_time)
@@ -457,10 +451,3 @@ class Fence(object):
                 f"Status code of the Extend link request: {extend_res.status_code}"
             )
             return extend_res.status_code
-
-    def force_linking(self, username: str, email: str):
-        """Force linking google account with username and email"""
-        logger.info(
-            f"Force linking google account with username {username} and email {email} ..."
-        )
-        gat.force_link_google(pytest.tested_env, username, email)

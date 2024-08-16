@@ -5,6 +5,7 @@ import time
 
 from utils import logger
 from services.fence import Fence
+import utils.gen3_admin_tasks as gat
 
 
 @pytest.mark.fence
@@ -47,7 +48,7 @@ class TestLinkGoogleAccount:
         assert (
             linking_status_code == 200
         ), f"Expected Google account to be linked, but got status_code {linking_status_code}"
-        # Extend th expiration time on the google account link
+        # Extend the expiration time on the google account link
         extend_status_code = self.fence.extend_expiration(
             user="main_account", expires_in=5
         )
@@ -113,6 +114,9 @@ class TestLinkGoogleAccount:
             1. Unlink the account which does not have any linked account
             2. Expect 404 status_code
         """
+        logger.info(
+            f"Trying to unlink auxAcct2 user which does not have linked account"
+        )
         unlink_status_code = self.fence.unlink_google_account(user="auxAcct2_account")
         assert (
             unlink_status_code == 404
@@ -125,6 +129,9 @@ class TestLinkGoogleAccount:
             1. Try to extend the expiration time of unlinked_account
             2. Expect 404 status_code
         """
+        logger.info(
+            "Trying to extend expiration time for main_account unlinked account"
+        )
         extend_status_code = self.fence.extend_expiration(user="main_account")
         assert (
             extend_status_code == 404
@@ -184,8 +191,13 @@ class TestLinkGoogleAccount:
         ), f"Expected Google account to be linked, but got status_code {status_code}"
 
         # send a force-link-google command to link user auxAcct1 with email cdis.autotest@gmail.com
-        self.fence.force_linking(
-            pytest.users["auxAcct1_account"], pytest.users["main_account"]
+        logger.info(
+            f"Force linking google account with username auxAcct1 with email cdis.autotest@gmail.com..."
+        )
+        gat.force_link_google(
+            pytest.tested_env,
+            pytest.users["auxAcct1_account"],
+            pytest.users["main_account"],
         )
 
         # try to link google account for user main_account with same email cdis.autotest@gmail.com which is linked to dummy-one user
