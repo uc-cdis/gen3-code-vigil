@@ -66,9 +66,11 @@ class LoginPage(object):
         if idp == "ORCID":
             page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
+            logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
+            logged_in_user = os.environ["CI_TEST_RAS_USERID"].lower()
         else:
             logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
@@ -81,9 +83,10 @@ class LoginPage(object):
                         break
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
-            expect(
-                page.locator(f'//div[contains(text(), "{pytest.users[user]}")]')
-            ).to_be_visible()
+                logged_in_user = pytest.users[user]
+        expect(
+            page.locator(f'//div[contains(text(), "{logged_in_user}")]')
+        ).to_be_visible()
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
