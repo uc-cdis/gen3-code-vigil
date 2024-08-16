@@ -178,7 +178,7 @@ class TestLinkGoogleAccount:
             . Unlink the google account for user auxAcct1
         """
         # Linking the google account to ensure a proxy group is created for the user auxAcct1
-        self.fence.link_google_account(user="auxAcct1_account")
+        linking_url, status_code = self.fence.link_google_account(user="auxAcct1_account")
         assert (
             status_code == 200
         ), f"Expected Google account to be linked, but got status_code {status_code}"
