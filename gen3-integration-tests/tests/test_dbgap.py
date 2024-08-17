@@ -108,8 +108,8 @@ class TestDbgap:
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
         cls.indexd.delete_records(cls.variables["created_dbgap_dids"])
 
-    @pytest.mark.wip(
-        "To avoid running usersync multiple times and since ONLY_DBGAP is not used in real time."
+    @pytest.mark.skip(
+        reason="To avoid running usersync multiple times and since ONLY_DBGAP is not used in real time."
     )
     def test_created_signed_urls_upload_urls(self):
         """
@@ -193,7 +193,7 @@ class TestDbgap:
         """
         Scenario: dbGaP + user.yaml Sync: ensure combined access
         Steps:
-            1. Run usersync job and add dbgap sync to yaml sync
+            1. Run usersync job and add dbgap sync to yaml sync (done in test setup)
             2. Create S3 signed url. main_account has access to phs000178 through dbgap
             3. File should get downloaded. Verify the contents of the file.
         """
