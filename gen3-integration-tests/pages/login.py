@@ -86,7 +86,7 @@ class LoginPage(object):
                 logged_in_user = pytest.users[user]
         expect(
             page.locator(f'//div[contains(text(), "{logged_in_user}")]')
-        ).to_be_visible()
+        ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
