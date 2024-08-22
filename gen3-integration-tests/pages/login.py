@@ -38,14 +38,15 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(
-        self,
-        page: Page,
-    ):
+    def go_to(self, page: Page, url=None):
         """Goes to the login page"""
-        page.goto(self.BASE_URL)
-        page.wait_for_selector(self.READY_CUE, state="visible")
-        screenshot(page, "LoginPage")
+        if url:
+            page.goto(url)
+            screenshot(page, "UrlPage")
+        else:
+            page.goto(self.BASE_URL)
+            page.wait_for_selector(self.READY_CUE, state="visible")
+            screenshot(page, "LoginPage")
 
     def login(
         self,
@@ -93,9 +94,10 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
-        expect(
-            page.locator(f'//div[contains(text(), "{logged_in_user}")]')
-        ).to_be_visible()
+        if validate_username_locator:
+            expect(
+                page.locator(f'//div[contains(text(), "{logged_in_user}")]')
+            ).to_be_visible(timeout=5000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(

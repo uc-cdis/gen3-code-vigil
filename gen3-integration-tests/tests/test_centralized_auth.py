@@ -10,10 +10,6 @@ from uuid import uuid4
 from services.indexd import Indexd
 from services.fence import Fence
 from playwright.sync_api import Page
-from utils.gen3_admin_tasks import (
-    create_fence_client,
-    run_gen3_job,
-)
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 

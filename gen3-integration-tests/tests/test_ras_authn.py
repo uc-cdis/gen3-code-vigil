@@ -6,7 +6,6 @@ import os
 import pytest
 
 from cdislogging import get_logger
-from services.indexd import Indexd
 from services.fence import Fence
 from pages.login import LoginPage
 from playwright.sync_api import Page
