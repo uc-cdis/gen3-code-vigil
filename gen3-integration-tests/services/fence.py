@@ -41,21 +41,6 @@ class Fence(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
 
-    def get_access_token(self, api_key):
-        """Generate access token from api key"""
-        res = requests.post(
-            f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token",
-            data=json.dumps({"api_key": api_key}),
-        )
-        logger.info(f"Status code: {res.status_code}")
-        if res.status_code == 200:
-            return res.json()["access_token"]
-        else:
-            logger.info(f"Response: {res.text}")
-            raise Exception(
-                f"Failed to get access token from {self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token"
-            )
-
     def create_signed_url(
         self, id, user, expected_status, params=[], access_token=None
     ):
@@ -327,6 +312,44 @@ class Fence(object):
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_record=file_node)
         return response
+
+    def create_api_key(self, scope, page, token=None):
+        login_page = LoginPage()
+        if not token:
+            # Login with main_account user and get the access_token
+            logger.info("Logging in with mainAcct")
+            login_page.go_to(page)
+            token = login_page.login(page)["value"]
+        data = {
+            "scope": scope,
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        res = requests.post(
+            url=f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/",
+            json=data,
+            headers=headers,
+        )
+        return res, token
+
+    def delete_api_key(self, api_key, token, page):
+        login_page = LoginPage()
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        res = requests.delete(
+            url=f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/{api_key}",
+            headers=headers,
+        )
+        assert (
+            res.status_code == 204
+        ), f"Expected status code 204 but got {res.status_code}"
+        login_page.logout(page)
 
     def get_version(self, user="main_account"):
         """Get fence version"""
