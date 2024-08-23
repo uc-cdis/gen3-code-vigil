@@ -297,7 +297,7 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
-            "username={}".format(os.environ["CI_TEST_RAS_USERID"].lower()),
+            "username={}".format(os.environ["CI_TEST_RAS_USERID"]),
         ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
