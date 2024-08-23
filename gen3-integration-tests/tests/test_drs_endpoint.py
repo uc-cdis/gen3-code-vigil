@@ -49,9 +49,6 @@ class TestDrsEndpoints:
 
     @classmethod
     def setup_class(cls):
-        # Removing test indexd records if they exist
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
-
         # Adding indexd files
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
