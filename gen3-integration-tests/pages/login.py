@@ -140,7 +140,7 @@ class LoginPage(object):
         screenshot(page, "BeforeRASLogin")
         ras_login_button.click()
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_enabled(timeout=5000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible():
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
         screenshot(page, "AfterRASLogin")
