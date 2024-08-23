@@ -80,7 +80,7 @@ class LoginPage(object):
         elif idp == "RAS":
             page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
-            logged_in_user = os.environ["CI_TEST_RAS_USERID"].lower()
+            logged_in_user = os.environ["CI_TEST_RAS_USERID"]
         else:
             logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
