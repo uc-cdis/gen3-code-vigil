@@ -8,7 +8,9 @@ import pytest
 from cdislogging import get_logger
 from services.fence import Fence
 from pages.login import LoginPage
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
+
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -49,9 +51,17 @@ class TestRasAuthN:
         secrets to be configured with RAS credentials
         """
         page.goto(self.url)
-        self.login_page.ras_login(
-            page=page, password="THIS_IS_AN_INVALID_PASSWORD_FOR_RAS_USER"
+        ras_login_button = page.locator(self.login_page.RAS_LOGIN_BUTTON)
+        expect(ras_login_button).to_be_visible(timeout=5000)
+        page.locator(self.login_page.RAS_USERNAME_INPUT).fill(
+            os.environ["CI_TEST_RAS_USERID"]
         )
+        page.locator(self.login_page.RAS_PASSWORD_INPUT).fill(
+            os.environ["CI_TEST_RAS_PASSWORD"]
+        )
+        screenshot(page, "BeforeRASLogin")
+        ras_login_button.click()
+        screenshot(page, "AfterRASLogin")
         html_content = page.content()
         assert (
             "Access Denied" in html_content
