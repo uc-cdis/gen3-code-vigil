@@ -312,7 +312,7 @@ class TestAuditService:
 
         # Check the query results with auxAcct2 user
         expected_results = {
-            "username": str(os.environ["CI_TEST_RAS_USERID"]).lower(),
+            "username": str(os.environ["CI_TEST_RAS_USERID"]),
             "idp": "ras",
             "client_id": None,
             "status_code": 302,
