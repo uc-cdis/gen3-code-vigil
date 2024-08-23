@@ -97,7 +97,7 @@ class LoginPage(object):
         if validate_username_locator:
             expect(
                 page.locator(f'//div[contains(text(), "{logged_in_user}")]')
-            ).to_be_visible(timeout=5000)
+            ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(

@@ -57,7 +57,7 @@ class TestRasAuthN:
             os.environ["CI_TEST_RAS_USERID"]
         )
         page.locator(self.login_page.RAS_PASSWORD_INPUT).fill(
-            os.environ["CI_TEST_RAS_PASSWORD"]
+            "THIS_IS_AN_INVALID_PASSWORD_FOR_USER"
         )
         screenshot(page, "BeforeRASLogin")
         ras_login_button.click()
