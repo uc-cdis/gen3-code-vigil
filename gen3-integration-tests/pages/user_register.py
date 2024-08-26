@@ -1,11 +1,9 @@
-import os
 import pytest
 
 from utils import logger
 from playwright.sync_api import Page, expect
 
 from utils.test_execution import screenshot
-from utils.gen3_admin_tasks import get_portal_config
 
 
 class UserRegister(object):
