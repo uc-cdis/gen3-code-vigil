@@ -28,17 +28,6 @@ class TestRasAuthN:
         assert "CI_TEST_RAS_USERID" in os.environ, "CI_TEST_RAS_USERID not found"
         assert "CI_TEST_RAS_PASSWORD" in os.environ, "CI_TEST_RAS_PASSWORD not found"
 
-        # Get the client id for CI_TEST_RAS_USERID
-        cls.basic_test_ras_client_id, cls.basic_test_ras_client_secret = (
-            cls.fence.get_client_id_secret(client_name="ras-test-client")
-        )
-
-        # URL for RAS Login Page
-        cls.url = f"""{pytest.root_url_portal}/user/oauth2/authorize?
-        response_type=code&client_id={cls.basic_test_ras_client_id}&
-        redirect_uri={pytest.root_url_portal}/user&scope=openid+user+
-        data+google_credentials+ga4gh_passport_v1&idp=ras"""
-
     def test_provide_invalid_credentials_NIH_login_page(self, page: Page):
         """
         Scenario: Provide invalid credentials in NIH Login page
@@ -50,18 +39,8 @@ class TestRasAuthN:
         NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
         secrets to be configured with RAS credentials
         """
-        page.goto(self.url)
-        ras_login_button = page.locator(self.login_page.RAS_LOGIN_BUTTON)
-        expect(ras_login_button).to_be_visible(timeout=5000)
-        page.locator(self.login_page.RAS_USERNAME_INPUT).fill(
-            os.environ["CI_TEST_RAS_USERID"]
-        )
-        page.locator(self.login_page.RAS_PASSWORD_INPUT).fill(
-            "THIS_IS_AN_INVALID_PASSWORD_FOR_USER"
-        )
-        screenshot(page, "BeforeRASLogin")
-        ras_login_button.click()
-        screenshot(page, "AfterRASLogin")
+        self.login_page.go_to(page)
+        self.login_page.ras_login(page, username=os.environ["CI_TEST_RAS_USERID"], password="THIS_IS_AN_INVALID_PASSWORD_FOR_USER_1")
         html_content = page.content()
         assert (
             "Access Denied" in html_content
