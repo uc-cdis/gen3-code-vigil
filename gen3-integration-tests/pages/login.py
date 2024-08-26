@@ -38,15 +38,11 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page, url=None):
+    def go_to(self, page: Page):
         """Goes to the login page"""
-        if url:
-            page.goto(url)
-            screenshot(page, "UrlPage")
-        else:
-            page.goto(self.BASE_URL)
-            page.wait_for_selector(self.READY_CUE, state="visible")
-            screenshot(page, "LoginPage")
+        page.goto(self.BASE_URL)
+        page.wait_for_selector(self.READY_CUE, state="visible")
+        screenshot(page, "LoginPage")
 
     def login(
         self,
@@ -127,24 +123,25 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
 
-    def ras_login(
-        self,
-        page: Page,
-        username=os.environ["CI_TEST_RAS_USERID"],
-        password=os.environ["CI_TEST_RAS_PASSWORD"],
-    ):
+    def ras_login(self, page: Page, username: str, password: str):
         # Perform RAS Login
-        ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
-        expect(ras_login_button).to_be_visible(timeout=5000)
+        screenshot(page, "RASLoginPage")
+        # ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
+        # expect(ras_login_button).to_be_visible(timeout=5000)
         page.locator(self.RAS_USERNAME_INPUT).fill(username)
         page.locator(self.RAS_PASSWORD_INPUT).fill(password)
-        screenshot(page, "BeforeRASLogin")
-        ras_login_button.click()
+        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
+        ras_signin_button.click()
+        screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_enabled(timeout=5000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=5000):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
-        screenshot(page, "AfterRASLogin")
+        if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(timeout=5000):
+            logger.info("Clicking on Authorization button")
+            page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
+        time.sleep(5)
+        screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
