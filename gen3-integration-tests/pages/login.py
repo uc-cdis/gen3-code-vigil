@@ -1,6 +1,7 @@
 # Login Page
 import os
 import pytest
+import time
 
 from utils import logger
 from playwright.sync_api import Page, expect
@@ -17,10 +18,14 @@ class LoginPage(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
-        self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
+        self.RAS_LOGIN_BUTTON = "//button[contains(text(),'Login with RAS')]"
+        self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
         self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
+        self.RAS_AUTHORIZATION_BOX = "//div[@class='auth-list']"
+        self.RAS_ACCEPT_AUTHORIZATION_BUTTON = "//button[contains(text(), 'authorize')]"
+        self.RAS_DENY_AUTHORIZATION_BUTTON = "//button[contains(text(), 'Cancel')]"
         self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
@@ -105,17 +110,25 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
 
-    def ras_login(self, page: Page):
+    def ras_login(self, page: Page, username: str, password: str):
         # Perform RAS Login
-        ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
-        expect(ras_login_button).to_be_visible(timeout=5000)
-        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_USERID"])
-        page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
-        ras_login_button.click()
+        screenshot(page, "RASLoginPage")
+        # ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
+        # expect(ras_login_button).to_be_visible(timeout=5000)
+        page.locator(self.RAS_USERNAME_INPUT).fill(username)
+        page.locator(self.RAS_PASSWORD_INPUT).fill(password)
+        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
+        ras_signin_button.click()
+        screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_enabled(timeout=5000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=5000):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
+        if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(timeout=5000):
+            logger.info("Clicking on Authorization button")
+            page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
+        time.sleep(5)
+        screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
