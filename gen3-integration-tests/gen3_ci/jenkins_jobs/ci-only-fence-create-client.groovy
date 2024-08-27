@@ -45,12 +45,20 @@ pipeline {
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
                             "basic-test-abc-client,test-abc-client@example.com,basic,None,"
+<<<<<<< HEAD:gen3-integration-tests/gen3_ci/jenkins_jobs/ci-only-fence-create-client.groovy
                             "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
                             "jenkins-client-no-expiration,test-user,client_credentials,None,"
                             "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
                             "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
                             "jenkins-client-long-expiration,test-user,client_credentials,None,30"
                             "ras-test-client,UCtestuser128,basic,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,"
+=======
+                            "jenkins-client-tester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+                            "jenkins-client-no-expiration,test-user,client_credentials,None,"
+                            "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
+                            "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
+                            "jenkins-client-long-expiration,test-user,client_credentials,None,30"
+>>>>>>> d89cf66 (add new code to support pytest.clients dict):gen3-integration-tests/gen3_ci/jenkins_jobs/fence-create-client.groovy
                         )
 
                         combined='{}'

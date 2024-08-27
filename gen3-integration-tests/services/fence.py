@@ -360,6 +360,7 @@ class Fence(object):
         ), f"Expected status code 200 but got {response.status_code}"
         assert "version" in response.json().keys()
         return response.json()["version"]
+<<<<<<< HEAD
 
     def link_google_account(self, user: str, expires_in: int = None):
         """Links google account with user account with expiration if provided"""
@@ -448,3 +449,5 @@ class Fence(object):
                 f"Status code of the Extend link request: {extend_res.status_code}"
             )
             return extend_res.status_code
+=======
+>>>>>>> d89cf66 (add new code to support pytest.clients dict)

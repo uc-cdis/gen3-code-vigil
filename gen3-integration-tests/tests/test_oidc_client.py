@@ -93,12 +93,16 @@ class TestOIDCClient:
         """
         Scenario: Test OIDC Client Rotation
         Steps:
-            1. Create client `jenkinsClientTester` with client_type = client_credentials and store it as creds1
+            1. Create client `jenkins-client-tester` with client_type = client_credentials and store it as creds1
             2. Request client credentials rotation and new credentials as creds2
             3. Get access_token with help of client_credentials creds1 and cred2
             4. Send indexd post request to add indexd record and check if it successful request
         """
+<<<<<<< HEAD
         client_name = "jenkinsClientTester"
+=======
+        client_name = "jenkins-client-tester"
+>>>>>>> 0c2adb6 (add new code to support pytest.clients dict)
         logger.info(f"Getting client_id and client_secret for client {client_name} ...")
         client_id = pytest.clients[client_name]["client_id"]
         client_secret = pytest.clients[client_name]["client_secret"]
@@ -113,9 +117,6 @@ class TestOIDCClient:
             )
         client_rotate_id = rotate_client[0]
         client_rotate_secret = rotate_client[1]
-
-        gat.run_gen3_job(pytest.namespace, "usersync")
-        gat.check_job_pod(pytest.namespace, "usersync", "gen3job")
 
         # Get access_token with client_id and client_secret before running client-fence-rotate command
         gen3auth_before = Gen3Auth(

@@ -43,12 +43,20 @@ pipeline {
                             "basic-test-client"
                             "implicit-test-client"
                             "basic-test-abc-client"
+<<<<<<< HEAD:gen3-integration-tests/gen3_ci/jenkins_jobs/ci-only-fence-delete-client.groovy
                             "jenkinsClientTester"
                             "jenkins-client-no-expiration"
                             "jenkins-client-short-expiration"
                             "jenkins-client-medium-expiration"
                             "jenkins-client-long-expiration"
                             "ras-test-client"
+=======
+                            "jenkins-client-tester"
+                            "jenkins-client-no-expiration"
+                            "jenkins-client-short-expiration"
+                            "jenkins-client-medium-expiration"
+                            "jenkins-client-long-expiration"
+>>>>>>> d89cf66 (add new code to support pytest.clients dict):gen3-integration-tests/gen3_ci/jenkins_jobs/fence-delete-client.groovy
                         )
 
                         combined='{}'
