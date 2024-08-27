@@ -123,7 +123,12 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
 
-    def ras_login(self, page: Page, username: str, password: str):
+    def ras_login(
+        self,
+        page: Page,
+        username=os.environ["CI_TEST_RAS_USERID"],
+        password=os.environ["CI_TEST_RAS_PASSWORD"],
+    ):
         # Perform RAS Login
         screenshot(page, "RASLoginPage")
         # ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
@@ -140,7 +145,6 @@ class LoginPage(object):
         if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(timeout=5000):
             logger.info("Clicking on Authorization button")
             page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
-        time.sleep(5)
         screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def logout(self, page: Page):
