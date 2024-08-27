@@ -55,14 +55,14 @@ pipeline {
                                 echo "Waiting for $JOB_NAME job pod ..."
 
                                 # checking if there are pods with LABEL_NAME mentioned in parameters
-                                POD_NAMES=$(g3kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$LABEL_NAME -o json | jq -r '.items[] | select(.metadata.name | test("^'"$JOB_NAME"'")) | .metadata.name')
+                                POD_NAMES=$(kubectl -n $KUBECTL_NAMESPACE get pod --sort-by=.metadata.creationTimestamp -l app=$LABEL_NAME -o json | jq -r '.items[] | select(.metadata.name | test("^'"$JOB_NAME"'")) | .metadata.name')
                                 if [[ -z "$POD_NAMES" ]]; then
                                     echo "No pods found with label $LABEL_NAME"
                                 else
                                     # if pod/s found, get the status of the latest pod
                                     LATEST_POD=$(echo "$POD_NAMES" | tail -n 1)
                                     echo "Pod found with label $LABEL_NAME: $LATEST_POD"
-                                    POD_STATUS=$(g3kubectl -n $KUBECTL_NAMESPACE get pod $LATEST_POD -o jsonpath='{.status.phase}')
+                                    POD_STATUS=$(kubectl -n $KUBECTL_NAMESPACE get pod $LATEST_POD -o jsonpath='{.status.phase}')
                                     echo "Pod status: $POD_STATUS"
                                     if [ "$POD_STATUS" == "Succeeded" ]; then
                                         echo "The container from pod $LATEST_POD is ready! Proceed with the assertion checks..."

@@ -33,9 +33,8 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
-        client_id, client_secret = fence.get_client_id_secret(
-            client_name="jenkinsClientTester"
-        )
+        client_id = pytest.clients["jenkins-client-tester"]["client_id"]
+        client_secret = pytest.clients["jenkins-client-tester"]["client_secret"]
 
         # TODO : wait for usersync pod to finish and completed
 

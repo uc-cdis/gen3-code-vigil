@@ -330,30 +330,3 @@ class Fence(object):
         ), f"Expected status code 200 but got {response.status_code}"
         assert "version" in response.json().keys()
         return response.json()["version"]
-
-    def get_client_id_secret(self, client_name):
-        """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
-        path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
-        clients_dict = {}
-
-        with open(path, "r") as file:
-            for line in file:
-                # Strip whitespace and skip empty lines
-                line = line.strip()
-                if not line:
-                    continue
-
-                # Split line into key and value
-                if ":" in line:
-                    key, value = line.split(":", 1)
-                    key = key.strip()
-                    value = value.strip()
-
-                    clients_dict[key] = value
-        assert (
-            client_name in clients_dict.keys()
-        ), f"{client_name} not found in {clients_dict.keys()}"
-        client_info = clients_dict[client_name].split(",")
-        client_id, client_secret = client_info[0], client_info[1]
-        return client_id, client_secret
-

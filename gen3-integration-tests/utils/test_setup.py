@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import re
 
 from utils import logger
 from pathlib import Path
@@ -52,6 +53,28 @@ def get_fence_client_info():
     file_path = path / "clients_creds.txt"
     with open(file_path, "w") as outfile:
         outfile.write(data)
+
+
+def get_client_id_secret():
+    """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
+    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
+    with open(path, "r") as file:
+        content = file.read()
+
+    client_entries = re.findall(
+        r"CLIENT_NAME:\s*([\w-]+).*?client id, client secret:\s*\(\s*\'([^\']+)\',\s*\'([^\']+)\'\s*\)",
+        content,
+        re.DOTALL,
+    )
+    # Adding the client_name, client_id and client_secret to the pytest.clients dict in conftest.py
+    for name, client_id, client_secret in client_entries:
+        pytest.clients[name] = {"client_id": client_id, "client_secret": client_secret}
+    logger.info(f"Client Dict in test_setup: {pytest.clients}")
+
+    # if client_name in clients_dict:
+    #     return clients_dict[client_name]['client_id'], clients_dict[client_name]['client_secret']
+    # else:
+    #     raise ValueError(f"Client Creds not found for client {client_name}")
 
 
 def delete_all_fence_clients():

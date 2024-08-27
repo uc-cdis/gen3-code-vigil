@@ -5,7 +5,6 @@ from utils import logger
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 import utils.gen3_admin_tasks as gat
-from services.fence import Fence
 
 
 @pytest.mark.fence
@@ -19,16 +18,17 @@ class TestOIDCClient:
             2. Get client_id and client_secrets after each create request and store it
             3. Run `fence-delete-expired-clients` gen3job and check the logs for confirmation
         """
-        fence = Fence()
         clients = [
-            ["jenkinsClientNoExpiration"],  # not in logs
-            ["jenkinsClientShortExpiration"],  # in the logs
-            ["jenkinsClientMediumExpiration"],  # in the logs
-            ["jenkinsClientLongExpiration"],  # not in logs
+            ["jenkins-client-no-expiration"],  # not in logs
+            ["jenkins-client-short-expiration"],  # in the logs
+            ["jenkins-client-medium-expiration"],  # in the logs
+            ["jenkins-client-long-expiration"],  # not in logs
         ]
         for client in clients:
-            logger.info(f"Getting client_id and client_secret for {client[0]} ...")
-            client_id, client_secret = fence.get_client_id_secret(client_name=client[0])
+            client_name = client[0]
+            logger.info(f"Getting client_id and client_secret for {client_name} ...")
+            client_id = pytest.clients[client_name]["client_id"]
+            client_secret = pytest.clients[client_name]["client_secret"]
             client.extend([client_id, client_secret])
 
             # checking if the access_token is created with client_id and client_secret
@@ -51,29 +51,29 @@ class TestOIDCClient:
 
         # assertion from logs
         assert (
-            "jenkinsClientNoExpiration" not in logs_contents
-        ), "jenkinsClientNoExpiration found in logs"
+            "jenkins-client-no-expiration" not in logs_contents
+        ), "jenkins-client-no-expiration found in logs"
         assert (
             "Some expired OIDC clients have been deleted!" in logs_contents
         ), 'Msg: "Some expired OIDC clients have been deleted!" not found in logs'
         assert (
-            "jenkinsClientShortExpiration" in logs_contents
-        ), "jenkinsClientShortExpiration not found in logs"
+            "jenkins-client-short-expiration" in logs_contents
+        ), "jenkins-client-short-expiration not found in logs"
         assert (
             "Some OIDC clients are expiring soon!" in logs_contents
         ), 'Msg: "Some OIDC clients are expiring soon!" not found in logs'
         assert (
-            "jenkinsClientMediumExpiration" in logs_contents
-        ), "jenkinsClientMediumExpiration not found in logs"
+            "jenkins-client-medium-expiration" in logs_contents
+        ), "jenkins-client-medium-expiration not found in logs"
         assert (
-            "jenkinsClientLongExpiration" not in logs_contents
-        ), "jenkinsClientLongExpiration found in logs"
+            "jenkins-client-long-expiration" not in logs_contents
+        ), "jenkins-client-long-expiration found in logs"
 
         # Testing if the non-expired clients still work properly
         for client in clients:
             client_name, client_id, client_secret = client
-            # you shouldnt be able to get access_token for client jenkinsClientShortExpiration
-            if client_name != "jenkinsClientShortExpiration":
+            # you shouldnt be able to get access_token for client jenkins-client-short-expiration
+            if client_name != "jenkins-client-short-expiration":
                 gen3auth = Gen3Auth(
                     endpoint=pytest.root_url,
                     client_credentials=(client_id, client_secret),
@@ -86,23 +86,23 @@ class TestOIDCClient:
                     client_token
                 ), f"Failed to get access token for client_id {client_id}"
             else:
-                # expected result for client jenkinsClientShortExpiration
+                # expected result for client jenkins-client-short-expiration
                 logger.info("Access Token is not found")
 
     def test_oidc_client_rotation(self):
         """
         Scenario: Test OIDC Client Rotation
         Steps:
-            1. Create client `jenkinsClientTester` with client_type = client_credentials and store it as creds1
+            1. Create client `jenkins-client-tester` with client_type = client_credentials and store it as creds1
             2. Request client credentials rotation and new credentials as creds2
             3. Run usersync gen3job
             4. Get access_token with help of client_credentials creds1 and cred2
             5. Send indexd post request to add indexd record and check if it successful request
         """
-        fence = Fence()
-        client_name = "jenkinsClientTester"
+        client_name = "jenkins-client-tester"
         logger.info(f"Getting client_id and client_secret for client {client_name} ...")
-        client_id, client_secret = fence.get_client_id_secret(client_name=client_name)
+        client_id = pytest.clients[client_name]["client_id"]
+        client_secret = pytest.clients[client_name]["client_secret"]
 
         # Run client-rotate command in fence pod for client
         logger.info(f"Rotating creds for client {client_name} ...")
@@ -114,9 +114,6 @@ class TestOIDCClient:
             )
         client_rotate_id = rotate_client[0]
         client_rotate_secret = rotate_client[1]
-
-        gat.run_gen3_job(pytest.namespace, "usersync")
-        gat.check_job_pod(pytest.namespace, "usersync", "gen3job")
 
         # Get access_token with client_id and client_secret before running client-fence-rotate command
         gen3auth_before = Gen3Auth(

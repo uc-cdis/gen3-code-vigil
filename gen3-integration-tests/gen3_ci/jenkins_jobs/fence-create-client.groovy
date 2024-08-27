@@ -45,11 +45,11 @@ pipeline {
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
                             "basic-test-abc-client,test-abc-client@example.com,basic,None,"
-                            "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
-                            "jenkinsClientNoExpiration,test-user,client_credentials,None,"
-                            "jenkinsClientShortExpiration,test-user,client_credentials,None,0.00000000001"
-                            "jenkinsClientMediumExpiration,test-user,client_credentials,None,4"
-                            "jenkinsClientLongExpiration,test-user,client_credentials,None,30"
+                            "jenkins-client-tester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+                            "jenkins-client-no-expiration,test-user,client_credentials,None,"
+                            "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
+                            "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
+                            "jenkins-client-long-expiration,test-user,client_credentials,None,30"
                         )
 
                         combined='{}'
@@ -89,17 +89,10 @@ pipeline {
 
                             echo "Running: ${FENCE_CMD}"
                             # execute the above fence command
-                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > temp_client_cred.txt))
-                            file_content=$(cat temp_client_cred.txt)
+                            # execute the above fence command
+                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}")
 
-                            case "$CLIENT_TYPE" in
-                                "implicit")
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\),None)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/$CLIENT_NAME: \\2,\\3/")
-                                    ;;
-                                *)
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), '\\(.*\\)')/$CLIENT_NAME: \\2,\\3/")
-                            esac
-                            echo $CLIENT_CREDS >> clients_creds.txt
+                            echo "CLIENT_NAME: ${CLIENT_NAME} ${FENCE_CMD_RES}" >> clients_creds.txt
                         done
 
                         # Run usersync
