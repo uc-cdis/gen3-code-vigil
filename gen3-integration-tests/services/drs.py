@@ -17,6 +17,7 @@ class Drs(object):
         try:
             id = file.get("did") or file.get("id")
         except Exception:
+            # id is set to None to test the negative test scenario
             id = None
         response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}")
         return response
@@ -27,6 +28,7 @@ class Drs(object):
         try:
             id = file.get("did") or file.get("id")
         except Exception:
+            # id is set to None to test the negative test scenario
             id = None
         access_id = file["urls"][0][:2]
         response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}/access/{access_id}")
@@ -34,12 +36,14 @@ class Drs(object):
 
     def get_drs_signed_url_without_header(self, file, user="main_account"):
         """Get Drs signed url without header"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         try:
             id = file.get("did") or file.get("id")
         except Exception:
+            # id is set to None to test the negative test scenario
             id = None
         access_id = file["urls"][0][:2]
-        response = requests.get(
-            url=f"{self.BASE_URL}{self.DRS_ENDPOINT}/{id}/access/{access_id}"
+        response = auth.curl(
+            path=f"{self.BASE_URL}{self.DRS_ENDPOINT}/{id}/access/{access_id}"
         )
         return response

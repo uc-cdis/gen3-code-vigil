@@ -204,8 +204,32 @@ def fence_client_rotate(
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+        
+        
+def force_link_google(test_env_namespace: str, username: str, email: str):
+    """
+    Runs jenkins job to force link google account
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "fence-force-link-google",
+    )
+    params = {"NAMESPACE": test_env_namespace, "USERNAME": username, "EMAIL": email}
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+ 
 
-   
 def delete_fence_client(test_env_namespace: str):
     """
     Runs jenkins job to delete client

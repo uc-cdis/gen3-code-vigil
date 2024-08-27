@@ -5,22 +5,21 @@ import re
 
 from utils import logger
 from pathlib import Path
-
-from services.fence import Fence
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
+
+from gen3.auth import Gen3Auth
 
 
 def get_api_key_and_auth_header(user):
-    fence = Fence()
     file_path = Path.home() / ".gen3" / f"{pytest.namespace}_{user}.json"
     try:
         api_key_json = json.loads(file_path.read_text())
     except FileNotFoundError:
         logger.error(f"API key file not found: '{file_path}'")
         raise
-    api_key = api_key_json["api_key"]
     try:
-        access_token = fence.get_access_token(api_key)
+        auth = Gen3Auth(refresh_token=api_key_json, endpoint=f"{pytest.root_url}/user")
+        access_token = auth.get_access_token()
     except Exception:
         logger.error(f"Failed to get access token using API Key: {file_path}")
         raise

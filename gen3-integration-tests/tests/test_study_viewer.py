@@ -1,10 +1,8 @@
-import pytest
-import os
-import json
 import time
 
 from utils import logger
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
+
 from pages.login import LoginPage
 from pages.study_viewer import StudyViewerPage
 from services.requestor import Requestor
@@ -23,7 +21,7 @@ class TestStudyViewer(object):
         requestor = Requestor()
         # revoke access for user0 in arborist after the test is executed
         # create new request with revoke=true and update the status of request_id to SIGNED status
-        logger.info(f"Revoking access for user ...")
+        logger.info("Revoking access for user ...")
         req_data = {
             "policy_id": cls.variables["policy"],
             "username": cls.variables["username"],
@@ -45,14 +43,14 @@ class TestStudyViewer(object):
             logger.info("Revoke request_id was not found ...")
         revoke_status = requestor.request_signed(revoke_request_id)
         if revoke_status == "SIGNED":
-            logger.info(f"Access revoked for user")
+            logger.info("Access revoked for user")
 
         # Delete all the request_ids after the test is executed
         for request_id in cls.variables["request_ids"]:
             requestor.request_delete(request_id)
             logger.info(f"Request {request_id} deleted")
 
-    def test_unauthorized_user_request_access(self, page):
+    def test_unauthorized_user_request_access(self, page: Page):
         """
         Scenario: Request Access without logging in
         Steps:
@@ -81,7 +79,7 @@ class TestStudyViewer(object):
         screenshot(page, "RequestAccessButton")
         assert request_access.is_visible()
 
-    def test_user_requests_access(self, page):
+    def test_user_requests_access(self, page: Page):
         """
         Scenario: User logs in and requests access
         Steps:
@@ -129,7 +127,7 @@ class TestStudyViewer(object):
         # screenshot(page, "RequestAccessDownloadButton")
         # assert download_button.is_visible()
 
-    def test_user_download_access(self, page):
+    def test_user_download_access(self, page: Page):
         """
         Note : This test depends on the success of previous tests
         Scenario: User logs in and downloads the study

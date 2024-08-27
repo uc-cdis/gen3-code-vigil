@@ -20,7 +20,7 @@ class TestClientCredentials:
         """
         Scenario: Test Client Credentials
         Steps:
-            1. Create a client in Fence Db with grant_type=client_credential and run usersync
+            1. Create a client in Fence Db with grant_type=client_credential and run usersync (done in the test setup)
             2. Create a client_access_token from the client_id and client_secret
             3. Create a new Requestor request with client_access_token
             4. Update the request to SIGNED status
@@ -35,8 +35,6 @@ class TestClientCredentials:
         # creating a new client for the test
         client_id = pytest.clients["jenkins-client-tester"]["client_id"]
         client_secret = pytest.clients["jenkins-client-tester"]["client_secret"]
-
-        # TODO : wait for usersync pod to finish and completed
 
         gen3auth = Gen3Auth(
             endpoint=pytest.root_url,
