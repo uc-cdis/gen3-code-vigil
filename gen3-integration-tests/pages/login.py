@@ -41,10 +41,13 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page):
+    def go_to(self, page: Page, url=None):
         """Goes to the login page"""
-        page.goto(self.BASE_URL)
-        page.wait_for_selector(self.READY_CUE, state="visible")
+        if url:
+            page.goto(url)
+        else:
+            page.goto(self.BASE_URL)
+            page.wait_for_selector(self.READY_CUE, state="visible")
         screenshot(page, "LoginPage")
 
     def login(
