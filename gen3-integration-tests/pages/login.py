@@ -17,10 +17,13 @@ class LoginPage(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
-        self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
+        self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
         self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
+        self.RAS_AUTHORIZATION_BOX = "//div[@class='auth-list']"
+        self.RAS_ACCEPT_AUTHORIZATION_BUTTON = "//button[contains(text(), 'authorize')]"
+        self.RAS_DENY_AUTHORIZATION_BUTTON = "//button[contains(text(), 'Cancel')]"
         self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
@@ -70,11 +73,9 @@ class LoginPage(object):
             logger.info(f"{cookie['name']}={cookie['value']}")
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         if idp == "ORCID":
-            page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
-            page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
             logged_in_user = os.environ["CI_TEST_RAS_USERID"]
         else:
@@ -110,6 +111,8 @@ class LoginPage(object):
         return access_token_cookie
 
     def orcid_login(self, page: Page):
+        # Click on 'ORCID Login' on Gen3 Login Page
+        page.locator("//button[normalize-space()='ORCID Login']").click()
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -129,13 +132,14 @@ class LoginPage(object):
         username=os.environ["CI_TEST_RAS_USERID"],
         password=os.environ["CI_TEST_RAS_PASSWORD"],
     ):
+        # Click on 'Login from RAS' on Gen3 Login Page
+        page.locator("//button[normalize-space()='Login from RAS']").click()
         # Perform RAS Login
         screenshot(page, "RASLoginPage")
-        # ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
-        # expect(ras_login_button).to_be_visible(timeout=5000)
+        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
+        expect(ras_signin_button).to_be_visible(timeout=5000)
         page.locator(self.RAS_USERNAME_INPUT).fill(username)
         page.locator(self.RAS_PASSWORD_INPUT).fill(password)
-        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
         ras_signin_button.click()
         screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
