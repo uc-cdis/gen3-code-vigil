@@ -5,28 +5,20 @@ RAS AuthN
 import os
 import pytest
 
-from cdislogging import get_logger
 from services.fence import Fence
 from pages.login import LoginPage
-from playwright.sync_api import Page, expect
 
-from utils.test_execution import screenshot
+from cdislogging import get_logger
+from playwright.sync_api import Page
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.portal
 @pytest.mark.fence
-@pytest.mark.requires_fence_client
 class TestRasAuthN:
     fence = Fence()
     login_page = LoginPage()
-
-    @classmethod
-    def setup_class(cls):
-        # Confirm CI_TEST_RAS_USERID and CI_TEST_RAS_PASSWORD are present in env
-        assert "CI_TEST_RAS_USERID" in os.environ, "CI_TEST_RAS_USERID not found"
-        assert "CI_TEST_RAS_PASSWORD" in os.environ, "CI_TEST_RAS_PASSWORD not found"
 
     def test_provide_invalid_credentials_NIH_login_page(self, page: Page):
         """
@@ -40,7 +32,11 @@ class TestRasAuthN:
         secrets to be configured with RAS credentials
         """
         self.login_page.go_to(page)
-        self.login_page.ras_login(page, username=os.environ["CI_TEST_RAS_USERID"], password="THIS_IS_AN_INVALID_PASSWORD_FOR_USER_1")
+        self.login_page.ras_login(
+            page,
+            username=os.environ["CI_TEST_RAS_USERID"],
+            password="THIS_IS_AN_INVALID_PASSWORD_FOR_USER_1",
+        )
         html_content = page.content()
         assert (
             "Access Denied" in html_content

@@ -134,7 +134,6 @@ def pytest_configure(config):
 
 def pytest_unconfigure(config):
     if not hasattr(config, "workerinput"):
-        global requires_fence_client_marker_present
         directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
