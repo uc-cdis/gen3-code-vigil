@@ -48,6 +48,7 @@ pipeline {
                             "jenkins-client-short-expiration"
                             "jenkins-client-medium-expiration"
                             "jenkins-client-long-expiration"
+                            "ras-test-client"
                         )
 
                         combined='{}'

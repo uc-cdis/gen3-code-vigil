@@ -465,3 +465,53 @@ def create_link_google_test_buckets(test_env_namespace: str):
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
         raise Exception("Build number not found")
+
+
+def fence_enable_register_users_redirect(test_env_namespace: str):
+    """
+    Runs jenkins job to setup register user redirect on login
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "fence-enable-user-register-redirect",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def fence_disable_register_users_redirect(test_env_namespace: str):
+    """
+    Runs jenkins job to disable register user redirect on login
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "fence-disable-user-register-redirect",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
