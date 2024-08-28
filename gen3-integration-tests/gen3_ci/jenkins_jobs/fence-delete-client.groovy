@@ -43,7 +43,7 @@ pipeline {
                             "basic-test-client"
                             "implicit-test-client"
                             "basic-test-abc-client"
-                            "jenkins-client-tester"
+                            "jenkinsClientTester"
                             "jenkins-client-no-expiration"
                             "jenkins-client-short-expiration"
                             "jenkins-client-medium-expiration"
