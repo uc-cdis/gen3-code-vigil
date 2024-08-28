@@ -1,6 +1,11 @@
 /*
     String parameter NAMESPACE
         e.g. jenkins-blood
+    String parameter USERNAME
+        e.g. dummy-one@planx-pla.net
+    String parameter EMAIL
+        e.g. cdis.autotest@gmail.com
+
 */
 pipeline {
     agent {
@@ -27,9 +32,9 @@ pipeline {
                 ])
             }
         }
-        stage('Delete Fence Client') {
+        stage('Force Link Google Account') {
             steps {
-                dir("delete-fence-client"){
+                dir("force_link_google"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e
@@ -37,28 +42,9 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source \$GEN3_HOME/gen3/gen3setup.sh
 
-
-                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN
-                        client_details=(
-                            "basic-test-client"
-                            "implicit-test-client"
-                            "basic-test-abc-client"
-                            "jenkinsClientTester"
-                            "jenkinsClientNoExpiration"
-                            "jenkinsClientShortExpiration"
-                            "jenkinsClientMediumExpiration"
-                            "jenkinsClientLongExpiration"
-                            "ras-test-client"
-                            "ras-test-client1"
-                            "ras-test-client2"
-                        )
-
-                        combined='{}'
-                        for CLIENT_NAME in "${client_details[@]}"; do
-                            DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
-                            echo "Running: ${DELETE_CMD}"
-                            bash -c "${DELETE_CMD}"
-                        done
+                        LINK_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create force-link-google --username ${USERNAME} --google-email ${EMAIL}"
+                        echo "Running: ${LINK_CMD}"
+                        LINK_CMD_RES=$(bash -c "${LINK_CMD}")
                         '''
                     }
                 }

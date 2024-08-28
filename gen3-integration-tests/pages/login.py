@@ -30,6 +30,7 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
+        self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
         self.LOGIN_BUTTONS = [
@@ -42,48 +43,65 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page):
+    def go_to(self, page: Page, url=None):
         """Goes to the login page"""
-        page.goto(self.BASE_URL)
-        page.wait_for_selector(self.READY_CUE, state="visible")
+        if url:
+            page.goto(url)
+        else:
+            page.goto(self.BASE_URL)
+            page.wait_for_selector(self.READY_CUE, state="visible")
         screenshot(page, "LoginPage")
 
-    def login(self, page: Page, user="main_account", idp="Google"):
+    def login(
+        self,
+        page: Page,
+        user="main_account",
+        idp="Google",
+        validate_username_locator=True,
+    ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
         Also checks if the access_token exists after login
         """
         page.context.add_cookies(
-            [{"name": "dev_login", "value": pytest.users[user], "url": self.BASE_URL}]
+            [
+                {
+                    "name": "dev_login",
+                    "value": pytest.users[user],
+                    "url": pytest.root_url_portal,
+                }
+            ]
         )
         # printing cookies if needed for debugging purposes
         cookies = page.context.cookies()
         for cookie in cookies:
-            logger.debug(f"{cookie['name']}={cookie['value']}")
-
+            logger.info(f"{cookie['name']}={cookie['value']}")
+        expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         if idp == "ORCID":
-            page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
+            logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
-            page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
+            logged_in_user = os.environ["CI_TEST_RAS_USERID"]
         else:
+            logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
+                logger.info(login_button)
                 try:
-                    if page.locator(login_button).is_visible():
-                        button = page.locator(login_button)
-                        if button.is_enabled():
-                            button.click()
-                            logger.info(f"Clicked on login button : {login_button}")
-                            break
-                except TimeoutError:
+                    button = page.locator(login_button)
+                    if button.is_enabled(timeout=5000):
+                        button.click()
+                        logger.info(f"Clicked on login button : {login_button}")
+                        break
+                except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
-
+                logged_in_user = pytest.users[user]
+        if validate_username_locator:
+            expect(
+                page.locator(f'//div[contains(text(), "{logged_in_user}")]')
+            ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
-        page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
-
         self.handle_popup(page)
-        screenshot(page, "AfterPopUpAccept")
         access_token_cookie = next(
             (
                 cookie
@@ -95,8 +113,11 @@ class LoginPage(object):
         assert (
             access_token_cookie is not None
         ), "Access token cookie not found after login"
+        return access_token_cookie
 
     def orcid_login(self, page: Page):
+        # Click on 'ORCID Login' on Gen3 Login Page
+        page.locator("//button[normalize-space()='ORCID Login']").click()
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -158,5 +179,6 @@ class LoginPage(object):
             accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
             if accept_button:
                 accept_button.click()
+            screenshot(page, "AfterPopUpAccept")
         else:
             logger.info("Popup message not found")
