@@ -48,6 +48,7 @@ pipeline {
                             "jenkinsClientShortExpiration"
                             "jenkinsClientMediumExpiration"
                             "jenkinsClientLongExpiration"
+                            "ras-test-client"
                         )
 
                         combined='{}'

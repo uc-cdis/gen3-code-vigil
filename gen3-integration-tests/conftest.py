@@ -14,8 +14,7 @@ from utils import TEST_DATA_PATH_OBJECT
 from dotenv import load_dotenv
 
 load_dotenv()
-
-collected_items = []
+requires_fence_client_marker_present = False
 
 
 class XDistCustomPlugin:
@@ -51,6 +50,7 @@ class CustomScheduling(LoadScopeScheduling):
 
 
 def pytest_collection_finish(session):
+    global requires_fence_client_marker_present
     # Iterate through the collected test items
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
@@ -59,6 +59,7 @@ def pytest_collection_finish(session):
             for marker_name, marker in markers.items():
                 if marker_name == "requires_fence_client":
                     setup.get_fence_client_info()
+                    requires_fence_client_marker_present = True
                     return
 
 
@@ -80,7 +81,7 @@ def pytest_configure(config):
     # Compute root_url
     pytest.root_url = f"https://{hostname}"
 
-    # Accounts used for testing
+    # Clients used for testing
     pytest.clients = {}
     # Accounts used for testing
     pytest.users = {}
@@ -136,4 +137,5 @@ def pytest_unconfigure(config):
         directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
-        setup.delete_all_fence_clients()
+        if requires_fence_client_marker_present:
+            setup.delete_all_fence_clients()

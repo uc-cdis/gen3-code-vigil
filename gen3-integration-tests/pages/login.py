@@ -17,10 +17,13 @@ class LoginPage(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
-        self.RAS_LOGIN_BUTTON = "//button[@type='submit']"
+        self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
         self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
+        self.RAS_AUTHORIZATION_BOX = "//div[@class='auth-list']"
+        self.RAS_ACCEPT_AUTHORIZATION_BUTTON = "//button[contains(text(), 'authorize')]"
+        self.RAS_DENY_AUTHORIZATION_BUTTON = "//button[contains(text(), 'Cancel')]"
         self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
@@ -38,13 +41,22 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page):
+    def go_to(self, page: Page, url=None):
         """Goes to the login page"""
-        page.goto(self.BASE_URL)
-        page.wait_for_selector(self.READY_CUE, state="visible")
+        if url:
+            page.goto(url)
+        else:
+            page.goto(self.BASE_URL)
+            page.wait_for_selector(self.READY_CUE, state="visible")
         screenshot(page, "LoginPage")
 
-    def login(self, page: Page, user="main_account", idp="Google"):
+    def login(
+        self,
+        page: Page,
+        user="main_account",
+        idp="Google",
+        validate_username_locator=True,
+    ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
         Also checks if the access_token exists after login
@@ -64,13 +76,11 @@ class LoginPage(object):
             logger.info(f"{cookie['name']}={cookie['value']}")
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         if idp == "ORCID":
-            page.locator("//button[normalize-space()='ORCID Login']").click()
             self.orcid_login(page)
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
-            page.locator("//button[normalize-space()='Login from RAS']").click()
             self.ras_login(page)
-            logged_in_user = os.environ["CI_TEST_RAS_USERID"].lower()
+            logged_in_user = os.environ["CI_TEST_RAS_USERID"]
         else:
             logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
@@ -84,9 +94,10 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
-        expect(
-            page.locator(f'//div[contains(text(), "{logged_in_user}")]')
-        ).to_be_visible(timeout=10000)
+        if validate_username_locator:
+            expect(
+                page.locator(f'//div[contains(text(), "{logged_in_user}")]')
+            ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
@@ -103,6 +114,8 @@ class LoginPage(object):
         return access_token_cookie
 
     def orcid_login(self, page: Page):
+        # Click on 'ORCID Login' on Gen3 Login Page
+        page.locator("//button[normalize-space()='ORCID Login']").click()
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -116,17 +129,30 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
 
-    def ras_login(self, page: Page):
+    def ras_login(
+        self,
+        page: Page,
+        username=os.environ["CI_TEST_RAS_USERID"],
+        password=os.environ["CI_TEST_RAS_PASSWORD"],
+    ):
+        # Click on 'Login from RAS' on Gen3 Login Page
+        page.locator("//button[normalize-space()='Login from RAS']").click()
         # Perform RAS Login
-        ras_login_button = page.locator(self.RAS_LOGIN_BUTTON)
-        expect(ras_login_button).to_be_visible(timeout=5000)
-        page.locator(self.RAS_USERNAME_INPUT).fill(os.environ["CI_TEST_RAS_USERID"])
-        page.locator(self.RAS_PASSWORD_INPUT).fill(os.environ["CI_TEST_RAS_PASSWORD"])
-        ras_login_button.click()
+        screenshot(page, "RASLoginPage")
+        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
+        expect(ras_signin_button).to_be_visible(timeout=5000)
+        page.locator(self.RAS_USERNAME_INPUT).fill(username)
+        page.locator(self.RAS_PASSWORD_INPUT).fill(password)
+        ras_signin_button.click()
+        screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_enabled(timeout=5000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=5000):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
+        if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(timeout=5000):
+            logger.info("Clicking on Authorization button")
+            page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
+        screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
