@@ -98,11 +98,7 @@ class TestOIDCClient:
             3. Get access_token with help of client_credentials creds1 and cred2
             4. Send indexd post request to add indexd record and check if it successful request
         """
-<<<<<<< HEAD
         client_name = "jenkinsClientTester"
-=======
-        client_name = "jenkins-client-tester"
->>>>>>> 0c2adb6 (add new code to support pytest.clients dict)
         logger.info(f"Getting client_id and client_secret for client {client_name} ...")
         client_id = pytest.clients[client_name]["client_id"]
         client_secret = pytest.clients[client_name]["client_secret"]

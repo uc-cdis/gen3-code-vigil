@@ -44,6 +44,7 @@ pipeline {
                             "implicit-test-client"
                             "basic-test-abc-client"
 <<<<<<< HEAD:gen3-integration-tests/gen3_ci/jenkins_jobs/ci-only-fence-delete-client.groovy
+<<<<<<< HEAD:gen3-integration-tests/gen3_ci/jenkins_jobs/ci-only-fence-delete-client.groovy
                             "jenkinsClientTester"
                             "jenkins-client-no-expiration"
                             "jenkins-client-short-expiration"
@@ -52,6 +53,9 @@ pipeline {
                             "ras-test-client"
 =======
                             "jenkins-client-tester"
+=======
+                            "jenkinsClientTester"
+>>>>>>> 3aabefe (fix the code again):gen3-integration-tests/gen3_ci/jenkins_jobs/fence-delete-client.groovy
                             "jenkins-client-no-expiration"
                             "jenkins-client-short-expiration"
                             "jenkins-client-medium-expiration"
