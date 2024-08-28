@@ -68,7 +68,6 @@ def get_client_id_secret():
     # Adding the client_name, client_id and client_secret to the pytest.clients dict in conftest.py
     for name, client_id, client_secret in client_entries:
         pytest.clients[name] = {"client_id": client_id, "client_secret": client_secret}
-    logger.info(f"Client Dict in test_setup: {pytest.clients}")
 
     # if client_name in clients_dict:
     #     return clients_dict[client_name]['client_id'], clients_dict[client_name]['client_secret']

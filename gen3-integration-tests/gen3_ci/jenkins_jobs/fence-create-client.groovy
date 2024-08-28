@@ -45,7 +45,7 @@ pipeline {
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
                             "basic-test-abc-client,test-abc-client@example.com,basic,None,"
-                            "jenkins-client-tester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+                            "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
                             "jenkins-client-no-expiration,test-user,client_credentials,None,"
                             "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
                             "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
