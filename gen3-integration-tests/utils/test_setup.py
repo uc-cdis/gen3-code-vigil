@@ -69,9 +69,12 @@ def get_client_id_secret():
     for name, client_id, client_secret in client_entries:
         pytest.clients[name] = {"client_id": client_id, "client_secret": client_secret}
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     logger.info(f"Client Dict in test_setup: {pytest.clients}")
 >>>>>>> 0c2adb6 (add new code to support pytest.clients dict)
+=======
+>>>>>>> ddfb0b0 (fix the code)
 
     # if client_name in clients_dict:
     #     return clients_dict[client_name]['client_id'], clients_dict[client_name]['client_secret']

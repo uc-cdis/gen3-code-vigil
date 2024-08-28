@@ -46,6 +46,7 @@ pipeline {
                             "implicit-test-client,test@example.com,implicit,None,"
                             "basic-test-abc-client,test-abc-client@example.com,basic,None,"
 <<<<<<< HEAD:gen3-integration-tests/gen3_ci/jenkins_jobs/ci-only-fence-create-client.groovy
+<<<<<<< HEAD:gen3-integration-tests/gen3_ci/jenkins_jobs/ci-only-fence-create-client.groovy
                             "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
                             "jenkins-client-no-expiration,test-user,client_credentials,None,"
                             "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
@@ -54,6 +55,9 @@ pipeline {
                             "ras-test-client,UCtestuser128,basic,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,"
 =======
                             "jenkins-client-tester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+=======
+                            "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+>>>>>>> 879e4d9 (fix the code):gen3-integration-tests/gen3_ci/jenkins_jobs/fence-create-client.groovy
                             "jenkins-client-no-expiration,test-user,client_credentials,None,"
                             "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
                             "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
