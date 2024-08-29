@@ -37,7 +37,6 @@ class TestOIDCClient:
                 client_credentials=(client_id, client_secret),
             )
             client_access_token = gen3auth.get_access_token()
-            logger.info(f"Client Access Token : {client_access_token}")
             assert client_access_token, "Client access token was not created"
 
         # running fence-delete-expired-clients job
