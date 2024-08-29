@@ -31,6 +31,10 @@ class TestRasAuthN:
         NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
         secrets to be configured with RAS credentials
         """
+        # Confirm CI_TEST_RAS_USERID and CI_TEST_RAS_PASSWORD are present in env
+        assert "CI_TEST_RAS_USERID" in os.environ, "CI_TEST_RAS_USERID not found"
+        assert "CI_TEST_RAS_PASSWORD" in os.environ, "CI_TEST_RAS_PASSWORD not found"
+
         self.login_page.go_to(page)
         self.login_page.ras_login(
             page,

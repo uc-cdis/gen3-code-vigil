@@ -560,6 +560,7 @@ class TestDataUpload:
             id=file_guid, user="main_account", expected_status=404
         )
 
+    @pytest.mark.portal
     def test_map_uploaded_files_in_submission_page(self, page: Page):
         """
         Scenario: Map uploaded files in windmill submission page
@@ -620,6 +621,7 @@ class TestDataUpload:
 
             self.login_page.logout(page)
 
+    @pytest.mark.portal
     def test_cannot_see_files_uploaded_by_other_users(self, page: Page):
         """
         Scenario: Cannot see files uploaded by other users
