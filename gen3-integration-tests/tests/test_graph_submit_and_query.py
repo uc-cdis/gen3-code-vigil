@@ -14,19 +14,6 @@ from pages.login import LoginPage
 from pages.files_landing_page import FilesLandingPage
 
 
-def skip_consent_code_test(gdt: GraphDataTools):
-    """
-    Function to check if consent_codes is available in dictionary.
-    Used to skip test if consent_codes in not available.
-    """
-    metadata = gdt.get_file_record()
-    if "consent_codes" not in metadata.props.keys():
-        logger.info("Running consent code tests since dictionary has them")
-        return True
-    logger.info("Skipping consent code tests since dictionary does not have them")
-    return False
-
-
 @pytest.mark.graph_submission
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
@@ -227,10 +214,6 @@ class TestGraphSubmitAndQuery:
             last_node.node_name in response["data"].keys()
         ), "{} not found in response {}".format(last_node.node_name, response)
 
-    @pytest.mark.skipif(
-        skip_consent_code_test(sd_tools),
-        reason="Consent Codes not available in dictionary",
-    )
     def test_submit_data_record_with_consent_codes(self):
         """
         Scenario: Update file with invalid property
@@ -239,7 +222,11 @@ class TestGraphSubmitAndQuery:
             2. Verify indexd record was created with the correct consent codes
         """
         indexd = Indexd()
-
+        metadata = self.sd_tools.get_file_record()
+        if "consent_codes" not in metadata.props.keys():
+            pytest.skip(
+                "Skipping consent code tests since dictionary does not have them"
+            )
         file_record = self.sd_tools.get_file_record()
         file_record.props["consent_codes"] += ["CC1", "CC2"]
         self.sd_tools.submit_links_for_record(file_record)
