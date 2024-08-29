@@ -29,6 +29,10 @@ on:
         required: true
       CI_TEST_RAS_PASSWORD:
         required: true
+      CI_TEST_RAS_2_USERID:
+        required: true
+      CI_TEST_RAS_2_PASSWORD:
+        required: true
       CI_SLACK_BOT_TOKEN:
         required: true
       CI_SLACK_CHANNEL_ID:
