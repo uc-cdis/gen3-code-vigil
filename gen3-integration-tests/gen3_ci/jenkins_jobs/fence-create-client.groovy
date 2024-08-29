@@ -40,7 +40,7 @@ pipeline {
                         source $GEN3_HOME/gen3/gen3setup.sh
 
 
-                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN
+                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN,SCOPES
                         client_details=(
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
