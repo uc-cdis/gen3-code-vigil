@@ -9,6 +9,7 @@ import utils.gen3_admin_tasks as gat
 
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
+@pytest.mark.serial
 class TestOIDCClient:
     def test_oidc_client_expiration(self):
         """

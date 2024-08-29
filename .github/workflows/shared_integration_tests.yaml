@@ -188,6 +188,7 @@ jobs:
             run: |
               mkdir output
               poetry run pytest -n auto -m "not wip" -m ${{ inputs.SERVICE_TO_TEST }} --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              poetry run pytest -m "not wip and ${{ inputs.SERVICE_TO_TEST }} and serial" --alluredir allure-results --no-header ${{ env.TEST_LABEL }}
 
           - name: Run tests
             id: run_tests
@@ -195,7 +196,8 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              poetry run pytest -n auto -m "not wip and not serial" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              poetry run pytest -m "not wip and serial" --alluredir allure-results --no-header ${{ env.TEST_LABEL }}
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}

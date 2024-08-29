@@ -49,6 +49,18 @@ class CustomScheduling(LoadScopeScheduling):
         return nodeid.rsplit("::", 1)[0]
 
 
+class SerialScheduling(LoadScopeScheduling):
+    def __init__(self, config, log, *, nodes):
+        super().__init__(config, log)
+        self.nodes = nodes
+
+    def _split_scope(self, nodeid):
+        node = self._nodes[nodeid]
+        if node.get_closest_marker("serial"):
+            return "__serial__"
+        return node
+
+
 def pytest_collection_finish(session):
     global requires_fence_client_marker_present
     # Iterate through the collected test items
