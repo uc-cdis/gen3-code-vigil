@@ -114,6 +114,9 @@ class TestOIDCClient:
         client_rotate_id = rotate_client[0]
         client_rotate_secret = rotate_client[1]
 
+        gat.run_gen3_job(pytest.namespace, "usersync")
+        gat.check_job_pod(pytest.namespace, "usersync", "gen3job")
+
         # Get access_token with client_id and client_secret before running client-fence-rotate command
         gen3auth_before = Gen3Auth(
             endpoint=pytest.root_url,
