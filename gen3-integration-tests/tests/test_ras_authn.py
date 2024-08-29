@@ -23,7 +23,7 @@ class TestRasAuthN:
     env_vars = [
         "CI_TEST_RAS_USERID",
         "CI_TEST_RAS_PASSWORD",
-        "CI_TEST_RAS_2_USER",
+        "CI_TEST_RAS_2_USERID",
         "CI_TEST_RAS_2_PASSWORD",
     ]
 
@@ -120,7 +120,7 @@ class TestRasAuthN:
         # and click on 'Yes. I authorize' button
         # Get code from the url
         scope = "openid user data google_credentials"
-        username = os.environ["CI_TEST_RAS_2_USER"]
+        username = os.environ["CI_TEST_RAS_2_USERID"]
         password = os.environ["CI_TEST_RAS_2_PASSWORD"]
         token = self.ras.get_tokens(
             client_id=client_id,
