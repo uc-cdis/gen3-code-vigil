@@ -12,6 +12,7 @@ from utils import logger
 
 
 @pytest.mark.pfb
+@pytest.mark.portal
 class TestPFBExport(object):
     def test_pfb_export(self, page: Page):
         """

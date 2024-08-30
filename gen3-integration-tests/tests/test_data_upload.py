@@ -23,19 +23,6 @@ from gen3.auth import Gen3Auth
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-def skip_consent_code_test(gdt: GraphDataTools):
-    """
-    Function to check if consent_codes is available in dictionary.
-    Used to skip test if consent_codes in not available.
-    """
-    metadata = gdt.get_file_record()
-    if "consent_codes" not in metadata.props.keys():
-        logger.info("Running consent code tests since dictionary has them")
-        return True
-    logger.info("Skipping consent code tests since dictionary does not have them")
-    return False
-
-
 def create_large_file(filePath, megabytes, text):
     with open(filePath, mode="w") as f:
         # 1MB = 1024 times the previous text
@@ -360,10 +347,6 @@ class TestDataUpload:
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
-    @pytest.mark.skipif(
-        skip_consent_code_test(sd_tools),
-        reason="Consent Codes not available in dictionary",
-    )
     def test_file_upload_with_consent_codes(self):
         """
         Scenario: File upload with consent codes
@@ -375,6 +358,11 @@ class TestDataUpload:
             5. Link metadata to the file via sheepdog
             6. Download the file via fence and check who can download
         """
+        metadata = self.sd_tools.get_file_record()
+        if "consent_codes" not in metadata.props.keys():
+            pytest.skip(
+                "Skipping consent code tests since dictionary does not have them"
+            )
         file_size = os.path.getsize(file_path)
         file_md5 = hashlib.md5(open(file_path, "rb").read()).hexdigest()
         fence_upload_res = self.fence.get_url_for_data_upload(
@@ -560,6 +548,7 @@ class TestDataUpload:
             id=file_guid, user="main_account", expected_status=404
         )
 
+    @pytest.mark.portal
     def test_map_uploaded_files_in_submission_page(self, page: Page):
         """
         Scenario: Map uploaded files in windmill submission page
@@ -620,6 +609,7 @@ class TestDataUpload:
 
             self.login_page.logout(page)
 
+    @pytest.mark.portal
     def test_cannot_see_files_uploaded_by_other_users(self, page: Page):
         """
         Scenario: Cannot see files uploaded by other users
