@@ -15,6 +15,7 @@ from utils import logger
 @pytest.mark.fence
 @pytest.mark.requestor
 @pytest.mark.requires_fence_client
+@pytest.mark.requires_usersync
 class TestClientCredentials:
     def test_client_credentials(self):
         """
@@ -33,9 +34,8 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
-        client_id, client_secret = fence.get_client_id_secret(
-            client_name="jenkinsClientTester"
-        )
+        client_id = pytest.clients["jenkins-client-tester"]["client_id"]
+        client_secret = pytest.clients["jenkins-client-tester"]["client_secret"]
 
         gen3auth = Gen3Auth(
             endpoint=pytest.root_url,

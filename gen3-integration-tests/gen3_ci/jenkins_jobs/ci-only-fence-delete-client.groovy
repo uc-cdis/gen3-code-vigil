@@ -44,10 +44,10 @@ pipeline {
                             "implicit-test-client"
                             "basic-test-abc-client"
                             "jenkinsClientTester"
-                            "jenkinsClientNoExpiration"
-                            "jenkinsClientShortExpiration"
-                            "jenkinsClientMediumExpiration"
-                            "jenkinsClientLongExpiration"
+                            "jenkins-client-no-expiration"
+                            "jenkins-client-short-expiration"
+                            "jenkins-client-medium-expiration"
+                            "jenkins-client-long-expiration"
                             "ras-test-client"
                         )
 

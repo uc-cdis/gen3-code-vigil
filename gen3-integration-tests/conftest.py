@@ -63,6 +63,12 @@ def pytest_collection_finish(session):
                     return
 
 
+@pytest.fixture(scope="session", autouse=True)
+def get_fence_clients():
+    setup.get_client_id_secret()
+    yield
+
+
 def pytest_configure(config):
     # Compute hostname and namespace
     hostname = os.getenv("HOSTNAME")
