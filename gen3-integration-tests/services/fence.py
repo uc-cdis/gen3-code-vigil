@@ -34,8 +34,9 @@ class Fence(object):
         self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
         self.GOOGLE_LINK_URL = f"{self.BASE_URL}/link/google"
         self.GOOGLE_LINK_REDIRECT = f"{self.GOOGLE_LINK_URL}?redirect=/login"
+        self.GOOGLE_CREDENTIALS_URL = f"{self.BASE_URL}/credentials/google/"
         self.DEFAULT_EXP_TIME = 84600
-        # Locatores
+        # Locators
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
@@ -474,3 +475,27 @@ class Fence(object):
                 f"Status code of the Extend link request: {extend_res.status_code}"
             )
             return extend_res.status_code
+
+    def create_temp_google_creds(self, user: str, expires_in: int = None):
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        access_token = auth.get_access_token()
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {access_token}",
+        }
+        if expires_in:
+            url = f"{self.GOOGLE_CREDENTIALS_URL}?expires_in={expires_in}"
+        else:
+            url = f"{self.GOOGLE_CREDENTIALS_URL}"
+        temp_google_creds_response = requests.post(url=url, headers=headers)
+        if temp_google_creds_response.status_code == 200:
+            response_json = temp_google_creds_response.json()
+            assert (
+                "private_key" in response_json
+            ), "Private key is not found in response json"
+            return response_json, temp_google_creds_response.status_code
+        else:
+            logger.info(
+                f"Status code of the creating temp google creds : {temp_google_creds_response.status_code}"
+            )
+            return None, temp_google_creds_response.status_code
