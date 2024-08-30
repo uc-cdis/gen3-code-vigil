@@ -11,6 +11,7 @@ from utils import logger
 
 
 @pytest.mark.requestor
+@pytest.mark.portal
 class TestRequestor:
     variables = {}
 
