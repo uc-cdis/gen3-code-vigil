@@ -15,7 +15,6 @@ from utils import logger
 @pytest.mark.fence
 @pytest.mark.requestor
 @pytest.mark.requires_fence_client
-@pytest.mark.requires_usersync
 class TestClientCredentials:
     def test_client_credentials(self):
         """
