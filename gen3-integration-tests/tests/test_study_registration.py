@@ -18,6 +18,7 @@ from services.metadataservice import MetadataService
 # @pytest.mark.mds
 # @pytest.mark.study_registration
 @pytest.mark.wip
+@pytest.mark.portal
 class TestStudyRegistration(object):
     variables = {}
 
