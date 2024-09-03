@@ -62,10 +62,9 @@ def pytest_collection_finish(session):
                     setup.get_fence_client_info()
                     requires_fence_client_marker_present = True
                     return
-                if (
-                    marker_name == "requires_usersync"
-                ):  # Check for requires_usersync marker
+                if marker_name == "requires_usersync":
                     requires_usersync_marker_present = True
+                    return
 
 
 @pytest.fixture(scope="session", autouse=True)

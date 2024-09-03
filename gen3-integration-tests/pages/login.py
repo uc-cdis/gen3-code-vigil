@@ -73,7 +73,7 @@ class LoginPage(object):
         # printing cookies if needed for debugging purposes
         cookies = page.context.cookies()
         for cookie in cookies:
-            logger.info(f"{cookie['name']}={cookie['value']}")
+            logger.debug(f"{cookie['name']}={cookie['value']}")
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         if idp == "ORCID":
             self.orcid_login(page)
