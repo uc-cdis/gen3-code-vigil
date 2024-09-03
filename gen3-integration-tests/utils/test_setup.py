@@ -61,13 +61,15 @@ def get_client_id_secret():
         content = file.read()
 
     client_entries = re.findall(
-        r"CLIENT_NAME:\s*([\w-]+).*?client id, client secret:\s*\(\s*\'([^\']+)\',\s*\'([^\']+)\'\s*\)",
+        r"CLIENT_NAME:\s*([\w-]+).*?client id, client secret:\s*\(\s*'([^\']+)',\s*(?:'([^\']*)'|None)\s*\)",
         content,
         re.DOTALL,
     )
     # Adding the client_name, client_id and client_secret to the pytest.clients dict in conftest.py
     for name, client_id, client_secret in client_entries:
         pytest.clients[name] = {"client_id": client_id, "client_secret": client_secret}
+
+    logger.info(f"Client Dictionary: {pytest.clients}")
 
     # if client_name in clients_dict:
     #     return clients_dict[client_name]['client_id'], clients_dict[client_name]['client_secret']
