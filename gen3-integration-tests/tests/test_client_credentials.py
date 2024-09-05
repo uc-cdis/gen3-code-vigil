@@ -33,8 +33,8 @@ class TestClientCredentials:
         requestor = Requestor()
 
         # creating a new client for the test
-        client_id = pytest.clients["jenkinsClientTester"]["client_id"]
-        client_secret = pytest.clients["jenkinsClientTester"]["client_secret"]
+        client_id = pytest.clients["jenkins-client-tester"]["client_id"]
+        client_secret = pytest.clients["jenkins-client-tester"]["client_secret"]
 
         gen3auth = Gen3Auth(
             endpoint=pytest.root_url,

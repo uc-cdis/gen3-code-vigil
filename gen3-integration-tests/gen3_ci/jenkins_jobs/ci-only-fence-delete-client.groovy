@@ -43,7 +43,7 @@ pipeline {
                             "basic-test-client"
                             "implicit-test-client"
                             "basic-test-abc-client"
-                            "jenkinsClientTester"
+                            "jenkins-client-tester"
                             "jenkinsClientTesterForRotation"
                             "jenkins-client-no-expiration"
                             "jenkins-client-short-expiration"

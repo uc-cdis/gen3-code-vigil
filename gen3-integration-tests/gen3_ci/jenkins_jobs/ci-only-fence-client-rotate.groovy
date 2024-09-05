@@ -38,7 +38,7 @@ pipeline {
                         source $GEN3_HOME/gen3/gen3setup.sh
                         # CLIENT_NAME,EXPIRES_IN
                         client_details=(
-                            "jenkinsClientTester,"
+                            "jenkins-client-tester,"
                         )
 
                         for value in "${client_details[@]}"; do

@@ -9,7 +9,6 @@ import utils.gen3_admin_tasks as gat
 
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
-@pytest.mark.requires_fence_rotated_client
 class TestOIDCClient:
     def test_oidc_client_expiration(self):
         """
@@ -106,7 +105,7 @@ class TestOIDCClient:
             3. Get access_token with help of client_credentials creds1 and cred2
             4. Send indexd post request to add indexd record and check if it successful request
         """
-        client_name = "jenkinsClientTester"
+        client_name = "jenkins-client-tester"
         logger.info(f"Getting client_id and client_secret for client {client_name} ...")
         client_id = pytest.clients[client_name]["client_id"]
         client_secret = pytest.clients[client_name]["client_secret"]

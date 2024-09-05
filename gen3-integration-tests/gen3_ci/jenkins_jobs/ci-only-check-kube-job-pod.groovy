@@ -40,7 +40,7 @@ pipeline {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
             steps {
-                dir("check-kube-pod"){
+                dir("ci-only-check-kube-pod"){
                     script {
                         try {
                             sh '''#!/bin/bash +x
