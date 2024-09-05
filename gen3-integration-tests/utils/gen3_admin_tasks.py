@@ -121,7 +121,7 @@ def check_job_pod(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "check-kube-job-pod",
+        "ci-only-check-kube-job-pod",
     )
     params = {
         "NAMESPACE": test_env_namespace,
@@ -152,7 +152,7 @@ def create_fence_client(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "fence-create-client",
+        "ci-only-fence-create-client",
     )
     params = {
         "NAMESPACE": test_env_namespace,
