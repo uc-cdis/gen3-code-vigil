@@ -105,7 +105,7 @@ spec:
         }
         stage('Generate API Key') {
             steps {
-                dir("generate-api-key") {
+                dir("ci-only-generate-api-key") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
@@ -141,7 +141,7 @@ spec:
     }
     post {
         always {
-            archiveArtifacts artifacts: 'generate-api-key/*.json'
+            archiveArtifacts artifacts: 'ci-only-generate-api-key/*.json'
         }
     }
 }

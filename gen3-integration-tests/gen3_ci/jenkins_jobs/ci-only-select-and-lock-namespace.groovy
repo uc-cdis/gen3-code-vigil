@@ -106,7 +106,7 @@ spec:
         }
         stage('Select and lock namespace') {
             steps {
-                dir("select-and-lock-namespace") {
+                dir("ci-only-select-and-lock-namespace") {
                     script {
                         sh '''#!/bin/bash +x
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
@@ -146,7 +146,7 @@ spec:
     }
     post {
         always {
-            archiveArtifacts artifacts: 'select-and-lock-namespace/namespace.txt'
+            archiveArtifacts artifacts: 'ci-only-select-and-lock-namespace/namespace.txt'
         }
     }
 }

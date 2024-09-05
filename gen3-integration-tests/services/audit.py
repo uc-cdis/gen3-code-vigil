@@ -42,6 +42,7 @@ class Audit(object):
             response = auth.curl(path=url)
             # Get the first record from api json data
             data = response.json()
+            logger.info(f"Record from api json data: {data}")
             # Counter to check response is recieved within 5 mins
             if len(data["data"]) != 0:
                 logger.info(data["data"])

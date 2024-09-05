@@ -1,8 +1,6 @@
 /*
-    String parameter CLIENT_NAME
-        e.g. jenkinsClientTester
-    String parameter EXPIRES_IN
-        e.g. NONE
+    String parameter NAMESPACE
+        e.g. jenkins-blood
 */
 pipeline {
     agent {
@@ -31,24 +29,35 @@ pipeline {
         }
         stage('Fence Client Rotation') {
             steps {
-                dir("fence-client-rotate"){
+                dir("ci-only-fence-client-rotate"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e
                         export GEN3_HOME=\$WORKSPACE/cloud-automation
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
-                        # construct fence-create command depending on the parameters provided by the run
-                        FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-rotate --client ${CLIENT_NAME}"
-                        echo "${FENCE_CMD}"
-                        if [[ -n $EXPIRES_IN ]]; then
-                            FENCE_CMD="${FENCE_CMD} --expires-in ${EXPIRES_IN}"
-                        fi
-                        echo "Running: ${FENCE_CMD}"
-                        # execute the above fence command
-                        FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > client_rotate_creds.txt))
-                        sed -n 's/.*\\x27\\([^\\x27]*\\)\\x27,\\s*\\x27\\([^\\x27]*\\)\\x27.*/\\1\\n\\2/p' client_rotate_creds.txt > temp_client_creds.txt
-                        mv temp_client_creds.txt client_rotate_creds.txt
+                        # CLIENT_NAME,EXPIRES_IN
+                        client_details=(
+                            "jenkinsClientTester,"
+                        )
+
+                        for value in "${client_details[@]}"; do
+                            # Split the variable into an array using comma as the delimiter
+                            IFS=',' read -r CLIENT_NAME EXPIRES_IN <<< "${value}"
+                            # construct fence-create command depending on the parameters provided by the run
+                            FENCE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-rotate --client ${CLIENT_NAME}"
+                            echo "${FENCE_CMD}"
+                            if [[ -n $EXPIRES_IN ]]; then
+                                FENCE_CMD="${FENCE_CMD} --expires-in ${EXPIRES_IN}"
+                            fi
+                            echo "Running: ${FENCE_CMD}"
+                            # execute the above fence command
+                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(awk -v prefix="$CLIENT_NAME" 'END{print prefix ":" $0}' >> client_rotate_creds.txt))
+                        done
+
+                        # Run usersync
+                        gen3 job run usersync ADD_DBGAP true
+                        kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }
@@ -57,7 +66,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'fence-client-rotate/client_rotate_creds.txt'
+            archiveArtifacts artifacts: 'ci-only-fence-client-rotate/client_rotate_creds.txt'
         }
     }
 }

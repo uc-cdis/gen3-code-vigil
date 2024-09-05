@@ -29,7 +29,7 @@ pipeline {
         }
         stage('Clean Up Indices') {
             steps {
-                dir("clean-up-indices"){
+                dir("ci-only-clean-up-indices"){
                     sh '''#!/bin/bash +x
                     set -e
                     export GEN3_HOME=\$WORKSPACE/cloud-automation
@@ -37,7 +37,7 @@ pipeline {
                     source $GEN3_HOME/gen3/gen3setup.sh
 
                     # get etlmapping names
-                    etlMappingNames=$(g3kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs)
+                    etlMappingNames=$(kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs)
                     IFS=' ' read -r -a indices <<< "$etlMappingNames"
 
                     # Add the "-array-config" suffix to each element

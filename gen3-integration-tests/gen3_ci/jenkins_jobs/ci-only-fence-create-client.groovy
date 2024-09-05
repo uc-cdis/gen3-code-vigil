@@ -31,7 +31,7 @@ pipeline {
         }
         stage('Create Fence Client') {
             steps {
-                dir("create-fence-client"){
+                dir("ci-only-create-fence-client"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e
@@ -91,14 +91,12 @@ pipeline {
                             echo "Running: ${FENCE_CMD}"
                             # execute the above fence command
                             # execute the above fence command
-                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}")
-
-                            echo "CLIENT_NAME: ${CLIENT_NAME} ${FENCE_CMD_RES}" >> clients_creds.txt
+                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(awk -v prefix="$CLIENT_NAME" 'END{print prefix ":" $0}' >> clients_creds.txt))
                         done
 
                         # Run usersync
                         gen3 job run usersync ADD_DBGAP true
-                        g3kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
+                        kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }
@@ -107,7 +105,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'create-fence-client/clients_creds.txt'
+            archiveArtifacts artifacts: 'ci-only-create-fence-client/clients_creds.txt'
         }
     }
 }

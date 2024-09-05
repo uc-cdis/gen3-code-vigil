@@ -9,7 +9,7 @@ import utils.gen3_admin_tasks as gat
 
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
-@pytest.mark.requires_usersync
+@pytest.mark.requires_fence_rotated_client
 class TestOIDCClient:
     def test_oidc_client_expiration(self):
         """
@@ -19,23 +19,28 @@ class TestOIDCClient:
             2. Get client_id and client_secrets after each create request and store it
             3. Run `fence-delete-expired-clients` gen3job and check the logs for confirmation
         """
-        clients = [
-            ["jenkins-client-no-expiration"],  # not in logs
-            ["jenkins-client-short-expiration"],  # in the logs
-            ["jenkins-client-medium-expiration"],  # in the logs
-            ["jenkins-client-long-expiration"],  # not in logs
-        ]
-        for client in clients:
-            client_name = client[0]
-            logger.info(f"Getting client_id and client_secret for {client_name} ...")
-            client_id = pytest.clients[client_name]["client_id"]
-            client_secret = pytest.clients[client_name]["client_secret"]
-            client.extend([client_id, client_secret])
-
+        clients = {
+            "jenkins-client-no-expiration": pytest.clients[
+                "jenkins-client-no-expiration"
+            ],
+            "jenkins-client-short-expiration": pytest.clients[
+                "jenkins-client-short-expiration"
+            ],
+            "jenkins-client-medium-expiration": pytest.clients[
+                "jenkins-client-medium-expiration"
+            ],
+            "jenkins-client-long-expiration": pytest.clients[
+                "jenkins-client-long-expiration"
+            ],
+        }
+        for client_name, client_details in clients.items():
             # checking if the access_token is created with client_id and client_secret
             gen3auth = Gen3Auth(
                 endpoint=pytest.root_url,
-                client_credentials=(client_id, client_secret),
+                client_credentials=(
+                    client_details["client_id"],
+                    client_details["client_secret"],
+                ),
             )
             client_access_token = gen3auth.get_access_token()
             assert client_access_token, "Client access token was not created"
@@ -70,8 +75,11 @@ class TestOIDCClient:
         ), "jenkins-client-long-expiration found in logs"
 
         # Testing if the non-expired clients still work properly
-        for client in clients:
-            client_name, client_id, client_secret = client
+        for client_name, client_details in clients.items():
+            client_id, client_secret = (
+                client_details["client_id"],
+                client_details["client_secret"],
+            )
             # you shouldnt be able to get access_token for client jenkins-client-short-expiration
             if client_name != "jenkins-client-short-expiration":
                 gen3auth = Gen3Auth(
@@ -102,20 +110,13 @@ class TestOIDCClient:
         logger.info(f"Getting client_id and client_secret for client {client_name} ...")
         client_id = pytest.clients[client_name]["client_id"]
         client_secret = pytest.clients[client_name]["client_secret"]
+        logger.info(client_id, client_secret)
 
-        # Run client-rotate command in fence pod for client
-        logger.info(f"Rotating creds for client {client_name} ...")
-        client_rotate_creds = gat.fence_client_rotate(pytest.namespace, client_name)
-        rotate_client = client_rotate_creds["client_rotate_creds.txt"].splitlines()
-        if len(rotate_client) < 2:
-            raise Exception(
-                "Client Rotation creds file does not contain expected data format (2 lines)"
-            )
-        client_rotate_id = rotate_client[0]
-        client_rotate_secret = rotate_client[1]
-
-        gat.run_gen3_job(pytest.namespace, "usersync")
-        gat.check_job_pod(pytest.namespace, "usersync", "gen3job")
+        # Client is rotated as part of the setup, to enable test execution in parallel for this test suite.
+        # Rotated client_id and client_secret are retrieved from pytest.rotated_clients.
+        client_rotate_id = pytest.rotated_clients[client_name]["client_id"]
+        client_rotate_secret = pytest.rotated_clients[client_name]["client_secret"]
+        logger.info(client_rotate_id, client_rotate_secret)
 
         # Get access_token with client_id and client_secret before running client-fence-rotate command
         gen3auth_before = Gen3Auth(

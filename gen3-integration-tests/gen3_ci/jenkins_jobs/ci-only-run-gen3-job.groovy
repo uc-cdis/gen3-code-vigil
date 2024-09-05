@@ -107,7 +107,7 @@ spec:
         }
         stage('Run Gen3 job') {
             steps {
-                dir("run-gen3-job") {
+                dir("ci-only-run-gen3-job") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
@@ -118,7 +118,7 @@ spec:
                                 gen3 roll all
                             fi
                             gen3 job run \${JOB_NAME}
-                            g3kubectl wait --for=condition=complete --timeout=-1s jobs/\${JOB_NAME}
+                            kubectl wait --for=condition=complete --timeout=-1s jobs/\${JOB_NAME}
                             gen3 job logs \${JOB_NAME} > log.txt
                         '''
                     }
@@ -128,7 +128,7 @@ spec:
     }
     post {
         always {
-            archiveArtifacts artifacts: 'run-gen3-job/log.txt'
+            archiveArtifacts artifacts: 'ci-only-run-gen3-job/log.txt'
         }
     }
 }

@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 requires_fence_client_marker_present = False
-requires_usersync_marker_present = False
 
 
 class XDistCustomPlugin:
@@ -51,7 +50,7 @@ class CustomScheduling(LoadScopeScheduling):
 
 
 def pytest_collection_finish(session):
-    global requires_fence_client_marker_present, requires_usersync_marker_present
+    global requires_fence_client_marker_present
     # Iterate through the collected test items
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
@@ -60,17 +59,15 @@ def pytest_collection_finish(session):
             for marker_name, marker in markers.items():
                 if marker_name == "requires_fence_client":
                     setup.get_fence_client_info()
+                    setup.get_fence_rotated_client_info()
                     requires_fence_client_marker_present = True
-                    return
-                if marker_name == "requires_usersync":
-                    requires_usersync_marker_present = True
                     return
 
 
 @pytest.fixture(scope="session", autouse=True)
 def get_fence_clients():
     setup.get_client_id_secret()
-    yield
+    setup.get_rotated_client_id_secret()
 
 
 def pytest_configure(config):
@@ -93,6 +90,7 @@ def pytest_configure(config):
 
     # Clients used for testing
     pytest.clients = {}
+    pytest.rotated_clients = {}
     # Accounts used for testing
     pytest.users = {}
     pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user

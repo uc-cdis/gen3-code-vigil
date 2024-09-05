@@ -37,7 +37,7 @@ pipeline {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
             steps {
-                dir("kube-setup-service"){
+                dir("ci-only-kube-setup-service"){
                     script {
                         try {
                             sh '''#!/bin/bash +x
