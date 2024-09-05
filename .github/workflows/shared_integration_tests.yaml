@@ -187,12 +187,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-<<<<<<< HEAD
-              poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip and not requires_usersync" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }} ; \
-              poetry run pytest -m "not wip and ${{ inputs.SERVICE_TO_TEST }} and requires_usersync" --alluredir allure-results --no-header ${{ env.TEST_LABEL }}
-=======
               poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
->>>>>>> 51f2374 (changes for OIDC)
 
           - name: Run tests
             id: run_tests
@@ -200,12 +195,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-<<<<<<< HEAD
-              poetry run pytest -n auto -m "not wip and not requires_usersync" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }} ; \
-              poetry run pytest -m "not wip and requires_usersync" --alluredir allure-results --no-header ${{ env.TEST_LABEL }}
-=======
               poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
->>>>>>> 51f2374 (changes for OIDC)
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
