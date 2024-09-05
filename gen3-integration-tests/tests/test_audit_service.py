@@ -292,12 +292,15 @@ class TestAuditService:
         NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
         secrets to be configured with RAS credentials
         """
+        #  Confirm CI_TEST_RAS_USERID and CI_TEST_RAS_PASSWORD are present in env
+        assert "CI_TEST_RAS_USERID" in os.environ, "CI_TEST_RAS_USERID not found"
+        assert "CI_TEST_RAS_PASSWORD" in os.environ, "CI_TEST_RAS_PASSWORD not found"
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
-            "username={}".format(os.environ["CI_TEST_RAS_USERID"].lower()),
+            "username={}".format(os.environ["CI_TEST_RAS_USERID"]),
         ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
@@ -312,7 +315,7 @@ class TestAuditService:
 
         # Check the query results with auxAcct2 user
         expected_results = {
-            "username": str(os.environ["CI_TEST_RAS_USERID"]).lower(),
+            "username": str(os.environ["CI_TEST_RAS_USERID"]),
             "idp": "ras",
             "client_id": None,
             "status_code": 302,

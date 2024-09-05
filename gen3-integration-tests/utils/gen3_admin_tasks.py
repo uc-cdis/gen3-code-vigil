@@ -150,7 +150,7 @@ def check_job_pod(
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
             os.getenv("JENKINS_PASSWORD"),
-            "check-kube-job-pod",
+            "ci-only-check-kube-job-pod",
         )
         params = {
             "NAMESPACE": test_env_namespace,
@@ -223,7 +223,7 @@ def create_fence_client(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "fence-create-client",
+        "ci-only-fence-create-client",
     )
     params = {
         "NAMESPACE": test_env_namespace,
@@ -240,6 +240,30 @@ def create_fence_client(
         raise Exception("Build number not found")
 
 
+def force_link_google(test_env_namespace: str, username: str, email: str):
+    """
+    Runs jenkins job to force link google account
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-fence-force-link-google",
+    )
+    params = {"NAMESPACE": test_env_namespace, "USERNAME": username, "EMAIL": email}
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
 def delete_fence_client(test_env_namespace: str):
     """
     Runs jenkins job to delete client
@@ -249,7 +273,7 @@ def delete_fence_client(test_env_namespace: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "fence-delete-client",
+        "ci-only-fence-delete-client",
     )
     params = {
         "NAMESPACE": test_env_namespace,
@@ -275,7 +299,7 @@ def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "revoke-arborist-policy",
+        "ci-only-revoke-arborist-policy",
     )
     params = {
         "NAMESPACE": test_env_namespace,
@@ -302,7 +326,7 @@ def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "audit-service-logging",
+        "ci-only-audit-service-logging",
     )
     params = {
         "AUDIT_LOGGING": audit_logging,
@@ -328,7 +352,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "mutate-manifest-for-guppy-test",
+        "ci-only-mutate-manifest-for-guppy-test",
     )
     params = {
         "NAMESPACE": test_env_namespace,
@@ -353,7 +377,7 @@ def clean_up_indices(test_env_namespace: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "clean-up-indices",
+        "ci-only-clean-up-indices",
     )
     params = {"NAMESPACE": test_env_namespace}
     build_num = job.build_job(params)
@@ -376,7 +400,7 @@ def check_indices_after_etl(test_env_namespace: str):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "check_indices_after_etl",
+        "ci-only-check_indices_after_etl",
     )
     params = {"NAMESPACE": test_env_namespace}
     build_num = job.build_job(params)
@@ -399,7 +423,7 @@ def create_access_token(test_env_namespace, service, expired, username):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "create-access-token",
+        "ci-only-create-access-token",
     )
     if expired:
         expiration = 1
@@ -434,7 +458,7 @@ def kube_setup_service(test_env_namespace, servicename):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "kube-setup-service",
+        "ci-only-kube-setup-service",
     )
     params = {
         "SERVICENAME": servicename,
@@ -461,6 +485,56 @@ def create_link_google_test_buckets(test_env_namespace: str):
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-create-link-google-test-buckets",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def fence_enable_register_users_redirect(test_env_namespace: str):
+    """
+    Runs jenkins job to setup register user redirect on login
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-fence-enable-user-register-redirect",
+    )
+    params = {
+        "NAMESPACE": test_env_namespace,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def fence_disable_register_users_redirect(test_env_namespace: str):
+    """
+    Runs jenkins job to disable register user redirect on login
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-fence-disable-user-register-redirect",
     )
     params = {
         "NAMESPACE": test_env_namespace,

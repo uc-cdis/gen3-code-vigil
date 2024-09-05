@@ -31,6 +31,9 @@ fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -40,7 +43,7 @@ addopts = "--log-cli-level=ERROR"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
-  "requires_fence_client: tests for basic_test_client",
+  "requires_fence_client: tests for clients related test cases",
   # services
   "audit: tests for audit-service",
   "fence: test for fence service",

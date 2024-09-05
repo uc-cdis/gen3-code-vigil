@@ -3,8 +3,10 @@ import pytest
 import requests
 import base64
 import os
+import datetime
 
 from utils.misc import retry
+import utils.gen3_admin_tasks as gat
 
 from utils import logger
 from pages.login import LoginPage
@@ -16,6 +18,7 @@ from utils import TEST_DATA_PATH_OBJECT
 
 class Fence(object):
     def __init__(self):
+        # Endpoints
         self.BASE_URL = f"{pytest.root_url}/user"
         self.API_CREDENTIALS_ENDPOINT = "/credentials/api"
         self.OAUTH_TOKEN_ENDPOINT = "/oauth2/token"
@@ -23,30 +26,20 @@ class Fence(object):
         self.DATA_ENDPOINT = "/data"
         self.DATA_DOWNLOAD_ENDPOINT = "/data/download"
         self.USER_ENDPOINT = "/user"
+        self.VERSION_ENDPOINT = f"/_version"
         self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT = "/oauth2/authorize"
         self.TOKEN_OAUTH2_CLIENT_ENDPOINT = "/oauth2/token"
         self.MULTIPART_UPLOAD_INIT_ENDPOINT = "/data/multipart/init"
         self.MULTIPART_UPLOAD_ENDPOINT = "/data/multipart/upload"
         self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
+        self.GOOGLE_LINK_URL = f"{self.BASE_URL}/link/google"
+        self.GOOGLE_LINK_REDIRECT = f"{self.GOOGLE_LINK_URL}?redirect=/login"
+        self.DEFAULT_EXP_TIME = 84600
+        # Locatores
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
-
-    def get_access_token(self, api_key):
-        """Generate access token from api key"""
-        res = requests.post(
-            f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token",
-            data=json.dumps({"api_key": api_key}),
-        )
-        logger.info(f"Status code: {res.status_code}")
-        if res.status_code == 200:
-            return res.json()["access_token"]
-        else:
-            logger.info(f"Response: {res.text}")
-            raise Exception(
-                f"Failed to get access token from {self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/access_token"
-            )
 
     def create_signed_url(
         self, id, user, expected_status, params=[], access_token=None
@@ -320,6 +313,54 @@ class Fence(object):
         indexd.file_equals(res=response, file_record=file_node)
         return response
 
+    def create_api_key(self, scope, page, token=None):
+        login_page = LoginPage()
+        if not token:
+            # Login with main_account user and get the access_token
+            logger.info("Logging in with mainAcct")
+            login_page.go_to(page)
+            token = login_page.login(page)["value"]
+        data = {
+            "scope": scope,
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        res = requests.post(
+            url=f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/",
+            json=data,
+            headers=headers,
+        )
+        return res, token
+
+    def delete_api_key(self, api_key, token, page):
+        login_page = LoginPage()
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        res = requests.delete(
+            url=f"{self.BASE_URL}{self.API_CREDENTIALS_ENDPOINT}/{api_key}",
+            headers=headers,
+        )
+        assert (
+            res.status_code == 204
+        ), f"Expected status code 204 but got {res.status_code}"
+        login_page.logout(page)
+
+    def get_version(self, user="main_account"):
+        """Get fence version"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(path=f"{self.VERSION_ENDPOINT}")
+        assert (
+            response.status_code == 200
+        ), f"Expected status code 200 but got {response.status_code}"
+        assert "version" in response.json().keys()
+        return response.json()["version"]
+
     def get_client_id_secret(self, client_name):
         """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
         path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
@@ -345,3 +386,91 @@ class Fence(object):
         client_info = clients_dict[client_name].split(",")
         client_id, client_secret = client_info[0], client_info[1]
         return client_id, client_secret
+
+    def link_google_account(self, user: str, expires_in: int = None):
+        """Links google account with user account with expiration if provided"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if expires_in is not None:
+            url = f"{self.GOOGLE_LINK_REDIRECT}&expires_in={expires_in}"
+        else:
+            url = self.GOOGLE_LINK_REDIRECT
+        linking_res = requests.get(
+            url=url,
+            auth=auth,
+            headers=headers,
+        )
+        if linking_res.status_code == 200:
+            logger.info(f"Google account with user {user} is linked successfully")
+            return linking_res.url, linking_res.status_code
+        else:
+            return None, linking_res.status_code
+
+    def unlink_google_account(self, user: str):
+        """Unlink / Delete google account link with user account"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        delete_res = requests.delete(
+            url=f"{self.GOOGLE_LINK_URL}",
+            auth=auth,
+        )
+        logger.debug(f"Unlinking Response: {delete_res.status_code}")
+        if delete_res.status_code == 200:
+            logger.info(f"Google account with user {user} is unlinked successfully")
+            return delete_res.status_code
+        else:
+            response_json = delete_res.json()
+            error_description = response_json.get(
+                "error_description", "No description provided"
+            )
+            assert (
+                error_description
+                == "Couldn't unlink account for user, no linked Google account found."
+            ), f"Unexpected error description: {error_description}"
+            logger.info(
+                f"Unlinking was unsuccessful with status code {delete_res.status_code}"
+            )
+            return delete_res.status_code
+
+    def check_extend_success(self, expires_in, request_time, expiration_time):
+        buffer_time = datetime.timedelta(seconds=60)
+        expiration_time_timestamp = datetime.datetime.fromtimestamp(expiration_time)
+        logger.debug(f"Expiration time from timestamp: {expiration_time_timestamp}")
+        # Calculate expected expiration time
+        expected_expiration_time = request_time + datetime.timedelta(seconds=expires_in)
+        min_expires = expected_expiration_time - buffer_time
+        max_expires = expected_expiration_time + buffer_time
+
+        # Assert that the expiration time is within the expected range
+        assert (
+            min_expires <= expiration_time_timestamp <= max_expires
+        ), f"The Link Expiration is not in expected range: Expiration time : {expiration_time_timestamp}, Expected Range : {min_expires},{max_expires}"
+
+    def extend_expiration(self, user: str, expires_in: int = None):
+        """Extend link expiration for google account"""
+        request_time = datetime.datetime.now()
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        # If expires_in is None, then use the default expiration time
+        if expires_in is None:
+            expires_in = self.DEFAULT_EXP_TIME
+        url = f"{self.GOOGLE_LINK_URL}?expires_in={expires_in}"
+        extend_res = requests.patch(
+            url=url,
+            auth=auth,
+            headers=headers,
+        )
+        if extend_res.status_code == 200:
+            response_json = extend_res.json()
+            assert "exp" in response_json, "Expiration key 'exp' not found in response"
+            expiration_time = response_json["exp"]
+            self.check_extend_success(expires_in, request_time, expiration_time)
+            return extend_res.status_code
+        else:
+            logger.info(
+                f"Status code of the Extend link request: {extend_res.status_code}"
+            )
+            return extend_res.status_code

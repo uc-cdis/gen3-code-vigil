@@ -23,7 +23,6 @@ indexd_files = {
         "file_name": "ras_test_file",
         "hashes": {"md5": "587efb5d96f695710a8df9c0dbb96eb0"},
         "size": 15,
-        "form": "object",
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://cdis-presigned-url-test/testdata",
@@ -35,7 +34,6 @@ indexd_files = {
         "file_name": "ras_test_file",
         "hashes": {"md5": "587efb5d96f695710a8df9c0dbb96eb0"},
         "size": 15,
-        "form": "object",
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://cdis-presigned-url-test/testdata",
@@ -46,6 +44,7 @@ indexd_files = {
 
 @pytest.mark.indexd
 @pytest.mark.fence
+@pytest.mark.skip(reason="RAS Passport creation is broken")
 class TestRasDrs:
     indexd = Indexd()
     fence = Fence()

@@ -4,19 +4,31 @@ import pytest
 from utils import logger
 from uuid import uuid4
 
-from pages import login, discovery
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks as gat
 
+from pages.discovery import DiscoveryPage
+from pages.login import LoginPage
 from pages.workspace import WorkspacePage
 from services.indexd import Indexd
 from services.metadataservice import MetadataService
 from utils.test_execution import screenshot
 
 
+@pytest.fixture()
+def page_setup(page):
+    yield page
+    workspace = WorkspacePage()
+    if page.locator(workspace.TERMINATE_BUTTON).is_visible():
+        workspace.terminate_workspace(page)
+        screenshot(page, "WorkspaceTerminatedInTearDown")
+    page.close()
+
+
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
 @pytest.mark.wts
+@pytest.mark.portal
 class TestDiscoveryPage(object):
     variables = {}
 
@@ -31,13 +43,15 @@ class TestDiscoveryPage(object):
 
     @classmethod
     def teardown_class(cls):
-        logger.info("Tearing down - delete indexd record and study metadata")
+        logger.info(
+            "Tearing down - delete indexd record and study metadata, and terminate workspace"
+        )
         indexd = Indexd()
         mds = MetadataService()
         indexd.delete_records([cls.variables["did"]])
         mds.delete_metadata(cls.variables["study_id"])
 
-    def test_study_publish_search_export(self, page):
+    def test_study_publish_search_export(self, page_setup):
         """
         Scenario: Publish a study, search discovery page and export to workspace
         Steps:
@@ -109,52 +123,52 @@ class TestDiscoveryPage(object):
         assert study_metadata["commons_name"] == "HEAL"
 
         # Navigate to discovery page
-        login_page = login.LoginPage()
-        login_page.go_to(page)
-        login_page.login(page)
-        discovery_page = discovery.DiscoveryPage()
-        discovery_page.go_to(page)
-        screenshot(page, "DiscoveryPage")
+        login_page = LoginPage()
+        login_page.go_to(page_setup)
+        login_page.login(page_setup)
+        discovery_page = DiscoveryPage()
+        discovery_page.go_to(page_setup)
+        screenshot(page_setup, "DiscoveryPage")
 
         # Tag search
-        discovery_page.search_tag(page, "AUTOTEST Tag")
-        screenshot(page, "TagSearch")
-        assert discovery_page.study_found(page, self.variables["study_id"])
-        screenshot(page, "StudyFound")
+        discovery_page.search_tag(page_setup, "AUTOTEST Tag")
+        screenshot(page_setup, "TagSearch")
+        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        screenshot(page_setup, "StudyFound")
 
         # Text search by study title
-        discovery_page.go_to(page)
-        discovery_page.search_text(page, "AUTOTEST Title")
-        screenshot(page, "TextSearchTitle")
-        assert discovery_page.study_found(page, self.variables["study_id"])
-        screenshot(page, "StudyFound")
+        discovery_page.go_to(page_setup)
+        discovery_page.search_text(page_setup, "AUTOTEST Title")
+        screenshot(page_setup, "TextSearchTitle")
+        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        screenshot(page_setup, "StudyFound")
 
         # Text search by study summary
-        discovery_page.go_to(page)
-        discovery_page.search_text(page, "AUTOTEST Summary")
-        screenshot(page, "TextSearchSummary")
-        assert discovery_page.study_found(page, self.variables["study_id"])
-        screenshot(page, "StudyFound")
+        discovery_page.go_to(page_setup)
+        discovery_page.search_text(page_setup, "AUTOTEST Summary")
+        screenshot(page_setup, "TextSearchSummary")
+        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        screenshot(page_setup, "StudyFound")
 
         # Open study in workspace
-        discovery_page.open_in_workspace(page, self.variables["study_id"])
+        discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
         workspace_page = WorkspacePage()
-        workspace_page.assert_page_loaded(page)
+        workspace_page.assert_page_loaded(page_setup)
         workspace_page.launch_workspace(
-            page, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
+            page_setup, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
         )
-        screenshot(page, "WorkspaceLaunched")
+        screenshot(page_setup, "WorkspaceLaunched")
 
         # Open Python notebook and run gen3 commands
-        workspace_page.open_python_notebook(page)
+        workspace_page.open_python_notebook(page_setup)
         command = "!pip install -U gen3==4.24.1"  # TODO: Fix the workspace image in jenkins envs, use jupyterlab
         logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page, command)
+        result = workspace_page.run_command_in_notebook(page_setup, command)
         command = f"!gen3 drs-pull object {self.variables['did']}"
         logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page, command)
+        result = workspace_page.run_command_in_notebook(page_setup, command)
         logger.info(f"Result: {result}")
 
         # Terminate workspace
-        workspace_page.terminate_workspace(page)
-        screenshot(page, "WorkspaceTerminated")
+        workspace_page.terminate_workspace(page_setup)
+        screenshot(page_setup, "WorkspaceTerminated")
