@@ -61,7 +61,7 @@ class TestAggregateMDS:
 
         # Metadata-aggregate-sync and verify
         logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         for i in range(len(study_ids)):
             study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
             assert_with_retry(
@@ -89,7 +89,7 @@ class TestAggregateMDS:
 
         # Metadata-aggregate-sync and verify
         logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         for i in range(len(study_ids)):
             study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
             assert_with_retry(

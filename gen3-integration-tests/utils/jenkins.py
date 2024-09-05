@@ -103,7 +103,7 @@ class JenkinsJob(object):
     def wait_for_build_completion(self, build_number, max_duration=1200):
         """
         Wait for a run to complete.
-        Default maximum wait time is 10 minutes, and can be configured.
+        Default maximum wait time is 20 minutes, and can be configured.
         If the run is not complete within the max set, this function errors out.
         """
         start = time.time()

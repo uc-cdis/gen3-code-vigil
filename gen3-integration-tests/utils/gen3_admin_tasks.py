@@ -1,11 +1,13 @@
 import os
 import pytest
 import requests
+import subprocess
 import time
-import json
+import uuid
 
 from dotenv import load_dotenv
 
+from utils import logger
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
@@ -30,25 +32,36 @@ def get_admin_vm_configurations(test_env_namespace: str):
     Fetch configs that require adminvm interaction using jenkins.
     Returns dict { file name: file contents }
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-fetch-configs",
-    )
-    params = {"NAMESPACE": test_env_namespace}
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return {
-                "manifest.json": job.get_artifact_content(build_num, "manifest.json"),
-            }
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-fetch-configs",
+        )
+        params = {"NAMESPACE": test_env_namespace}
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return {
+                    "manifest.json": job.get_artifact_content(
+                        build_num, "manifest.json"
+                    ),
+                }
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
+            raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        manifest_all = {}
+        cmd = "kubectl get configmap manifest-global -o json | jq -r '.data'"
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        manifest_all["global"] = result.stdout.decode("utf-8")
+        return {"manifest.json": manifest_all}
 
 
 def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):
@@ -79,37 +92,50 @@ def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = Fal
 
 
 def run_gen3_job(
-    test_env_namespace: str,
     job_name: str,
     cmd_line_params: str = "",
+    test_env_namespace: str = "",
     roll_all: bool = False,
 ):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     Since this requires adminvm interaction we use jenkins.
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-run-gen3-job",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "JOB_NAME": job_name,
-        "CMD_LINE_PARAMS": cmd_line_params,
-        "GEN3_ROLL_ALL": roll_all,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return job.get_build_result(build_num)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-run-gen3-job",
+        )
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "JOB_NAME": job_name,
+            "CMD_LINE_PARAMS": cmd_line_params,
+            "GEN3_ROLL_ALL": roll_all,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
+            raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        job_pod = f"{job_name}-{uuid.uuid4()}"
+        cmd = ["kubectl", "create", job, f"--from=cronjob/{job_name}", job_pod]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
+        else:
+            raise Exception(
+                f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
+            )
 
 
 def check_job_pod(
@@ -118,28 +144,72 @@ def check_job_pod(
     label_name: str,
     expect_failure: bool = False,
 ):
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "check-kube-job-pod",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "JOB_NAME": job_name,
-        "LABEL_NAME": label_name,
-        "EXPECT_FAILURE": expect_failure,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return job.get_build_result(build_num)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "check-kube-job-pod",
+        )
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "JOB_NAME": job_name,
+            "LABEL_NAME": label_name,
+            "EXPECT_FAILURE": expect_failure,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
+            raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        # Wait for the job pod to start
+        cmd = [
+            "kubectl",
+            "get",
+            "pods",
+            f"--selector=job-name={job_name}",
+            "-o",
+            "jsonpath='{.items[0].status.phase}'",
+        ]
+        i = 0
+        job_started = False
+        for i in range(6):
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.stdout.decode("utf-8") in ["Running", "Succeeded", "Failed"]:
+                job_started = True
+                break
+            else:
+                time.sleep(10)
+        if job_started is False:
+            raise Exception(f"Pod failed to start for job {job_name}")
+
+        # Wait for the job to complete
+        cmd = [
+            "kubectl",
+            "get",
+            "job",
+            job_name,
+            "-o",
+            "jsonpath='{.status.conditions[?(@.type==\"Complete\")].status}'",
+        ]
+        job_completed = False
+        for i in range(40):
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.stdout.decode("utf-8") == "True":
+                job_completed = True
+                break
+            else:
+                time.sleep(30)
+        if job_completed is False:
+            raise Exception(f"Job {job_name} failed to complete in 20 minutes")
 
 
 def create_fence_client(
