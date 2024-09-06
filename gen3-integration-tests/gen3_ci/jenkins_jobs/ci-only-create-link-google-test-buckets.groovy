@@ -110,12 +110,12 @@ spec:
                         source $GEN3_HOME/gen3/gen3setup.sh
 
                         # Create Google Test Buckets
-                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-qa --google-project-id dcf-integration --project-auth-id QA --public False
-                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-test --google-project-id dcf-integration --project-auth-id test --public False
+                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-qa --google-project-id dcf-integration --project-auth-id QA --public False
+                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-test --google-project-id dcf-integration --project-auth-id test --public False
 
                         # Link phs ids to existing buckets
-                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000179 --bucket_id dcf-integration-qa --bucket_provider google
-                        g3kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000178 --bucket_id dcf-integration-test --bucket_provider google
+                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000179 --bucket_id dcf-integration-qa --bucket_provider google
+                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000178 --bucket_id dcf-integration-test --bucket_provider google
                         '''
                     }
                 }

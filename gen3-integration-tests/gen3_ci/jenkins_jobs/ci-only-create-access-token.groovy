@@ -52,7 +52,7 @@ pipeline {
                             source $GEN3_HOME/gen3/gen3setup.sh
 
                             # Create access token
-                            g3kubectl exec $(gen3 pod \$SERVICE \$NAMESPACE) -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account,google_credentials --type access_token --exp \$EXPIRATION --username \$USERNAME > access_token.txt
+                            kubectl exec $(gen3 pod \$SERVICE \$NAMESPACE) -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account,google_credentials --type access_token --exp \$EXPIRATION --username \$USERNAME > access_token.txt
                             '''
                     }
                 }

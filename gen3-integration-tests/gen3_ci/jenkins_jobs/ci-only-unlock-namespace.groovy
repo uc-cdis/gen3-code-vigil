@@ -105,7 +105,7 @@ spec:
         }
         stage('Unlock namespace') {
             steps {
-                dir("unlock-namespace") {
+                dir("ci-only-unlock-namespace") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e

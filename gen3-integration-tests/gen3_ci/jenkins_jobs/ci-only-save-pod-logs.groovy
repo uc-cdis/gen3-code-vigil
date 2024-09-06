@@ -101,7 +101,7 @@ spec:
         }
         stage('Save pod logs') {
             steps {
-                dir("save-pod-logs") {
+                dir("ci-only-save-pod-logs") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
@@ -118,7 +118,7 @@ spec:
     }
     post {
         always {
-            archiveArtifacts artifacts: 'save-pod-logs/*.log.gz'
+            archiveArtifacts artifacts: 'ci-only-save-pod-logs/*.log.gz'
         }
     }
 }
