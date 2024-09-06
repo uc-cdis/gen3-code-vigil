@@ -40,7 +40,7 @@ pipeline {
                         source $GEN3_HOME/gen3/gen3setup.sh
 
 
-                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN,SCOPES
+                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN,SCOPE
                         client_details=(
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
@@ -92,11 +92,9 @@ pipeline {
                             if [[ -n $EXPIRES_IN ]]; then
                                 FENCE_CMD="${FENCE_CMD} --expires-in ${EXPIRES_IN}"
                             fi
-
                             if [[ -n $SCOPES ]]; then
                                 FENCE_CMD="${FENCE_CMD} --allowed-scopes ${SCOPES}"
                             fi
-
                             echo "Running: ${FENCE_CMD}"
                             # execute the above fence command
                             # execute the above fence command
