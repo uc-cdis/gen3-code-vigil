@@ -10,13 +10,9 @@ import json
 
 from services.fence import Fence
 from pages.login import LoginPage
-from utils.gen3_admin_tasks import create_fence_client
+from utils import logger
 
-from cdislogging import get_logger
 from playwright.sync_api import Page
-
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.fence
@@ -27,12 +23,17 @@ class TestOauth2:
     @classmethod
     def setup_class(cls):
         # Generate Client id and secrets
-        cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.fence.get_client_id_secret(client_name="basic-test-client")
-        )
-        cls.implicit_test_client_id, cls.implicit_test_client_secret = (
-            cls.fence.get_client_id_secret(client_name="implicit-test-client")
-        )
+        cls.basic_test_client_id = pytest.clients["basic-test-client"]["client_id"]
+        cls.basic_test_client_secret = pytest.clients["basic-test-client"][
+            "client_secret"
+        ]
+
+        cls.implicit_test_client_id = pytest.clients["implicit-test-client"][
+            "client_id"
+        ]
+        cls.implicit_test_client_secret = pytest.clients["implicit-test-client"][
+            "client_secret"
+        ]
 
     def test_authorization_code_no_user_consent_fail_code_generation(self, page: Page):
         """

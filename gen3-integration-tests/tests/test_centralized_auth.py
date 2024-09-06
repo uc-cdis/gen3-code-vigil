@@ -5,13 +5,12 @@ CENTRALIZED AUTH
 import os
 import pytest
 
-from cdislogging import get_logger
+from utils import logger
 from uuid import uuid4
 from services.indexd import Indexd
 from services.fence import Fence
 from playwright.sync_api import Page
 
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 """
 NOTES:
@@ -143,12 +142,17 @@ class TestCentralizedAuth:
         new_abc_records["delete_me"]["did"] = str(uuid4())
 
         # Generate Client id and secrets
-        cls.basic_test_client_id, cls.basic_test_client_secret = (
-            cls.fence.get_client_id_secret(client_name="basic-test-client")
-        )
-        cls.basic_test_abc_client_id, cls.basic_test_abc_client_secret = (
-            cls.fence.get_client_id_secret(client_name="basic-test-abc-client")
-        )
+        cls.basic_test_client_id = pytest.clients["basic-test-client"]["client_id"]
+        cls.basic_test_client_secret = pytest.clients["basic-test-client"][
+            "client_secret"
+        ]
+
+        cls.basic_test_abc_client_id = pytest.clients["basic-test-abc-client"][
+            "client_id"
+        ]
+        cls.basic_test_abc_client_secret = pytest.clients["basic-test-abc-client"][
+            "client_secret"
+        ]
 
         # Create indexd records
         for key, val in indexed_files.items():

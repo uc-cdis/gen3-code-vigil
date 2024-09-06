@@ -104,7 +104,7 @@ spec:
         }
         stage('Run command on adminvm') {
             steps {
-                dir("run-command") {
+                dir("ci-only-run-command") {
                     script {
                         sh '''#!/bin/bash +x
                             set -e
@@ -121,7 +121,7 @@ spec:
     }
     post {
         always {
-            archiveArtifacts artifacts: 'run-command/result.txt'
+            archiveArtifacts artifacts: 'ci-only-run-command/result.txt'
         }
     }
 }
