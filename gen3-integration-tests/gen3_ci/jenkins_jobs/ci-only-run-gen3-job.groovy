@@ -118,7 +118,7 @@ spec:
                                 gen3 roll all
                             fi
                             gen3 job run \${JOB_NAME}
-                            kubectl wait --for=condition=complete --timeout=-1s jobs/\${JOB_NAME}
+                            kubectl -n ${KUBECTL_NAMESPACE} wait --for=condition=complete --timeout=-1s jobs/\${JOB_NAME}
                             gen3 job logs \${JOB_NAME} > log.txt
                         '''
                     }

@@ -109,7 +109,7 @@ spec:
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source \$GEN3_HOME/gen3/gen3setup.sh
-                            RESULT=`kubectl get configmaps manifest-all -o json | jq -r '.data.json'`
+                            RESULT=`kubectl get configmaps manifest-all -o json -n ${KUBECTL_NAMESPACE} | jq -r '.data.json'`
                             echo "\$RESULT" > manifest.json
                         '''
                     }
