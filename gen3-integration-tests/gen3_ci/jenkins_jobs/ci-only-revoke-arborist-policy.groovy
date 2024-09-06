@@ -31,7 +31,7 @@ pipeline {
         }
         stage('Revoke Arborist Policy') {
             steps {
-                dir("revoke-arborist-policy"){
+                dir("ci-only-revoke-arborist-policy"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e

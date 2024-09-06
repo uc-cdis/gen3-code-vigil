@@ -2,7 +2,7 @@
     String parameter NAMESPACE
         e.g. jenkins-blood
 
-    Artifact archived -
+    Artifact archived - clients_creds.txt
 */
 pipeline {
     agent {
@@ -31,7 +31,7 @@ pipeline {
         }
         stage('Create Fence Client') {
             steps {
-                dir("create-fence-client"){
+                dir("ci-only-create-fence-client"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e
@@ -45,11 +45,11 @@ pipeline {
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
                             "basic-test-abc-client,test-abc-client@example.com,basic,None,"
-                            "jenkinsClientTester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
-                            "jenkinsClientNoExpiration,test-user,client_credentials,None,"
-                            "jenkinsClientShortExpiration,test-user,client_credentials,None,0.00000000001"
-                            "jenkinsClientMediumExpiration,test-user,client_credentials,None,4"
-                            "jenkinsClientLongExpiration,test-user,client_credentials,None,30"
+                            "jenkins-client-tester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
+                            "jenkins-client-no-expiration,test-user,client_credentials,None,"
+                            "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
+                            "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
+                            "jenkins-client-long-expiration,test-user,client_credentials,None,30"
                             "ras-test-client,UCtestuser128,basic,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,"
                             "ras-test-client1,UCtestuser127,auth_code,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,,openid user data google_credentials ga4gh_passport_v1"
                             "ras-test-client2,UCtestuser129,auth_code,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,,openid user data google_credentials"
@@ -99,22 +99,13 @@ pipeline {
 
                             echo "Running: ${FENCE_CMD}"
                             # execute the above fence command
-                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(tail -n 1 > temp_client_cred.txt))
-                            file_content=$(cat temp_client_cred.txt)
-
-                            case "$CLIENT_TYPE" in
-                                "implicit")
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\),None)/\\2,None/" -e "s/(\\('\\(.*\\)'\\), \\(.*\\))/$CLIENT_NAME: \\2,\\3/")
-                                    ;;
-                                *)
-                                    CLIENT_CREDS=$(echo "$file_content" | sed -e "s/(\\('\\(.*\\)'\\), '\\(.*\\)')/$CLIENT_NAME: \\2,\\3/")
-                            esac
-                            echo $CLIENT_CREDS >> clients_creds.txt
+                            # execute the above fence command
+                            FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(awk -v prefix="$CLIENT_NAME" 'END{print prefix ":" $0}' >> clients_creds.txt))
                         done
 
                         # Run usersync
                         gen3 job run usersync ADD_DBGAP true
-                        g3kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
+                        kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }
@@ -123,7 +114,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'create-fence-client/clients_creds.txt'
+            archiveArtifacts artifacts: 'ci-only-create-fence-client/clients_creds.txt'
         }
     }
 }

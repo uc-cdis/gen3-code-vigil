@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import re
 
 from utils import logger
 from pathlib import Path
@@ -53,5 +54,54 @@ def get_fence_client_info():
         outfile.write(data)
 
 
+def get_client_id_secret():
+    """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
+    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
+    if not os.path.exists(path):
+        logger.info('clients_creds.txt doesn\'t exists.')
+        return
+    with open(path, "r") as file:
+        content = file.read()
+
+    for entry in content.split("\n"):
+        if len(entry) == 0:  # Empty line
+            continue
+        client_name, client_details = entry.split(":")
+        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
+        pytest.clients[client_name] = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
+
+
 def delete_all_fence_clients():
     gen3_admin_tasks.delete_fence_client(pytest.namespace)
+
+
+def get_fence_rotated_client_info():
+    # Create the client and return the client information
+    data = gen3_admin_tasks.fence_client_rotate(test_env_namespace=pytest.namespace)
+    path = TEST_DATA_PATH_OBJECT / "fence_clients"
+    path.mkdir(parents=True, exist_ok=True)
+    file_path = path / "client_rotate_creds.txt"
+    with open(file_path, "w") as outfile:
+        outfile.write(data)
+
+
+def get_rotated_client_id_secret():
+    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
+    if not os.path.exists(path):
+        logger.info('client_rotate_creds.txt doesn\'t exists.')
+        return
+    with open(path, "r") as file:
+        content = file.read()
+
+    for entry in content.split("\n"):
+        if len(entry) == 0:  # Empty line
+            continue
+        client_name, client_details = entry.split(":")
+        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
+        pytest.rotated_clients[client_name] = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }

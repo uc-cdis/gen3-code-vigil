@@ -34,7 +34,7 @@ pipeline {
         }
         stage('Force Link Google Account') {
             steps {
-                dir("force_link_google"){
+                dir("ci-only-force_link_google"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e

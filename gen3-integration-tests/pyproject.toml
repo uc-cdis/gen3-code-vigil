@@ -43,7 +43,7 @@ addopts = "--log-cli-level=ERROR"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
-  "requires_fence_client: tests for clients related test cases",
+  "requires_fence_client: tests for fence clients",
   # services
   "audit: tests for audit-service",
   "fence: test for fence service",
