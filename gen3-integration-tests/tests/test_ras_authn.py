@@ -43,8 +43,8 @@ class TestRasAuthN:
             5. Check access_token, refresh_token and id_token is returned in refresh_token response
         """
         # Get client_id and client_secret with ga4gh_passport_v1 scope from test_data/fence_clients list
-        client_id = pytest.clients["ras-test-client1"]["client_id"]
-        client_secret = pytest.clients["ras-test-client1"]["client_secret"]
+        client_id = pytest.clients["ras-test-client"]["client_id"]
+        client_secret = pytest.clients["ras-test-client"]["client_secret"]
         # Login with RAS user 128, click GRANT button on /authorize/consent url
         # and click on 'Yes. I authorize' button
         # Get code from the url
