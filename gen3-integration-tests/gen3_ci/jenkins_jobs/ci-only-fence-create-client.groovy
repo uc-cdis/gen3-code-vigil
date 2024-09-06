@@ -103,7 +103,7 @@ pipeline {
 
                         # Run usersync
                         gen3 job run usersync ADD_DBGAP true
-                        kubectl wait --for=condition=complete --timeout=-1s jobs/usersync
+                        kubectl -n ${KUBECTL_NAMESPACE} wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }
