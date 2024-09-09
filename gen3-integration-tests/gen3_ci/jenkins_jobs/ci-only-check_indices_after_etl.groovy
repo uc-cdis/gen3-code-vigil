@@ -36,7 +36,7 @@ pipeline {
                     export KUBECTL_NAMESPACE=\${NAMESPACE}
                     source $GEN3_HOME/gen3/gen3setup.sh
 
-                    etlMappingNames=$(kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs)
+                    etlMappingNames=$(kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' -n ${KUBECTL_NAMESPACE} | yq '.mappings[].name' | xargs)
                     IFS=' ' read -r -a aliases <<< "$etlMappingNames"
 
                     echo "${aliases[@]}"

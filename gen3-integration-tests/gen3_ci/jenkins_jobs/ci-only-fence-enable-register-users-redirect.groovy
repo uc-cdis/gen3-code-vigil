@@ -45,7 +45,7 @@ pipeline {
                             echo "REGISTERED_USERS_GROUP: 'data_uploaders'" >> "fence_config_tmp.yaml"
 
                             # Update the secret
-                            kubectl get secret fence-config -o json | jq --arg new_config "$(cat fence_config_tmp.yaml | base64)" \'.data["fence-config.yaml"]=$new_config\' | kubectl apply -f -
+                            kubectl get secret fence-config -o json -n ${KUBECTL_NAMESPACE} | jq --arg new_config "$(cat fence_config_tmp.yaml | base64)" \'.data["fence-config.yaml"]=$new_config\' | kubectl apply -f -
 
                             # Roll Fence
                             rm fence_config_tmp.yaml; gen3 roll fence; gen3 kube-setup-portal
