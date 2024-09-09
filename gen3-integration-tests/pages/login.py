@@ -132,8 +132,8 @@ class LoginPage(object):
     def ras_login(
         self,
         page: Page,
-        username: str,
-        password: str,
+        username=os.environ["CI_TEST_RAS_USERID"],
+        password=os.environ["CI_TEST_RAS_PASSWORD"],
         portal_test=True,
     ):
         if portal_test == True:
