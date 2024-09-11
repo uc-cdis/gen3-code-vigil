@@ -39,7 +39,6 @@ class RAS(object):
             data=payload,
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-        logger.debug(get_ras_token.content)
         token_data = get_ras_token.json()
         return token_data
 
@@ -48,12 +47,10 @@ class RAS(object):
     ):
         login = LoginPage()
         url = f"{self.RAS_AUTH_ENDPOINT}?response_type=code&client_id={client_id}&redirect_uri={pytest.root_url}&scope={scope}&idp=ras"
-        logger.info(url)
         page.goto(url)
         login.ras_login(page, username=username, password=password, portal_test=False)
         time.sleep(10)
         current_url = page.url
-        logger.debug(f"URL with code: {current_url}")
         assert "code=" in current_url, f"{current_url} is missing code= substring"
         code = current_url.split("code=")[-1]
         return code
