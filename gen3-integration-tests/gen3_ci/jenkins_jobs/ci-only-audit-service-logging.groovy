@@ -38,7 +38,7 @@ pipeline {
                     timeout(time: 5, unit: 'MINUTES')   // timeout on this stage
                 }
             steps {
-                dir("audit-service-logging"){
+                dir("ci-only-audit-service-logging"){
                     script {
                         try {
                             sh '''#!/bin/bash +x
@@ -54,7 +54,7 @@ pipeline {
                             shopt -s xpg_echo; echo "ENABLE_AUDIT_LOGS:\n  presigned_url: \${AUDIT_LOGGING}\n  login: \${AUDIT_LOGGING}" >> fence_config_tmp.yaml
 
                             # Update the Secret
-                            g3kubectl get secret fence-config -o json | jq --arg new_config "$(cat fence_config_tmp.yaml | base64)" '.data["fence-config.yaml"]=$new_config' | g3kubectl apply -f -
+                            kubectl get secret fence-config -o json -n ${KUBECTL_NAMESPACE} | jq --arg new_config "$(cat fence_config_tmp.yaml | base64)" '.data["fence-config.yaml"]=$new_config' | kubectl -n ${KUBECTL_NAMESPACE} apply -f -
 
                             # Roll the fence and presigned-url-fence pods
                             gen3 roll fence; gen3 roll presigned-url-fence

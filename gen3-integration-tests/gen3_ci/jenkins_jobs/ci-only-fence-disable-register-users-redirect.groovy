@@ -44,7 +44,7 @@ pipeline {
                             sed -i \'/REGISTER_USERS_ON/d\' fence_config_tmp.yaml; sed -i \'/REGISTERED_USERS_GROUP/d\' fence_config_tmp.yaml
 
                             # Update the secret
-                            g3kubectl get secret fence-config -o json | jq --arg new_config "$(cat fence_config_tmp.yaml | base64)" \'.data["fence-config.yaml"]=$new_config\' | g3kubectl apply -f -
+                            kubectl get secret fence-config -o json -n ${KUBECTL_NAMESPACE}| jq --arg new_config "$(cat fence_config_tmp.yaml | base64)" \'.data["fence-config.yaml"]=$new_config\' | kubectl apply -f -
 
                             # Roll Fence
                             rm fence_config_tmp.yaml; gen3 roll fence; gen3 kube-setup-portal

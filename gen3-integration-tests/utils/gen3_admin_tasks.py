@@ -162,7 +162,7 @@ def check_job_pod(
         if build_num:
             status = job.wait_for_build_completion(build_num)
             if status == "Completed":
-                return job.get_build_result(build_num)
+                return {"logs.txt": job.get_artifact_content(build_num, "logs.txt")}
             else:
                 job.terminate_build(build_num)
                 raise Exception("Build timed out. Consider increasing max_duration")
@@ -233,6 +233,30 @@ def create_fence_client(
         status = job.wait_for_build_completion(build_num)
         if status == "Completed":
             return job.get_artifact_content(build_num, "clients_creds.txt")
+        else:
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
+
+
+def fence_client_rotate(test_env_namespace: str):
+    """
+    Runs jenkins job to create a fence client
+    Since this requires adminvm interaction we use jenkins.
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-fence-client-rotate",
+    )
+    params = {"NAMESPACE": test_env_namespace}
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return job.get_artifact_content(build_num, "client_rotate_creds.txt")
         else:
             job.terminate_build(build_num)
             raise Exception("Build timed out. Consider increasing max_duration")
