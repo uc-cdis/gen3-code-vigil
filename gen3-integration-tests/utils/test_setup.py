@@ -1,12 +1,29 @@
 import json
 import os
 import pytest
+import subprocess
 
 from utils import logger
 from pathlib import Path
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
 
 from gen3.auth import Gen3Auth
+
+
+def get_kube_namespace(hostname: str = ""):
+    """
+    Compute the kubernetes namespace
+    """
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        return hostname.split(".")[0]
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = (
+            "kubectl get configmap manifest-global -o json | jq -r '.data.environment'"
+        )
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        return result.stdout.decode("utf-8")
 
 
 def get_api_key_and_auth_header(user):

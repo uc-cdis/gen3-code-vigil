@@ -65,19 +65,15 @@ def pytest_collection_finish(session):
 
 def pytest_configure(config):
     # Compute hostname and namespace
-    hostname = os.getenv("HOSTNAME")
-    namespace = os.getenv("NAMESPACE")
-    tested_env = os.getenv("TESTED_ENV")
-    assert hostname or namespace, "Hostname and namespace undefined"
-    if hostname and not namespace:
-        namespace = hostname.split(".")[0]
-    if namespace and not hostname:
-        hostname = f"{namespace}.planx-pla.net"
-    pytest.hostname = hostname
-    pytest.namespace = namespace
+    pytest.hostname = os.getenv("HOSTNAME")
+    pytest.namespace = os.getenv("NAMESPACE")
+    pytest.tested_env = os.getenv("TESTED_ENV")
+    assert pytest.hostname, "Hostname undefined"
+    if not pytest.namespace:
+        pytest.namespace = setup.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
-    pytest.tested_env = tested_env or namespace
-
+    if not pytest.tested_env:
+        pytest.tested_env = pytest.namespace
     # Compute root_url
     pytest.root_url = f"https://{hostname}"
 
