@@ -96,7 +96,7 @@ pipeline {
     }
     post {
         always {
-            archiveArtifacts artifacts: 'check-kube-pod/logs.txt'
+            archiveArtifacts artifacts: 'ci-only-check-kube-pod/logs.txt'
         }
     }
 }
