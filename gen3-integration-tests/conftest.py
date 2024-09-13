@@ -145,5 +145,8 @@ def pytest_unconfigure(config):
         directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
+        directory_path = TEST_DATA_PATH_OBJECT / "google_creds"
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
