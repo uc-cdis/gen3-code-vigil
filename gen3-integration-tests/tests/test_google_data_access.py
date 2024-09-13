@@ -47,13 +47,17 @@ class TestGoogleDataAccess:
         """
         Scenario: Google Data Access dcf-integration-test-0
         Steps:
-            1.
+            1. Link google account for user dcf-integration-test-0
+            2. Create temporary google credentials
+            3. Create presigned urls for QA and Test indexd files
+            4. Verify QA file is accessible with 200 status code and Test file is inaccessible with 401 code
+               User dcf-integration-test-0 has access to QA and not Test project.
         """
         # Unlinking Google Account for user0
         unlinking_status_code = self.fence.unlink_google_account(user="user0_account")
         assert (
             unlinking_status_code == 200
-        ), f"Expected Google account to be unlinked, but got status_code {linking_status_code}"
+        ), f"Expected Google account to be unlinked, but got status_code {unlinking_status_code}"
 
         # Linking Google Account for user0
         linking_url, linking_status_code = self.fence.link_google_account(
@@ -73,12 +77,12 @@ class TestGoogleDataAccess:
         qa_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["qa_file"]["did"],
             params=["protocol=s3"],
-            user="user2_account",
+            user="user0_account",
             expected_status=200,
         )
         test_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["test_file"]["did"],
             params=["protocol=s3"],
-            user="user2_account",
-            expected_status=200,
+            user="user0_account",
+            expected_status=401,
         )
