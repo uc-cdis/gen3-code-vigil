@@ -8,7 +8,6 @@ from services.indexd import Indexd
 
 
 @pytest.mark.fence
-@pytest.mark.serial
 class TestGoogleDataAccess:
     fence = Fence()
     indexd = Indexd()
@@ -20,14 +19,14 @@ class TestGoogleDataAccess:
             "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
             "size": 9,
             "acl": ["QA"],
-            "url": ["gs://dcf-integration-qa/file.txt"],
+            "urls": ["gs://dcf-integration-qa/file.txt"],
         },
         "test_file": {
             "file_name": "file.txt",
             "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
             "size": 10,
             "acl": ["test"],
-            "url": ["gs://dcf-integration-test/file.txt"],
+            "urls": ["gs://dcf-integration-test/file.txt"],
         },
     }
 
