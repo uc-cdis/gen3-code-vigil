@@ -40,7 +40,7 @@ pipeline {
                         source $GEN3_HOME/gen3/gen3setup.sh
 
 
-                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN
+                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN,SCOPE
                         client_details=(
                             "basic-test-client,test-client@example.com,basic,None,"
                             "implicit-test-client,test@example.com,implicit,None,"
@@ -51,12 +51,14 @@ pipeline {
                             "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
                             "jenkins-client-long-expiration,test-user,client_credentials,None,30"
                             "ras-test-client,UCtestuser128,basic,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,"
+                            "ras-test-client1,UCtestuser127,auth_code,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,,openid user data google_credentials ga4gh_passport_v1"
+                            "ras-test-client2,UCtestuser129,auth_code,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,,openid user data google_credentials"
                         )
 
                         combined='{}'
                         for value in "${client_details[@]}"; do
                             # Split the variable into an array using comma as the delimiter
-                            IFS=',' read -r CLIENT_NAME USER_NAME CLIENT_TYPE ARBORIST_POLICIES EXPIRES_IN <<< "${value}"
+                            IFS=',' read -r CLIENT_NAME USER_NAME CLIENT_TYPE ARBORIST_POLICIES EXPIRES_IN SCOPES<<< "${value}"
                             echo "Creating client: ${CLIENT_NAME}"
 
                             DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
@@ -80,6 +82,9 @@ pipeline {
                                 "implicit")
                                     FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net --grant-types implicit --public"
                                     ;;
+                                "auth_code")
+                                    FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net --grant-types authorization_code"
+                                    ;;
                                 *)
                                     FENCE_CMD="${FENCE_CMD} --client ${CLIENT_NAME} --user ${USER_NAME} --urls https://${NAMESPACE}.planx-pla.net"
                             esac
@@ -87,7 +92,9 @@ pipeline {
                             if [[ -n $EXPIRES_IN ]]; then
                                 FENCE_CMD="${FENCE_CMD} --expires-in ${EXPIRES_IN}"
                             fi
-
+                            if [[ -n $SCOPES ]]; then
+                                FENCE_CMD="${FENCE_CMD} --allowed-scopes ${SCOPES}"
+                            fi
                             echo "Running: ${FENCE_CMD}"
                             # execute the above fence command
                             # execute the above fence command
