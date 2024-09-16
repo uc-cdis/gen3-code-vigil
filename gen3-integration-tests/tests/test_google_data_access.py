@@ -1,12 +1,10 @@
 import pytest
 
-from utils import logger
-from services.fence import Fence
 from pages.login import LoginPage
-from gen3.auth import Gen3Auth
-from gen3.index import Gen3Index
+from services.fence import Fence
 from services.indexd import Indexd
-from utils import TEST_DATA_PATH_OBJECT
+from utils import logger
+
 from playwright.sync_api import Page
 
 
@@ -27,7 +25,7 @@ class TestGoogleDataAccess:
         },
         "test_file": {
             "file_name": "file.txt",
-            "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+            "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad1"},
             "size": 10,
             "acl": ["test"],
             "urls": ["gs://dcf-integration-test/file.txt"],
@@ -56,8 +54,13 @@ class TestGoogleDataAccess:
             4. Verify QA file is accessible with 200 status code and Test file is inaccessible with 401 code
                User dcf-integration-test-0 has access to QA and not Test project.
         """
+        # Login from UI to get access_token
         self.login_page.go_to(page)
         token = self.login_page.login(page, user="user0_account")["value"]
+
+        # Delete previous temp Google Credentials
+        self.fence.delete_previous_google_service_account_keys(access_token=token)
+
         # Unlinking Google Account for user0
         unlinking_status_code = self.fence.unlink_google_account(user="user0_account")
         assert unlinking_status_code in (
@@ -72,39 +75,29 @@ class TestGoogleDataAccess:
         assert (
             linking_status_code == 200
         ), f"Expected Google account to be linked, but got status_code {linking_status_code}"
-        logger.info(linking_url)
 
         # Creating Temporary Google Credentials
         temp_creds_json, status_code = self.fence.create_temp_google_creds(
-            user="user0_account", access_token=token
+            user="user0_account", access_token=token, expires_in=300
         )
         assert (
             status_code == 200
         ), f"Expected Google credentials to be created but got status {status_code}"
 
         # Creating Presigned URLs for QA and Test
-        logger.info(self.indexd_files["qa_file"]["did"])
         qa_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["qa_file"]["did"],
-            params=["protocol=s3"],
+            params=["protocol=gs"],
             user="user0_account",
             expected_status=200,
         )
         test_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["test_file"]["did"],
-            params=["protocol=s3"],
+            params=["protocol=gs"],
             user="user0_account",
             expected_status=401,
         )
-        key_path_file = (
-            TEST_DATA_PATH_OBJECT
-            / "google_creds"
-            / f"{temp_creds_json['private_key_id']}.json"
-        )
-        logger.info(
-            self.fence.read_file_from_google_storage(
-                bucket_name="dcf-integration-qa",
-                file_name="file.txt",
-                key_path_file=key_path_file,
-            )
-        )
+
+        # Verify the contents of /abc signed url
+        logger.info(qa_presigned_url)
+        self.fence.check_file_equals(qa_presigned_url, "dcf-integration-qa")

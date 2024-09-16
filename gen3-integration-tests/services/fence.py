@@ -14,7 +14,6 @@ from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 from utils.test_execution import screenshot
 from utils import TEST_DATA_PATH_OBJECT
-from google.cloud import storage
 
 
 class Fence(object):
@@ -35,7 +34,7 @@ class Fence(object):
         self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
         self.GOOGLE_LINK_URL = f"{self.BASE_URL}/link/google"
         self.GOOGLE_LINK_REDIRECT = f"{self.GOOGLE_LINK_URL}?redirect=/login"
-        self.GOOGLE_CREDENTIALS_URL = f"{self.BASE_URL}/credentials/google/"
+        self.GOOGLE_CREDENTIALS_URL = f"{self.BASE_URL}/credentials/google"
         self.DEFAULT_EXP_TIME = 84600
         # Locators
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
@@ -466,12 +465,6 @@ class Fence(object):
             assert (
                 "private_key" in response_json
             ), "Private key is not found in response json"
-            # Write the creds to a json file
-            path = TEST_DATA_PATH_OBJECT / "google_creds"
-            path.mkdir(parents=True, exist_ok=True)
-            file_path = path / f"{temp_google_creds_response['private_key']}.json"
-            with open(file_path, "w") as outfile:
-                json.dump(response_json, outfile, indent=4)
             return response_json, temp_google_creds_response.status_code
         else:
             logger.info(
@@ -479,18 +472,14 @@ class Fence(object):
             )
             return None, temp_google_creds_response.status_code
 
-    def read_file_from_google_storage(self, bucket_name, file_name, key_path_file):
-        """Reads the content of a blob from the bucket."""
-        # Initialize a storage client using the service account key file
-        client = storage.Client.from_service_account_json(key_path_file)
-
-        # Get the bucket
-        bucket = client.get_bucket(bucket_name)
-
-        # Get the blob (file) from the bucket
-        blob = bucket.blob(file_name)
-
-        # Download the content of the blob as a string (or as bytes if binary)
-        content = blob.download_as_text()  # Use download_as_bytes() for binary content
-
-        return content
+    def delete_previous_google_service_account_keys(self, access_token):
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {access_token}",
+        }
+        url = self.GOOGLE_CREDENTIALS_URL + "?all=true"
+        response = requests.delete(url=url, headers=headers)
+        assert response.status_code in (
+            204,
+            404,
+        ), f"Expected status 204/404 but got response {response.status_code}"
