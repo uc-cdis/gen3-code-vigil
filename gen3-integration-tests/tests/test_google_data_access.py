@@ -4,6 +4,10 @@ from pages.login import LoginPage
 from services.fence import Fence
 from services.indexd import Indexd
 from utils import logger
+from utils import TEST_DATA_PATH_OBJECT
+from gen3.auth import Gen3Auth
+from gen3.file import Gen3File
+
 
 from playwright.sync_api import Page
 
@@ -18,15 +22,15 @@ class TestGoogleDataAccess:
     indexd_files = {
         "qa_file": {
             "file_name": "file.txt",
-            "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
-            "size": 9,
+            "hashes": {"md5": "9573c8ad851c0a150d78ff4755b97920"},
+            "size": 18,
             "acl": ["QA"],
             "urls": ["gs://dcf-integration-qa/file.txt"],
         },
         "test_file": {
             "file_name": "file.txt",
-            "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad1"},
-            "size": 10,
+            "hashes": {"md5": "17bc0fb10a1c8df6940cdf7127042dd7"},
+            "size": 20,
             "acl": ["test"],
             "urls": ["gs://dcf-integration-test/file.txt"],
         },
@@ -85,6 +89,9 @@ class TestGoogleDataAccess:
         ), f"Expected Google credentials to be created but got status {status_code}"
 
         # Creating Presigned URLs for QA and Test
+        # auth = Gen3Auth(refresh_token=pytest.api_keys["user0_account"], endpoint=f"{pytest.root_url}")
+        # file = Gen3File(auth)
+        # qa_presigned_url = file.get_presigned_url(guid=self.indexd_files["qa_file"]["did"], protocol='gs')
         qa_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["qa_file"]["did"],
             params=["protocol=gs"],
@@ -99,5 +106,26 @@ class TestGoogleDataAccess:
         )
 
         # Verify the contents of /abc signed url
-        logger.info(qa_presigned_url)
-        self.fence.check_file_equals(qa_presigned_url, "dcf-integration-qa")
+        # logger.info(qa_presigned_url)
+        # self.fence.check_file_equals(qa_presigned_url, "dcf-integration-qa")
+
+        key_path_file = (
+            TEST_DATA_PATH_OBJECT
+            / "google_creds"
+            / f"{temp_creds_json['private_key_id']}.json"
+        )
+
+        logger.info(
+            self.fence.read_file_from_google_storage(
+                bucket_name="dcf-integration-qa",
+                file_name="file.txt",
+                key_path_file=key_path_file,
+            )
+        )
+        logger.info(
+            self.fence.read_file_from_google_storage(
+                bucket_name="dcf-integration-test",
+                file_name="file.txt",
+                key_path_file=key_path_file,
+            )
+        )

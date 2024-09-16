@@ -14,6 +14,7 @@ from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 from utils.test_execution import screenshot
 from utils import TEST_DATA_PATH_OBJECT
+from google.cloud import storage
 
 
 class Fence(object):
@@ -462,15 +463,38 @@ class Fence(object):
         temp_google_creds_response = requests.post(url=url, headers=headers)
         if temp_google_creds_response.status_code == 200:
             response_json = temp_google_creds_response.json()
+            logger.info
             assert (
                 "private_key" in response_json
             ), "Private key is not found in response json"
+            # Write the creds to a json file
+            path = TEST_DATA_PATH_OBJECT / "google_creds"
+            path.mkdir(parents=True, exist_ok=True)
+            file_path = path / f"{response_json['private_key_id']}.json"
+            with open(file_path, "w") as outfile:
+                json.dump(response_json, outfile, indent=4)
             return response_json, temp_google_creds_response.status_code
         else:
             logger.info(
                 f"Status code of the creating temp google creds : {temp_google_creds_response.status_code}"
             )
             return None, temp_google_creds_response.status_code
+
+    def read_file_from_google_storage(self, bucket_name, file_name, key_path_file):
+        """Reads the content of a blob from the bucket."""
+        # Initialize a storage client using the service account key file
+        client = storage.Client.from_service_account_json(key_path_file)
+
+        # Get the bucket
+        bucket = client.get_bucket(bucket_name)
+
+        # Get the blob (file) from the bucket
+        blob = bucket.blob(file_name)
+
+        # Download the content of the blob as a string (or as bytes if binary)
+        content = blob.download_as_text()  # Use download_as_bytes() for binary content
+
+        return content
 
     def delete_previous_google_service_account_keys(self, access_token):
         headers = {
