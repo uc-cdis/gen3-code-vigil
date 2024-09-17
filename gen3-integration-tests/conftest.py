@@ -14,7 +14,7 @@ from utils import TEST_DATA_PATH_OBJECT
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
 
-load_dotenv(verbose=True)
+load_dotenv()
 requires_fence_client_marker_present = False
 
 
