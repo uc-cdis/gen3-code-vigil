@@ -132,11 +132,13 @@ class LoginPage(object):
     def ras_login(
         self,
         page: Page,
-        username=os.environ["CI_TEST_RAS_USERID"],
-        password=os.environ["CI_TEST_RAS_PASSWORD"],
+        username="",
+        password="",
         portal_test=True,
     ):
-        if portal_test == True:
+        username = username or os.environ["CI_TEST_RAS_USERID"]
+        password = password or os.environ["CI_TEST_RAS_PASSWORD"]
+        if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
             page.locator("//button[normalize-space()='Login from RAS']").click()
             # Perform RAS Login
