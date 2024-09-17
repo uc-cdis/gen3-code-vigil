@@ -57,18 +57,10 @@ def get_configuration_files():
     logger.info("Creating configuration files")
     path = TEST_DATA_PATH_OBJECT / "configuration"
     path.mkdir(parents=True, exist_ok=True)
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        configs = gen3_admin_tasks.get_env_configurations(pytest.namespace)
-        for file_name, contents in configs.items():
-            with (path / file_name).open("w", encoding="utf-8") as f:
-                f.write(contents)
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = "kubectl get configmap manifest-global -o json | jq -r '.data'"
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-        with open(path / "manifest.json", "w") as f:
-            f.write('{ "global": ' + result.stdout.decode("utf-8") + "}")
+    configs = gen3_admin_tasks.get_env_configurations(pytest.namespace)
+    for file_name, contents in configs.items():
+        with (path / file_name).open("w", encoding="utf-8") as f:
+            f.write(contents)
 
 
 def get_fence_client_info():

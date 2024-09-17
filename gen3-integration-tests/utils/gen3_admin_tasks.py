@@ -28,13 +28,14 @@ def get_portal_config():
         )
 
 
-def get_admin_vm_configurations(test_env_namespace: str):
+def get_env_configurations(test_env_namespace: str = ""):
     """
     Fetch configs that require adminvm interaction using jenkins.
     Returns dict { file name: file contents }
     """
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        assert test_env_namespace != ""
         job = JenkinsJob(
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
@@ -56,6 +57,11 @@ def get_admin_vm_configurations(test_env_namespace: str):
                 raise Exception("Build timed out. Consider increasing max_duration")
         else:
             raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = "kubectl get configmap manifest-global -o json | jq -r '.data'"
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        return {"manifest.json": '{ "global": ' + result.stdout.decode("utf-8") + "}"}
 
 
 def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):
