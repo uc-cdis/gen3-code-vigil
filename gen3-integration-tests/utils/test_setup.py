@@ -11,24 +11,6 @@ from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks
 from gen3.auth import Gen3Auth
 
 
-def get_kube_namespace(hostname: str = ""):
-    """
-    Compute the kubernetes namespace
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        return hostname.split(".")[0]
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        # TODO: Set up the namespace in helm deployment and use it like below. For now just use hostname
-        #     cmd = (
-        #         "kubectl get configmap manifest-global -o json | jq -r '.data.environment'"
-        #     )
-        #     result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-        #     return result.stdout.decode("utf-8")
-        return hostname
-
-
 def get_api_key_and_auth_header(user):
     file_path = Path.home() / ".gen3" / f"{pytest.namespace}_{user}.json"
     try:

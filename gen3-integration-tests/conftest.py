@@ -7,6 +7,7 @@ from xdist import is_xdist_controller
 from xdist.scheduler import LoadScopeScheduling
 
 from utils import logger
+from utils import gen3_admin_tasks as gat
 from utils import test_setup as setup
 from utils import TEST_DATA_PATH_OBJECT
 
@@ -74,7 +75,7 @@ def pytest_configure(config):
     pytest.tested_env = os.getenv("TESTED_ENV")
     assert pytest.hostname, "Hostname undefined"
     if not pytest.namespace:
-        pytest.namespace = setup.get_kube_namespace(pytest.hostname)
+        pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
     if not pytest.tested_env:
         pytest.tested_env = pytest.namespace

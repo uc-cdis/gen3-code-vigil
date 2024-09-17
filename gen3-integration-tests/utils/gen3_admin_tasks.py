@@ -28,6 +28,24 @@ def get_portal_config():
         )
 
 
+def get_kube_namespace(hostname: str = ""):
+    """
+    Compute the kubernetes namespace
+    """
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        return hostname.split(".")[0]
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        # TODO: Set up the namespace in helm deployment and use it like below. For now just use hostname
+        #     cmd = (
+        #         "kubectl get configmap manifest-global -o json | jq -r '.data.environment'"
+        #     )
+        #     result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        #     return result.stdout.decode("utf-8")
+        return hostname
+
+
 def get_env_configurations(test_env_namespace: str = ""):
     """
     Fetch configs that require adminvm interaction using jenkins.
