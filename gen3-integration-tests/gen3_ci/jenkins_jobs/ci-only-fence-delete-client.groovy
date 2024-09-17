@@ -44,12 +44,13 @@ pipeline {
                             "implicit-test-client"
                             "basic-test-abc-client"
                             "jenkins-client-tester"
-                            "jenkinsClientTesterForRotation"
                             "jenkins-client-no-expiration"
                             "jenkins-client-short-expiration"
                             "jenkins-client-medium-expiration"
                             "jenkins-client-long-expiration"
                             "ras-test-client"
+                            "ras-test-client1"
+                            "ras-test-client2"
                         )
 
                         combined='{}'

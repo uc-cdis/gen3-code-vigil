@@ -42,9 +42,6 @@ class CustomScheduling(LoadScopeScheduling):
         if node.get_closest_marker("workspace"):
             return "__workspace__"
 
-        if node.get_closest_marker("requires_fence_client"):
-            return "__requires_fence_client__"
-
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
 
