@@ -64,3 +64,4 @@ if __name__ == "__main__":
     env_file = os.getenv("GITHUB_ENV")
     with open(env_file, "a") as myfile:
         myfile.write(f"NAMESPACE={selected_ns}\n")
+        myfile.write(f"HOSTNAME={selected_ns}.planx-pla.net\n")

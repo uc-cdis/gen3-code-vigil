@@ -1,6 +1,6 @@
 # Notes
 ## Steps
-1. Bring up gen3 locally
+1. Bring up gen3 locally. Please refer [gen3-helm](https://github.com/uc-cdis/gen3-helm) repo
 1. Create required fence clients
 1. Run usersync (test users are configured in the USERYAML block of values.yaml)
 1. Generate API keys for all test users
