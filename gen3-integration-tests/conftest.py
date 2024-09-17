@@ -74,6 +74,9 @@ def pytest_configure(config):
     pytest.namespace = os.getenv("NAMESPACE")
     pytest.tested_env = os.getenv("TESTED_ENV")
     assert pytest.hostname, "Hostname undefined"
+    # TODO: this is needed for Gen3 CI running on admin vm based envs
+    if pytest.namespace and not pytest.hostname:
+        pytest.hostname = f"{pytest.namespace}.planx-pla.net"
     if not pytest.namespace:
         pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
