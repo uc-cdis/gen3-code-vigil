@@ -29,7 +29,7 @@ class TestAggregateMDS:
         study_json_files = ["study1.json", "study2.json", "study3.json"]
         # Identify UID field name from gitops.json
         logger.info("# Fetch UID field name from gitops.json")
-        portal_config = gat.get_portal_config(pytest.namespace)
+        portal_config = gat.get_portal_config()
         assert portal_config is not None
         uid_field_name = (
             portal_config.get("discoveryConfig", {})

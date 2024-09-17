@@ -1,3 +1,4 @@
+import json
 import os
 import pytest
 import requests
@@ -13,7 +14,7 @@ from utils.jenkins import JenkinsJob
 load_dotenv()
 
 
-def get_portal_config(test_env_namespace):
+def get_portal_config():
     """Fetch portal config from the GUI"""
     if "heal" in pytest.tested_env:
         res = requests.get(f"{pytest.root_url}/portal/data/config/gitops.json")
@@ -55,13 +56,6 @@ def get_admin_vm_configurations(test_env_namespace: str):
                 raise Exception("Build timed out. Consider increasing max_duration")
         else:
             raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        manifest_all = {}
-        cmd = "kubectl get configmap manifest-global -o json | jq -r '.data'"
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-        manifest_all["global"] = result.stdout.decode("utf-8")
-        return {"manifest.json": manifest_all}
 
 
 def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):

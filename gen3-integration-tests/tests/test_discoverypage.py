@@ -65,7 +65,7 @@ class TestDiscoveryPage(object):
             8. Terminate workspace
         """
         # Get uid field and study preview field from portal config
-        portal_config = gat.get_portal_config(pytest.tested_env)
+        portal_config = gat.get_portal_config()
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
             .get("minimalFieldMapping", {})

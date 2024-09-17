@@ -154,7 +154,7 @@ class LoginPage(object):
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
-        res = get_portal_config(pytest.namespace)
+        res = get_portal_config()
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()

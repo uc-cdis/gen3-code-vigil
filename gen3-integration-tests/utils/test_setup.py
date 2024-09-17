@@ -20,11 +20,13 @@ def get_kube_namespace(hostname: str = ""):
         return hostname.split(".")[0]
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = (
-            "kubectl get configmap manifest-global -o json | jq -r '.data.environment'"
-        )
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-        return result.stdout.decode("utf-8")
+        # TODO: Set up the namespace in helm deployment and use it like below. For now just use hostname
+        #     cmd = (
+        #         "kubectl get configmap manifest-global -o json | jq -r '.data.environment'"
+        #     )
+        #     result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        #     return result.stdout.decode("utf-8")
+        return hostname
 
 
 def get_api_key_and_auth_header(user):
@@ -53,12 +55,20 @@ def get_configuration_files():
     Get configuration files from the admin VM and save them at `test_data/configuration`
     """
     logger.info("Creating configuration files")
-    configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
     path = TEST_DATA_PATH_OBJECT / "configuration"
     path.mkdir(parents=True, exist_ok=True)
-    for file_name, contents in configs.items():
-        with (path / file_name).open("w", encoding="utf-8") as f:
-            f.write(contents)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        configs = gen3_admin_tasks.get_env_configurations(pytest.namespace)
+        for file_name, contents in configs.items():
+            with (path / file_name).open("w", encoding="utf-8") as f:
+                f.write(contents)
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = "kubectl get configmap manifest-global -o json | jq -r '.data'"
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        with open(path / "manifest.json", "w") as f:
+            f.write('{ "global": ' + result.stdout.decode("utf-8") + "}")
 
 
 def get_fence_client_info():

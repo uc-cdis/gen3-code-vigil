@@ -13,7 +13,7 @@ from utils import TEST_DATA_PATH_OBJECT
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(verbose=True)
 requires_fence_client_marker_present = False
 
 
@@ -82,7 +82,7 @@ def pytest_configure(config):
     if not pytest.tested_env:
         pytest.tested_env = pytest.namespace
     # Compute root_url
-    pytest.root_url = f"https://{hostname}"
+    pytest.root_url = f"https://{pytest.hostname}"
 
     # Clients used for testing
     pytest.clients = {}
@@ -120,13 +120,14 @@ def pytest_configure(config):
     # Compute root url for portal
     try:
         manifest = json.loads(
-            (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
         )
     except FileNotFoundError:
         logger.error(
             "manifest.json not found. It should have been fetched by `get_configuration_files`..."
         )
         raise
+    logger.info(manifest)
     if manifest.get("global", {}).get("frontend_root", "") == "gen3ff":
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:
