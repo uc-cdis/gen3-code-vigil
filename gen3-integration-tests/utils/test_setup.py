@@ -44,54 +44,31 @@ def get_configuration_files():
             f.write(contents)
 
 
-def get_fence_client_info():
-    # Create the client and return the client information
-    data = gen3_admin_tasks.create_fence_client(test_env_namespace=pytest.namespace)
-    path = TEST_DATA_PATH_OBJECT / "fence_clients"
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / "clients_creds.txt"
-    with open(file_path, "w") as outfile:
-        outfile.write(data)
-
-
-def get_client_id_secret():
-    """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
-    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
-    if not os.path.exists(path):
-        logger.info('clients_creds.txt doesn\'t exists.')
-        return
-    with open(path, "r") as file:
-        content = file.read()
-
-    for entry in content.split("\n"):
-        if len(entry) == 0:  # Empty line
-            continue
-        client_name, client_details = entry.split(":")
-        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
-        pytest.clients[client_name] = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
-
-
 def delete_all_fence_clients():
     gen3_admin_tasks.delete_fence_client(pytest.namespace)
 
 
-def get_fence_rotated_client_info():
+def fence_clients_setup_info():
     # Create the client and return the client information
-    data = gen3_admin_tasks.fence_client_rotate(test_env_namespace=pytest.namespace)
-    path = TEST_DATA_PATH_OBJECT / "fence_clients"
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / "client_rotate_creds.txt"
-    with open(file_path, "w") as outfile:
-        outfile.write(data)
+    clients_data, rotated_clients_data = gen3_admin_tasks.setup_fence_test_clients(
+        test_env_namespace=pytest.namespace
+    )
+    clients_path = TEST_DATA_PATH_OBJECT / "fence_clients"
+    clients_path.mkdir(parents=True, exist_ok=True)
+    clients_file_path = clients_path / "clients_creds.txt"
+    with open(clients_file_path, "w") as outfile:
+        outfile.write(clients_data)
+    rotated_clients_path = TEST_DATA_PATH_OBJECT / "fence_clients"
+    rotated_clients_path.mkdir(parents=True, exist_ok=True)
+    rotated_clients_file_path = rotated_clients_path / "client_rotate_creds.txt"
+    with open(rotated_clients_file_path, "w") as outfile:
+        outfile.write(rotated_clients_data)
 
 
 def get_rotated_client_id_secret():
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
     if not os.path.exists(path):
-        logger.info('client_rotate_creds.txt doesn\'t exists.')
+        logger.info("client_rotate_creds.txt doesn't exists.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -102,6 +79,26 @@ def get_rotated_client_id_secret():
         client_name, client_details = entry.split(":")
         client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
         pytest.rotated_clients[client_name] = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
+
+
+def get_client_id_secret():
+    """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
+    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
+    if not os.path.exists(path):
+        logger.info("clients_creds.txt doesn't exists.")
+        return
+    with open(path, "r") as file:
+        content = file.read()
+
+    for entry in content.split("\n"):
+        if len(entry) == 0:  # Empty line
+            continue
+        client_name, client_details = entry.split(":")
+        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
+        pytest.clients[client_name] = {
             "client_id": client_id,
             "client_secret": client_secret,
         }

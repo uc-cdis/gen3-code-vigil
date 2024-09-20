@@ -55,8 +55,7 @@ def pytest_collection_finish(session):
             markers = item.keywords
             for marker_name, marker in markers.items():
                 if marker_name == "requires_fence_client":
-                    setup.get_fence_client_info()
-                    setup.get_fence_rotated_client_info()
+                    setup.fence_clients_setup_info()
                     requires_fence_client_marker_present = True
                     return
 
