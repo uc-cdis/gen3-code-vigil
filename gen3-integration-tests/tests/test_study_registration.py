@@ -82,7 +82,7 @@ class TestStudyRegistration(object):
         discovery_page = DiscoveryPage()
         study_register = StudyRegistrationPage()
         # Get UID field name from portal config
-        portal_config = gat.get_portal_config(pytest.tested_env)
+        portal_config = gat.get_portal_config()
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
             .get("minimalFieldMapping", {})
@@ -167,7 +167,7 @@ class TestStudyRegistration(object):
         study_register.fill_registration_form(page, cedar_uuid, study_name)
 
         # After registering the study, run metadata-agg-sync job
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         # # TODO : check the job pod status with kube-check-pod jenkins job
         gat.check_job_pod(pytest.namespace, "metadata-aggregate-sync", "gen3job")
 

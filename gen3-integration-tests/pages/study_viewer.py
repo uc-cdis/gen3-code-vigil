@@ -6,7 +6,7 @@ import utils.gen3_admin_tasks as gat
 from utils.test_execution import screenshot
 from playwright.sync_api import Page
 
-portal_config = gat.get_portal_config(pytest.tested_env)
+portal_config = gat.get_portal_config()
 study_viewer_config = portal_config.get("studyViewerConfig", [])
 if study_viewer_config:
     study_viewer_index = study_viewer_config[0].get("dataType")
