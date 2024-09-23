@@ -29,7 +29,7 @@ class TestAggregateMDS:
         study_json_files = ["study1.json", "study2.json", "study3.json"]
         # Identify UID field name from gitops.json
         logger.info("# Fetch UID field name from gitops.json")
-        portal_config = gat.get_portal_config(pytest.namespace)
+        portal_config = gat.get_portal_config()
         assert portal_config is not None
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
@@ -61,7 +61,7 @@ class TestAggregateMDS:
 
         # Metadata-aggregate-sync and verify
         logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         for i in range(len(study_ids)):
             study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
             assert_with_retry(
@@ -89,7 +89,7 @@ class TestAggregateMDS:
 
         # Metadata-aggregate-sync and verify
         logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         for i in range(len(study_ids)):
             study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
             assert_with_retry(

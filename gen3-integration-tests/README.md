@@ -2,19 +2,19 @@
 
 ## Setup
 
+### Identify GEN3_INSTANCE_TYPE
+The integration tests can be run on Gen3 instances hosted using cloud-automation or helm. Since the mechanisms for running admin tasks varies for both, we must specify this for executing tests correctly. The following values are accepted:
+- ADMINVM_REMOTE (for instances hosted on a remote admin VM using cloud-automation)
+- HELM_LOCAL (for instances hosted locally using helm)
+
 ### Test user credentials
 The code supports running different steps as different users. Please see pytest_configure method in conftest.py for details.
 
-The users required to run the tests are:
-- `main_account` is the default user. Save API key for that user as `<namespace>_main_account.json` in `~/.gen3` directory. For example, `qa-dcp_main_account.json`.
-- `indexing_account` is the indexing_admin user. Save the API key as `<namespace>_indexing_account.json` in `~/.gen3` directory.
-- `auxAcct1_account` is an auxiliary user account-1. The user does not have `data-upload` role but has `abc.programs.test_program.projects.test_project1-viewer` policy. Save the API key as `<namespace>_auxAcct1_account.json` in `~/.gen3` directory.
-- `auxAcct2_account` is an auxiliary user account-2. The user does not have `data-upload` role but has `abc.programs.test_program2.projects.test_project3-viewer` policy. Save the API key as `<namespace>_auxAcct2_account.json` in `~/.gen3` directory.
-- `user0_account` is an user account-0. Save the API key as `<namespace>_user0_account.json` in `~/.gen3` directory.
+The test users required to run the tests are listed [here](test_data/test_setup/users.csv)
 
 You can use the following jenkins job to generate the api_keys (the keys are saved as build artifacts):
-- If `NAMESPACE` is on `qaplanetv1` use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/generate-api-keys/)
-- If it is on `devplanetv2` use [jenkins2-job](https://jenkins2.planx-pla.net/job/generate-api-keys/)
+- For CI and test environments use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/generate-api-keys/)
+- For dev environments use [jenkins2-job](https://jenkins2.planx-pla.net/job/generate-api-keys/)
 
 ### Running gen3 admin tasks
 We use jenkins for running tasks like metadata-aggregate-sync, etl etc.
@@ -28,6 +28,8 @@ CI_TEST_ORCID_USERID=<ORCID Username>
 CI_TEST_ORCID_PASSWORD=<ORCID Password>
 CI_TEST_RAS_USERID=<RAS Username>
 CI_TEST_RAS_PASSWORD=<RAS Password>
+CI_TEST_RAS_2_USERID=<RAS Username>
+CI_TEST_RAS_2_PASSWORD=<RAS Password>
 ```
 The Jenkins API token, ORCID creds and RAS creds can be obtained from Keeper.
 
@@ -37,21 +39,21 @@ Switch to `gen3-code-vigil/gen3-integration-tests` and run the commands:
 mkdir output
 poetry install
 ```
-Then:
+Then (please note that these are example values, please replace with the right ones):
 ```
-HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --alluredir allure-results -n auto --dist loadscope
+GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --alluredir allure-results -n auto --dist loadscope
 ```
 The kubernetes namespace is required for Gen3 admin tasks. It is assumed to be the first part of the hostname (`jenkins-brain` in the example above).
 If it is different it must be explicitly defined, like
 ```
-HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --alluredir allure-results -n auto --dist loadscope
+GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --alluredir allure-results -n auto --dist loadscope
 ```
 
 We use [allure-pytest](https://pypi.org/project/allure-pytest/). The report can be viewed by running `allure serve allure-results`
 
 We can set TESTED_ENV to the enviroment being actually tested. This is useful when we replicate the configuration of the tested environment in the dev / test environment for testing or development. We can then run the tests by executing
 ```
-TESTED_ENV="healdata.org" HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
+GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" TESTED_ENV="healdata.org" HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
 ```
 
 `-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). We run test classes / suties in parallel using the `--dist loadscope`. To use this feature it is imperative that the test suites are designed to be independent and idempotent.
@@ -78,7 +80,8 @@ All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-inte
 ## Code organization
 Test code is organized into 4 directories:  `services`, `tests`, `test-data` and `utils`.
 - `pages` contains endpoints, locators and methods specific to each page in the portal. There is a separate module for each page.
+- `scripts` contains standalone helper scripts to assist in setting up the environment.
 - `services` contains the endpoints and methods specific to each service. There is a separate module for each service.
+- `test_data` contains the test data.
 - `tests` contains the tests written in pytest. Tests are further separated into api tests and gui tests.
-- `test-data` contains the test data.
 - `utils` contains utility and helper functions.

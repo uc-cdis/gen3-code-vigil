@@ -35,9 +35,9 @@ class TestETL:
             5. Clean-up indices after the test run
         """
         logger.info("Running etl for the first time")
-        gat.run_gen3_job(pytest.namespace, "etl")
+        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
         logger.info("Running etl for the second time")
-        gat.run_gen3_job(pytest.namespace, "etl")
+        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
         gat.check_indices_after_etl(pytest.namespace)
