@@ -136,11 +136,13 @@ class LoginPage(object):
     def ras_login(
         self,
         page: Page,
-        username=os.environ["CI_TEST_RAS_USERID"],
-        password=os.environ["CI_TEST_RAS_PASSWORD"],
+        username="",
+        password="",
         portal_test=True,
     ):
-        if portal_test == True:
+        username = username or os.environ["CI_TEST_RAS_USERID"]
+        password = password or os.environ["CI_TEST_RAS_PASSWORD"]
+        if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
             page.locator("//button[normalize-space()='Login from RAS']").click()
             # Perform RAS Login
@@ -170,7 +172,7 @@ class LoginPage(object):
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
-        res = get_portal_config(pytest.namespace)
+        res = get_portal_config()
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()

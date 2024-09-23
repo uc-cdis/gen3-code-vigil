@@ -7,6 +7,7 @@ from xdist import is_xdist_controller
 from xdist.scheduler import LoadScopeScheduling
 
 from utils import logger
+from utils import gen3_admin_tasks as gat
 from utils import test_setup as setup
 from utils import TEST_DATA_PATH_OBJECT
 
@@ -80,21 +81,19 @@ def get_fence_clients():
 
 def pytest_configure(config):
     # Compute hostname and namespace
-    hostname = os.getenv("HOSTNAME")
-    namespace = os.getenv("NAMESPACE")
-    tested_env = os.getenv("TESTED_ENV")
-    assert hostname or namespace, "Hostname and namespace undefined"
-    if hostname and not namespace:
-        namespace = hostname.split(".")[0]
-    if namespace and not hostname:
-        hostname = f"{namespace}.planx-pla.net"
-    pytest.hostname = hostname
-    pytest.namespace = namespace
+    pytest.hostname = os.getenv("HOSTNAME")
+    pytest.namespace = os.getenv("NAMESPACE")
+    pytest.tested_env = os.getenv("TESTED_ENV")
+    assert pytest.hostname or pytest.namespace, "Hostname and namespace undefined"
+    if pytest.namespace and not pytest.hostname:
+        pytest.hostname = f"{pytest.namespace}.planx-pla.net"
+    if pytest.hostname and not pytest.namespace:
+        pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
-    pytest.tested_env = tested_env or namespace
-
+    if not pytest.tested_env:
+        pytest.tested_env = pytest.namespace
     # Compute root_url
-    pytest.root_url = f"https://{hostname}"
+    pytest.root_url = f"https://{pytest.hostname}"
 
     # Clients used for testing
     pytest.clients = {}
@@ -132,13 +131,14 @@ def pytest_configure(config):
     # Compute root url for portal
     try:
         manifest = json.loads(
-            (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
         )
     except FileNotFoundError:
         logger.error(
             "manifest.json not found. It should have been fetched by `get_configuration_files`..."
         )
         raise
+    logger.info(manifest)
     if manifest.get("global", {}).get("frontend_root", "") == "gen3ff":
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:

@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+import subprocess
 import re
 
 from utils import logger
@@ -36,9 +37,9 @@ def get_configuration_files():
     Get configuration files from the admin VM and save them at `test_data/configuration`
     """
     logger.info("Creating configuration files")
-    configs = gen3_admin_tasks.get_admin_vm_configurations(pytest.namespace)
     path = TEST_DATA_PATH_OBJECT / "configuration"
     path.mkdir(parents=True, exist_ok=True)
+    configs = gen3_admin_tasks.get_env_configurations(pytest.namespace)
     for file_name, contents in configs.items():
         with (path / file_name).open("w", encoding="utf-8") as f:
             f.write(contents)
