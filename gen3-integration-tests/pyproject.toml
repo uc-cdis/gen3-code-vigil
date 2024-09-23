@@ -17,6 +17,9 @@ cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.1"}
 filelock = "<4"
 gen3 = "<5"
+google-cloud-resource-manager = "^1.12.5"
+google-api-python-client = "^2.146.0"
+google-auth = "^2.34.0"
 google-cloud-storage = "^2.18.2"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
@@ -45,6 +48,7 @@ markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
   "requires_fence_client: tests for fence clients",
+  "requires_google_bucket: tests which require creation of google buckets",
   # services
   "audit: tests for audit-service",
   "fence: test for fence service",

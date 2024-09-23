@@ -101,7 +101,7 @@ spec:
         }
         stage('Create Link Google Test Buckets') {
             steps {
-                dir("create-link-google-test-buckets"){
+                dir("ci-only-create-link-google-test-buckets"){
                     script {
                         sh '''#!/bin/bash +x
                         set -e
@@ -110,12 +110,16 @@ spec:
                         source $GEN3_HOME/gen3/gen3setup.sh
 
                         # Create Google Test Buckets
-                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-qa --google-project-id dcf-integration --project-auth-id QA --public False
-                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-test --google-project-id dcf-integration --project-auth-id test --public False
+                        kubectl exec -n ${KUBECTL_NAMESPACE} $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-qa --google-project-id dcf-integration --project-auth-id QA --public False
+                        kubectl exec -n ${KUBECTL_NAMESPACE} $(gen3 pod fence \${NAMESPACE}) -- fence-create google-bucket-create --unique-name dcf-integration-test --google-project-id dcf-integration --project-auth-id test --public False
 
                         # Link phs ids to existing buckets
-                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000179 --bucket_id dcf-integration-qa --bucket_provider google
-                        kubectl exec $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000178 --bucket_id dcf-integration-test --bucket_provider google
+                        kubectl exec -n ${KUBECTL_NAMESPACE} $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000179 --bucket_id dcf-integration-qa --bucket_provider google
+                        kubectl exec -n ${KUBECTL_NAMESPACE} $(gen3 pod fence \${NAMESPACE}) -- fence-create link-bucket-to-project --project_auth_id phs000178 --bucket_id dcf-integration-test --bucket_provider google
+
+                        # Run usersync
+                        gen3 job run usersync ADD_DBGAP true
+                        kubectl -n ${KUBECTL_NAMESPACE} wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }

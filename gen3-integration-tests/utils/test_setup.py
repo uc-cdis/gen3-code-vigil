@@ -58,7 +58,7 @@ def get_client_id_secret():
     """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
     if not os.path.exists(path):
-        logger.info('clients_creds.txt doesn\'t exists.')
+        logger.info("clients_creds.txt doesn't exists.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -91,7 +91,7 @@ def get_fence_rotated_client_info():
 def get_rotated_client_id_secret():
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
     if not os.path.exists(path):
-        logger.info('client_rotate_creds.txt doesn\'t exists.')
+        logger.info("client_rotate_creds.txt doesn't exists.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -105,3 +105,7 @@ def get_rotated_client_id_secret():
             "client_id": client_id,
             "client_secret": client_secret,
         }
+
+
+def setup_google_buckets():
+    gen3_admin_tasks.create_link_google_test_buckets(pytest.namespace)

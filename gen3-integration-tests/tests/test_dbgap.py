@@ -81,6 +81,7 @@ new_dbgap_records = {
 
 @pytest.mark.indexd
 @pytest.mark.fence
+@pytest.mark.requires_google_bucket
 class TestDbgap:
     indexd = Indexd()
     fence = Fence()
@@ -90,9 +91,6 @@ class TestDbgap:
 
     @classmethod
     def setup_class(cls):
-        # Create and Link Google Test Buckets
-        create_link_google_test_buckets(pytest.namespace)
-
         # Removing test indexd records if they exist
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
         cls.indexd.delete_records(cls.variables["created_dbgap_dids"])

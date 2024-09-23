@@ -15,6 +15,7 @@ from playwright.sync_api import Page
 from utils.test_execution import screenshot
 from utils import TEST_DATA_PATH_OBJECT
 from google.cloud import storage
+from google.oauth2 import service_account
 
 
 class Fence(object):
@@ -363,139 +364,6 @@ class Fence(object):
         assert "version" in response.json().keys()
         return response.json()["version"]
 
-    def link_google_account(self, user: str, expires_in: int = None):
-        """Links google account with user account with expiration if provided"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        headers = {
-            "Content-Type": "application/json",
-        }
-        if expires_in is not None:
-            url = f"{self.GOOGLE_LINK_REDIRECT}&expires_in={expires_in}"
-        else:
-            url = self.GOOGLE_LINK_REDIRECT
-        linking_res = requests.get(
-            url=url,
-            auth=auth,
-            headers=headers,
-        )
-        if linking_res.status_code == 200:
-            logger.info(f"Google account with user {user} is linked successfully")
-            return linking_res.url, linking_res.status_code
-        else:
-            return None, linking_res.status_code
-
-    def unlink_google_account(self, user: str):
-        """Unlink / Delete google account link with user account"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        delete_res = requests.delete(
-            url=f"{self.GOOGLE_LINK_URL}",
-            auth=auth,
-        )
-        logger.debug(f"Unlinking Response: {delete_res.status_code}")
-        if delete_res.status_code == 200:
-            logger.info(f"Google account with user {user} is unlinked successfully")
-            return delete_res.status_code
-        else:
-            response_json = delete_res.json()
-            error_description = response_json.get(
-                "error_description", "No description provided"
-            )
-            assert (
-                error_description
-                == "Couldn't unlink account for user, no linked Google account found."
-            ), f"Unexpected error description: {error_description}"
-            logger.info(
-                f"Unlinking was unsuccessful with status code {delete_res.status_code}"
-            )
-            return delete_res.status_code
-
-    def check_extend_success(self, expires_in, request_time, expiration_time):
-        buffer_time = datetime.timedelta(seconds=60)
-        expiration_time_timestamp = datetime.datetime.fromtimestamp(expiration_time)
-        logger.debug(f"Expiration time from timestamp: {expiration_time_timestamp}")
-        # Calculate expected expiration time
-        expected_expiration_time = request_time + datetime.timedelta(seconds=expires_in)
-        min_expires = expected_expiration_time - buffer_time
-        max_expires = expected_expiration_time + buffer_time
-
-        # Assert that the expiration time is within the expected range
-        assert (
-            min_expires <= expiration_time_timestamp <= max_expires
-        ), f"The Link Expiration is not in expected range: Expiration time : {expiration_time_timestamp}, Expected Range : {min_expires},{max_expires}"
-
-    def extend_expiration(self, user: str, expires_in: int = None):
-        """Extend link expiration for google account"""
-        request_time = datetime.datetime.now()
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        headers = {
-            "Content-Type": "application/json",
-        }
-        # If expires_in is None, then use the default expiration time
-        if expires_in is None:
-            expires_in = self.DEFAULT_EXP_TIME
-        url = f"{self.GOOGLE_LINK_URL}?expires_in={expires_in}"
-        extend_res = requests.patch(
-            url=url,
-            auth=auth,
-            headers=headers,
-        )
-        if extend_res.status_code == 200:
-            response_json = extend_res.json()
-            assert "exp" in response_json, "Expiration key 'exp' not found in response"
-            expiration_time = response_json["exp"]
-            self.check_extend_success(expires_in, request_time, expiration_time)
-            return extend_res.status_code
-        else:
-            logger.info(
-                f"Status code of the Extend link request: {extend_res.status_code}"
-            )
-            return extend_res.status_code
-
-    def create_temp_google_creds(self, user: str, access_token, expires_in: int = None):
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"bearer {access_token}",
-        }
-        if expires_in:
-            url = f"{self.GOOGLE_CREDENTIALS_URL}?expires_in={expires_in}"
-        else:
-            url = f"{self.GOOGLE_CREDENTIALS_URL}"
-        temp_google_creds_response = requests.post(url=url, headers=headers)
-        if temp_google_creds_response.status_code == 200:
-            response_json = temp_google_creds_response.json()
-            logger.info
-            assert (
-                "private_key" in response_json
-            ), "Private key is not found in response json"
-            # Write the creds to a json file
-            path = TEST_DATA_PATH_OBJECT / "google_creds"
-            path.mkdir(parents=True, exist_ok=True)
-            file_path = path / f"{response_json['private_key_id']}.json"
-            with open(file_path, "w") as outfile:
-                json.dump(response_json, outfile, indent=4)
-            return response_json, temp_google_creds_response.status_code
-        else:
-            logger.info(
-                f"Status code of the creating temp google creds : {temp_google_creds_response.status_code}"
-            )
-            return None, temp_google_creds_response.status_code
-
-    def read_file_from_google_storage(self, bucket_name, file_name, key_path_file):
-        """Reads the content of a blob from the bucket."""
-        # Initialize a storage client using the service account key file
-        client = storage.Client.from_service_account_json(key_path_file)
-
-        # Get the bucket
-        bucket = client.get_bucket(bucket_name)
-
-        # Get the blob (file) from the bucket
-        blob = bucket.blob(file_name)
-
-        # Download the content of the blob as a string (or as bytes if binary)
-        content = blob.download_as_text()  # Use download_as_bytes() for binary content
-
-        return content
-
     def delete_previous_google_service_account_keys(self, access_token):
         headers = {
             "Content-Type": "application/json",
@@ -507,3 +375,16 @@ class Fence(object):
             204,
             404,
         ), f"Expected status 204/404 but got response {response.status_code}"
+
+    def update_bucket_iam_policy(self, bucket_name, member, role, key_path_file):
+        # Load credentials
+        credentials = service_account.Credentials.from_service_account_file(
+            key_path_file
+        )
+        # Initialize the storage client
+        client = storage.Client(credentials=credentials)
+        # Get the bucket
+        bucket = client.bucket(bucket_name)
+        # Get the current IAM policy
+        policy = bucket.get_iam_policy(requested_policy_version=3)
+        logger.info(policy)
