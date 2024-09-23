@@ -99,6 +99,14 @@ class LoginPage(object):
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
         if validate_username_locator:
+            res = get_portal_config()
+            # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
+            if (
+                res.get("components", {})
+                .get("topBar", {})
+                .get("useProfileDropdown", "")
+            ):
+                page.locator(self.USER_PROFILE_DROPDOWN).click()
             expect(
                 page.locator(f'//div[contains(text(), "{logged_in_user}")]')
             ).to_be_visible(timeout=10000)
