@@ -49,7 +49,7 @@ def delete_all_fence_clients():
     gen3_admin_tasks.delete_fence_client(pytest.namespace)
 
 
-def fence_clients_setup_info():
+def setup_fence_test_clients_info():
     # Create the client and return the client information
     clients_data, rotated_clients_data = gen3_admin_tasks.setup_fence_test_clients(
         test_env_namespace=pytest.namespace
