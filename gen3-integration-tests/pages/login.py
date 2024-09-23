@@ -74,7 +74,6 @@ class LoginPage(object):
         )
         # printing cookies if needed for debugging purposes
         cookies = page.context.cookies()
-        res = get_portal_config(pytest.namespace)
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         if idp == "ORCID":
             self.orcid_login(page)
@@ -95,9 +94,6 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
-        # Check if useProfileDropdown is set to True and click on the Profile Dropdown
-        if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
-            page.locator(self.USER_PROFILE_DROPDOWN).click()
         if validate_username_locator:
             res = get_portal_config()
             # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
