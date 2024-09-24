@@ -451,28 +451,3 @@ class Fence(object):
                 f"Status code of the Extend link request: {extend_res.status_code}"
             )
             return extend_res.status_code
-
-    def delete_previous_google_service_account_keys(self, access_token):
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"bearer {access_token}",
-        }
-        url = self.GOOGLE_CREDENTIALS_URL + "?all=true"
-        response = requests.delete(url=url, headers=headers)
-        assert response.status_code in (
-            204,
-            404,
-        ), f"Expected status 204/404 but got response {response.status_code}"
-
-    def update_bucket_iam_policy(self, bucket_name, member, role, key_path_file):
-        # Load credentials
-        credentials = service_account.Credentials.from_service_account_file(
-            key_path_file
-        )
-        # Initialize the storage client
-        client = storage.Client(credentials=credentials)
-        # Get the bucket
-        bucket = client.bucket(bucket_name)
-        # Get the current IAM policy
-        policy = bucket.get_iam_policy(requested_policy_version=3)
-        logger.info(policy)

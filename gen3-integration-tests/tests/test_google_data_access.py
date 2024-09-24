@@ -47,10 +47,8 @@ class TestGoogleDataAccess:
         """
         Scenario: Google Data Access dcf-integration-test-0
         Steps:
-            1. Link google account for user dcf-integration-test-0
-            2. Create temporary google credentials
-            3. Create presigned urls for QA and Test indexd files
-            4. Verify QA file is accessible with 200 status code and Test file is inaccessible with 401 code
+            1. Create presigned urls for QA and Test indexd files
+            2. Verify QA file is accessible with 200 status code and Test file is inaccessible with 401 code
                User dcf-integration-test-0 has access to QA and not Test project.
         Note : Make sure to run the fence-create google bucket command and perform usersync to setup access for
                google buckets.

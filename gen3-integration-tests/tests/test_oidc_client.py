@@ -46,7 +46,7 @@ class TestOIDCClient:
 
         # running fence-delete-expired-clients job
         gat.run_gen3_job(
-            test_env_namespace=pytest.namespace, job_name="fence-delete-expired-clients"
+            "fence-delete-expired-clients", test_env_namespace=pytest.namespace
         )
         # checking the logs from the job pod
         job_logs = gat.check_job_pod(

@@ -153,7 +153,7 @@ class JenkinsJob(object):
         """
         Terminate a build / run of the job.
         """
-        logger.info(f"Terminating build {build_num} for job {self.job_url}")
+        logger.info(f"Terminating build for job {self.job_url}/{build_num}")
         try:
             response = requests.post(f"{self.job_url}/{build_num}/stop", auth=self.auth)
             if response.status_code == 200:
