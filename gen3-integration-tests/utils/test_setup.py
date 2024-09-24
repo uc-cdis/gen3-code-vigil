@@ -3,6 +3,7 @@ import os
 import pytest
 import subprocess
 import re
+import csv
 
 from utils import logger
 from pathlib import Path
@@ -50,9 +51,15 @@ def delete_all_fence_clients():
 
 
 def setup_fence_test_clients_info():
+    clients_data_file_path = TEST_DATA_PATH_OBJECT / "test_setup" / "clients.csv"
+    # Read CSV data into a python variable
+    with open(clients_data_file_path, newline="") as csvfile:
+        reader = csv.reader(csvfile)
+        # Join rows with newlines to preserve the format
+        data = "\n".join(",".join(row) for row in reader)
     # Create the client and return the client information
     clients_data, rotated_clients_data = gen3_admin_tasks.setup_fence_test_clients(
-        test_env_namespace=pytest.namespace
+        test_env_namespace=pytest.namespace, clients_data=data
     )
     clients_path = TEST_DATA_PATH_OBJECT / "fence_clients"
     clients_path.mkdir(parents=True, exist_ok=True)
@@ -103,3 +110,11 @@ def get_client_id_secret():
             "client_id": client_id,
             "client_secret": client_secret,
         }
+
+
+def run_usersync():
+    gen3_admin_tasks.run_gen3_command(
+        test_env_namespace=pytest.namespace,
+        command="gen3 job run usersync ADD_DBGAP true",
+    )
+    gen3_admin_tasks.check_job_pod(pytest.namespace, "usersync", "gen3job")

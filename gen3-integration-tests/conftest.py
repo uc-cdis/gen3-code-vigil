@@ -70,6 +70,8 @@ def pytest_collection_finish(session):
                     # Create and Link Google Test Buckets
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
+        # Run Usersync job
+        setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)

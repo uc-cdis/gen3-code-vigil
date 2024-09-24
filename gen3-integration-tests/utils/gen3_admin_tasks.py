@@ -232,6 +232,7 @@ def check_job_pod(
 
 def setup_fence_test_clients(
     test_env_namespace: str,
+    clients_data: str,
 ):
     """
     Runs jenkins job to create a fence client
@@ -245,6 +246,7 @@ def setup_fence_test_clients(
     )
     params = {
         "NAMESPACE": test_env_namespace,
+        "CLIENTS_DATA": clients_data,
     }
     build_num = job.build_job(params)
     if build_num:

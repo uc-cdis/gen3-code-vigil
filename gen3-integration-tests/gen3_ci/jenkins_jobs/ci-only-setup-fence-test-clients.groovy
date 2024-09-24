@@ -2,6 +2,8 @@
     String parameter NAMESPACE
         e.g. jenkins-blood
 
+    String parameter CLIENTS_DATA
+
     Artifact archived - clients_creds.txt
                       - client_rotate_creds.txt
 */
@@ -43,26 +45,12 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
 
-                        # PERFORMING CLIENTS CREATION
-                        # CLIENT_NAME,USER_NAME,CLIENT_TYPE,ARBORIST_POLICIES,EXPIRES_IN,SCOPE
-                        client_details=(
-                            "basic-test-client,test-client@example.com,basic,None,"
-                            "implicit-test-client,test@example.com,implicit,None,"
-                            "basic-test-abc-client,test-abc-client@example.com,basic,None,"
-                            "jenkins-client-tester,dcf-integration-test-0@planx-pla.net,client_credentials,None,"
-                            "jenkins-client-no-expiration,test-user,client_credentials,None,"
-                            "jenkins-client-short-expiration,test-user,client_credentials,None,0.00000000001"
-                            "jenkins-client-medium-expiration,test-user,client_credentials,None,4"
-                            "jenkins-client-long-expiration,test-user,client_credentials,None,30"
-                            "ras-test-client,UCtestuser128,basic,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,"
-                            "ras-test-client1,UCtestuser127,auth_code,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,,openid user data google_credentials ga4gh_passport_v1"
-                            "ras-test-client2,UCtestuser129,auth_code,programs.QA-admin programs.test-admin programs.DEV-admin programs.jnkns-admin,,openid user data google_credentials"
-                        )
+                        # Remove the first line which contains headers
+                        CLIENTS_DATA=$(echo "$CLIENTS_DATA" | tail -n +2)
 
-                        combined='{}'
-                        for value in "${client_details[@]}"; do
+                        while IFS= read -r line; do
                             # Split the variable into an array using comma as the delimiter
-                            IFS=',' read -r CLIENT_NAME USER_NAME CLIENT_TYPE ARBORIST_POLICIES EXPIRES_IN SCOPES<<< "${value}"
+                            IFS=',' read -r CLIENT_NAME USER_NAME CLIENT_TYPE ARBORIST_POLICIES EXPIRES_IN SCOPES<<< "${line}"
                             echo "Creating client: ${CLIENT_NAME}"
 
                             DELETE_CMD="kubectl -n $KUBECTL_NAMESPACE exec $(gen3 pod fence) -- fence-create client-delete --client ${CLIENT_NAME}"
@@ -103,7 +91,8 @@ pipeline {
                             # execute the above fence command
                             # execute the above fence command
                             FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(awk -v prefix="$CLIENT_NAME" 'END{print prefix ":" $0}' >> clients_creds.txt))
-                        done
+                        done <<< "$CLIENTS_DATA"
+
 
                         # PERFORMING CLIENT ROTATION
                         # CLIENT_NAME,EXPIRES_IN
@@ -124,10 +113,6 @@ pipeline {
                             # execute the above fence command
                             FENCE_CMD_RES=$(bash -c "${FENCE_CMD}" | tee >(awk -v prefix="$CLIENT_NAME" 'END{print prefix ":" $0}' >> client_rotate_creds.txt))
                         done
-
-                        # Run usersync
-                        gen3 job run usersync ADD_DBGAP true
-                        kubectl -n ${KUBECTL_NAMESPACE} wait --for=condition=complete --timeout=-1s jobs/usersync
                         '''
                     }
                 }
