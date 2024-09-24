@@ -538,7 +538,22 @@ def create_access_token(test_env_namespace, service, expired, username):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = f"kubectl get pods -l app={service} | awk '{{print $1}}' | tail -n 1"
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True
+        )
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.strip()
+        else:
+            raise Exception("Unable to retrieve fence-deployment pod")
+        cmd = f"kubectl exec -it {fence_pod_name} -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account,google_credentials --type access_token --exp {expired} --username {username}"
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            raise Exception("Unable to get expired access_token")
 
 
 # TODO remove this if unused... in a while
