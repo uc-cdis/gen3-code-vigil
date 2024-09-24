@@ -118,3 +118,7 @@ def run_usersync():
         command="gen3 job run usersync ADD_DBGAP true",
     )
     gen3_admin_tasks.check_job_pod(pytest.namespace, "usersync", "gen3job")
+
+
+def setup_google_buckets():
+    gen3_admin_tasks.create_link_google_test_buckets(pytest.namespace)
