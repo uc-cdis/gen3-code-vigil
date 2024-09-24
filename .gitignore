@@ -11,3 +11,4 @@ gen3-integration-tests/test_data/lock
 gen3-integration-tests/test_data/configuration
 gen3-integration-tests/test_data/graph_data
 gen3-integration-tests/test_data/fence_client
+gen3-integration-tests/test_data/google_creds

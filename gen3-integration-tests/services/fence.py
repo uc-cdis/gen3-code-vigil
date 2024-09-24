@@ -2,7 +2,6 @@ import json
 import pytest
 import requests
 import base64
-import os
 import datetime
 
 from utils.misc import retry
@@ -13,7 +12,6 @@ from pages.login import LoginPage
 from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 from utils.test_execution import screenshot
-from utils import TEST_DATA_PATH_OBJECT
 
 
 class Fence(object):
@@ -34,8 +32,9 @@ class Fence(object):
         self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
         self.GOOGLE_LINK_URL = f"{self.BASE_URL}/link/google"
         self.GOOGLE_LINK_REDIRECT = f"{self.GOOGLE_LINK_URL}?redirect=/login"
+        self.GOOGLE_CREDENTIALS_URL = f"{self.BASE_URL}/credentials/google"
         self.DEFAULT_EXP_TIME = 84600
-        # Locatores
+        # Locators
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"

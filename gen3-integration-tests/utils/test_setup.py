@@ -106,3 +106,7 @@ def get_rotated_client_id_secret():
             "client_id": client_id,
             "client_secret": client_secret,
         }
+
+
+def setup_google_buckets():
+    gen3_admin_tasks.create_link_google_test_buckets(pytest.namespace)
