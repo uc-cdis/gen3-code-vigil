@@ -2,7 +2,6 @@ import json
 import pytest
 import requests
 import base64
-import os
 import datetime
 
 from utils.misc import retry
@@ -13,9 +12,6 @@ from pages.login import LoginPage
 from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
 from utils.test_execution import screenshot
-from utils import TEST_DATA_PATH_OBJECT
-from google.cloud import storage
-from google.oauth2 import service_account
 
 
 class Fence(object):
