@@ -230,8 +230,9 @@ def check_job_pod(
             raise Exception(f"Job {job_name} failed to complete in 20 minutes")
 
 
-def create_fence_client(
+def setup_fence_test_clients(
     test_env_namespace: str,
+    clients_data: str,
 ):
     """
     Runs jenkins job to create a fence client
@@ -243,50 +244,21 @@ def create_fence_client(
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
             os.getenv("JENKINS_PASSWORD"),
-            "ci-only-fence-create-client",
+            "ci-only-setup-fence-test-clients",
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLIENTS_DATA": clients_data,
         }
         build_num = job.build_job(params)
         if build_num:
             status = job.wait_for_build_completion(build_num)
             if status == "Completed":
-                return job.get_artifact_content(build_num, "clients_creds.txt")
+                return job.get_artifact_content(
+                    build_num, "clients_creds.txt"
+                ), job.get_artifact_content(build_num, "client_rotate_creds.txt")
             else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
-        else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
-
-
-def fence_client_rotate(test_env_namespace: str):
-    """
-    Runs jenkins job to create a fence client
-    Since this requires adminvm interaction we use jenkins.
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-fence-client-rotate",
-        )
-        params = {"NAMESPACE": test_env_namespace}
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return job.get_artifact_content(build_num, "client_rotate_creds.txt")
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
-        else:
-            raise Exception("Build number not found")
+                raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         pass
