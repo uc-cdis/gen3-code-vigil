@@ -238,25 +238,27 @@ def setup_fence_test_clients(
     Runs jenkins job to create a fence client
     Since this requires adminvm interaction we use jenkins.
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-setup-fence-test-clients",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "CLIENTS_DATA": clients_data,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return job.get_artifact_content(
-                build_num, "clients_creds.txt"
-            ), job.get_artifact_content(build_num, "client_rotate_creds.txt")
-        else:
-            raise Exception("Build number not found")
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-setup-fence-test-clients",
+        )
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "CLIENTS_DATA": clients_data,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return job.get_artifact_content(
+                    build_num, "clients_creds.txt"
+                ), job.get_artifact_content(build_num, "client_rotate_creds.txt")
+            else:
+                raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         pass
