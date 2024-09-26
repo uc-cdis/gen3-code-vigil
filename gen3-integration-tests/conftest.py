@@ -18,6 +18,8 @@ load_dotenv()
 requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
 
+collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
+
 
 class XDistCustomPlugin:
     def __init__(self):
@@ -51,6 +53,9 @@ class CustomScheduling(LoadScopeScheduling):
 def pytest_collection_finish(session):
     global requires_fence_client_marker_present
     global requires_google_bucket_marker_present
+    # Skip running code if --collect-only is passed
+    if session.config.option.collectonly:
+        return
     # Iterate through the collected test items
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
@@ -150,6 +155,9 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
+    # Skip running code if --collect-only is passed
+    if config.option.collectonly:
+        return
     if not hasattr(config, "workerinput"):
         directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
         if os.path.exists(directory_path):
