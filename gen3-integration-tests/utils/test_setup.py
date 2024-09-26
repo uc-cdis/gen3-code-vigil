@@ -3,6 +3,7 @@ import os
 import pytest
 import subprocess
 import re
+import csv
 
 from utils import logger
 from pathlib import Path
@@ -45,21 +46,51 @@ def get_configuration_files():
             f.write(contents)
 
 
-def get_fence_client_info():
+def delete_all_fence_clients():
+    gen3_admin_tasks.delete_fence_client(pytest.namespace)
+
+
+def setup_fence_test_clients_info():
+    clients_data_file_path = TEST_DATA_PATH_OBJECT / "test_setup" / "clients.csv"
+    clients_path = TEST_DATA_PATH_OBJECT / "fence_clients"
+    clients_path.mkdir(parents=True, exist_ok=True)
+    rotated_clients_path = TEST_DATA_PATH_OBJECT / "fence_clients"
+    rotated_clients_path.mkdir(parents=True, exist_ok=True)
+    # Read CSV data into a python variable
+    with open(clients_data_file_path, newline="") as csvfile:
+        reader = csv.reader(csvfile)
+        # Join rows with newlines to preserve the format
+        data = "\n".join(",".join(row) for row in reader)
     # Create the client and return the client information
-    data = gen3_admin_tasks.create_fence_client(test_env_namespace=pytest.namespace)
-    path = TEST_DATA_PATH_OBJECT / "fence_clients"
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / "clients_creds.txt"
-    with open(file_path, "w") as outfile:
-        outfile.write(data)
+    gen3_admin_tasks.setup_fence_test_clients(
+        test_env_namespace=pytest.namespace, clients_data=data
+    )
+
+
+def get_rotated_client_id_secret():
+    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
+    if not os.path.exists(path):
+        logger.info("clients_creds.txt doesn't exists.")
+        return
+    with open(path, "r") as file:
+        content = file.read()
+
+    for entry in content.split("\n"):
+        if len(entry) == 0:  # Empty line
+            continue
+        client_name, client_details = entry.split(":")
+        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
+        pytest.rotated_clients[client_name] = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
 
 
 def get_client_id_secret():
     """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
     if not os.path.exists(path):
-        logger.info("clients_creds.txt doesn't exists.")
+        logger.info("client_rotate_creds.txt doesn't exists.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -75,34 +106,13 @@ def get_client_id_secret():
         }
 
 
-def delete_all_fence_clients():
-    gen3_admin_tasks.delete_fence_client(pytest.namespace)
+def run_usersync():
+    gen3_admin_tasks.run_usersync(
+        test_env_namespace=pytest.namespace,
+        command="gen3 job run usersync ADD_DBGAP true",
+    )
+    gen3_admin_tasks.check_job_pod(pytest.namespace, "usersync", "gen3job")
 
 
-def get_fence_rotated_client_info():
-    # Create the client and return the client information
-    data = gen3_admin_tasks.fence_client_rotate(test_env_namespace=pytest.namespace)
-    path = TEST_DATA_PATH_OBJECT / "fence_clients"
-    path.mkdir(parents=True, exist_ok=True)
-    file_path = path / "client_rotate_creds.txt"
-    with open(file_path, "w") as outfile:
-        outfile.write(data)
-
-
-def get_rotated_client_id_secret():
-    path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
-    if not os.path.exists(path):
-        logger.info("client_rotate_creds.txt doesn't exists.")
-        return
-    with open(path, "r") as file:
-        content = file.read()
-
-    for entry in content.split("\n"):
-        if len(entry) == 0:  # Empty line
-            continue
-        client_name, client_details = entry.split(":")
-        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
-        pytest.rotated_clients[client_name] = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
+def setup_google_buckets():
+    gen3_admin_tasks.create_link_google_test_buckets(pytest.namespace)

@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 requires_fence_client_marker_present = False
+requires_google_bucket_marker_present = False
 
 
 class XDistCustomPlugin:
@@ -49,17 +50,28 @@ class CustomScheduling(LoadScopeScheduling):
 
 def pytest_collection_finish(session):
     global requires_fence_client_marker_present
+    global requires_google_bucket_marker_present
     # Iterate through the collected test items
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
             # Access the markers for each test item
             markers = item.keywords
             for marker_name, marker in markers.items():
-                if marker_name == "requires_fence_client":
-                    setup.get_fence_client_info()
-                    setup.get_fence_rotated_client_info()
+                if (
+                    marker_name == "requires_fence_client"
+                    and requires_fence_client_marker_present is False
+                ):
+                    setup.setup_fence_test_clients_info()
                     requires_fence_client_marker_present = True
-                    return
+                if (
+                    marker_name == "requires_google_bucket"
+                    and requires_google_bucket_marker_present is False
+                ):
+                    # Create and Link Google Test Buckets
+                    setup.setup_google_buckets()
+                    requires_google_bucket_marker_present = True
+        # Run Usersync job
+        setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)

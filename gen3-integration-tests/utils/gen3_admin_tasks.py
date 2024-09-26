@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 from utils import logger
 from utils.jenkins import JenkinsJob
+from utils import TEST_DATA_PATH_OBJECT
 
 load_dotenv()
 
@@ -87,26 +88,70 @@ def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = Fal
     Run gen3 command (e.g., gen3 --help).
     Since this requires adminvm interaction we use jenkins.
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-run-gen3-command",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "COMMAND": command,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return job.get_build_result(build_num)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-run-gen3-command",
+        )
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "COMMAND": command,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
+            raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        pass
+
+
+def run_usersync(test_env_namespace: str, command: str, DBGAP_TRUE=False):
+    """
+    Run Usersync
+    Since this requires adminvm interaction we use jenkins.
+    """
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-run-gen3-command",
+        )
+        if DBGAP_TRUE:
+            command = f"{command} ADD_DBGAP true"
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "COMMAND": command,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
+        else:
+            raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = "kubectl delete job usersync"
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        cmd = "kubectl create job --from=cronjob/usersync usersync"
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
+        if not result.returncode == 0:
+            raise Exception(f"Unable to run command. Got {result.stdout.strip()}")
 
 
 def run_gen3_job(
@@ -146,7 +191,7 @@ def run_gen3_job(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         job_pod = f"{job_name}-{uuid.uuid4()}"
-        cmd = ["kubectl", "create", job, f"--from=cronjob/{job_name}", job_pod]
+        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_pod]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
@@ -201,7 +246,12 @@ def check_job_pod(
         job_started = False
         for i in range(6):
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.stdout.decode("utf-8") in ["Running", "Succeeded", "Failed"]:
+            if result.stdout.decode("utf-8").replace("'", "") in [
+                "Running",
+                "Succeeded",
+                "Failed",
+                "Completed",
+            ]:
                 job_started = True
                 break
             else:
@@ -221,7 +271,7 @@ def check_job_pod(
         job_completed = False
         for i in range(40):
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.stdout.decode("utf-8") == "True":
+            if result.stdout.decode("utf-8").replace("'", "") == "True":
                 job_completed = True
                 break
             else:
@@ -230,66 +280,138 @@ def check_job_pod(
             raise Exception(f"Job {job_name} failed to complete in 20 minutes")
 
 
-def create_fence_client(
+def setup_fence_test_clients(
     test_env_namespace: str,
+    clients_data: str,
 ):
     """
     Runs jenkins job to create a fence client
     Since this requires adminvm interaction we use jenkins.
     """
+    clients_file_path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
+    rotated_clients_file_path = (
+        TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
+    )
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
         job = JenkinsJob(
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
             os.getenv("JENKINS_PASSWORD"),
-            "ci-only-fence-create-client",
+            "ci-only-setup-fence-test-clients",
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLIENTS_DATA": clients_data,
         }
         build_num = job.build_job(params)
         if build_num:
             status = job.wait_for_build_completion(build_num)
             if status == "Completed":
-                return job.get_artifact_content(build_num, "clients_creds.txt")
+                with open(clients_file_path, "+a") as outfile:
+                    outfile.write(
+                        job.get_artifact_content(build_num, "clients_creds.txt")
+                    )
+                with open(rotated_clients_file_path, "+a") as outfile:
+                    outfile.write(
+                        job.get_artifact_content(build_num, "client_rotate_creds.txt")
+                    )
             else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
-        else:
-            raise Exception("Build number not found")
+                raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        hostname = os.getenv("HOSTNAME")
 
-
-def fence_client_rotate(test_env_namespace: str):
-    """
-    Runs jenkins job to create a fence client
-    Since this requires adminvm interaction we use jenkins.
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-fence-client-rotate",
+        # Get the pod name for fence app
+        cmd = "kubectl get pods -l app=fence | awk '{{print $1}}' | tail -n 1"
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, text=True
         )
-        params = {"NAMESPACE": test_env_namespace}
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return job.get_artifact_content(build_num, "client_rotate_creds.txt")
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.strip()
         else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+            raise Exception("Unable to retrieve fence-deployment pod")
+
+        # Create clients
+        for line in clients_data.split("\n")[1:]:
+            (
+                client_name,
+                username,
+                client_type,
+                arborist_policies,
+                expires_in,
+                scopes,
+            ) = line.split(",")
+            logger.info(f"Creating Client: {client_name}")
+
+            # Delete existing client if it exists
+            delete_cmd = f"kubectl exec -it {fence_pod_name} -- fence-create client-delete --client {client_name}"
+            subprocess.run(
+                delete_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+
+            create_cmd = f"kubectl exec -it {fence_pod_name} -- fence-create"
+
+            if arborist_policies:
+                create_cmd = (
+                    f"{create_cmd} client-create --policies {arborist_policies}"
+                )
+            else:
+                create_cmd = f"{create_cmd} client-create"
+
+            if client_type == "client_credentials":
+                create_cmd = f"{create_cmd} --client {client_name} --grant-types client_credentials"
+            elif client_type == "implicit":
+                create_cmd = f"{create_cmd} --client {client_name} --user {username} --urls 'https://{hostname}' --grant-types implicit --public"
+            elif client_type == "auth_code":
+                create_cmd = f"{create_cmd} --client {client_name} --user {username} --urls 'https://{hostname}' --grant-types authorization_code"
+            else:
+                create_cmd = f"{create_cmd} --client {client_name} --user {username} --urls 'https://{hostname}'"
+
+            if expires_in:
+                create_cmd = f"{create_cmd} --expires-in {expires_in}"
+            if scopes:
+                create_cmd = f"{create_cmd} --allowed-scopes {scopes}"
+
+            create_result = subprocess.run(
+                create_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                client_info = create_result.stdout.strip().split("\n")[-1]
+            else:
+                raise Exception(
+                    f"Unable to create client for {client_name}. Response: {create_result.stderr.strip()}"
+                )
+            with open(clients_file_path, "+a") as outfile:
+                outfile.write(f"{client_name}:{client_info}\n")
+
+        # Rotate Client
+        rotate_client_list = ["jenkins-client-tester"]
+        for client in rotate_client_list:
+            rotate_client_command = f"kubectl exec -it {fence_pod_name} -- fence-create client-rotate --client {client}"
+            rotate_result = subprocess.run(
+                rotate_client_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+            if rotate_result.returncode == 0:
+                client_info = rotate_result.stdout.strip().split("\n")[-1]
+            else:
+                raise Exception(
+                    f"Unable to create client for {client}. Response: {rotate_result.stderr.strip()}"
+                )
+            with open(rotated_clients_file_path, "+a") as outfile:
+                outfile.write(f"{client}:{client_info}\n")
 
 
 def force_link_google(test_env_namespace: str, username: str, email: str):
