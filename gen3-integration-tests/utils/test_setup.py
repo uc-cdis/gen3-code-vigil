@@ -47,7 +47,13 @@ def get_configuration_files():
 
 
 def delete_all_fence_clients():
-    gen3_admin_tasks.delete_fence_client(pytest.namespace)
+    clients_data_file_path = TEST_DATA_PATH_OBJECT / "test_setup" / "clients.csv"
+    # Read CSV data into a python variable
+    with open(clients_data_file_path, newline="") as csvfile:
+        reader = csv.reader(csvfile)
+        # Join rows with newlines to preserve the format
+        data = "\n".join(",".join(row) for row in reader)
+    gen3_admin_tasks.delete_fence_client(pytest.namespace, clients_data=data)
 
 
 def setup_fence_test_clients_info():
@@ -79,6 +85,7 @@ def get_rotated_client_id_secret():
         if len(entry) == 0:  # Empty line
             continue
         client_name, client_details = entry.split(":")
+        logger.info(client_details)
         client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
         pytest.rotated_clients[client_name] = {
             "client_id": client_id,
@@ -94,7 +101,6 @@ def get_client_id_secret():
         return
     with open(path, "r") as file:
         content = file.read()
-
     for entry in content.split("\n"):
         if len(entry) == 0:  # Empty line
             continue

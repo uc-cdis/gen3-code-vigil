@@ -100,11 +100,9 @@ class Indexd(object):
         logger.info(f"Response data : {res}")
         logger.info(f"File Node: {file_record.props}")
         errors = []
-        md5_hash = res["hashes"].get("md5") or res["hashes"].get("md5sum")
-        assert md5_hash is not None, "md5_hash return None"
-        if md5_hash != file_record.props["md5sum"]:
+        if res["hashes"]["md5"] != file_record.props["md5sum"]:
             errors.append(
-                f"md5 value mismatch: '{md5_hash}' != '{file_record.props['md5sum']}'"
+                f"md5 value mismatch: '{res['hashes']['md5']}' != '{file_record.props['md5sum']}'"
             )
         if res["size"] != file_record.props["file_size"]:
             errors.append(
