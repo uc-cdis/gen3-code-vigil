@@ -61,7 +61,7 @@ def setup_fence_test_clients_info():
         reader = csv.reader(csvfile)
         # Join rows with newlines to preserve the format
         data = "\n".join(",".join(row) for row in reader)
-    # Create the client and return the client information
+    # Create the client
     gen3_admin_tasks.setup_fence_test_clients(
         test_env_namespace=pytest.namespace, clients_data=data
     )
