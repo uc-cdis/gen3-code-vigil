@@ -22,11 +22,13 @@ from playwright.sync_api import Page
 class TestAuditService:
     @classmethod
     def setup_class(cls):
-        assert update_audit_service_logging(pytest.namespace, "true")
+        assert update_audit_service_logging("true", test_env_namespace=pytest.namespace)
 
     @classmethod
     def teardown_class(cls):
-        assert update_audit_service_logging(pytest.namespace, "false")
+        assert update_audit_service_logging(
+            "false", test_env_namespace=pytest.namespace
+        )
 
     def test_audit_unauthorized_log_query(self):
         """

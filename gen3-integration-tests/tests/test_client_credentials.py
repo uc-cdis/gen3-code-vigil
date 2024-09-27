@@ -64,4 +64,6 @@ class TestClientCredentials:
             requestor.request_delete(request_id)
 
         logger.info("Revoking arborist policy for the user ...")
-        gat.revoke_arborist_policy(pytest.namespace, username, policy)
+        gat.revoke_arborist_policy(
+            username, policy, test_env_namespace=pytest.namespace
+        )

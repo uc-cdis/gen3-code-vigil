@@ -12,7 +12,7 @@ from utils import logger
 class TestETL:
     @classmethod
     def setup_class(cls):
-        gat.clean_up_indices(pytest.namespace)
+        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
         sd_tools = GraphDataTools(
             auth=auth, program_name="jnkns", project_code="jenkins2"
@@ -22,7 +22,7 @@ class TestETL:
 
     @classmethod
     def teardown_class(cls):
-        gat.clean_up_indices(pytest.namespace)
+        gat.clean_up_indices(test_env_namespace=pytest.namespace)
 
     def test_etl(self):
         """
@@ -40,4 +40,4 @@ class TestETL:
         logger.info("Running etl for the second time")
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
-        gat.check_indices_after_etl(pytest.namespace)
+        gat.check_indices_after_etl(test_env_namespace=pytest.namespace)

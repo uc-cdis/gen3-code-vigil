@@ -119,7 +119,9 @@ class TestIndexingPage:
             page, self.variables["valid_output_path"]
         )
         # Check if the sowerjob pod for manifest-indexing has completed
-        gat.check_job_pod(pytest.namespace, "manifest-indexing", "sowerjob")
+        gat.check_job_pod(
+            "manifest-indexing", "sowerjob", test_env_namespace=pytest.namespace
+        )
         # Get the indexd record and check if the hash value matches to the test_hash value
         index_record = indexd.get_record(self.variables["test_guid"])
         indexd_record_hash = index_record["hashes"]["md5"]
@@ -132,7 +134,9 @@ class TestIndexingPage:
         # Click on 'Download Manifest' button and wait to get the manifest link
         manifest_link = indexing_page.get_manifest_download_link(page)
         logger.debug(f"Download Link : {manifest_link}")
-        gat.check_job_pod(pytest.namespace, "indexd-manifest", "sowerjob")
+        gat.check_job_pod(
+            "indexd-manifest", "sowerjob", test_env_namespace=pytest.namespace
+        )
         # Sending request with manifest_link to get manifest data
         manifest_link_resp = requests.get(manifest_link)
         logger.debug(f"Text from manifest link response : {manifest_link_resp.text}")
@@ -168,4 +172,9 @@ class TestIndexingPage:
             page, self.variables["invalid_output_path"]
         )
         # Check status of the sowerjob manifest-indexin pod , we expect the pods to fail as the manifest is invalid
-        gat.check_job_pod(pytest.namespace, "manifest-indexing", "sowerjob", True)
+        gat.check_job_pod(
+            "manifest-indexing",
+            "sowerjob",
+            test_env_namespace=pytest.namespace,
+            expect_failure=True,
+        )

@@ -50,7 +50,9 @@ class TestOIDCClient:
         )
         # checking the logs from the job pod
         job_logs = gat.check_job_pod(
-            pytest.namespace, "fence-delete-expired-clients", "gen3job"
+            "fence-delete-expired-clients",
+            "gen3job",
+            test_env_namespace=pytest.namespace,
         )
         logs_contents = job_logs["logs.txt"]
         logger.debug(f"Logs: {logs_contents}")

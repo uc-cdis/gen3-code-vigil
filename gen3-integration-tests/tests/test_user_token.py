@@ -54,7 +54,7 @@ class TestUserToken:
 
         # Generate expired access_token
         res = create_access_token(
-            pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
+            "fence", "1", "cdis.autotest@gmail.com", test_env_namespace=pytest.namespace
         )
         access_token = res.splitlines()[-1].strip()
 

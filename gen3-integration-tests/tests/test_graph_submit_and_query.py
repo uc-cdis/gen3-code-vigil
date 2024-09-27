@@ -104,7 +104,7 @@ class TestGraphSubmitAndQuery:
         """
         # Generate an expired token
         res = create_access_token(
-            pytest.namespace, "fence", "1", "cdis.autotest@gmail.com"
+            "fence", "1", "cdis.autotest@gmail.com", test_env_namespace=pytest.namespace
         )
 
         res = res.splitlines()[-1].strip()

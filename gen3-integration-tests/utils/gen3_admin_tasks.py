@@ -99,7 +99,9 @@ def get_env_configurations(test_env_namespace: str = ""):
             logger.info(f"Error in kubectl command: {result.stderr}")
 
 
-def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):
+def run_gen3_command(
+    command: str, test_env_namespace: str = "", roll_all: bool = False
+):
     """
     Run gen3 command (e.g., gen3 --help).
     Since this requires adminvm interaction we use jenkins.
@@ -129,45 +131,6 @@ def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = Fal
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         pass
-
-
-def run_usersync(test_env_namespace: str, command: str, DBGAP_TRUE=False):
-    """
-    Run Usersync
-    Since this requires adminvm interaction we use jenkins.
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-run-gen3-command",
-        )
-        if DBGAP_TRUE:
-            command = f"{command} ADD_DBGAP true"
-        params = {
-            "NAMESPACE": test_env_namespace,
-            "COMMAND": command,
-        }
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return job.get_build_result(build_num)
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
-        else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = ["kubectl", "delete", "job", "usersync"]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE)
-        cmd = ["kubectl", "create", "job", "--from=cronjob/usersync", "usersync"]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
-        if not result.returncode == 0:
-            raise Exception(f"Unable to run command. Got {result.stdout.strip()}")
 
 
 def run_gen3_job(
@@ -218,9 +181,9 @@ def run_gen3_job(
 
 
 def check_job_pod(
-    test_env_namespace: str,
     job_name: str,
     label_name: str,
+    test_env_namespace: str = "",
     expect_failure: bool = False,
 ):
     # Admin VM Deployments
@@ -301,8 +264,8 @@ def check_job_pod(
 
 
 def setup_fence_test_clients(
-    test_env_namespace: str,
     clients_data: str,
+    test_env_namespace: str = "",
 ):
     """
     Runs jenkins job to create a fence client
@@ -492,36 +455,7 @@ def setup_fence_test_clients(
                 outfile.write(f"{client}:{client_info}\n")
 
 
-def force_link_google(test_env_namespace: str, username: str, email: str):
-    """
-    Runs jenkins job to force link google account
-    Since this requires adminvm interaction we use jenkins.
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-fence-force-link-google",
-        )
-        params = {"NAMESPACE": test_env_namespace, "USERNAME": username, "EMAIL": email}
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return job.get_build_result(build_num)
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
-        else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
-
-
-def delete_fence_client(test_env_namespace: str, clients_data: str):
+def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
     """
     Runs jenkins job to delete client
     Since this requires adminvm interaction we use jenkins.
@@ -584,7 +518,7 @@ def delete_fence_client(test_env_namespace: str, clients_data: str):
             )
 
 
-def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
+def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str = ""):
     """
     Runs jenkins job to revoke arborist policy
     Since jenkins job is faster way without too much configuration changes
@@ -617,7 +551,7 @@ def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
         pass
 
 
-def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
+def update_audit_service_logging(audit_logging: str, test_env_namespace: str = ""):
     """
     Runs jenkins job to enable/disable audit logging
     """
@@ -648,7 +582,7 @@ def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
         pass
 
 
-def mutate_manifest_for_guppy_test(test_env_namespace: str):
+def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
     """
     Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
     """
@@ -678,7 +612,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str):
         pass
 
 
-def clean_up_indices(test_env_namespace: str):
+def clean_up_indices(test_env_namespace: str = ""):
     """
     Runs jenkins job to clean up indices before running the ETL tests
     """
@@ -734,7 +668,7 @@ def check_indices_after_etl(test_env_namespace: str):
         pass
 
 
-def create_access_token(test_env_namespace, service, expired, username):
+def create_access_token(service, expired, username, test_env_namespace: str = ""):
     """
     Roll a give service pod
     """
@@ -805,7 +739,7 @@ def create_access_token(test_env_namespace, service, expired, username):
             raise Exception("Unable to get expired access_token")
 
 
-def create_link_google_test_buckets(test_env_namespace: str):
+def create_link_google_test_buckets(test_env_namespace: str = ""):
     """
     Runs jenkins job to execute command for creating and linking Google test buckets
     """
@@ -835,7 +769,7 @@ def create_link_google_test_buckets(test_env_namespace: str):
         pass
 
 
-def fence_enable_register_users_redirect(test_env_namespace: str):
+def fence_enable_register_users_redirect(test_env_namespace: str = ""):
     """
     Runs jenkins job to setup register user redirect on login
     """
@@ -865,7 +799,7 @@ def fence_enable_register_users_redirect(test_env_namespace: str):
         pass
 
 
-def fence_disable_register_users_redirect(test_env_namespace: str):
+def fence_disable_register_users_redirect(test_env_namespace: str = ""):
     """
     Runs jenkins job to disable register user redirect on login
     """
