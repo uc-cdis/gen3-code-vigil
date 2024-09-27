@@ -169,8 +169,14 @@ def run_gen3_job(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        job_pod = f"{job_name}-{uuid.uuid4()}"
-        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_pod]
+        # job_pod = f"{job_name}-{uuid.uuid4()}"
+        cmd = ["kubectl", "delete", "job", job_name]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if not result.returncode == 0:
+            logger.info(
+                f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
+            )
+        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
@@ -227,6 +233,7 @@ def check_job_pod(
             result = subprocess.run(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
+            logger.info(result.stdout.replace("'", ""))
             if result.stdout.replace("'", "") in [
                 "Running",
                 "Succeeded",
@@ -495,6 +502,7 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
 
         # Delete clients
         for line in clients_data.split("\n")[1:]:
+            logger.info(line)
             client_name = line.split(",")[0]
             logger.info(f"Deleting Client: {client_name}")
 
