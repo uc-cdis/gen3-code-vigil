@@ -233,7 +233,6 @@ def check_job_pod(
             result = subprocess.run(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-            logger.info(result.stdout.replace("'", ""))
             if result.stdout.replace("'", "") in [
                 "Running",
                 "Succeeded",
@@ -502,7 +501,6 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
 
         # Delete clients
         for line in clients_data.split("\n")[1:]:
-            logger.info(line)
             client_name = line.split(",")[0]
             logger.info(f"Deleting Client: {client_name}")
 
