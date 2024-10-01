@@ -43,10 +43,10 @@ class Guppy(object):
         endpoint - Can be one of the following : /graphql or /download
         """
         queryFile = (
-            TEST_DATA_PATH_OBJECT / "guppy_data" / "test_data" / queryFile
+            TEST_DATA_PATH_OBJECT / "guppy" / "test_data" / queryFile
         ).read_text(encoding="UTF-8")
         responseFile = (
-            TEST_DATA_PATH_OBJECT / "guppy_data" / "test_data" / responseFile
+            TEST_DATA_PATH_OBJECT / "guppy" / "test_data" / responseFile
         ).read_text(encoding="UTF-8")
         queryToSubmit = "".join(queryFile.split("\n"))
         logger.info(queryToSubmit)

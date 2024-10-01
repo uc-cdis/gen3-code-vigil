@@ -18,17 +18,17 @@
 
 # if you're having problems - a little toy for testing
 if false; then
-  gen3 es create toy_debug_1 canine_data/toy_mapping.json
-  curl -H 'Content-Type: application/x-ndjson' "${ESHOST}/toy_debug_1/thing/_bulk" --data-binary @canine_data/toy_batch.ndjson
+  gen3 es create toy_debug_1 es_indexes_data/toy_mapping.json
+  curl -H 'Content-Type: application/x-ndjson' "${ESHOST}/toy_debug_1/thing/_bulk" --data-binary @es_indexes_data/toy_batch.ndjson
 fi
 
-gen3 es create jenkins_subject_1 canine_data/subject_mapping.json
+gen3 es create jenkins_subject_1 es_indexes_data/subject_mapping.json
 gen3 es alias jenkins_subject_1 jenkins_subject_alias
-curl -H 'Content-Type: application/x-ndjson' "${ESHOST}/jenkins_subject_1/subject/_bulk" --data-binary @canine_data/subject_batch.ndjson
+curl -H 'Content-Type: application/x-ndjson' "${ESHOST}/jenkins_subject_1/subject/_bulk" --data-binary @es_indexes_data/subject_batch.ndjson
 
-gen3 es create jenkins_file_1 canine_data/file_mapping.json
+gen3 es create jenkins_file_1 es_indexes_data/file_mapping.json
 gen3 es alias jenkins_file_1 jenkins_file_alias
-curl -H 'Content-Type: application/x-ndjson' "${ESHOST}/jenkins_file_1/file/_bulk" --data-binary @canine_data/file_batch.ndjson
+curl -H 'Content-Type: application/x-ndjson' "${ESHOST}/jenkins_file_1/file/_bulk" --data-binary @es_indexes_data/file_batch.ndjson
 
-gen3 es create jenkins_configs_1 canine_data/array_mapping.json
+gen3 es create jenkins_configs_1 es_indexes_data/array_mapping.json
 gen3 es alias jenkins_configs_1 jenkins_configs_alias
