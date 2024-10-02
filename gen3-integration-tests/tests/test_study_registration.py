@@ -169,7 +169,9 @@ class TestStudyRegistration(object):
         # After registering the study, run metadata-agg-sync job
         gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         # # TODO : check the job pod status with kube-check-pod jenkins job
-        gat.check_job_pod(pytest.namespace, "metadata-aggregate-sync", "gen3job")
+        gat.check_job_pod(
+            "metadata-aggregate-sync", "gen3job", test_env_namespace=pytest.namespace
+        )
 
         linked_record = mds.get_aggregate_metadata(self.variables["application_id"])
         logger.debug(f"Linked Record : {linked_record}")

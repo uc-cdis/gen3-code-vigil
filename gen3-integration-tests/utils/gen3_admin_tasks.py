@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 from utils import logger
 from utils.jenkins import JenkinsJob
+from utils import TEST_DATA_PATH_OBJECT
 
 load_dotenv()
 
@@ -77,36 +78,59 @@ def get_env_configurations(test_env_namespace: str = ""):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = "kubectl get configmap manifest-global -o json | jq -r '.data'"
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
-        return {"manifest.json": '{ "global": ' + result.stdout.decode("utf-8") + "}"}
+        cmd = ["kubectl", "get", "configmap", "manifest-global", "-o", "json"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            jq_command = ["jq", "-r", ".data"]
+            jq_result = subprocess.run(
+                jq_command,
+                input=result.stdout,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if jq_result.returncode == 0:
+                return {"manifest.json": '{ "global": ' + jq_result.stdout + "}"}
+            else:
+                logger.info(f"Error in jq command: {jq_result.stderr}")
+        else:
+            logger.info(f"Error in kubectl command: {result.stderr}")
 
 
-def run_gen3_command(test_env_namespace: str, command: str, roll_all: bool = False):
+def run_gen3_command(
+    command: str, test_env_namespace: str = "", roll_all: bool = False
+):
     """
     Run gen3 command (e.g., gen3 --help).
     Since this requires adminvm interaction we use jenkins.
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-run-gen3-command",
-    )
-    params = {
-        "NAMESPACE": test_env_namespace,
-        "COMMAND": command,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            return job.get_build_result(build_num)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-run-gen3-command",
+        )
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "COMMAND": command,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            job.terminate_build(build_num)
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
+            raise Exception("Build number not found")
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        pass
 
 
 def run_gen3_job(
@@ -145,8 +169,14 @@ def run_gen3_job(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        job_pod = f"{job_name}-{uuid.uuid4()}"
-        cmd = ["kubectl", "create", job, f"--from=cronjob/{job_name}", job_pod]
+        # job_pod = f"{job_name}-{uuid.uuid4()}"
+        cmd = ["kubectl", "delete", "job", job_name]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if not result.returncode == 0:
+            logger.info(
+                f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
+            )
+        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
@@ -157,9 +187,9 @@ def run_gen3_job(
 
 
 def check_job_pod(
-    test_env_namespace: str,
     job_name: str,
     label_name: str,
+    test_env_namespace: str = "",
     expect_failure: bool = False,
 ):
     # Admin VM Deployments
@@ -200,8 +230,15 @@ def check_job_pod(
         i = 0
         job_started = False
         for i in range(6):
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.stdout.decode("utf-8") in ["Running", "Succeeded", "Failed"]:
+            result = subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            if result.stdout.replace("'", "") in [
+                "Running",
+                "Succeeded",
+                "Failed",
+                "Completed",
+            ]:
                 job_started = True
                 break
             else:
@@ -220,8 +257,10 @@ def check_job_pod(
         ]
         job_completed = False
         for i in range(40):
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.stdout.decode("utf-8") == "True":
+            result = subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            if result.stdout.replace("'", "") == "True":
                 job_completed = True
                 break
             else:
@@ -231,13 +270,17 @@ def check_job_pod(
 
 
 def setup_fence_test_clients(
-    test_env_namespace: str,
     clients_data: str,
+    test_env_namespace: str = "",
 ):
     """
     Runs jenkins job to create a fence client
     Since this requires adminvm interaction we use jenkins.
     """
+    clients_file_path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
+    rotated_clients_file_path = (
+        TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
+    )
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
         job = JenkinsJob(
@@ -254,46 +297,171 @@ def setup_fence_test_clients(
         if build_num:
             status = job.wait_for_build_completion(build_num)
             if status == "Completed":
-                return job.get_artifact_content(
-                    build_num, "clients_creds.txt"
-                ), job.get_artifact_content(build_num, "client_rotate_creds.txt")
+                with open(clients_file_path, "+a") as outfile:
+                    outfile.write(
+                        job.get_artifact_content(build_num, "clients_creds.txt")
+                    )
+                with open(rotated_clients_file_path, "+a") as outfile:
+                    outfile.write(
+                        job.get_artifact_content(build_num, "client_rotate_creds.txt")
+                    )
             else:
                 raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        hostname = os.getenv("HOSTNAME")
 
-
-def force_link_google(test_env_namespace: str, username: str, email: str):
-    """
-    Runs jenkins job to force link google account
-    Since this requires adminvm interaction we use jenkins.
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-fence-force-link-google",
+        # Get the pod name for fence app
+        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
-        params = {"NAMESPACE": test_env_namespace, "USERNAME": username, "EMAIL": email}
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return job.get_build_result(build_num)
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
         else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+            raise Exception("Unable to retrieve fence-deployment pod")
+
+        # Create clients
+        for line in clients_data.split("\n")[1:]:
+            (
+                client_name,
+                username,
+                client_type,
+                arborist_policies,
+                expires_in,
+                scopes,
+            ) = line.split(",")
+            logger.info(f"Creating Client: {client_name}")
+
+            # Delete existing client if it exists
+            delete_cmd = [
+                "kubectl",
+                "exec",
+                "-it",
+                fence_pod_name,
+                "--",
+                "fence-create",
+                "client-delete",
+                "--client",
+                client_name,
+            ]
+            subprocess.run(
+                delete_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            create_cmd = [
+                "kubectl",
+                "exec",
+                "-it",
+                fence_pod_name,
+                "--",
+                "fence-create",
+            ]
+
+            if arborist_policies:
+                create_cmd = create_cmd + [
+                    "client-create",
+                    "--policies",
+                    arborist_policies,
+                ]
+            else:
+                create_cmd = create_cmd + ["client-create"]
+
+            if client_type == "client_credentials":
+                create_cmd = create_cmd + [
+                    "--client",
+                    client_name,
+                    "--grant-types",
+                    "client_credentials",
+                ]
+            elif client_type == "implicit":
+                create_cmd = create_cmd + [
+                    "--client",
+                    client_name,
+                    "--user",
+                    username,
+                    "--urls",
+                    f"https://{hostname}",
+                    "--grant-types",
+                    "implicit",
+                    "--public",
+                ]
+            elif client_type == "auth_code":
+                create_cmd = create_cmd + [
+                    "--client",
+                    client_name,
+                    "--user",
+                    username,
+                    "--urls",
+                    f"https://{hostname}",
+                    "--grant-types",
+                    "authorization_code",
+                ]
+            else:
+                create_cmd = create_cmd + [
+                    "--client",
+                    client_name,
+                    "--user",
+                    username,
+                    "--urls",
+                    f"https://{hostname}",
+                ]
+
+            if expires_in:
+                create_cmd = create_cmd + ["--expires-in", expires_in]
+            if scopes:
+                create_cmd = create_cmd + ["--allowed-scopes"] + scopes.split(" ")
+
+            create_result = subprocess.run(
+                create_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=10,
+            )
+            if result.returncode == 0:
+                client_info = create_result.stdout.strip().split("\n")[-1]
+            else:
+                raise Exception(
+                    f"Unable to create client for {client_name}. Response: {create_result.stderr.strip()}"
+                )
+            with open(clients_file_path, "+a") as outfile:
+                outfile.write(f"{client_name}:{client_info}\n")
+
+        # Rotate Client
+        rotate_client_list = ["jenkins-client-tester"]
+        for client in rotate_client_list:
+            rotate_client_command = [
+                "kubectl",
+                "exec",
+                "-it",
+                fence_pod_name,
+                "--",
+                "fence-create",
+                "client-rotate",
+                "--client",
+                client,
+            ]
+            rotate_result = subprocess.run(
+                rotate_client_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if rotate_result.returncode == 0:
+                client_info = rotate_result.stdout.strip().split("\n")[-1]
+            else:
+                raise Exception(
+                    f"Unable to create client for {client}. Response: {rotate_result.stderr.strip()}"
+                )
+            with open(rotated_clients_file_path, "+a") as outfile:
+                outfile.write(f"{client}:{client_info}\n")
 
 
-def delete_fence_client(test_env_namespace: str):
+def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
     """
     Runs jenkins job to delete client
     Since this requires adminvm interaction we use jenkins.
@@ -321,10 +489,42 @@ def delete_fence_client(test_env_namespace: str):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        # Get the pod name for fence app
+        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+        else:
+            raise Exception("Unable to retrieve fence-deployment pod")
+
+        # Delete clients
+        for line in clients_data.split("\n")[1:]:
+            client_name = line.split(",")[0]
+            logger.info(f"Deleting Client: {client_name}")
+
+            # Delete existing client if it exists
+            delete_cmd = [
+                "kubectl",
+                "exec",
+                "-it",
+                fence_pod_name,
+                "--",
+                "fence-create",
+                "client-delete",
+                "--client",
+                client_name,
+            ]
+            subprocess.run(
+                delete_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
 
 
-def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
+def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str = ""):
     """
     Runs jenkins job to revoke arborist policy
     Since jenkins job is faster way without too much configuration changes
@@ -357,7 +557,7 @@ def revoke_arborist_policy(test_env_namespace: str, username: str, policy: str):
         pass
 
 
-def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
+def update_audit_service_logging(audit_logging: str, test_env_namespace: str = ""):
     """
     Runs jenkins job to enable/disable audit logging
     """
@@ -388,7 +588,7 @@ def update_audit_service_logging(test_env_namespace: str, audit_logging: str):
         pass
 
 
-def mutate_manifest_for_guppy_test(test_env_namespace: str):
+def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
     """
     Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
     """
@@ -418,7 +618,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str):
         pass
 
 
-def clean_up_indices(test_env_namespace: str):
+def clean_up_indices(test_env_namespace: str = ""):
     """
     Runs jenkins job to clean up indices before running the ETL tests
     """
@@ -474,7 +674,7 @@ def check_indices_after_etl(test_env_namespace: str):
         pass
 
 
-def create_access_token(test_env_namespace, service, expired, username):
+def create_access_token(service, expired, username, test_env_namespace: str = ""):
     """
     Roll a give service pod
     """
@@ -510,42 +710,42 @@ def create_access_token(test_env_namespace, service, expired, username):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
-
-
-# TODO remove this if unused... in a while
-def kube_setup_service(test_env_namespace, servicename):
-    """
-    Runs jenkins job to kube setup service
-    """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-kube-setup-service",
+        # Get the pod name for fence app
+        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
-        params = {
-            "SERVICENAME": servicename,
-            "NAMESPACE": test_env_namespace,
-        }
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return True
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
         else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+            raise Exception("Unable to retrieve fence-deployment pod")
+        cmd = [
+            "kubectl",
+            "exec",
+            "-it",
+            fence_pod_name,
+            "--",
+            "fence-create",
+            "token-create",
+            "--scopes",
+            "openid,user,fence,data,credentials,google_service_account,google_credentials",
+            "--type",
+            "access_token",
+            "--exp",
+            expired,
+            "--username",
+            username,
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            raise Exception("Unable to get expired access_token")
 
 
-def create_link_google_test_buckets(test_env_namespace: str):
+def create_link_google_test_buckets(test_env_namespace: str = ""):
     """
     Runs jenkins job to execute command for creating and linking Google test buckets
     """
@@ -575,7 +775,7 @@ def create_link_google_test_buckets(test_env_namespace: str):
         pass
 
 
-def fence_enable_register_users_redirect(test_env_namespace: str):
+def fence_enable_register_users_redirect(test_env_namespace: str = ""):
     """
     Runs jenkins job to setup register user redirect on login
     """
@@ -605,7 +805,7 @@ def fence_enable_register_users_redirect(test_env_namespace: str):
         pass
 
 
-def fence_disable_register_users_redirect(test_env_namespace: str):
+def fence_disable_register_users_redirect(test_env_namespace: str = ""):
     """
     Runs jenkins job to disable register user redirect on login
     """

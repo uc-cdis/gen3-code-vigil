@@ -9,7 +9,6 @@ import uuid
 from cdislogging import get_logger
 from services.indexd import Indexd
 from services.fence import Fence
-from utils.gen3_admin_tasks import create_link_google_test_buckets, run_gen3_command
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 

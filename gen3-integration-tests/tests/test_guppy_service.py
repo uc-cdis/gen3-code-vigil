@@ -1,6 +1,7 @@
 """
 GUPPY SERVICE
 """
+
 import os
 import pytest
 
@@ -25,12 +26,12 @@ class TestGuppyService:
         than 30 with a past stroke in ascending order of BMI.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery1.json
+            1. Call API guppy/graphql using Query in test_query1.json
             2. Validate API response against data in tesResponse1.json
         """
         guppy = Guppy()
-        queryFile = "testQuery1.json"
-        responseFile = "testResponse1.json"
+        queryFile = "test_query1.json"
+        responseFile = "test_response1.json"
         queryType = "data"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -43,12 +44,12 @@ class TestGuppyService:
         filter in the scenario above.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery2.json
+            1. Call API guppy/graphql using Query in test_query2.json
             2. Validate API response against data in tesResponse2.json
         """
         guppy = Guppy()
-        queryFile = "testQuery2.json"
-        responseFile = "testResponse2.json"
+        queryFile = "test_query2.json"
+        responseFile = "test_response2.json"
         queryType = "aggregation"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -62,12 +63,12 @@ class TestGuppyService:
         occurrence and age groups represented.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery3.json
+            1. Call API guppy/graphql using Query in test_query3.json
             2. Validate API response against data in tesResponse3.json
         """
         guppy = Guppy()
-        queryFile = "testQuery3.json"
-        responseFile = "testResponse3.json"
+        queryFile = "test_query3.json"
+        responseFile = "test_response3.json"
         queryType = "histogram"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -79,12 +80,12 @@ class TestGuppyService:
         Range-stepped database check of age groups.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery4.json
+            1. Call API guppy/graphql using Query in test_query4.json
             2. Validate API response against data in tesResponse4.json
         """
         guppy = Guppy()
-        queryFile = "testQuery4.json"
-        responseFile = "testResponse4.json"
+        queryFile = "test_query4.json"
+        responseFile = "test_response4.json"
         queryType = "histogram"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -96,12 +97,12 @@ class TestGuppyService:
         I would like to list the fields on the subject document.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery5.json
+            1. Call API guppy/graphql using Query in test_query5.json
             2. Validate API response against data in tesResponse5.json
         """
         guppy = Guppy()
-        queryFile = "testQuery5.json"
-        responseFile = "testResponse5.json"
+        queryFile = "test_query5.json"
+        responseFile = "test_response5.json"
         queryType = "mapping"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -114,12 +115,12 @@ class TestGuppyService:
         summarizing data in the commons.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery6.json
+            1. Call API guppy/graphql using Query in test_query6.json
             2. Validate API response against data in tesResponse6.json
         """
         guppy = Guppy()
-        queryFile = "testQuery6.json"
-        responseFile = "testResponse6.json"
+        queryFile = "test_query6.json"
+        responseFile = "test_response6.json"
         queryType = "histogram"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -132,12 +133,12 @@ class TestGuppyService:
         parameter to gain an understanding of its distribution.
 
         Steps:
-            1. Call API guppy/graphql using Query in testQuery7.json
+            1. Call API guppy/graphql using Query in test_query7.json
             2. Validate API response against data in tesResponse7.json
         """
         guppy = Guppy()
-        queryFile = "testQuery7.json"
-        responseFile = "testResponse7.json"
+        queryFile = "test_query7.json"
+        responseFile = "test_response7.json"
         queryType = "histogram"
         assert guppy.validate_guppy_query(
             queryFile, responseFile, queryType, "main_account", 200
@@ -149,12 +150,12 @@ class TestGuppyService:
         paginating the results, or whether the result will be > 10k records.
 
         Steps:
-            1. Call API guppy/download using Query in testQuery8.json
+            1. Call API guppy/download using Query in test_query8.json
             2. Validate API response against data in tesResponse8.json
         """
         guppy = Guppy()
-        queryFile = "testQuery8.json"
-        responseFile = "testResponse8.json"
+        queryFile = "test_query8.json"
+        responseFile = "test_response8.json"
         queryType = "download"
         assert guppy.validate_guppy_query(
             queryFile,
