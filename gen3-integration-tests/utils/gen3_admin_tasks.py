@@ -14,6 +14,8 @@ from utils import TEST_DATA_PATH_OBJECT
 
 load_dotenv()
 
+fence_delete_clients_logs = ""
+
 
 def get_portal_config():
     """Fetch portal config from the GUI"""
@@ -169,21 +171,57 @@ def run_gen3_job(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        # job_pod = f"{job_name}-{uuid.uuid4()}"
-        cmd = ["kubectl", "delete", "job", job_name]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if not result.returncode == 0:
-            logger.info(
-                f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
+        if job_name == "fence-delete-expired-clients":
+            global fence_delete_clients_logs
+            # Get the pod name for fence app
+            cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+            result = subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
+            if result.returncode == 0:
+                fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+            else:
+                raise Exception("Unable to retrieve fence-deployment pod")
+            # Delete expired clients
+            delete_explired_clients_cmd = [
+                "kubectl",
+                "exec",
+                "-it",
+                fence_pod_name,
+                "--",
+                "fence-create",
+                "client-delete-expired",
+            ]
+            delete_explired_client_result = subprocess.run(
+                delete_explired_clients_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=10,
+            )
+            fence_delete_clients_logs = delete_explired_client_result.stdout.strip()
+            if not result.returncode == 0:
+                raise Exception(
+                    f"Unable to delete expired clients. Response: {delete_explired_client_result.stderr.strip()}"
+                )
         else:
-            raise Exception(
-                f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
-            )
+            # job_pod = f"{job_name}-{uuid.uuid4()}"
+            cmd = ["kubectl", "delete", "job", job_name]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if not result.returncode == 0:
+                logger.info(
+                    f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
+                )
+            cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(
+                    f"{job_name} job triggered - {result.stdout.decode('utf-8')}"
+                )
+            else:
+                raise Exception(
+                    f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
+                )
 
 
 def check_job_pod(
@@ -218,6 +256,12 @@ def check_job_pod(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        if job_name == "fence-delete-expired-clients":
+            """
+            We dont need to validate it on local helm as command
+            is run directly and not in a job.
+            """
+            return {"logs.txt": fence_delete_clients_logs}
         # Wait for the job pod to start
         cmd = [
             "kubectl",
