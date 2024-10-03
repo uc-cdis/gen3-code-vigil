@@ -186,6 +186,35 @@ def run_gen3_job(
             )
 
 
+def fence_delete_expired_clients():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        run_gen3_job(
+            "fence-delete-expired-clients", test_env_namespace=pytest.namespace
+        )
+        job_logs = check_job_pod(
+            "fence-delete-expired-clients",
+            "gen3job",
+            test_env_namespace=pytest.namespace,
+        )
+        return job_logs["logs.txt"]
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        # Delete expired clients
+        delete_explired_clients_cmd = "kubectl exec -i $(kubectl get pods -l app=fence -o jsonpath='{.items[0].metadata.name}') -- fence-create client-delete-expired"
+        delete_explired_client_result = subprocess.run(
+            delete_explired_clients_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
+            timeout=10,
+        )
+        if not delete_explired_client_result.returncode == 0:
+            raise Exception("Unable to delete expired clients.")
+        return delete_explired_client_result.stdout.strip()
+
+
 def check_job_pod(
     job_name: str,
     label_name: str,
@@ -337,7 +366,7 @@ def setup_fence_test_clients(
             delete_cmd = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -355,7 +384,7 @@ def setup_fence_test_clients(
             create_cmd = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -437,7 +466,7 @@ def setup_fence_test_clients(
             rotate_client_command = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -508,7 +537,7 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
             delete_cmd = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -722,7 +751,7 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
         cmd = [
             "kubectl",
             "exec",
-            "-it",
+            "-i",
             fence_pod_name,
             "--",
             "fence-create",
