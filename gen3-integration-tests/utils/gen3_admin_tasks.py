@@ -14,8 +14,6 @@ from utils import TEST_DATA_PATH_OBJECT
 
 load_dotenv()
 
-fence_delete_clients_logs = ""
-
 
 def get_portal_config():
     """Fetch portal config from the GUI"""
