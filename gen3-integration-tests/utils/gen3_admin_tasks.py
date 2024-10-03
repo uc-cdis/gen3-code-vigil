@@ -171,57 +171,52 @@ def run_gen3_job(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        if job_name == "fence-delete-expired-clients":
-            global fence_delete_clients_logs
-            # Get the pod name for fence app
-            cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
-            result = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        # job_pod = f"{job_name}-{uuid.uuid4()}"
+        cmd = ["kubectl", "delete", "job", job_name]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if not result.returncode == 0:
+            logger.info(
+                f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
             )
-            if result.returncode == 0:
-                fence_pod_name = result.stdout.splitlines()[-1].split()[0]
-            else:
-                raise Exception("Unable to retrieve fence-deployment pod")
-            # Delete expired clients
-            delete_explired_clients_cmd = [
-                "kubectl",
-                "exec",
-                "-it",
-                fence_pod_name,
-                "--",
-                "fence-create",
-                "client-delete-expired",
-            ]
-            delete_explired_client_result = subprocess.run(
-                delete_explired_clients_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=10,
-            )
-            fence_delete_clients_logs = delete_explired_client_result.stdout.strip()
-            if not result.returncode == 0:
-                raise Exception(
-                    f"Unable to delete expired clients. Response: {delete_explired_client_result.stderr.strip()}"
-                )
+        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
         else:
-            # job_pod = f"{job_name}-{uuid.uuid4()}"
-            cmd = ["kubectl", "delete", "job", job_name]
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if not result.returncode == 0:
-                logger.info(
-                    f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
-                )
-            cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode == 0:
-                logger.info(
-                    f"{job_name} job triggered - {result.stdout.decode('utf-8')}"
-                )
-            else:
-                raise Exception(
-                    f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
-                )
+            raise Exception(
+                f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
+            )
+
+
+def fence_delete_expired_clients():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        run_gen3_job(
+            "fence-delete-expired-clients", test_env_namespace=pytest.namespace
+        )
+        job_logs = check_job_pod(
+            "fence-delete-expired-clients",
+            "gen3job",
+            test_env_namespace=pytest.namespace,
+        )
+        return job_logs["logs.txt"]
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        # Delete expired clients
+        delete_explired_clients_cmd = "kubectl exec -i $(kubectl get pods -l app=fence -o jsonpath='{.items[0].metadata.name}') -- fence-create client-delete-expired"
+        delete_explired_client_result = subprocess.run(
+            delete_explired_clients_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
+            timeout=10,
+        )
+        if not delete_explired_client_result.returncode == 0:
+            raise Exception(
+                f"Unable to delete expired clients. Response: {delete_explired_client_result.stderr.strip()}"
+            )
+        return delete_explired_client_result.stdout.strip()
 
 
 def check_job_pod(
@@ -256,12 +251,6 @@ def check_job_pod(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        if job_name == "fence-delete-expired-clients":
-            """
-            We dont need to validate it on local helm as command
-            is run directly and not in a job.
-            """
-            return {"logs.txt": fence_delete_clients_logs}
         # Wait for the job pod to start
         cmd = [
             "kubectl",
@@ -381,7 +370,7 @@ def setup_fence_test_clients(
             delete_cmd = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -399,7 +388,7 @@ def setup_fence_test_clients(
             create_cmd = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -481,7 +470,7 @@ def setup_fence_test_clients(
             rotate_client_command = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -552,7 +541,7 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
             delete_cmd = [
                 "kubectl",
                 "exec",
-                "-it",
+                "-i",
                 fence_pod_name,
                 "--",
                 "fence-create",
@@ -766,7 +755,7 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
         cmd = [
             "kubectl",
             "exec",
-            "-it",
+            "-i",
             fence_pod_name,
             "--",
             "fence-create",
