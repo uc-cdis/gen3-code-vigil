@@ -46,7 +46,6 @@ class TestOIDCClient:
 
         # running fence-delete-expired-clients job
         logs_contents = gat.fence_delete_expired_clients()
-        logger.debug(f"Logs: {logs_contents}")
 
         # assertion from logs
         assert (

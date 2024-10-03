@@ -211,9 +211,7 @@ def fence_delete_expired_clients():
             timeout=10,
         )
         if not delete_explired_client_result.returncode == 0:
-            raise Exception(
-                f"Unable to delete expired clients. Response: {delete_explired_client_result.stderr.strip()}"
-            )
+            raise Exception("Unable to delete expired clients.")
         return delete_explired_client_result.stdout.strip()
 
 
