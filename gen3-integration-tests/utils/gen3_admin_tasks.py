@@ -583,7 +583,38 @@ def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str =
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = [
+            "kubectl",
+            "get",
+            "pods",
+            "-l",
+            "app=fence",
+            "-o",
+            "jsonpath='{.items[0].metadata.name}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.strip().replace("'", "")
+        else:
+            raise Exception("Unable to retrieve fence-deployment pod")
+        cmd = [
+            "kubectl",
+            "exec",
+            "-i",
+            fence_pod_name,
+            "--",
+            "curl",
+            "-X",
+            "DELETE",
+            f"arborist-service/user/{username}/policy/{policy}",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if not result.returncode == 0:
+            raise Exception("Unable to revoke arborist policy")
 
 
 def update_audit_service_logging(audit_logging: str, test_env_namespace: str = ""):
