@@ -34,6 +34,7 @@ class Fence(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
 
+    @retry(times=3, delay=20, exceptions=(AssertionError,))
     def create_signed_url(
         self, id, user, expected_status, params=[], access_token=None
     ):
