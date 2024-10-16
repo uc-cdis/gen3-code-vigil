@@ -1,18 +1,17 @@
 import json
 import os
-import pytest
 import shutil
 
-from xdist import is_xdist_controller
-from xdist.scheduler import LoadScopeScheduling
-
-from utils import logger
-from utils import gen3_admin_tasks as gat
-from utils import test_setup as setup
-from utils import TEST_DATA_PATH_OBJECT
+import pytest
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
+from utils import TEST_DATA_PATH_OBJECT
+from utils import gen3_admin_tasks as gat
+from utils import logger
+from utils import test_setup as setup
+from xdist import is_xdist_controller
+from xdist.scheduler import LoadScopeScheduling
 
 load_dotenv()
 requires_fence_client_marker_present = False
@@ -105,20 +104,7 @@ def pytest_configure(config):
     pytest.clients = {}
     pytest.rotated_clients = {}
     # Accounts used for testing
-    pytest.users = {}
-    pytest.users["main_account"] = "cdis.autotest@gmail.com"  # default user
-    pytest.users["indexing_account"] = "ctds.indexing.test@gmail.com"  # indexing admin
-    pytest.users["auxAcct1_account"] = "dummy-one@planx-pla.net"  # auxAcct1 user
-    pytest.users["auxAcct2_account"] = "smarty-two@planx-pla.net"  # auxAcct2 user
-    pytest.users["user0_account"] = (
-        "dcf-integration-test-0@planx-pla.net"  # user0 dcf_integration_test
-    )
-    pytest.users["user1_account"] = (
-        "dcf-integration-test-1@planx-pla.net"  # user1 dcf_integration_test
-    )
-    pytest.users["user2_account"] = (
-        "dcf-integration-test-2@planx-pla.net"  # user2 dcf_integration_test
-    )
+    pytest.users = setup.get_users()
 
     # Generate api key and auth headers
     pytest.api_keys = {}
