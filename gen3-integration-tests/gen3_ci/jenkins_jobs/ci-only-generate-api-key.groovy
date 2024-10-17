@@ -120,10 +120,10 @@ spec:
                             gen3 api api-key ctds.indexing.test@gmail.com > \${NAMESPACE}_indexing_account.json
 
                             echo "creating auxAcct1 for \$NAMESPACE"
-                            gen3 api api-key dummy-one@planx-pla.net > \${NAMESPACE}_auxAcct1_account.json
+                            gen3 api api-key dummy-one@planx-pla.net > \${NAMESPACE}_dummy_one.json
 
                             echo "creating auxAcct2 for \$NAMESPACE"
-                            gen3 api api-key smarty-two@planx-pla.net > \${NAMESPACE}_auxAcct2_account.json
+                            gen3 api api-key smarty-two@planx-pla.net > \${NAMESPACE}_smarty_two.json
 
                             echo "creating user0 for \$NAMESPACE"
                             gen3 api api-key dcf-integration-test-0@planx-pla.net > \${NAMESPACE}_user0_account.json

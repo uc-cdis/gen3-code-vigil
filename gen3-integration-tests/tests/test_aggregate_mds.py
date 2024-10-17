@@ -1,14 +1,10 @@
 import json
-import os
 import uuid
+
 import pytest
-
-from utils import logger
-
-from utils import TEST_DATA_PATH_OBJECT
 import utils.gen3_admin_tasks as gat
-
 from services.metadataservice import MetadataService
+from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.test_execution import assert_with_retry
 
 

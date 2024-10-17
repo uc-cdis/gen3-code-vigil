@@ -3,14 +3,13 @@ CENTRALIZED AUTH
 """
 
 import os
-import pytest
-
-from utils import logger
 from uuid import uuid4
-from services.indexd import Indexd
-from services.fence import Fence
-from playwright.sync_api import Page
 
+import pytest
+from playwright.sync_api import Page
+from services.fence import Fence
+from services.indexd import Indexd
+from utils import logger
 
 """
 NOTES:
@@ -615,7 +614,7 @@ class TestCentralizedAuth:
             page=page,
             client_id=self.basic_test_abc_client_id,
             client_secret=self.basic_test_abc_client_secret,
-            user="auxAcct1_account",
+            user="dummy_one",
         ).json()["access_token"]
 
         # Create Signed URL using access_token

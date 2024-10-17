@@ -1,6 +1,12 @@
 repos:
+-   repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+    -  id: isort
+       name: isort (python)
+       args: ['--profile', 'black']
 -   repo: https://github.com/psf/black
-    rev: 24.8.0
+    rev: 24.10.0
     hooks:
     -   id: black
 -   repo: git@github.com:Yelp/detect-secrets
@@ -10,7 +16,7 @@ repos:
         args: ['--baseline', '.secrets.baseline']
         exclude: poetry.lock
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
