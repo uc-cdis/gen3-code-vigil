@@ -183,8 +183,8 @@ class LoginPage(object):
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
         # Click on Logout button to logout
         else:
-            page.get_by_role("button", name="Logout").click()
-        nav_bar_login_button = page.get_by_role("button", name="Login")
+            page.get_by_role("link", name="Logout").click()
+        nav_bar_login_button = page.get_by_role("link", name="Login")
         screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 
