@@ -42,25 +42,25 @@ pipeline {
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
                             echo "creating main_account api key for \$NAMESPACE"
-                            gen3 api api-key cdis.autotest@gmail.com > \${NAMESPACE}_main_account.json
+                            gen3 api api-key main@example.org > \${NAMESPACE}_main_account.json
 
                             echo "creating indexing_account for \$NAMESPACE"
-                            gen3 api api-key ctds.indexing.test@gmail.com > \${NAMESPACE}_indexing_account.json
+                            gen3 api api-key indexing@example.org > \${NAMESPACE}_indexing_account.json
 
                             echo "creating auxAcct1 for \$NAMESPACE"
-                            gen3 api api-key dummy-one@planx-pla.net > \${NAMESPACE}_dummy_one.json
+                            gen3 api api-key dummy-one@example.org > \${NAMESPACE}_dummy_one.json
 
                             echo "creating auxAcct2 for \$NAMESPACE"
-                            gen3 api api-key smarty-two@planx-pla.net > \${NAMESPACE}_smarty_two.json
+                            gen3 api api-key smarty-two@example.org > \${NAMESPACE}_smarty_two.json
 
                             echo "creating user0 for \$NAMESPACE"
-                            gen3 api api-key dcf-integration-test-0@planx-pla.net > \${NAMESPACE}_user0_account.json
+                            gen3 api api-key user0@example.org > \${NAMESPACE}_user0_account.json
 
                             echo "creating user1 for \$NAMESPACE"
-                            gen3 api api-key dcf-integration-test-1@planx-pla.net > \${NAMESPACE}_user1_account.json
+                            gen3 api api-key user1@example.org > \${NAMESPACE}_user1_account.json
 
                             echo "creating user2 for \$NAMESPACE"
-                            gen3 api api-key dcf-integration-test-2@planx-pla.net > \${NAMESPACE}_user2_account.json
+                            gen3 api api-key user2@example.org > \${NAMESPACE}_user2_account.json
                         '''
                     }
                 }

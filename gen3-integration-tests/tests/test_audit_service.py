@@ -45,14 +45,12 @@ class TestAuditService:
         audit.audit_query(
             "presigned_url",
             "main_account",
-            "cdis.autotest@gmail.com",
             403,
             "Main-Account Presigned-URL",
         )
         audit.audit_query(
             "login",
             "main_account",
-            "cdis.autotest@gmail.com",
             403,
             "Main-Account Login",
         )
@@ -61,14 +59,12 @@ class TestAuditService:
         audit.audit_query(
             "presigned_url",
             "dummy_one",
-            "dummy-one@planx-pla.net",
             200,
             "auxAcct1 Presigned-URL",
         )
         audit.audit_query(
             "login",
             "dummy_one",
-            "dummy-one@planx-pla.net",
             403,
             "auxAcct1 Login",
         )
@@ -77,14 +73,12 @@ class TestAuditService:
         audit.audit_query(
             "presigned_url",
             "smarty_two",
-            "smarty-two@planx-pla.net",
             403,
             "auxAcct2 Presigned-URL",
         )
         audit.audit_query(
             "login",
             "smarty_two",
-            "smarty-two@planx-pla.net",
             200,
             "auxAcct2 Login",
         )
@@ -101,7 +95,10 @@ class TestAuditService:
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp), "username=cdis.autotest@gmail.com"]
+        params = [
+            "start={}".format(timestamp),
+            f"username={pytest.users['main_account']}",
+        ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("Logging in with mainAcct")
@@ -111,7 +108,7 @@ class TestAuditService:
 
         # Check the query results with auxAcct2 user
         expected_results = {
-            "username": "cdis.autotest@gmail.com",
+            "username": pytest.users["main_account"],
             "idp": "google",
             "client_id": None,
             "status_code": 302,
@@ -207,7 +204,7 @@ class TestAuditService:
             # Private File - mainAcct succeffully requests a presigned URL
             expected_results = {
                 "action": "download",
-                "username": "cdis.autotest@gmail.com",
+                "username": pytest.users["main_account"],
                 "guid": did_mapping[file_type],
                 "status_code": 200,
             }
@@ -237,7 +234,7 @@ class TestAuditService:
             # Private File - mainAcct fails to request a presigned URL with a file that doesn't exists
             expected_results = {
                 "action": "download",
-                "username": "cdis.autotest@gmail.com",
+                "username": pytest.users["main_account"],
                 "guid": "123",
                 "status_code": 404,
             }

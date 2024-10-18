@@ -14,11 +14,11 @@ from utils import logger
 """
 NOTES:
 * CRUD: Create, Read, Update, Delete
-* main account: cdis.autotest@gmail.com
-* auxAcct1 account: dummy-one@planx-pla.net
-* indexing account: ctds.indexing.test@gmail.com
-* dcf-user0 account: dcf-integration-test-0@planx-pla.net
-* dcf-user2 account: dcf-integration-test-2@gmail.com
+* main account: main@example.org
+* auxAcct1 account: dummy-one@example.org
+* indexing account: indexing@example.org
+* dcf-user0 account: user0@example.org
+* dcf-user2 account: user2@example.org
 """
 
 indexed_files = {
