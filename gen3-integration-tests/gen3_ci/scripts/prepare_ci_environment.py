@@ -119,7 +119,7 @@ def generate_api_keys_for_test_users(namespace):
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "ci-only-generate-api-key",
+        "ci-only-generate-api-keys",
     )
     params = {
         "NAMESPACE": namespace,
