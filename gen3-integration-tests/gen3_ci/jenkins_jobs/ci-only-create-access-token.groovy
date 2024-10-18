@@ -9,7 +9,7 @@
     e.g., 1, 300 (value in seconds)
 
   String parameter USERNAME
-    e.g., cdis.autotest@gmail.com
+    e.g., main@example.org
   This is to help create access token
 
 */

@@ -1,8 +1,6 @@
 import pytest
-
-from utils import logger
 from playwright.sync_api import Page, expect
-
+from utils import logger
 from utils.test_execution import screenshot
 
 
@@ -44,7 +42,7 @@ class UserRegister(object):
         page.locator(self.LAST_NAME_INPUT).fill("Test")
         page.locator(self.ORGANIZATION_INPUT).fill("Uchicago")
         if page.locator(self.EMAIL_INPUT).is_visible():
-            page.locator(self.EMAIL_INPUT).fill("cdis.autotest@gmail.com")
+            page.locator(self.EMAIL_INPUT).fill(pytest.users["main_account"])
         register_button.click()
 
         # Wait for username to showup

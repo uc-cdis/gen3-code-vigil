@@ -1,8 +1,8 @@
 USER_ID,EMAIL
-main_account,cdis.autotest@gmail.com
-indexing_account,ctds.indexing.test@gmail.com
-auxAcct1_account,dummy-one@planx-pla.net
-auxAcct2_account,smarty-two@planx-pla.net
-user0_account,dcf-integration-test-0@planx-pla.net
-user1_account,dcf-integration-test-1@planx-pla.net
-user2_account,dcf-integration-test-2@planx-pla.net
+main_account,main@example.org
+indexing_account,indexing@example.org
+dummy_one,dummy-one@example.org
+smarty_two,smarty-two@example.org
+user0_account,user0@example.org
+user1_account,user1@example.org
+user2_account,user2@example.org

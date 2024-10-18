@@ -1,10 +1,9 @@
 import os
+
 import pytest
 import requests
-
-from utils import logger
-
 from gen3.auth import Gen3Auth
+from utils import logger
 
 
 class ManifestService(object):
@@ -17,8 +16,8 @@ class ManifestService(object):
     def post_manifest_for_user(self, user: str, data: list):
         """
         Create manifest for user
-        user - pick one from conftest.py - main_account / indexing_account / auxAcct1_account /
-            auxAcct2_account / user0_account
+        user - pick one from conftest.py - main_account / indexing_account / dummy_one /
+            smarty_two / user0_account
         """
         logger.info(f"Posting manifest for user {user} with data {data}")
         res = requests.post(

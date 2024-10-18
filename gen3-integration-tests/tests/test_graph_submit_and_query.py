@@ -1,17 +1,17 @@
 import json
 import os
+
 import pytest
 import requests
-
-from utils import logger
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from gen3.submission import Gen3SubmissionQueryError
-from utils.gen3_admin_tasks import create_access_token
-from services.indexd import Indexd
-from services.graph import GraphDataTools
-from pages.login import LoginPage
 from pages.files_landing_page import FilesLandingPage
+from pages.login import LoginPage
+from services.graph import GraphDataTools
+from services.indexd import Indexd
+from utils import logger
+from utils.gen3_admin_tasks import create_access_token
 
 
 @pytest.mark.graph_submission
@@ -104,7 +104,10 @@ class TestGraphSubmitAndQuery:
         """
         # Generate an expired token
         res = create_access_token(
-            "fence", "1", "cdis.autotest@gmail.com", test_env_namespace=pytest.namespace
+            "fence",
+            "1",
+            pytest.users["main_account"],
+            test_env_namespace=pytest.namespace,
         )
 
         res = res.splitlines()[-1].strip()

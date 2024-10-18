@@ -3,14 +3,11 @@ USER TOKEN
 """
 
 import pytest
-
-from utils import logger
-from services.fence import Fence
-from utils.gen3_admin_tasks import create_access_token
-
 from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
-from urllib3.exceptions import ConnectionError
+from services.fence import Fence
+from utils import logger
+from utils.gen3_admin_tasks import create_access_token
 
 
 @pytest.mark.fence
@@ -54,7 +51,10 @@ class TestUserToken:
 
         # Generate expired access_token
         res = create_access_token(
-            "fence", "1", "cdis.autotest@gmail.com", test_env_namespace=pytest.namespace
+            "fence",
+            "1",
+            pytest.users["main_account"],
+            test_env_namespace=pytest.namespace,
         )
         access_token = res.splitlines()[-1].strip()
 

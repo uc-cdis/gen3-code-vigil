@@ -1,6 +1,6 @@
 /*
     String parameter USERNAME
-        e.g. cdis.autotest@gmail.com
+        e.g. main@example.org
     String parameter POLICY
         e.g.
 */

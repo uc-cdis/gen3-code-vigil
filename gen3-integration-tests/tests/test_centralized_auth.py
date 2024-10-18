@@ -3,23 +3,22 @@ CENTRALIZED AUTH
 """
 
 import os
-import pytest
-
-from utils import logger
 from uuid import uuid4
-from services.indexd import Indexd
-from services.fence import Fence
-from playwright.sync_api import Page
 
+import pytest
+from playwright.sync_api import Page
+from services.fence import Fence
+from services.indexd import Indexd
+from utils import logger
 
 """
 NOTES:
 * CRUD: Create, Read, Update, Delete
-* main account: cdis.autotest@gmail.com
-* auxAcct1 account: dummy-one@planx-pla.net
-* indexing account: ctds.indexing.test@gmail.com
-* dcf-user0 account: dcf-integration-test-0@planx-pla.net
-* dcf-user2 account: dcf-integration-test-2@gmail.com
+* main account: main@example.org
+* auxAcct1 account: dummy-one@example.org
+* indexing account: indexing@example.org
+* dcf-user0 account: user0@example.org
+* dcf-user2 account: user2@example.org
 """
 
 indexed_files = {
@@ -615,7 +614,7 @@ class TestCentralizedAuth:
             page=page,
             client_id=self.basic_test_abc_client_id,
             client_secret=self.basic_test_abc_client_secret,
-            user="auxAcct1_account",
+            user="dummy_one",
         ).json()["access_token"]
 
         # Create Signed URL using access_token

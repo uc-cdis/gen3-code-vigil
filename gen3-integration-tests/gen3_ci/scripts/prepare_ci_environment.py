@@ -1,15 +1,13 @@
 import json
 import os
-from pathlib import Path
-import requests
 import time
-
-from utils import logger
 from datetime import datetime
+from pathlib import Path
 
-from utils.jenkins import JenkinsJob
-
+import requests
 from dotenv import load_dotenv
+from utils import logger, test_setup
+from utils.jenkins import JenkinsJob
 
 load_dotenv()
 
@@ -116,20 +114,12 @@ def modify_env_for_test_repo_pr(namespace):
 
 def generate_api_keys_for_test_users(namespace):
     # Accounts used for testing
-    test_users = {
-        "main_account": "cdis.autotest@gmail.com",  # default user
-        "indexing_account": "ctds.indexing.test@gmail.com",  # indexing admin
-        "auxAcct1_account": "dummy-one@planx-pla.net",  # auxAcct1 user
-        "auxAcct2_account": "smarty-two@planx-pla.net",  # auxAcct2 user
-        "user0_account": "dcf-integration-test-0@planx-pla.net",  # user0 dcf_integration_test
-        "user1_account": "dcf-integration-test-1@planx-pla.net",  # user1 dcf_integration_test
-        "user2_account": "dcf-integration-test-2@planx-pla.net",  # user2 dcf_integration_test
-    }
+    test_users = test_setup.get_users()
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
         os.getenv("JENKINS_USERNAME"),
         os.getenv("JENKINS_PASSWORD"),
-        "ci-only-generate-api-key",
+        "ci-only-generate-api-keys",
     )
     params = {
         "NAMESPACE": namespace,

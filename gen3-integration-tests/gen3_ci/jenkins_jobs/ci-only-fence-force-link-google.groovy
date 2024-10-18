@@ -2,9 +2,9 @@
     String parameter NAMESPACE
         e.g. jenkins-blood
     String parameter USERNAME
-        e.g. dummy-one@planx-pla.net
+        e.g. dummy-one@example.org
     String parameter EMAIL
-        e.g. cdis.autotest@gmail.com
+        e.g. main@example.org
 
 */
 pipeline {
