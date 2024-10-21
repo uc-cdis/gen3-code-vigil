@@ -170,6 +170,8 @@ def run_gen3_job(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # job_pod = f"{job_name}-{uuid.uuid4()}"
+        if job_name == "etl":
+            job_name = "etl-cronjob"
         cmd = ["kubectl", "delete", "job", job_name]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if not result.returncode == 0:
@@ -731,7 +733,63 @@ def check_indices_after_etl(test_env_namespace: str):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        get_alias_cmd = "kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
+        get_alias_result = subprocess.run(
+            get_alias_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
+        )
+        if not get_alias_result.returncode == 0:
+            raise Exception(
+                f"Unable to get alias. Error: {get_alias_result.stderr.strip()}"
+            )
+        for alias_name in get_alias_result.stdout.strip().split(" "):
+            get_alias_status_cmd = [
+                "curl",
+                "-I",
+                "-s",
+                f"localhost:9200/_alias/{alias_name}",
+            ]
+            get_alias_status_result = subprocess.run(
+                get_alias_status_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            if not get_alias_status_result.returncode == 0:
+                raise Exception(
+                    f"Unable to get status code for {alias_name}. Error: {get_alias_status_result.stderr.strip()}"
+                )
+            assert (
+                "200 OK" in get_alias_status_result.stdout.strip()
+            ), f"Expected 200 OK but got {get_alias_status_result.stdout.strip()} for {alias_name}"
+            logger.info(f"{alias_name} is present")
+
+            get_indices_name_cmd = [
+                "curl",
+                "-X",
+                "GET",
+                "-s",
+                f"localhost:9200/_alias/{alias_name}",
+            ]
+            get_indices_name_result = subprocess.run(
+                get_indices_name_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if not get_indices_name_result.returncode == 0:
+                raise Exception(
+                    f"Unable to get status code for {alias_name}. Error: {get_indices_name_result.stderr.strip()}"
+                )
+            data = json.loads(get_indices_name_result.stdout.strip())
+            indices_name = list(data.keys())[0]
+            version = indices_name.split("_")[-1]
+            if version == "1":
+                logger.info(f"Index version has increased for {alias_name}")
 
 
 def create_access_token(service, expired, username, test_env_namespace: str = ""):
