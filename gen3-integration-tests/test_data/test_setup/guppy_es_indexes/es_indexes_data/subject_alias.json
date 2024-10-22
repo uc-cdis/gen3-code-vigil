@@ -1,6 +1,6 @@
 {
     "actions" : [
-        { "remove" : { "index" : "jenkins_subject_1", "alias" : "jenkins_subject_alias" } },
-        { "add" : { "index" : "jenkins_subject_1", "alias" : "jenkins_subject_alias" } }
+        { "remove" : { "index" : "jenkins_subject_1", "alias" : "jenkins_subject" } },
+        { "add" : { "index" : "jenkins_subject_1", "alias" : "jenkins_subject" } }
     ]
 }

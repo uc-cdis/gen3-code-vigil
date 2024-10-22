@@ -1,6 +1,6 @@
 {
     "actions" : [
-        { "remove" : { "index" : "jenkins_configs_1", "alias" : "jenkins_configs_alias" } },
-        { "add" : { "index" : "jenkins_configs_1", "alias" : "jenkins_configs_alias" } }
+        { "remove" : { "index" : "jenkins_configs_1", "alias" : "jenkins_configs" } },
+        { "add" : { "index" : "jenkins_configs_1", "alias" : "jenkins_configs" } }
     ]
 }
