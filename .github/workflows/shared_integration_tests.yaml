@@ -29,6 +29,10 @@ on:
         required: true
       CI_TEST_RAS_PASSWORD:
         required: true
+      CI_TEST_RAS_2_USERID:
+        required: true
+      CI_TEST_RAS_2_PASSWORD:
+        required: true
       CI_SLACK_BOT_TOKEN:
         required: true
       CI_SLACK_CHANNEL_ID:
@@ -62,6 +66,8 @@ jobs:
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
           CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
+          CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
+          CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
@@ -187,7 +193,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
 
           - name: Run tests
             id: run_tests
@@ -195,7 +201,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}

@@ -31,12 +31,12 @@ class TestRegisterUser:
     @classmethod
     def setup_class(cls):
         # Enable Register User Redirect Login
-        fence_enable_register_users_redirect(pytest.namespace)
+        fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
 
     @classmethod
     def teardown_class(cls):
         # Enable Register User Redirect Login
-        fence_disable_register_users_redirect(pytest.namespace)
+        fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
 
     @pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")
     def test_redirect_to_login_page_from_the_download_button(self, page: Page):

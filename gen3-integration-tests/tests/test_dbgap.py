@@ -9,7 +9,6 @@ import uuid
 from cdislogging import get_logger
 from services.indexd import Indexd
 from services.fence import Fence
-from utils.gen3_admin_tasks import create_link_google_test_buckets, run_gen3_command
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -81,6 +80,7 @@ new_dbgap_records = {
 
 @pytest.mark.indexd
 @pytest.mark.fence
+@pytest.mark.requires_google_bucket
 class TestDbgap:
     indexd = Indexd()
     fence = Fence()
@@ -90,9 +90,6 @@ class TestDbgap:
 
     @classmethod
     def setup_class(cls):
-        # Create and Link Google Test Buckets
-        create_link_google_test_buckets(pytest.namespace)
-
         # Removing test indexd records if they exist
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
         cls.indexd.delete_records(cls.variables["created_dbgap_dids"])

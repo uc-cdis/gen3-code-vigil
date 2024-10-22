@@ -7,6 +7,7 @@ from xdist import is_xdist_controller
 from xdist.scheduler import LoadScopeScheduling
 
 from utils import logger
+from utils import gen3_admin_tasks as gat
 from utils import test_setup as setup
 from utils import TEST_DATA_PATH_OBJECT
 
@@ -15,6 +16,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 requires_fence_client_marker_present = False
+requires_google_bucket_marker_present = False
+
+collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
 
 
 class XDistCustomPlugin:
@@ -42,26 +46,37 @@ class CustomScheduling(LoadScopeScheduling):
         if node.get_closest_marker("workspace"):
             return "__workspace__"
 
-        if node.get_closest_marker("requires_fence_client"):
-            return "__requires_fence_client__"
-
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
 
 
 def pytest_collection_finish(session):
     global requires_fence_client_marker_present
+    global requires_google_bucket_marker_present
+    # Skip running code if --collect-only is passed
+    if session.config.option.collectonly:
+        return
     # Iterate through the collected test items
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
             # Access the markers for each test item
             markers = item.keywords
             for marker_name, marker in markers.items():
-                if marker_name == "requires_fence_client":
-                    setup.get_fence_client_info()
-                    setup.get_fence_rotated_client_info()
+                if (
+                    marker_name == "requires_fence_client"
+                    and requires_fence_client_marker_present is False
+                ):
+                    setup.setup_fence_test_clients_info()
                     requires_fence_client_marker_present = True
-                    return
+                if (
+                    marker_name == "requires_google_bucket"
+                    and requires_google_bucket_marker_present is False
+                ):
+                    # Create and Link Google Test Buckets
+                    setup.setup_google_buckets()
+                    requires_google_bucket_marker_present = True
+        # Run Usersync job
+        setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -72,21 +87,19 @@ def get_fence_clients():
 
 def pytest_configure(config):
     # Compute hostname and namespace
-    hostname = os.getenv("HOSTNAME")
-    namespace = os.getenv("NAMESPACE")
-    tested_env = os.getenv("TESTED_ENV")
-    assert hostname or namespace, "Hostname and namespace undefined"
-    if hostname and not namespace:
-        namespace = hostname.split(".")[0]
-    if namespace and not hostname:
-        hostname = f"{namespace}.planx-pla.net"
-    pytest.hostname = hostname
-    pytest.namespace = namespace
+    pytest.hostname = os.getenv("HOSTNAME")
+    pytest.namespace = os.getenv("NAMESPACE")
+    pytest.tested_env = os.getenv("TESTED_ENV")
+    assert pytest.hostname or pytest.namespace, "Hostname and namespace undefined"
+    if pytest.namespace and not pytest.hostname:
+        pytest.hostname = f"{pytest.namespace}.planx-pla.net"
+    if pytest.hostname and not pytest.namespace:
+        pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
-    pytest.tested_env = tested_env or namespace
-
+    if not pytest.tested_env:
+        pytest.tested_env = pytest.namespace
     # Compute root_url
-    pytest.root_url = f"https://{hostname}"
+    pytest.root_url = f"https://{pytest.hostname}"
 
     # Clients used for testing
     pytest.clients = {}
@@ -124,13 +137,14 @@ def pytest_configure(config):
     # Compute root url for portal
     try:
         manifest = json.loads(
-            (TEST_DATA_PATH_OBJECT / "configuration/manifest.json").read_text()
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
         )
     except FileNotFoundError:
         logger.error(
             "manifest.json not found. It should have been fetched by `get_configuration_files`..."
         )
         raise
+    logger.info(manifest)
     if manifest.get("global", {}).get("frontend_root", "") == "gen3ff":
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:
@@ -141,6 +155,9 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
+    # Skip running code if --collect-only is passed
+    if config.option.collectonly:
+        return
     if not hasattr(config, "workerinput"):
         directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
         if os.path.exists(directory_path):

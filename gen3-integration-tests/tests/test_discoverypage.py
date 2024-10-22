@@ -65,7 +65,7 @@ class TestDiscoveryPage(object):
             8. Terminate workspace
         """
         # Get uid field and study preview field from portal config
-        portal_config = gat.get_portal_config(pytest.tested_env)
+        portal_config = gat.get_portal_config()
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
             .get("minimalFieldMapping", {})
@@ -116,7 +116,7 @@ class TestDiscoveryPage(object):
         mds.create_metadata(self.variables["study_id"], study_json)
 
         # Re-sync aggregate mds
-        gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
+        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
         study_metadata = mds.get_aggregate_metadata(self.variables["study_id"])[
             "gen3_discovery"
         ]

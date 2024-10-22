@@ -1,0 +1,6 @@
+{
+    "actions" : [
+        { "remove" : { "index" : "jenkins_file_1", "alias" : "jenkins_file" } },
+        { "add" : { "index" : "jenkins_file_1", "alias" : "jenkins_file" } }
+    ]
+}

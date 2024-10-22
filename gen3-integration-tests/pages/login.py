@@ -1,6 +1,7 @@
 # Login Page
 import os
 import pytest
+import time
 
 from utils import logger
 from playwright.sync_api import Page, expect
@@ -17,6 +18,7 @@ class LoginPage(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
+        self.RAS_LOGIN_BUTTON = "//button[contains(text(),'Login with RAS')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -93,6 +95,14 @@ class LoginPage(object):
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
         if validate_username_locator:
+            res = get_portal_config()
+            # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
+            if (
+                res.get("components", {})
+                .get("topBar", {})
+                .get("useProfileDropdown", "")
+            ):
+                page.locator(self.USER_PROFILE_DROPDOWN).click()
             expect(
                 page.locator(f'//div[contains(text(), "{logged_in_user}")]')
             ).to_be_visible(timeout=10000)
@@ -130,39 +140,51 @@ class LoginPage(object):
     def ras_login(
         self,
         page: Page,
-        username=os.environ["CI_TEST_RAS_USERID"],
-        password=os.environ["CI_TEST_RAS_PASSWORD"],
+        username="",
+        password="",
+        portal_test=True,
     ):
-        # Click on 'Login from RAS' on Gen3 Login Page
-        page.locator("//button[normalize-space()='Login from RAS']").click()
-        # Perform RAS Login
+        username = username or os.environ["CI_TEST_RAS_USERID"]
+        password = password or os.environ["CI_TEST_RAS_PASSWORD"]
+        if portal_test is True:
+            # Click on 'Login from RAS' on Gen3 Login Page
+            page.locator("//button[normalize-space()='Login from RAS']").click()
+            # Perform RAS Login
+            self.ras_login_form(page, username, password)
+            screenshot(page, "RASAfterClickingGrantButton")
+        else:
+            self.ras_login_form(page, username, password)
+            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(
+                timeout=5000
+            ):
+                logger.info("Clicking on Authorization button")
+                page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
+                time.sleep(5)
+                screenshot(page, "RASAfterClickingAuthorizationButton")
+
+    def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")
-        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
-        expect(ras_signin_button).to_be_visible(timeout=5000)
         page.locator(self.RAS_USERNAME_INPUT).fill(username)
         page.locator(self.RAS_PASSWORD_INPUT).fill(password)
+        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
         ras_signin_button.click()
         screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
         if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=5000):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
-        if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(timeout=5000):
-            logger.info("Clicking on Authorization button")
-            page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
-        screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def logout(self, page: Page):
         """Logs out and wait for Login button on nav bar"""
-        res = get_portal_config(pytest.namespace)
+        res = get_portal_config()
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
         # Click on Logout button to logout
         else:
-            page.get_by_role("button", name="Logout").click()
-        nav_bar_login_button = page.get_by_role("button", name="Login")
+            page.get_by_role("link", name="Logout").click()
+        nav_bar_login_button = page.get_by_role("link", name="Login")
         screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 

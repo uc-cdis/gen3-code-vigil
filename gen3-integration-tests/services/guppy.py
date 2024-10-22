@@ -42,12 +42,12 @@ class Guppy(object):
         queryType - Can be one of the following : mapping / aggregation / historgram / download
         endpoint - Can be one of the following : /graphql or /download
         """
-        queryFile = (
-            TEST_DATA_PATH_OBJECT / "guppy_data" / "testData" / queryFile
-        ).read_text(encoding="UTF-8")
-        responseFile = (
-            TEST_DATA_PATH_OBJECT / "guppy_data" / "testData" / responseFile
-        ).read_text(encoding="UTF-8")
+        queryFile = (TEST_DATA_PATH_OBJECT / "guppy" / queryFile).read_text(
+            encoding="UTF-8"
+        )
+        responseFile = (TEST_DATA_PATH_OBJECT / "guppy" / responseFile).read_text(
+            encoding="UTF-8"
+        )
         queryToSubmit = "".join(queryFile.split("\n"))
         logger.info(queryToSubmit)
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)

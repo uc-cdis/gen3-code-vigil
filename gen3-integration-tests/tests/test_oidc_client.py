@@ -45,13 +45,7 @@ class TestOIDCClient:
             assert client_access_token, "Client access token was not created"
 
         # running fence-delete-expired-clients job
-        gat.run_gen3_job(pytest.namespace, "fence-delete-expired-clients")
-        # checking the logs from the job pod
-        job_logs = gat.check_job_pod(
-            pytest.namespace, "fence-delete-expired-clients", "gen3job"
-        )
-        logs_contents = job_logs["logs.txt"]
-        logger.debug(f"Logs: {logs_contents}")
+        logs_contents = gat.fence_delete_expired_clients()
 
         # assertion from logs
         assert (
