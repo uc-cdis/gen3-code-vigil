@@ -1,5 +1,6 @@
 import time
 
+import pytest
 from pages.login import LoginPage
 from pages.study_viewer import StudyViewerPage
 from playwright.sync_api import Page
