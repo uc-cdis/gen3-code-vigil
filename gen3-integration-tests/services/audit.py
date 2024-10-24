@@ -51,9 +51,11 @@ class Audit(object):
                         assert (
                             data["data"][0][key].lower()
                             == expected_results[key].lower()
-                        )
+                        ), f"Expected {expected_results[key].lower()} but got {data['data'][0][key].lower()}"
                     else:
-                        assert data["data"][0][key] == expected_results[key]
+                        assert (
+                            data["data"][0][key] == expected_results[key]
+                        ), f"Expected {expected_results[key]} but got {data['data'][0][key]}"
                 return True
             counter += 1
 
