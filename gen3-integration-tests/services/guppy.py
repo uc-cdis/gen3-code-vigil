@@ -1,11 +1,7 @@
-import os
 import pytest
 import requests
-
-from utils import logger
 from gen3.auth import Gen3Auth
-from utils import TEST_DATA_PATH_OBJECT
-import requests
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 
 class Guppy(object):
@@ -15,8 +11,8 @@ class Guppy(object):
     def validate_guppy_status(self, user, expected_status):
         """
         Validate the status of Guppy
-        user - pick one from conftest.py - main_account / indexing_account / auxAcct1_account /
-            auxAcct2_account / user0_account
+        user - pick one from conftest.py - main_account / indexing_account / dummy_one /
+            smarty_two / user0_account
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         url = self.BASE_ENDPOINT + "/_status"

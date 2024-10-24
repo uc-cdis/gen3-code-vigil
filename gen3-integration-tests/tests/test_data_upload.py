@@ -3,22 +3,21 @@ DATA UPLOAD
 """
 
 import hashlib
+import math
 import os
-import pytest
 import random
 import string
 import time
-import math
 
+import pytest
 from cdislogging import get_logger
-from services.fence import Fence
-from services.indexd import Indexd
-from services.graph import GraphDataTools
-from playwright.sync_api import Page
+from gen3.auth import Gen3Auth
 from pages.login import LoginPage
 from pages.submission import SubmissionPage
-
-from gen3.auth import Gen3Auth
+from playwright.sync_api import Page
+from services.fence import Fence
+from services.graph import GraphDataTools
+from services.indexd import Indexd
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -166,7 +165,7 @@ class TestDataUpload:
 
         # a user who is not the uploader CANNOT download the file
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expected_status=401
+            id=file_guid, user="smarty_two", expected_status=401
         )
 
         # submit metadata for this file
@@ -179,7 +178,7 @@ class TestDataUpload:
 
         # a user who is not the uploader can now download the file
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expected_status=200
+            id=file_guid, user="smarty_two", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
@@ -190,9 +189,7 @@ class TestDataUpload:
             1. Get an upload url from fence for a user that has no role.
             2. No url should be returned from fence.
         """
-        fence_upload_res = self.fence.get_url_for_data_upload(
-            file_name, "auxAcct1_account"
-        )
+        fence_upload_res = self.fence.get_url_for_data_upload(file_name, "dummy_one")
         assert (
             "url" not in fence_upload_res.content.decode()
         ), f"URL key is missing.\n{fence_upload_res}"
@@ -236,7 +233,7 @@ class TestDataUpload:
         record = self.indexd.get_record(self.created_guids[-1])
         rev = record.get("rev", None)
         response = self.indexd.delete_record_via_api(
-            guid=self.created_guids[-1], rev=rev, user="auxAcct2_account"
+            guid=self.created_guids[-1], rev=rev, user="smarty_two"
         )
         assert (
             response == 401
@@ -311,7 +308,7 @@ class TestDataUpload:
 
         # check that the file can be downloaded
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expected_status=200
+            id=file_guid, user="smarty_two", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
@@ -343,7 +340,7 @@ class TestDataUpload:
         self.sd_tools.submit_record(record=file_type_node)
         # check that the file can be downloaded
         signed_url_res = self.fence.create_signed_url(
-            id=file_guid, user="auxAcct2_account", expected_status=200
+            id=file_guid, user="smarty_two", expected_status=200
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 

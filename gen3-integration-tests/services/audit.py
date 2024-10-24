@@ -3,10 +3,9 @@ import math
 import pytest
 import time
 
-from utils import logger
-
+import pytest
 from gen3.auth import Gen3Auth
-
+from utils import logger
 from utils.misc import retry
 
 
@@ -16,11 +15,12 @@ class Audit(object):
         self.AUDIT_LOG_ENDPOINT = f"{self.BASE_ENDPOINT}/log"
 
     @retry(times=3, delay=10, exceptions=(AssertionError))
-    def audit_query(
-        self, log_category, user, user_email, expected_status, audit_category
-    ):
+    def audit_query(self, log_category, user, expected_status, audit_category):
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = ["start={}".format(timestamp), "username={}".format(user_email)]
+        params = [
+            "start={}".format(timestamp),
+            "username={}".format(pytest.users[user]),
+        ]
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
         url = url + "?" + "&".join(params)
