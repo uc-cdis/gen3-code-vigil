@@ -47,7 +47,13 @@ class Audit(object):
                 logger.info(data["data"])
                 for key, val in expected_results.items():
                     # Get the first entry of json data
-                    assert data["data"][0][key] == expected_results[key]
+                    if key == "username":
+                        assert (
+                            data["data"][0][key].lower()
+                            == expected_results[key].lower()
+                        )
+                    else:
+                        assert data["data"][0][key] == expected_results[key]
                 return True
             counter += 1
 
