@@ -104,7 +104,7 @@ class LoginPage(object):
             ):
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
             expect(
-                page.locator(f'//div[contains(text(), "{logged_in_user}")]')
+                page.get_by_role("link").filter(has_text=logged_in_user)
             ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
