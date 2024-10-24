@@ -14,7 +14,7 @@ class TestStudyViewer(object):
 
     def setup_class(cls):
         cls.variables["request_ids"] = []
-        cls.variables["username"] = pytest.users["main_account"]
+        cls.variables["username"] = pytest.users["user0_account"]
         cls.variables["policy"] = "programs.jnkns.projects.jenkins_accessor"
 
     def teardown_class(cls):
