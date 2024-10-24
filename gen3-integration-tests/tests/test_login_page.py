@@ -83,3 +83,26 @@ class TestLoginPage:
         ), f"Expected /DEV-test/search in url but got {current_url}"
 
         self.login_page.logout(page)
+
+    def test_login_of_new_user_redirects_to_401_page(self, page: Page):
+        """
+        Scenario: Login redirects to 401 page if user is new
+        and ALLOW_NEW_USER_ON_LOGIN is False
+        Steps:
+            1. Go to /login page
+            3. Login using dummy_new_user logging in for the first time
+            4. After login, page should redirect to 401 error page
+        """
+        # Make sure ALLOW_NEW_USER_ON_LOGIN is False in Fence config:
+        # TODO
+
+        # Perform user login
+        self.login_page.login(page, user="dummy_new_user")
+
+        # Validate the user is redirected to 401 page after logging in
+        current_url = page.url
+        assert (
+            "/workspace" in current_url
+        ), f"Expected /workspace in url but got {current_url}"
+
+        self.login_page.logout(page)
