@@ -75,6 +75,7 @@ Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/ma
 - Tag tests appropriately using markers. Ensure that the markers are added [here](./pyproject.toml#44)
 - Add test steps as docstrings in the test for understanding the purpose of the test easily.
 - Mark in-progress tests with marker `wip` to prevent CI pipeline from breaking when incomplete test code is pushed to repo.
+- Ensure that privileged information is not logged since the tests run in Github Actions and the logs are public.
 
 ## Code structure
 The test code is organized into several directories for ease of maintenance:
