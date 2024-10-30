@@ -58,7 +58,7 @@ The report can be viewed by running `allure serve allure-results`
 
 `-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). `auto` distributes tests across all available CPUs. We can set to to a smaller value to use only some of the cores.
 
-Test classes / suties run in parallel using the `--dist loadscope`. We implemented custom scheduling for grouping tests across test suites which is explained [here](docs/reference/custom_scheduling.md)
+Test classes / suites run in parallel using the `--dist loadscope`. We implemented custom scheduling for grouping tests across test suites which is explained [here](docs/reference/custom_scheduling.md)
 
 Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`.
 
