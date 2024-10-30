@@ -47,6 +47,10 @@ The test users required to run the tests are listed [here](test_data/test_setup/
 
 The API keys for these users must be saved to `~/.gen3` directory before running tests. Please find the instructions for each GEN3_INSTANCE_TYPE [here](docs/howto/generate_api_keys_for_test_users/)
 
+### Set up test data
+#### Guppy
+We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use one of the setup scripts located [here](test_data/test_setup/guppy_es) depending on the type of Gen3 instance being tested.
+
 ## Run tests and reviewing results
 Read these [docs](docs/howto/run_tests/) for specific information on how to run tests for each GEN3_INSTANCE_TYPE.
 
