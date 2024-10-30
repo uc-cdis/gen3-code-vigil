@@ -1,8 +1,4 @@
-import os
 import pytest
-
-from utils import logger
-
 from pages import home, login
 
 
