@@ -324,8 +324,6 @@ authz:
       description: 'test resource for client credentials requestor requests'
     - name: 'cedar'
       description: 'commons /cedar'
-    - name: 'kayako'
-      description: 'commons /kayako'
     - name: 'ttyadmin'
     - name: 'workspace'
     - name: "sower"
