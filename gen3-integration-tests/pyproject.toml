@@ -46,6 +46,7 @@ markers = [
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
   "requires_fence_client: tests for fence clients",
   "requires_google_bucket: tests which require creation of google buckets",
+  "admin_vm_only: tests which can run only against admin_vm",
   # services
   "audit: tests for audit-service",
   "fence: test for fence service",
