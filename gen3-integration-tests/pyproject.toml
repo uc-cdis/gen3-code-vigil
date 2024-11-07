@@ -13,7 +13,6 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-allure-pytest = "^2.13.2"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.1"}
 filelock = "<4"
@@ -31,6 +30,7 @@ pypfb = "^0.5.29"
 fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
+allure-pytest = "^2.13.5"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
