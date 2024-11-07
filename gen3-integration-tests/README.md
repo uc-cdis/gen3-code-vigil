@@ -102,4 +102,4 @@ Code used for running integration tests in CI at CTDS is at `gen3-code-vigil/gen
 - **`jenkins-jobs`** directory contains the groovy scripts used by the jenkins jobs that perform Gen3 admin tasks.
 - **`scripts`** directory contains python scripts used in the github actions workflow.
 
-Tests are organized into test suites using classes as explained [here](https://docs.pytest.org/en/stable/getting-started.html#group-multiple-tests-in-a-class)
+Tests are organized into test suites using classes as explained [here](https://docs.pytest.org/en/stable/getting-started.html#group-multiple-tests-in-a-class).
