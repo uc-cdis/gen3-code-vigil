@@ -1,18 +1,19 @@
-import pytest
-import os
-import requests
-import fastavro
 import json
-
+import os
 from datetime import datetime
-from playwright.sync_api import Page
-from pages.login import LoginPage
+
+import fastavro
+import pytest
+import requests
 from pages.exploration import ExplorationPage
+from pages.login import LoginPage
+from playwright.sync_api import Page
 from utils import logger
 
 
 @pytest.mark.pfb
 @pytest.mark.portal
+@pytest.mark.admin_vm_only
 class TestPFBExport(object):
     def test_pfb_export(self, page: Page):
         """
