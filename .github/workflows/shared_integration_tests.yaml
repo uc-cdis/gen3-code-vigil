@@ -77,6 +77,7 @@ jobs:
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
+            working-directory: ${{ github.workspace }}
             run: |
               if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
                   echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
@@ -107,7 +108,6 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
-              path: gen3-code-vigil
               ref: master
 
           # gen3-integration-tests run with python 3.9
