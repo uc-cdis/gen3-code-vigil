@@ -3,12 +3,12 @@ DBGAP
 """
 
 import os
-import pytest
 import uuid
 
+import pytest
 from cdislogging import get_logger
-from services.indexd import Indexd
 from services.fence import Fence
+from services.indexd import Indexd
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -42,6 +42,26 @@ indexd_files = {
         ],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad2"},
         "authz": ["/orgB/programs/phs000179"],
+        "size": 11,
+    },
+    "parentPhs001194File": {
+        "file_name": "cascauth",
+        "urls": [
+            "s3://cdis-presigned-url-test/testdata",
+            "gs://dcf-integration-test/file.txt",
+        ],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad2"},
+        "authz": ["/programs/phs001194"],
+        "size": 11,
+    },
+    "childPhs000571File": {
+        "file_name": "cascauth",
+        "urls": [
+            "s3://cdis-presigned-url-test/testdata",
+            "gs://dcf-integration-test/file.txt",
+        ],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad2"},
+        "authz": ["/programs/phs000571"],
         "size": 11,
     },
     "QAFile": {
@@ -331,3 +351,56 @@ class TestDbgap:
         assert (
             foo_bar_file_deleted_record == 401
         ), f"Expected 401 status, but got {foo_bar_file_deleted_record}"
+
+    def test_cascading_auth_create_signed_urls(self):
+        """
+        Scenario: dbGaP Sync: Cascading Auth - create signed urls from s3 and gs to download
+        Steps:
+            1. Create S3 signed url. main_account has access to phs001194 through dbgap
+            2. Create S3 signed url. main_account has access to phs000571 through dbgap
+        """
+        # Create S3 signed url. main_account has access to phs001194 through dbgap
+        phs001194_s3_signed_url = self.fence.create_signed_url(
+            id=indexd_files["parentPhs001194File"]["did"],
+            params=["protocol=s3"],
+            user="main_account",
+            expected_status=200,
+        )
+        phs001194_gs_signed_url = self.fence.create_signed_url(
+            id=indexd_files["parentPhs001194File"]["did"],
+            params=["protocol=gs"],
+            user="main_account",
+            expected_status=200,
+        )
+
+        phs001194_s3_file_contents = self.fence.get_file(phs001194_s3_signed_url["url"])
+        phs001194_gs_file_contents = self.fence.get_file(phs001194_gs_signed_url["url"])
+        assert (
+            "Hi Zac!\ncdis-data-client uploaded this!\n" == phs001194_s3_file_contents
+        ), f"Unable to get file contents. Response: {phs001194_s3_file_contents}"
+        assert (
+            "dcf-integration-test" == phs001194_gs_file_contents
+        ), f"Unable to get file contents. Response: {phs001194_gs_file_contents}"
+
+        # Create S3 signed url. main_account has access to phs000571 as its child of phs001194
+        phs000571_s3_signed_url = self.fence.create_signed_url(
+            id=indexd_files["childPhs000571File"]["did"],
+            params=["protocol=s3"],
+            user="main_account",
+            expected_status=200,
+        )
+        phs000571_gs_signed_url = self.fence.create_signed_url(
+            id=indexd_files["childPhs000571File"]["did"],
+            params=["protocol=gs"],
+            user="main_account",
+            expected_status=200,
+        )
+
+        phs000571_s3_file_contents = self.fence.get_file(phs000571_s3_signed_url["url"])
+        phs000571_gs_file_contents = self.fence.get_file(phs000571_gs_signed_url["url"])
+        assert (
+            "Hi Zac!\ncdis-data-client uploaded this!\n" == phs000571_s3_file_contents
+        ), f"Unable to get file contents. Response: {phs000571_s3_file_contents}"
+        assert (
+            "dcf-integration-test" == phs000571_gs_file_contents
+        ), f"Unable to get file contents. Response: {phs000571_gs_file_contents}"
