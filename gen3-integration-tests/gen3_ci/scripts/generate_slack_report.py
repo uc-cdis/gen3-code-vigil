@@ -22,7 +22,7 @@ def get_failed_suites():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"To label & retry, just send the following message: \n@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {','.join(failed_suites)}",
+                "text": f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {','.join(failed_suites)}`",
             },
         }
         return failed_suites_block
