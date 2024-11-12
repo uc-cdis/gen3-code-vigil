@@ -138,6 +138,10 @@ def generate_api_keys_for_test_users(namespace):
                         Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
                     ) as key_file:
                         json.dump(api_key, key_file)
+            else:
+                raise Exception(
+                    "Generation of API keys failed, please check job logs for details"
+                )
         else:
             raise Exception("Build timed out. Consider increasing max_duration")
     else:
