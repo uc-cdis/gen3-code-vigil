@@ -1,7 +1,6 @@
 import csv
 import json
 import os
-
 from pathlib import Path
 
 from utils import logger
@@ -23,7 +22,7 @@ def get_failed_suites():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Failed Suites*: {list(failed_suites)}",
+                "text": f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {','.join(failed_suites)}`",
             },
         }
         return failed_suites_block
@@ -111,11 +110,6 @@ def generate_slack_report():
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."
         )
-    # Failed suites list
-    if test_result == "Failed":
-        failed_suites_block = get_failed_suites()
-        if failed_suites_block:
-            slack_report_json["blocks"].append(failed_suites_block)
     # Pod logs url
     if test_result == "Failed" and os.getenv("POD_LOGS_URL"):
         pod_logs_url__block = {
@@ -130,6 +124,12 @@ def generate_slack_report():
         logger.info(
             "Pod logs were not archived. Skipping pod logs url block generation."
         )
+    # qa-bot replay command with failed suites labeled in the PR
+    if test_result == "Failed":
+        failed_suites_block = get_failed_suites()
+        if failed_suites_block:
+            slack_report_json["blocks"].append(failed_suites_block)
+
     json.dump(slack_report_json, open("slack_report.json", "w"))
 
 
