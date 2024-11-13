@@ -1,11 +1,9 @@
 import os
-import requests
 import time
 
+import requests
 from utils import logger
-
 from utils.misc import retry
-
 
 # Jobs listed on https://jenkins.planx-pla.net/view/CI%20Jobs/
 
@@ -52,6 +50,7 @@ class JenkinsJob(object):
         """Get result of a run"""
         info = self.get_build_info(build_number)
         assert "result" in info
+        assert info["result"] is not None
         return info["result"]
 
     def get_console_output(self, build_number):
@@ -184,7 +183,6 @@ class JenkinsJob(object):
 
 if __name__ == "__main__":
     # The code below is to help with debugging changes to the above
-    import os
     from dotenv import load_dotenv
 
     load_dotenv()
