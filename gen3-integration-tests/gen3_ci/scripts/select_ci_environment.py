@@ -1,9 +1,9 @@
 import os
-import requests
 import sys
+import time
 
+import requests
 from utils import logger
-
 from utils.jenkins import JenkinsJob
 
 
@@ -28,7 +28,7 @@ def select_ci_environment(namespaces):
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
             myfile.write(f"SELECT_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-        status = job.wait_for_build_completion(build_num, max_duration=1800)
+        status = job.wait_for_build_completion(build_num, max_duration=7200)
         if status == "Completed":
             return job.get_artifact_content(build_num, "namespace.txt")
         else:
@@ -49,9 +49,16 @@ if __name__ == "__main__":
         else:
             env_pool = "services"
         logger.info("Namespace was not set as a PR label")
-        res = requests.get(
-            f"https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-{env_pool}.txt"
-        )
+        try:
+            res = requests.get(
+                f"https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-{env_pool}.txt"
+            )
+        except Exception:
+            # Handle HTTP errors or S3 rate-limiting errors
+            time.sleep(30)
+            res = requests.get(
+                f"https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-{env_pool}.txt"
+            )
         namespaces = ",".join(res.text.strip().split("\n"))
 
     try:
