@@ -10,7 +10,6 @@ from utils import logger
 )
 @pytest.mark.portal
 @pytest.mark.frontend_framework
-@pytest.mark.arborist
 class TestGen3FFLandingPage(object):
     def test_home_page_redirection(self, page):
         """

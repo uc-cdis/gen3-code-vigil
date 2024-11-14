@@ -8,7 +8,6 @@ from utils import logger
 
 
 @pytest.mark.tube
-@pytest.mark.arborist
 class TestETL:
     @classmethod
     def setup_class(cls):
