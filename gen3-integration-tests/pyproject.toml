@@ -64,10 +64,12 @@ markers = [
   # features
   "agg_mds: tests for aggregate metadata service",
   "client_credentials: tests for fence client credentials",
+  "data_upload: tests for data upload",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
   "pfb: tests for pfb file handling",
   "workspace: tests for workspace page",
+  "sanity: tests for performing sanity check",
   "study_registration: tests for study registration service"
 ]
 pythonpath = "."

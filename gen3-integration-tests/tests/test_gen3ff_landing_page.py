@@ -1,9 +1,8 @@
 import os
+
 import pytest
-
-from utils import logger
-
 from pages import gen3ff_landing_page
+from utils import logger
 
 
 @pytest.mark.skipif(
