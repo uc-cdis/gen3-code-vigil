@@ -9,7 +9,6 @@ from utils import logger
 
 
 @pytest.mark.workspace
-@pytest.mark.arborist
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page):
         """

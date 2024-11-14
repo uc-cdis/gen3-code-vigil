@@ -14,7 +14,6 @@ from utils import logger
 
 @pytest.mark.indexd
 @pytest.mark.gen3_client
-@pytest.mark.arborist
 class TestGen3Client:
     @classmethod
     def setup_class(cls):

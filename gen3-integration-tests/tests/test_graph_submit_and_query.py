@@ -15,7 +15,6 @@ from utils.gen3_admin_tasks import create_access_token
 
 
 @pytest.mark.graph_submission
-@pytest.mark.arborist
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")

@@ -11,7 +11,6 @@ from utils import logger
 
 @pytest.mark.requestor
 @pytest.mark.portal
-@pytest.mark.arborist
 class TestRequestor:
     variables = {}
 

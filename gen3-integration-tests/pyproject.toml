@@ -47,7 +47,6 @@ markers = [
   "requires_fence_client: tests for fence clients",
   "requires_google_bucket: tests which require creation of google buckets",
   # services
-  "arborist: tests for arborist",
   "audit: tests for audit-service",
   "fence: test for fence service",
   "frontend_framework: tests for frontend-framework",

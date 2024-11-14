@@ -9,7 +9,6 @@ from utils.test_execution import assert_with_retry
 
 
 @pytest.mark.mds
-@pytest.mark.arborist
 class TestAggregateMDS:
     def test_create_edit_delete_study(self):
         """

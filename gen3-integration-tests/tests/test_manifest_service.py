@@ -6,7 +6,6 @@ from utils import logger
 
 
 @pytest.mark.manifestservice
-@pytest.mark.arborist
 class TestManifestService:
     def test_manifest_service(self):
         """

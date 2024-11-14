@@ -13,7 +13,6 @@ nest_asyncio.apply()
 
 @pytest.mark.mds
 @pytest.mark.sower
-@pytest.mark.arborist
 class TestMetadataIngestion:
     variables = {}
     variables["UNIQUE_NUM"] = uuid.uuid1().time

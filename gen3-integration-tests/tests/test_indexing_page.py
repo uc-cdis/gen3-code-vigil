@@ -16,7 +16,6 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 @pytest.mark.portal
 @pytest.mark.sower
 @pytest.mark.ssjdispatcher
-@pytest.mark.arborist
 class TestIndexingPage:
     variables = {}
 

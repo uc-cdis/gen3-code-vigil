@@ -10,7 +10,6 @@ from utils import logger
 
 
 @pytest.mark.guppy
-@pytest.mark.arborist
 class TestGuppyService:
     @classmethod
     def setup_class(cls):
