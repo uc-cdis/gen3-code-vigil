@@ -28,7 +28,6 @@ def page_setup(page):
 @pytest.mark.agg_mds
 @pytest.mark.wts
 @pytest.mark.portal
-@pytest.mark.arborist
 class TestDiscoveryPage(object):
     variables = {}
 
