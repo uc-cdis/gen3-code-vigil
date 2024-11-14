@@ -18,6 +18,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 
 
 @pytest.mark.audit
+@pytest.mark.arborist
 class TestAuditService:
     @classmethod
     def setup_class(cls):

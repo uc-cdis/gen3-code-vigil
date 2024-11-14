@@ -1,17 +1,17 @@
-import pytest
-import os
 import json
+import os
 
+import pytest
 from gen3.auth import Gen3Auth
-from services.fence import Fence
 from pages.login import LoginPage
+from services.fence import Fence
 from services.requestor import Requestor
-
 from utils import logger
 
 
 @pytest.mark.requestor
 @pytest.mark.portal
+@pytest.mark.arborist
 class TestRequestor:
     variables = {}
 

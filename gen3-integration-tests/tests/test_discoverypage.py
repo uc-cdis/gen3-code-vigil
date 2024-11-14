@@ -1,16 +1,15 @@
 import json
-import pytest
-
-from utils import logger
 from uuid import uuid4
 
-from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks as gat
-
+import pytest
 from pages.discovery import DiscoveryPage
 from pages.login import LoginPage
 from pages.workspace import WorkspacePage
 from services.indexd import Indexd
 from services.metadataservice import MetadataService
+from utils import TEST_DATA_PATH_OBJECT
+from utils import gen3_admin_tasks as gat
+from utils import logger
 from utils.test_execution import screenshot
 
 
@@ -29,6 +28,7 @@ def page_setup(page):
 @pytest.mark.agg_mds
 @pytest.mark.wts
 @pytest.mark.portal
+@pytest.mark.arborist
 class TestDiscoveryPage(object):
     variables = {}
 

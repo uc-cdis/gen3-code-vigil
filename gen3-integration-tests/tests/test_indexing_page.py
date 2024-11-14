@@ -1,21 +1,22 @@
+import csv
+import os
+from uuid import uuid4
+
 import pytest
 import requests
 import utils.gen3_admin_tasks as gat
-import csv
-import os
-
-from uuid import uuid4
-from utils import logger, TEST_DATA_PATH_OBJECT
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from pages.login import LoginPage
 from pages.indexing_page import IndexingPage
+from pages.login import LoginPage
 from services.indexd import Indexd
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 
 @pytest.mark.portal
 @pytest.mark.sower
 @pytest.mark.ssjdispatcher
+@pytest.mark.arborist
 class TestIndexingPage:
     variables = {}
 

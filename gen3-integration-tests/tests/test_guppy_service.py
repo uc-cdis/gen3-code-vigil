@@ -3,13 +3,14 @@ GUPPY SERVICE
 """
 
 import os
-import pytest
 
-from utils import logger
+import pytest
 from services.guppy import Guppy
+from utils import logger
 
 
 @pytest.mark.guppy
+@pytest.mark.arborist
 class TestGuppyService:
     @classmethod
     def setup_class(cls):

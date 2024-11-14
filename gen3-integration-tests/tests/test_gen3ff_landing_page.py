@@ -1,9 +1,8 @@
 import os
+
 import pytest
-
-from utils import logger
-
 from pages import gen3ff_landing_page
+from utils import logger
 
 
 @pytest.mark.skipif(
@@ -11,6 +10,7 @@ from pages import gen3ff_landing_page
 )
 @pytest.mark.portal
 @pytest.mark.frontend_framework
+@pytest.mark.arborist
 class TestGen3FFLandingPage(object):
     def test_home_page_redirection(self, page):
         """

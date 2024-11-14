@@ -1,21 +1,19 @@
 import asyncio
-import pytest
 import uuid
 
-from gen3.auth import Gen3Auth
-from gen3.jobs import Gen3Jobs, INGEST_METADATA_JOB
-
-from services.metadataservice import MetadataService
-
-from utils import logger
-
 import nest_asyncio
+import pytest
+from gen3.auth import Gen3Auth
+from gen3.jobs import INGEST_METADATA_JOB, Gen3Jobs
+from services.metadataservice import MetadataService
+from utils import logger
 
 nest_asyncio.apply()
 
 
 @pytest.mark.mds
 @pytest.mark.sower
+@pytest.mark.arborist
 class TestMetadataIngestion:
     variables = {}
     variables["UNIQUE_NUM"] = uuid.uuid1().time
