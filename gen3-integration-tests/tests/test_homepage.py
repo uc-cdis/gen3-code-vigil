@@ -3,6 +3,7 @@ from pages import home, login
 
 
 @pytest.mark.portal
+@pytest.mark.sanity
 class TestHomePage:
     def test_home_page_navigation(self, page):
         """
