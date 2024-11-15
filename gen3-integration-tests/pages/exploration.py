@@ -13,7 +13,7 @@ class ExplorationPage(object):
         self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
         self.FILE_URL = f"{self.BASE_URL}/files"
         # Locators
-        self.NAV_BAR = "//nav[@class='nav-bar__nav--items']"
+        self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
         self.GUPPY_TABS = "//div[@id='guppy-explorer-main-tabs']"
         self.FILE_TAB = "//h3[contains(text(), 'File')]"
         self.GUPPY_FILTERS = "//div[@class='guppy-data-explorer__filter']"
