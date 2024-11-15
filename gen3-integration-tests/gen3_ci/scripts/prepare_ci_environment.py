@@ -37,6 +37,8 @@ def wait_for_quay_build(repo, tag):
                     print(image_time)
                     if image_time > commit_time:
                         repo_image_status[repo_item] = True
+                    else:
+                        repo_image_status[repo_item] = False
             else:
                 repo_image_status[repo_item] = False
         i += 1
