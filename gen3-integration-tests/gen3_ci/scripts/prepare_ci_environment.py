@@ -17,33 +17,25 @@ def wait_for_quay_build(repo, tag):
     Wait for the branch image to be ready for testing.
     Used in service PRs.
     """
-    repo_image_status = {}
     quay_url_org = "https://quay.io/api/v1/repository/cdis"
     commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
     max_tries = 30  # Minutes to wait for image
     found = False
     i = 0
-    repo_list = repo.split(",")
     logger.info(f"Repo - {repo}, image - {tag}")
     while not found and i < max_tries:
-        for repo_item in repo_list:
-            logger.info(f"Waiting for image {repo_item}:{tag} to be built in quay")
-            res = requests.get(f"{quay_url_org}/{repo_item}/tag")
-            if res.status_code == 200:
-                branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
-                if len(branch_images) >= 1:
-                    image = branch_images[0]
-                    image_time = datetime.utcfromtimestamp(image["start_ts"])
-                    print(image_time)
-                    if image_time > commit_time:
-                        repo_image_status[repo_item] = True
-                    else:
-                        repo_image_status[repo_item] = False
-            else:
-                repo_image_status[repo_item] = False
+        logger.info(f"Waiting for image {repo}:{tag} to be built in quay")
+        res = requests.get(f"{quay_url_org}/{repo}/tag")
+        if res.status_code == 200:
+            branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
+            if len(branch_images) >= 1:
+                image = branch_images[0]
+                image_time = datetime.utcfromtimestamp(image["start_ts"])
+                print(image_time)
+                if image_time > commit_time:
+                    found = True
         i += 1
         time.sleep(60)
-        found = all(repo_image_status.values())
     if found:
         return "success"
     if not found:
@@ -174,10 +166,12 @@ def prepare_ci_environment(namespace):
         quay_tag = (
             os.getenv("BRANCH").replace("(", "_").replace(")", "_").replace("/", "_")
         )
-        result = wait_for_quay_build(quay_repo, quay_tag)
-        assert result.lower() == "success"
-        result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
-        assert result.lower() == "success"
+        quay_repo_list = quay_repo.split(",")
+        for quay_repo_item in quay_repo_list:
+            result = wait_for_quay_build(quay_repo_item, quay_tag)
+            assert result.lower() == "success"
+            result = modify_env_for_service_pr(namespace, quay_repo_item, quay_tag)
+            assert result.lower() == "success"
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
     assert result.lower() == "success"
