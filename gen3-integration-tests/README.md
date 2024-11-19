@@ -1,87 +1,105 @@
-# Running tests locally
+# Overview
+This is the repository for managing Gen3 integration tests. The code is written in Python, and the following tools/frameworks are used:
+
+- **`poetry`** (package management [docs](https://python-poetry.org/docs/))
+- **`pytest`** (testing framework [docs](https://docs.pytest.org/en/stable/))
+- **`requests`** (tool for making HTTP requests [docs](https://docs.python-requests.org/en/master/))
+- **`playwright`** (tool for automating web applications [docs](https://playwright.dev/python/docs/intro))
+- **`gen3sdk-python`** (SDK for handling common Gen3 tasks [docs](https://github.com/uc-cdis/gen3sdk-python))
+- **`xdist`** (parallel test execution [docs](https://pytest-xdist.readthedocs.io/en/stable/))
+- **`allure`** (tool for visualizing test results [docs](https://allurereport.org/docs/pytest/))
+
+# Running tests
 
 ## Setup
 
-### Identify GEN3_INSTANCE_TYPE
-The integration tests can be run on Gen3 instances hosted using cloud-automation or helm. Since the mechanisms for running admin tasks varies for both, we must specify this for executing tests correctly. The following values are accepted:
-- ADMINVM_REMOTE (for instances hosted on a remote admin VM using cloud-automation)
-- HELM_LOCAL (for instances hosted locally using helm)
+### Set up prerequisites
 
-### Test user credentials
-The code supports running different steps as different users. Please see pytest_configure method in conftest.py for details.
+#### Checkout and switch directory
+Checkout this repo and switch to `gen3-integration-tests` directory. This is the root directory for integration tests.
 
-The test users required to run the tests are listed [here](test_data/test_setup/users.csv)
+#### Create `~/.gen3` directory
+The integration tests look for API keys in this location. Make sure you created this directory.
 
-You can use the following jenkins job to generate the api_keys (the keys are saved as build artifacts):
-- For CI and test environments use [jenkins1-job](https://jenkins.planx-pla.net/view/CI%20Jobs/job/generate-api-keys/)
-- For dev environments use [jenkins2-job](https://jenkins2.planx-pla.net/job/generate-api-keys/)
+#### Create `.env` file
+Switch to `gen3-integration-tests` directory and create a `.env` file. The code is designed to fetch environment variables set in this file.
 
-### Running gen3 admin tasks
-We use jenkins for running tasks like metadata-aggregate-sync, etl etc.
-Create a .env file under `gen3-code-vigil/gen3-integration-tests` with the values:
+#### Create output and install dependencies
+*The output directory is used to store the markdown report that is also generated along with the allure report.*
 
-```
-JENKINS_URL="https://jenkins.planx-pla.net"
-JENKINS_USERNAME=PlanXCyborg
-JENKINS_PASSWORD=<Jenkins API Token>
-CI_TEST_ORCID_USERID=<ORCID Username>
-CI_TEST_ORCID_PASSWORD=<ORCID Password>
-CI_TEST_RAS_USERID=<RAS Username>
-CI_TEST_RAS_PASSWORD=<RAS Password>
-CI_TEST_RAS_2_USERID=<RAS Username>
-CI_TEST_RAS_2_PASSWORD=<RAS Password>
-```
-The Jenkins API token, ORCID creds and RAS creds can be obtained from Keeper.
-
-## Running tests
 Switch to `gen3-code-vigil/gen3-integration-tests` and run the commands:
 ```
 mkdir output
 poetry install
 ```
-Then (please note that these are example values, please replace with the right ones):
-```
-GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --alluredir allure-results -n auto --dist loadscope
-```
-The kubernetes namespace is required for Gen3 admin tasks. It is assumed to be the first part of the hostname (`jenkins-brain` in the example above).
-If it is different it must be explicitly defined, like
-```
-GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" HOSTNAME="jenkins-brain.planx-pla.net" NAMESPACE="something_else" poetry run pytest --alluredir allure-results -n auto --dist loadscope
-```
 
-We use [allure-pytest](https://pypi.org/project/allure-pytest/). The report can be viewed by running `allure serve allure-results`
+### Set environment variable GEN3_INSTANCE_TYPE
+Gen3 instances can be run on an admin VM using [cloud-automation](https://github.com/uc-cdis/cloud-automation) or using [helm](https://github.com/uc-cdis/gen3-helm), and the mechanisms for running admin tasks vary based on the instance type.
 
-We can set TESTED_ENV to the enviroment being actually tested. This is useful when we replicate the configuration of the tested environment in the dev / test environment for testing or development. We can then run the tests by executing
-```
-GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" TESTED_ENV="healdata.org" HOSTNAME="jenkins-brain.planx-pla.net" poetry run pytest --html=output/report.html --self-contained-html -n auto --dist loadscope
-```
+Since some integration tests run admin tasks, we must set this variable for executing tests correctly in the `.env` file. The following values are accepted:
+- ADMINVM_REMOTE (for instances hosted on a remote admin VM using cloud-automation)
+- HELM_LOCAL (for instances hosted locally using helm)
 
-`-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). We run test classes / suties in parallel using the `--dist loadscope`. To use this feature it is imperative that the test suites are designed to be independent and idempotent.
+### Set up test users
+The code supports running test steps as different users. This [code](conftest.py#L103-L116) can provide insights into the set up process.
 
-Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`. Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/markers.html)
+The test users required to run the tests are listed [here](test_data/test_setup/users.csv).
 
-# Running tests in continuous integration pipeline
-All the code pertaining to using the repo in CI is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`. Jenkins is used for setting up the test environments and interacting with them.
-- `jenkins-jobs` directory contains the groovy scripts used by the jenkins jobs.
-- `scripts` directory contains python scripts used in the github actions workflow.
+The API keys for these users must be saved to `~/.gen3` directory before running tests. Please find the instructions for each GEN3_INSTANCE_TYPE [here](docs/howto/generate_api_keys_for_test_users/)
 
-# Designing tests
+### Set up test user permissions
+User permissions required for the tests to pass are documented [here](test_data/test_setup/user.yaml). The tests attempt to run usersync before starting, so if usersync is correctly set up with this configuration there is nothing more to do. If that is not the case please make sure to run usersync or useryaml with this configuration before running the tests.
 
-## Design principles (not optional)
+### Set up test data
+#### Guppy
+We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use one of the setup scripts located [here](test_data/test_setup/guppy_es) depending on the type of Gen3 instance being tested.
+
+## Run tests and review results
+Read these [docs](docs/howto/run_tests/) for specific information on how to run tests for each GEN3_INSTANCE_TYPE.
+
+The report can be viewed by running `allure serve allure-results`
+
+`-n auto` comes from [python-xdist](https://pypi.org/project/pytest-xdist/). `auto` distributes tests across all available CPUs. We can set to to a smaller value to use only some of the cores.
+
+Test classes / suites run in parallel using the `--dist loadscope`. We implemented custom scheduling for grouping tests across test suites which is explained [here](docs/reference/custom_scheduling.md)
+
+Markers and `-m` flag can be used to specify what tests should or should not run. For example, `-m wip` selects only tests with marker `wip` and `-m not wip` skips tests with marker `wip`.
+
+`-k` flag can be used to run specific test suites (test suite name is the class name), e.g.
+- `-k TestHomePage` runs only the test_homepage.py
+- `-k "TestHomePage or TestETL"` runs test_homepage.py
+
+Read more about marking tests [here](https://docs.pytest.org/en/7.1.x/example/markers.html)
+
+# Writing tests
+
+## Design principles
 - The test suites must be independent and idempotent. This is essential since we run test classes in parallel by using xdist (loadscope).
 - All tests should be able to run anywhere (locally / CI) without changing test code.
 - Debugging must be done locally, not in CI pipeline.
 - Documentation is essential. Code is incomplete without it.
 - Avoid hard waits. Test should wait for application state, not otherwise.
-- Tag tests appropriately.
+- Tag tests appropriately using markers. Ensure that the markers are added [here](./pyproject.toml#44)
 - Add test steps as docstrings in the test for understanding the purpose of the test easily.
 - Mark in-progress tests with marker `wip` to prevent CI pipeline from breaking when incomplete test code is pushed to repo.
+- Ensure that privileged information is not logged since the tests run in Github Actions and the logs are public.
 
-## Code organization
-Test code is organized into 4 directories:  `services`, `tests`, `test-data` and `utils`.
-- `pages` contains endpoints, locators and methods specific to each page in the portal. There is a separate module for each page.
-- `scripts` contains standalone helper scripts to assist in setting up the environment.
-- `services` contains the endpoints and methods specific to each service. There is a separate module for each service.
-- `test_data` contains the test data.
-- `tests` contains the tests written in pytest. Tests are further separated into api tests and gui tests.
-- `utils` contains utility and helper functions.
+## Code structure
+The test code is organized into several directories for ease of maintenance:
+
+- **`tests`**: Contains tests written in pytest
+- **`test_data`**: Contains test data needed for integration tests.
+- **`pages`**: Contains endpoint definitions, locators, and methods specific to each page in the portal, with a separate module for each page.
+- **`services`**: Contains endpoints and methods specific to each service, with a separate module for each service.
+- **`utils`**: Provides utility and helper functions used across tests.
+- **`scripts`**: Includes standalone helper scripts used for setting up the test environment.
+
+[conftest.py](./conftest.py) controls the test flow.
+
+The integration tests perform Gen3 operations and admin tasks, e.g., etl, metadata-aggregate-sync as part of the test flow. The code for handling these is at [utils/gen3_admin_tasks](utils/gen3_admin_tasks.py). Read this [doc](docs/howto/run_admin_tasks/) for more information.
+
+Code used for running integration tests in CI at CTDS is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`. Jenkins is used for setting up the test environments and interacting with them.
+- **`jenkins-jobs`** directory contains the groovy scripts used by the jenkins jobs that perform Gen3 admin tasks.
+- **`scripts`** directory contains python scripts used in the github actions workflow.
+
+Tests are organized into test suites using classes as explained [here](https://docs.pytest.org/en/stable/getting-started.html#group-multiple-tests-in-a-class).

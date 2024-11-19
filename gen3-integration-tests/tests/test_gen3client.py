@@ -1,15 +1,14 @@
-import os
-import pytest
-import subprocess
 import datetime
+import os
 import re
 import shutil
+import subprocess
 import time
-
 from pathlib import Path
-from services.indexd import Indexd
-import utils.gen3_client_install as gc
 
+import pytest
+import utils.gen3_client_install as gc
+from services.indexd import Indexd
 from utils import logger
 
 

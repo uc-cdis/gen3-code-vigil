@@ -1,11 +1,11 @@
 import time
 
-from utils import logger
-from playwright.sync_api import Page
-
+import pytest
 from pages.login import LoginPage
 from pages.study_viewer import StudyViewerPage
+from playwright.sync_api import Page
 from services.requestor import Requestor
+from utils import logger
 from utils.test_execution import screenshot
 
 
@@ -14,7 +14,7 @@ class TestStudyViewer(object):
 
     def setup_class(cls):
         cls.variables["request_ids"] = []
-        cls.variables["username"] = "dcf-integration-test-0@planx-pla.net"
+        cls.variables["username"] = pytest.users["user0_account"]
         cls.variables["policy"] = "programs.jnkns.projects.jenkins_accessor"
 
     def teardown_class(cls):

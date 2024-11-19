@@ -13,7 +13,6 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-allure-pytest = "^2.13.2"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.1"}
 filelock = "<4"
@@ -31,6 +30,7 @@ pypfb = "^0.5.29"
 fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
+allure-pytest = "^2.13.5"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
@@ -64,10 +64,12 @@ markers = [
   # features
   "agg_mds: tests for aggregate metadata service",
   "client_credentials: tests for fence client credentials",
+  "data_upload: tests for data upload",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",
   "pfb: tests for pfb file handling",
   "workspace: tests for workspace page",
+  "sanity: tests for performing sanity check",
   "study_registration: tests for study registration service"
 ]
 pythonpath = "."

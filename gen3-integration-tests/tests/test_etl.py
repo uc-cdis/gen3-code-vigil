@@ -1,10 +1,9 @@
-import pytest
 import os
 
+import pytest
 import utils.gen3_admin_tasks as gat
-from services.graph import GraphDataTools
-
 from gen3.auth import Gen3Auth
+from services.graph import GraphDataTools
 from utils import logger
 
 

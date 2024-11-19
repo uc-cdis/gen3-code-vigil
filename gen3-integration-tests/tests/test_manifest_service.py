@@ -1,8 +1,7 @@
 import os
+
 import pytest
-
 from services.manifestservice import ManifestService
-
 from utils import logger
 
 
