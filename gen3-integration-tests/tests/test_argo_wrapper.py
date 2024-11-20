@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 from pages.gwas import GWASPage
 from pages.login import LoginPage
@@ -7,6 +8,7 @@ from utils.test_execution import screenshot
 
 
 @pytest.mark.argo_wrapper
+@pytest.mark.wip
 class TestArgoWrapper(object):
     login_page = LoginPage()
     gwas_page = GWASPage()
@@ -26,6 +28,7 @@ class TestArgoWrapper(object):
         self.gwas_page.goto_analysis_page(page)
         self.gwas_page.select_team_project(page, project_name="project1")
         self.gwas_page.goto_gwas_ui_app_page(page)
+        workflow_submitted, workflow_limit = self.gwas_page.get_workflow_limits(page)
         self.gwas_page.select_cohort(page)
         self.gwas_page.attrition_table(page)
         self.gwas_page.click_next_button(page)
@@ -52,6 +55,9 @@ class TestArgoWrapper(object):
         # Submit the workflow
         job_name, job_id = self.gwas_page.submit_workflow(page)
         self.submitted_jobs[job_name] = job_id
+        self.gwas_page.validate_workflow_limits_after_workflow_submission(
+            page, workflow_submitted, workflow_limit
+        )
         self.gwas_page.verify_job_submission(page)
 
     def test_submit_workflow_2(self, page):
@@ -68,6 +74,7 @@ class TestArgoWrapper(object):
         self.gwas_page.goto_analysis_page(page)
         self.gwas_page.select_team_project(page, project_name="project1")
         self.gwas_page.goto_gwas_ui_app_page(page)
+        workflow_submitted, workflow_limit = self.gwas_page.get_workflow_limits(page)
         self.gwas_page.select_cohort(page)
         self.gwas_page.attrition_table(page)
         self.gwas_page.click_next_button(page)
@@ -93,6 +100,9 @@ class TestArgoWrapper(object):
         # Submit the workflow
         job_name, job_id = self.gwas_page.submit_workflow(page)
         self.submitted_jobs[job_name] = job_id
+        self.gwas_page.validate_workflow_limits_after_workflow_submission(
+            page, workflow_submitted, workflow_limit
+        )
         self.gwas_page.verify_job_submission(page)
 
     def test_submit_workflow_3(self, page):
@@ -109,6 +119,7 @@ class TestArgoWrapper(object):
         self.gwas_page.goto_analysis_page(page)
         self.gwas_page.select_team_project(page, project_name="project1")
         self.gwas_page.goto_gwas_ui_app_page(page)
+        workflow_submitted, workflow_limit = self.gwas_page.get_workflow_limits(page)
         self.gwas_page.select_cohort(page)
         self.gwas_page.attrition_table(page)
         self.gwas_page.click_next_button(page)
@@ -134,6 +145,9 @@ class TestArgoWrapper(object):
         # Submit the workflow
         job_name, job_id = self.gwas_page.submit_workflow(page)
         self.submitted_jobs[job_name] = job_id
+        self.gwas_page.validate_workflow_limits_after_workflow_submission(
+            page, workflow_submitted, workflow_limit
+        )
         self.gwas_page.verify_job_submission(page)
 
     def test_submit_workflow_4(self, page):
@@ -150,6 +164,7 @@ class TestArgoWrapper(object):
         self.gwas_page.goto_analysis_page(page)
         self.gwas_page.select_team_project(page, project_name="project1")
         self.gwas_page.goto_gwas_ui_app_page(page)
+        workflow_submitted, workflow_limit = self.gwas_page.get_workflow_limits(page)
         self.gwas_page.select_cohort(page)
         self.gwas_page.attrition_table(page)
         self.gwas_page.click_next_button(page)
@@ -174,6 +189,9 @@ class TestArgoWrapper(object):
         # Submit the workflow
         job_name, job_id = self.gwas_page.submit_workflow(page)
         self.submitted_jobs[job_name] = job_id
+        self.gwas_page.validate_workflow_limits_after_workflow_submission(
+            page, workflow_submitted, workflow_limit
+        )
         self.gwas_page.verify_job_submission(page)
 
     def test_gwas_result_app(self, page):
@@ -182,16 +200,14 @@ class TestArgoWrapper(object):
         Steps:
             1.
         """
-        # Login with main_account
-        self.login_page.go_to(page)
-        self.gwas_page.login(page, user="main_account")
-
-        # Perform operations on GWAS Page
-        self.gwas_page.goto_analysis_page(page)
-        self.gwas_page.select_team_project(page, project_name="project1")
-        self.gwas_page.goto_result_page(page)
+        workflows_data = self.gwas_page.get_all_workflows(project="project1")
+        df = pd.DataFrame(workflows_data)
         for job_name, job_id in self.submitted_jobs.items():
-            self.gwas_page.check_job_result(page, job_name, job_id)
+            workflow_df = df[df["wf_name"] == job_name]
+            uid_value = workflow_df["uid"].iloc[0]
+            assert self.gwas_page.check_job_result(
+                uid_value, job_id
+            ), f"Workflow {job_id} failed/errored"
 
     def test_next_previous_buttons_gwas_page(self, page):
         """
@@ -249,8 +265,51 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="dummy_one")
+        self.gwas_page.login(page, user="smarty_two")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
         self.gwas_page.unauthorized_user_select_team_project(page)
+
+    def test_workflow_submission_after_workflow_limit_reached(self, page):
+        """
+        Scenario: Workflow submission is disabled once monthly workflow limit is reached
+        Steps:
+            1.
+        """
+        # Login with main_account
+        self.login_page.go_to(page)
+        self.gwas_page.login(page, user="indexing_account")
+
+        # Perform operations on GWAS Page
+        self.gwas_page.goto_analysis_page(page)
+        self.gwas_page.select_team_project(page, project_name="project1")
+        self.gwas_page.goto_gwas_ui_app_page(page)
+        workflow_submitted, workflow_limit = self.gwas_page.get_workflow_limits(page)
+        logger.info(f"Number of Workflows submitted: {workflow_submitted}")
+        logger.info(f"Monthly Workflows limit: {workflow_limit}")
+        self.gwas_page.select_cohort(page)
+        self.gwas_page.attrition_table(page)
+        self.gwas_page.click_next_button(page)
+
+        # Selecting Continuous Phenotype
+        self.gwas_page.select_continuous_phenotype(page)
+        self.gwas_page.select_continuous_phenotype_concept(page)
+        self.gwas_page.click_submit_button(page)
+
+        # Select Continuous Covariate
+        self.gwas_page.select_continuous_covariate(page)
+        self.gwas_page.select_first_concept(page)
+        self.gwas_page.click_add_button(page)
+        self.gwas_page.select_continuous_covariate(page)
+        self.gwas_page.select_second_concept(page)
+        self.gwas_page.click_add_button(page)
+        screenshot(page, "Continuous-ContinuousCovariate")
+        self.gwas_page.click_next_button(page)
+
+        # Selecting Ancestry
+        self.gwas_page.select_ancestry(page)
+        self.gwas_page.click_next_button(page)
+
+        # Submit the workflow
+        self.gwas_page.submit_workflow_after_monthly_limit_reached(page)

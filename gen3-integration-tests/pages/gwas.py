@@ -2,9 +2,9 @@ import time
 from datetime import datetime
 
 import pytest
+from gen3.auth import Gen3Auth
 from playwright.sync_api import Page, expect
 from utils import logger
-from utils.gen3_admin_tasks import get_portal_config
 from utils.test_execution import screenshot
 
 
@@ -15,6 +15,8 @@ class GWASPage(object):
         self.ANALYSIS_ENDPOINT = f"{self.BASE_URL}/analysis"
         self.GWAS_UI_APP_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASUIApp"
         self.GWAS_RESULTS_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASResults"
+        self.GWAS_WORKFLOW_API_ENDPOINT = "/ga4gh/wes/v2/workflows"
+        self.GWAS_WORKFLOW_STATUS_API_ENDPOINT = "/ga4gh/wes/v2/status"
         # Locators
         self.ACCEPT_PRE_LOGIN_BUTTON = "//button[normalize-space()='Accept']"
         self.LOGIN_BUTTON = "//button[contains(text(), 'Google')]"
@@ -82,6 +84,10 @@ class GWASPage(object):
         self.CONTINUOUS_COVARIATE_CONCEPT_ID2 = "2000006001"  # weight-2000006001
         self.GWAS_JOB_ID_MESSAGE = "//*[contains(text(),'GWAS job id')]"
         self.UNAUTHORIZED_PROJECT_USER_ACCESS_MSG = "//*[contains(text(), 'Please reach out to') and contains(., 'to gain access to the system')]"
+        self.WORKFLOW_LIMIT_MSG = "//div[@data-testid='workflow-limits-message']"
+        self.WORKFLOW_LIMIT_REACHED_MSG = (
+            "//*[contains(text(), 'Workflow limit reached')]"
+        )
 
     def login(
         self,
@@ -338,16 +344,32 @@ class GWASPage(object):
         screenshot(page, "SubmissionDialogBox")
         logger.info(f"Job Name : {job_name}")
         self.click_submit_button(page)
-        time.sleep(10)
-        screenshot(page, "TestCheck")
         job_id_message_element = page.locator(self.GWAS_JOB_ID_MESSAGE)
         expect(job_id_message_element).to_be_visible(timeout=15000)
         job_id = job_id_message_element.text_content().split()[-1].replace('"', "")
         return job_name, job_id
 
+    def submit_workflow_after_monthly_limit_reached(self, page: Page):
+        logger.info("Submitting Job Name")
+        timestamp = datetime.now()
+        timestamp_string = timestamp.strftime("%Y%m%d-%H%M%S")
+        job_name = f"AutomationTest_{timestamp_string}"
+        submit_dialog_box = page.locator(self.SUBMIT_DIALOG_BOX)
+        expect(submit_dialog_box).to_be_visible(timeout=5000)
+        enter_job_name_field = page.locator(self.ENTER_JOB_NAME_FIELD)
+        enter_job_name_field.fill(job_name)
+        screenshot(page, "SubmissionDialogBox")
+        logger.info(f"Job Name : {job_name}")
+        workflow_limit_reached_msg = page.locator(self.WORKFLOW_LIMIT_REACHED_MSG)
+        expect(workflow_limit_reached_msg).to_be_visible(timeout=5000)
+        submit_button = page.locator(self.SUBMIT_BUTTON)
+        expect(submit_button).to_be_visible(timeout=5000)
+        expect(submit_button).to_be_disabled()
+
     def verify_job_submission(self, page: Page):
         submission_success_message = page.locator(self.SUBMISSION_SUCCESS_MESSAGE)
         expect(submission_success_message).to_be_visible(timeout=10000)
+        workflow_submitted, workflow_limit = self.get_workflow_limits(page)
         see_status_button = page.locator(self.SEE_STATUS_BUTTON)
         expect(see_status_button).to_be_visible(timeout=5000)
         see_status_button.click()
@@ -355,6 +377,9 @@ class GWASPage(object):
         expect(gwas_results_table).to_be_visible(timeout=15000)
         current_url = page.url
         assert "GWASResults" in current_url
+        self.validate_workflow_limits_with_results_page(
+            page, workflow_submitted, workflow_limit
+        )
         screenshot(page, "ResultsPage")
 
     def goto_result_page(self, page: Page):
@@ -363,5 +388,69 @@ class GWASPage(object):
         expect(gwas_results_table).to_be_visible(timeout=5000)
         screenshot(page, "GWASResultsPage")
 
-    def check_job_result(self, page: Page, job_name, job_id):
-        logger.info(f"Checking result for job: {job_name} with job_id {job_id}")
+    def get_workflow_limits(self, page: Page):
+        workflow_limit_msg = page.locator(self.WORKFLOW_LIMIT_MSG)
+        expect(workflow_limit_msg).to_be_visible(timeout=5000)
+        workflow_submitted = int(workflow_limit_msg.text_content().split()[0])
+        workflow_limit = int(workflow_limit_msg.text_content().split()[-2])
+        return workflow_submitted, workflow_limit
+
+    def validate_workflow_limits_after_workflow_submission(
+        self, page: Page, previous_workflow_submitted, previous_workflow_limit
+    ):
+        current_workflow_submitted, current_workflow_limit = self.get_workflow_limits(
+            page
+        )
+        logger.info(f"Previous Workflow Submitted: {previous_workflow_submitted}")
+        logger.info(f"Current Workflow Submitted: {current_workflow_submitted}")
+        assert (
+            current_workflow_submitted == previous_workflow_submitted + 1
+        ), f"Workflow count is not incremented. Current limit: {current_workflow_submitted} and previous limit: {previous_workflow_submitted}"
+        assert (
+            current_workflow_limit == previous_workflow_limit
+        ), f"Workflow count doesnot match. Current limit: {current_workflow_limit} and previous limit: {previous_workflow_limit}"
+
+    def validate_workflow_limits_with_results_page(
+        self, page: Page, workflow_submitted, workflow_limit
+    ):
+        results_page_workflow_submitted, results_page_workflow_limit = (
+            self.get_workflow_limits(page)
+        )
+        logger.info(
+            f"Results Page Workflow Submitted: {results_page_workflow_submitted}"
+        )
+        assert (
+            results_page_workflow_submitted == workflow_submitted
+        ), f"Workflow count doesnot match. Results page: {results_page_workflow_submitted} and current: {workflow_submitted}"
+        assert (
+            results_page_workflow_limit == workflow_limit
+        ), f"Workflow count doesnot match. Results page limit: {results_page_workflow_limit} and current limit: {workflow_limit}"
+
+    def get_all_workflows(self, project, user="main_account"):
+        logger.info(f"Getting all worflows for project: {project}")
+        url = (
+            f"{self.GWAS_WORKFLOW_API_ENDPOINT}?team_projects=/gwas_projects/{project}"
+        )
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(path=url)
+        return response.json()
+
+    def check_job_result(self, uid_value, job_id, user="main_account"):
+        logger.info(f"Checking result for job: {job_id}")
+        counter = 0
+        url = f"{self.GWAS_WORKFLOW_STATUS_API_ENDPOINT}/{job_id}?uid={uid_value}"
+        while counter < 20:
+            time.sleep(30)
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            response = auth.curl(path=url)
+            wf_status = response.json()["phase"]
+            if wf_status == "Succeeded":
+                logger.info(f"Workflow Passed. Last status: {wf_status}")
+                return True
+            elif wf_status in ["Failed", "Error"]:
+                logger.error(f"Workflow failed. Last status: {wf_status}")
+                return False
+        logger.error(
+            f"Waited for 10mins but the Worflow neither Passed or Failed. Last status: {wf_status}"
+        )
+        return False
