@@ -1,12 +1,11 @@
-import pytest
 import time
-
-from utils import logger
-from playwright.sync_api import Page, expect
-
-from utils.test_execution import screenshot
-from utils.gen3_admin_tasks import get_portal_config
 from datetime import datetime
+
+import pytest
+from playwright.sync_api import Page, expect
+from utils import logger
+from utils.gen3_admin_tasks import get_portal_config
+from utils.test_execution import screenshot
 
 
 class GWASPage(object):
@@ -22,8 +21,9 @@ class GWASPage(object):
         self.PROJECT_SELECTOR_BOX = (
             "//*[contains(@class, 'team-project-header_modal-button')]"
         )
-        self.PROJECT_SELECTOR_DROPDOWN = "//span[@class='ant-select-selection-item']"
-        self.PROJECT_SEARCH_DROPDOWN = "//span[@class='ant-select-selection-search']"
+        self.PROJECT_SEARCH_DROPDOWN = (
+            "//*[contains(@aria-labelledby, 'team-select-label')]"
+        )
         self.PROJECT_SUBMISSION = "//span[normalize-space()='Submit']"
         self.COHORT_TABLE = "//*[contains(@class, 'GWASUI-mainTable')]"
         self.ADD_NEW_COHORT_BUTTON = "//button[normalize-space()='Add New Cohort']"
@@ -80,6 +80,8 @@ class GWASPage(object):
         self.CONTINUOUS_CONCEPT_ID = "2100007053"  # test new cohort - catch all
         self.CONTINUOUS_COVARIATE_CONCEPT_ID1 = "2000006000"  # height-2000006000
         self.CONTINUOUS_COVARIATE_CONCEPT_ID2 = "2000006001"  # weight-2000006001
+        self.GWAS_JOB_ID_MESSAGE = "//*[contains(text(),'GWAS job id')]"
+        self.UNAUTHORIZED_PROJECT_USER_ACCESS_MSG = "//*[contains(text(), 'Please reach out to') and contains(., 'to gain access to the system')]"
 
     def login(
         self,
@@ -135,43 +137,28 @@ class GWASPage(object):
 
     def select_team_project(self, page: Page, project_name):
         project_selector_box = page.locator(self.PROJECT_SELECTOR_BOX)
-        expect(project_selector_box).to_be_visible(timeout=5000)
+        expect(project_selector_box).to_be_visible(timeout=15000)
         project_search_dropdown = page.locator(self.PROJECT_SEARCH_DROPDOWN)
         if project_search_dropdown.is_visible():
-            logger.info("Selector box not present")
-            project_search_dropdown.click()
+            logger.info("Project selector window is already present")
             self.select_project(page, project_name)
             return
         logger.info("Clicking on Project selector box")
         project_selector_box.click()
         logger.info("Clicking on Project selector dropdown")
-        project_selector_dropdown = page.locator(self.PROJECT_SELECTOR_DROPDOWN)
-        project_selector_dropdown.click()
         self.select_project(page, project_name)
 
     def select_project(self, page, project_name):
         logger.info("Clicking on the project")
-        self.PROJECT_NAME = f"//div[@title='/gwas_projects/{project_name}']"
-        project_name_locator = page.locator(self.PROJECT_NAME)
-        expect(project_name_locator).to_be_visible(timeout=5000)
-        project_name_locator.click()
+        page.select_option("select#team-select", value=f"/gwas_projects/{project_name}")
         page.locator(self.PROJECT_SUBMISSION).click()
         screenshot(page, "AfterSelectingProject")
 
-    def unauthorized_user_select_team_project(self, page: Page, project_name):
-        logger.info("Clicking on Project selector box")
-        project_selector_box = page.locator(self.PROJECT_SELECTOR_BOX)
+    def unauthorized_user_select_team_project(self, page: Page):
+        logger.info("Verifying Msg box for unauthorized project access is displayed")
+        project_selector_box = page.locator(self.UNAUTHORIZED_PROJECT_USER_ACCESS_MSG)
         expect(project_selector_box).to_be_visible(timeout=5000)
-        project_selector_box.click()
-        logger.info("Clicking on Project selector dropdown")
-        project_selector_dropdown = page.locator(self.PROJECT_SELECTOR_DROPDOWN)
-        expect(project_selector_dropdown).to_be_visible(timeout=5000)
-        project_selector_dropdown.click()
-        # Expecting project name to not be present
-        self.PROJECT_NAME = f"//div[@title='/gwas_projects/{project_name}']"
-        project_name_locator = page.locator(self.PROJECT_NAME)
-        expect(project_name_locator).not_to_be_visible(timeout=5000)
-        screenshot(page, "UnauthorizedUserDropdownBox")
+        screenshot(page, "UnauthorizedProjectUserAccessMsg")
 
     def select_cohort(self, page: Page):
         logger.info("Selecting Cohort from Cohort table")
@@ -195,8 +182,6 @@ class GWASPage(object):
         expect(active_attrition_table).to_be_visible(timeout=5000)
 
     def click_next_button(self, page: Page):
-        time.sleep(10)
-        screenshot(page, "TestCheck")
         logger.info("Clicking on Next Button")
         next_button = page.locator(self.NEXT_BUTTON)
         expect(next_button).to_be_visible(timeout=5000)
@@ -341,8 +326,8 @@ class GWASPage(object):
         expect(ancestry_title).to_be_visible(timeout=5000)
         ancestry_title.click()
 
-    def enter_job_name(self, page: Page):
-        logger.info("Entering Job Name")
+    def submit_workflow(self, page: Page):
+        logger.info("Submitting Job Name")
         timestamp = datetime.now()
         timestamp_string = timestamp.strftime("%Y%m%d-%H%M%S")
         job_name = f"AutomationTest_{timestamp_string}"
@@ -352,7 +337,13 @@ class GWASPage(object):
         enter_job_name_field.fill(job_name)
         screenshot(page, "SubmissionDialogBox")
         logger.info(f"Job Name : {job_name}")
-        return job_name
+        self.click_submit_button(page)
+        time.sleep(10)
+        screenshot(page, "TestCheck")
+        job_id_message_element = page.locator(self.GWAS_JOB_ID_MESSAGE)
+        expect(job_id_message_element).to_be_visible(timeout=15000)
+        job_id = job_id_message_element.text_content().split()[-1].replace('"', "")
+        return job_name, job_id
 
     def verify_job_submission(self, page: Page):
         submission_success_message = page.locator(self.SUBMISSION_SUCCESS_MESSAGE)
@@ -361,7 +352,7 @@ class GWASPage(object):
         expect(see_status_button).to_be_visible(timeout=5000)
         see_status_button.click()
         gwas_results_table = page.locator(self.GWAS_RESULTS_TABLE)
-        expect(gwas_results_table).to_be_visible(timeout=5000)
+        expect(gwas_results_table).to_be_visible(timeout=15000)
         current_url = page.url
         assert "GWASResults" in current_url
         screenshot(page, "ResultsPage")
@@ -372,5 +363,5 @@ class GWASPage(object):
         expect(gwas_results_table).to_be_visible(timeout=5000)
         screenshot(page, "GWASResultsPage")
 
-    def check_job_result(self, page: Page, job_name):
-        logger.info(f"Checking result for job: {job_name}")
+    def check_job_result(self, page: Page, job_name, job_id):
+        logger.info(f"Checking result for job: {job_name} with job_id {job_id}")

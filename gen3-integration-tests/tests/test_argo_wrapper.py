@@ -1,20 +1,18 @@
 import pytest
-
-from utils import logger
-
-from pages.login import LoginPage
 from pages.gwas import GWASPage
-from utils.test_execution import screenshot
+from pages.login import LoginPage
 from playwright.sync_api import expect
+from utils import logger
+from utils.test_execution import screenshot
 
 
 @pytest.mark.argo_wrapper
 class TestArgoWrapper(object):
     login_page = LoginPage()
     gwas_page = GWASPage()
-    submitted_jobs = []
+    submitted_jobs = {}  # key: job_name, value: job_id
 
-    '''def test_submit_workflow_1(self, page):
+    def test_submit_workflow_1(self, page):
         """
         Scenario: Submit workflow Continuous Outcome - Continuous Covariate Phenotype
         Steps:
@@ -52,9 +50,8 @@ class TestArgoWrapper(object):
         self.gwas_page.click_next_button(page)
 
         # Submit the workflow
-        job_name = self.gwas_page.enter_job_name(page)
-        self.submitted_jobs.append(job_name)
-        self.gwas_page.click_submit_button(page)
+        job_name, job_id = self.gwas_page.submit_workflow(page)
+        self.submitted_jobs[job_name] = job_id
         self.gwas_page.verify_job_submission(page)
 
     def test_submit_workflow_2(self, page):
@@ -94,9 +91,8 @@ class TestArgoWrapper(object):
         self.gwas_page.click_next_button(page)
 
         # Submit the workflow
-        job_name = self.gwas_page.enter_job_name(page)
-        self.submitted_jobs.append(job_name)
-        self.gwas_page.click_submit_button(page)
+        job_name, job_id = self.gwas_page.submit_workflow(page)
+        self.submitted_jobs[job_name] = job_id
         self.gwas_page.verify_job_submission(page)
 
     def test_submit_workflow_3(self, page):
@@ -136,9 +132,8 @@ class TestArgoWrapper(object):
         self.gwas_page.click_next_button(page)
 
         # Submit the workflow
-        job_name = self.gwas_page.enter_job_name(page)
-        self.submitted_jobs.append(job_name)
-        self.gwas_page.click_submit_button(page)
+        job_name, job_id = self.gwas_page.submit_workflow(page)
+        self.submitted_jobs[job_name] = job_id
         self.gwas_page.verify_job_submission(page)
 
     def test_submit_workflow_4(self, page):
@@ -177,9 +172,8 @@ class TestArgoWrapper(object):
         self.gwas_page.click_next_button(page)
 
         # Submit the workflow
-        job_name = self.gwas_page.enter_job_name(page)
-        self.submitted_jobs.append(job_name)
-        self.gwas_page.click_submit_button(page)
+        job_name, job_id = self.gwas_page.submit_workflow(page)
+        self.submitted_jobs[job_name] = job_id
         self.gwas_page.verify_job_submission(page)
 
     def test_gwas_result_app(self, page):
@@ -196,8 +190,8 @@ class TestArgoWrapper(object):
         self.gwas_page.goto_analysis_page(page)
         self.gwas_page.select_team_project(page, project_name="project1")
         self.gwas_page.goto_result_page(page)
-        for job_name in self.submitted_jobs:
-            self.gwas_page.check_job_result(page, job_name)
+        for job_name, job_id in self.submitted_jobs.items():
+            self.gwas_page.check_job_result(page, job_name, job_id)
 
     def test_next_previous_buttons_gwas_page(self, page):
         """
@@ -245,7 +239,7 @@ class TestArgoWrapper(object):
         self.gwas_page.click_next_button(page)
         submit_dialog_box = page.locator(self.gwas_page.SUBMIT_DIALOG_BOX)
         expect(submit_dialog_box).to_be_visible(timeout=5000)
-        screenshot(page, "SubmitDialogBox")'''
+        screenshot(page, "SubmitDialogBox")
 
     def test_unauthorized_access_to_gwas(self, page):
         """
@@ -259,6 +253,4 @@ class TestArgoWrapper(object):
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
-        self.gwas_page.unauthorized_user_select_team_project(
-            page, project_name="project1"
-        )
+        self.gwas_page.unauthorized_user_select_team_project(page)
