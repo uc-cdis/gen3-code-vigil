@@ -18,7 +18,11 @@ class TestArgoWrapper(object):
         """
         Scenario: Submit workflow Continuous Outcome - Continuous Covariate Phenotype
         Steps:
-            1.
+            1. Login with main_account user (user has access to gwas projects)
+            2. Check the monthly workflow limits of the user
+            3. Submit a Continuous Outcome - Continuous Covariate Phenotype workflows
+            4. Verify the workflow is submitted successfully and monthly workflow limit is increased by 1
+            5. Also verify the monthly workflow limits are same on GWAS results page
         """
         # Login with main_account
         self.login_page.go_to(page)
@@ -64,7 +68,11 @@ class TestArgoWrapper(object):
         """
         Scenario: Submit workflow Continuous Outcome - Dichotomous Covariate Phenotype
         Steps:
-            1.
+            1. Login with main_account user (user has access to gwas projects)
+            2. Check the monthly workflow limits of the user
+            3. Submit a Continuous Outcome - Dichotomous Covariate Phenotype workflows
+            4. Verify the workflow is submitted successfully and monthly workflow limit is increased by 1
+            5. Also verify the monthly workflow limits are same on GWAS results page
         """
         # Login with main_account
         self.login_page.go_to(page)
@@ -109,7 +117,11 @@ class TestArgoWrapper(object):
         """
         Scenario: Submit workflow Dichotomous Outcome - Continuous Covariate Phenotype
         Steps:
-            1.
+            1. Login with main_account user (user has access to gwas projects)
+            2. Check the monthly workflow limits of the user
+            3. Submit a Dichotomous Outcome - Continuous Covariate Phenotype workflows
+            4. Verify the workflow is submitted successfully and monthly workflow limit is increased by 1
+            5. Also verify the monthly workflow limits are same on GWAS results page
         """
         # Login with main_account
         self.login_page.go_to(page)
@@ -154,7 +166,11 @@ class TestArgoWrapper(object):
         """
         Scenario: Submit workflow Dichotomous Outcome - Dichotomous Covariate Phenotype
         Steps:
-            1.
+            1. Login with main_account user (user has access to gwas projects)
+            2. Check the monthly workflow limits of the user
+            3. Submit a Dichotomous Outcome - Dichotomous Covariate Phenotype workflows
+            4. Verify the workflow is submitted successfully and monthly workflow limit is increased by 1
+            5. Also verify the monthly workflow limits are same on GWAS results page
         """
         # Login with main_account
         self.login_page.go_to(page)
@@ -198,7 +214,8 @@ class TestArgoWrapper(object):
         """
         Scenario: GWAS Result App
         Steps:
-            1.
+            1. For all the workflows submitted, get the status of workflows
+            2. Verify the workflows are in "succeeded" state (Waits upto 10mins for checking workflow status)
         """
         workflows_data = self.gwas_page.get_all_workflows(project="project1")
         df = pd.DataFrame(workflows_data)
@@ -213,7 +230,9 @@ class TestArgoWrapper(object):
         """
         Scenario: Test next and previous buttons GWAS page
         Steps:
-            1.
+            1. Login with main_account user (user has access to gwas projects)
+            2. Perform steps to submit a workflow, but don't actuall submit it on the last step
+            3. Navigate back and forth between workflow submission steps using Previous and Next buttons
         """
         # Login with main_account
         self.login_page.go_to(page)
@@ -261,7 +280,8 @@ class TestArgoWrapper(object):
         """
         Scenario: Unauthorized access to GWAS
         Steps:
-            1.
+            1. Login with smarty_two user (user has access to gwas but not gwas projects)
+            2. Goto Analysis page and verify a pop up is displayed stating user doesn't have access
         """
         # Login with main_account
         self.login_page.go_to(page)
@@ -275,7 +295,10 @@ class TestArgoWrapper(object):
         """
         Scenario: Workflow submission is disabled once monthly workflow limit is reached
         Steps:
-            1.
+            1. Login with indexing_account user (user has access to gwas projects and has reached its monthly workflow limit)
+            2. Submit a new workflow
+            3. On the last step of submitting the workflow, an error message should be displayed that user has already reached
+               the monthly workflow limit and the Submit button should be disabled.
         """
         # Login with main_account
         self.login_page.go_to(page)
