@@ -53,19 +53,13 @@ class Indexd(object):
         access_token=None,
     ):
         """Update indexd record"""
-        if access_token:
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"bearer {access_token}",
-            }
-        else:
+        if not access_token:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
             access_token = auth.get_access_token()
-            headers = {
-                "Accept": "application/json",
-                "Authorization": f"bearer {access_token}",
-                "Content-Type": "application/json",
-            }
+        headers = {
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
         update_res = requests.put(
             f"{self.BASE_URL}/{guid}?rev={rev}",
             json=data,
