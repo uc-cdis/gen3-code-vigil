@@ -1,9 +1,9 @@
+from uuid import uuid4
+
 import pytest
 import requests
-
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from uuid import uuid4
 from utils import logger
 
 
@@ -59,7 +59,13 @@ class Indexd(object):
                 "Authorization": f"bearer {access_token}",
             }
         else:
-            headers = pytest.auth_headers[user]
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            access_token = auth.get_access_token()
+            headers = {
+                "Accept": "application/json",
+                "Authorization": f"bearer {access_token}",
+                "Content-Type": "application/json",
+            }
         update_res = requests.put(
             f"{self.BASE_URL}/{guid}?rev={rev}",
             json=data,
@@ -78,7 +84,13 @@ class Indexd(object):
                 "Authorization": f"bearer {access_token}",
             }
         else:
-            headers = pytest.auth_headers[user]
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            access_token = auth.get_access_token()
+            headers = {
+                "Accept": "application/json",
+                "Authorization": f"bearer {access_token}",
+                "Content-Type": "application/json",
+            }
         delete_resp = requests.delete(
             f"{self.BASE_URL}/{guid}?rev={rev}", headers=headers
         )
