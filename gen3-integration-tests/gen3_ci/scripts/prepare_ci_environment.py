@@ -162,7 +162,7 @@ def prepare_ci_environment(namespace):
     repo = os.getenv("REPO")
     # if quay repo name is different from github repo name
     if os.getenv("QUAY_REPO"):
-        quay_repo = os.getenv("QUAY_REPO")
+        quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
         quay_repo = repo
     if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
