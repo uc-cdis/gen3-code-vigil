@@ -116,13 +116,7 @@ class Requestor(object):
     def get_request_status(self, request_id: str, user: str = "main_account"):
         """Gets the request_status for the user's request_id in requestor"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        access_token = auth.get_access_token()
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"bearer {access_token}",
-            "Content-Type": "application/json",
-        }
-        status_res = requests.get(f"{self.BASE_URL}/{request_id}", headers=headers)
+        status_res = auth.curl(path={request_id})
         status_data_json = status_res.json()
         req_status = status_data_json["status"]
 

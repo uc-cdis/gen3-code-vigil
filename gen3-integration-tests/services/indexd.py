@@ -72,19 +72,13 @@ class Indexd(object):
         self, guid: str, rev: str, user="indexing_account", access_token=None
     ):
         """Delete indexd record if upload is not happening through gen3-sdk"""
-        if access_token:
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"bearer {access_token}",
-            }
-        else:
+        if not access_token:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
             access_token = auth.get_access_token()
-            headers = {
-                "Accept": "application/json",
-                "Authorization": f"bearer {access_token}",
-                "Content-Type": "application/json",
-            }
+        headers = {
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
         delete_resp = requests.delete(
             f"{self.BASE_URL}/{guid}?rev={rev}", headers=headers
         )
