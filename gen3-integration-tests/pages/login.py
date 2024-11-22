@@ -41,7 +41,6 @@ class LoginPage(object):
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
-        self.GWAS_ACCEPT_PRE_LOGIN_BUTTON = "//button[normalize-space()='Accept']"
 
     def go_to(self, page: Page, url=None):
         """Goes to the login page"""
@@ -75,9 +74,7 @@ class LoginPage(object):
         # printing cookies if needed for debugging purposes
         cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
-        # Handles GWAS PRE Login POPUP
-        if page.locator(self.GWAS_ACCEPT_PRE_LOGIN_BUTTON).is_visible():
-            page.locator(self.GWAS_ACCEPT_PRE_LOGIN_BUTTON).click()
+        self.handle_popup(page)
         if idp == "ORCID":
             self.orcid_login(page)
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
@@ -194,7 +191,7 @@ class LoginPage(object):
 
     # function to handle pop ups after login
     def handle_popup(self, page: Page):
-        """Handling popups after login"""
+        """Handling UA popups during login"""
         popup_message = page.query_selector(self.POP_UP_BOX)
         if popup_message:
             logger.info("Popup message found")
