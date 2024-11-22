@@ -108,12 +108,8 @@ def pytest_configure(config):
 
     # Generate api key and auth headers
     pytest.api_keys = {}
-    pytest.auth_headers = {}
     for user in pytest.users:
-        (
-            pytest.api_keys[user],
-            pytest.auth_headers[user],
-        ) = setup.get_api_key_and_auth_header(user)
+        pytest.api_keys[user] = setup.get_api_key(user)
 
     # Prevent pytest-xdist from running this on each worker individually
     if not hasattr(config, "workerinput"):
