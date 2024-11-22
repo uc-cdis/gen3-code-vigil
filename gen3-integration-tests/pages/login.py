@@ -1,13 +1,12 @@
 # Login Page
 import os
-import pytest
 import time
 
-from utils import logger
+import pytest
 from playwright.sync_api import Page, expect
-
-from utils.test_execution import screenshot
+from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
+from utils.test_execution import screenshot
 
 
 class LoginPage(object):
@@ -42,6 +41,7 @@ class LoginPage(object):
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
+        self.GWAS_ACCEPT_PRE_LOGIN_BUTTON = "//button[normalize-space()='Accept']"
 
     def go_to(self, page: Page, url=None):
         """Goes to the login page"""
@@ -75,6 +75,9 @@ class LoginPage(object):
         # printing cookies if needed for debugging purposes
         cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
+        # Handles GWAS PRE Login POPUP
+        if page.locator(self.GWAS_ACCEPT_PRE_LOGIN_BUTTON).is_visible():
+            page.locator(self.GWAS_ACCEPT_PRE_LOGIN_BUTTON).click()
         if idp == "ORCID":
             self.orcid_login(page)
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
@@ -94,6 +97,7 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
+        screenshot(page, "AfterLogin")
         if validate_username_locator:
             res = get_portal_config()
             # Check if useProfileDropdown is set to True and click on dropdown for username to be visible

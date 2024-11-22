@@ -26,7 +26,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="main_account")
+        self.login_page.login(page, user="main_account")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
@@ -76,7 +76,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="main_account")
+        self.login_page.login(page, user="main_account")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
@@ -125,7 +125,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="main_account")
+        self.login_page.login(page, user="main_account")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
@@ -174,7 +174,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="main_account")
+        self.login_page.login(page, user="main_account")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
@@ -236,7 +236,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="main_account")
+        self.login_page.login(page, user="main_account")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
@@ -285,7 +285,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="smarty_two")
+        self.login_page.login(page, user="smarty_two")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)
@@ -302,7 +302,7 @@ class TestArgoWrapper(object):
         """
         # Login with main_account
         self.login_page.go_to(page)
-        self.gwas_page.login(page, user="indexing_account")
+        self.login_page.login(page, user="indexing_account")
 
         # Perform operations on GWAS Page
         self.gwas_page.goto_analysis_page(page)

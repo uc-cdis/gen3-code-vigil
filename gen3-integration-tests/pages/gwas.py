@@ -18,8 +18,6 @@ class GWASPage(object):
         self.GWAS_WORKFLOW_API_ENDPOINT = "/ga4gh/wes/v2/workflows"
         self.GWAS_WORKFLOW_STATUS_API_ENDPOINT = "/ga4gh/wes/v2/status"
         # Locators
-        self.ACCEPT_PRE_LOGIN_BUTTON = "//button[normalize-space()='Accept']"
-        self.LOGIN_BUTTON = "//button[contains(text(), 'Google')]"
         self.PROJECT_SELECTOR_BOX = (
             "//*[contains(@class, 'team-project-header_modal-button')]"
         )
@@ -88,50 +86,6 @@ class GWASPage(object):
         self.WORKFLOW_LIMIT_REACHED_MSG = (
             "//*[contains(text(), 'Workflow limit reached')]"
         )
-
-    def login(
-        self,
-        page: Page,
-        user,
-    ):
-        """
-        Sets up Dev Cookie for main Account and logs in with Google
-        Also checks if the access_token exists after login
-        """
-        page.context.add_cookies(
-            [
-                {
-                    "name": "dev_login",
-                    "value": pytest.users[user],
-                    "url": pytest.root_url_portal,
-                }
-            ]
-        )
-        expect(page.locator(self.LOGIN_BUTTON)).to_be_visible(timeout=10000)
-        page.locator(self.ACCEPT_PRE_LOGIN_BUTTON).click()
-        try:
-            button = page.locator(self.LOGIN_BUTTON)
-            if button.is_enabled(timeout=5000):
-                button.click()
-                logger.info(f"Clicked on login button : {self.LOGIN_BUTTON}")
-        except Exception:
-            logger.info(f"Login Button {self.LOGIN_BUTTON} not found or not enabled")
-        screenshot(page, "AfterClickingLoginButton")
-        expect(
-            page.locator(f'//div[contains(text(), "{pytest.users[user]}")]')
-        ).to_be_visible(timeout=10000)
-        screenshot(page, "AfterLogin")
-        access_token_cookie = next(
-            (
-                cookie
-                for cookie in page.context.cookies()
-                if cookie["name"] == "access_token"
-            ),
-            None,
-        )
-        assert (
-            access_token_cookie is not None
-        ), "Access token cookie not found after login"
 
     def goto_analysis_page(self, page: Page):
         page.goto(self.ANALYSIS_ENDPOINT)
