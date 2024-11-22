@@ -123,11 +123,14 @@ spec:
             steps {
                 dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
                     script {
-                        currentBranch = "${SERVICE}:[a-zA-Z0-9._-]*"
-                        targetBranch = "${SERVICE}:${VERSION}"
-                        echo "Editing cdis-manifest/${NAMESPACE} service ${SERVICE} to version ${VERSION}"
-                        sh 'sed -i -e "s,'+"${currentBranch},${targetBranch}"+',g" manifest.json'
-                        sh 'cat manifest.json'
+                        serviceList = SERVICE.split(',')
+                        serviceList.each { SERVICE_NAME ->
+                          currentBranch = "${SERVICE_NAME}:[a-zA-Z0-9._-]*"
+                          targetBranch = "${SERVICE_NAME}:${VERSION}"
+                          echo "Editing cdis-manifest/${NAMESPACE} service ${SERVICE_NAME} to version ${VERSION}"
+                          sh 'sed -i -e "s,'+"${currentBranch},${targetBranch}"+',g" manifest.json'
+                          sh 'cat manifest.json'
+                        }
                     }
                 }
             }
