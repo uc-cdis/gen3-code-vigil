@@ -1,9 +1,9 @@
+from uuid import uuid4
+
 import pytest
 import requests
-
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from uuid import uuid4
 from utils import logger
 
 
@@ -53,13 +53,13 @@ class Indexd(object):
         access_token=None,
     ):
         """Update indexd record"""
-        if access_token:
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"bearer {access_token}",
-            }
-        else:
-            headers = pytest.auth_headers[user]
+        if not access_token:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            access_token = auth.get_access_token()
+        headers = {
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
         update_res = requests.put(
             f"{self.BASE_URL}/{guid}?rev={rev}",
             json=data,
@@ -72,13 +72,13 @@ class Indexd(object):
         self, guid: str, rev: str, user="indexing_account", access_token=None
     ):
         """Delete indexd record if upload is not happening through gen3-sdk"""
-        if access_token:
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"bearer {access_token}",
-            }
-        else:
-            headers = pytest.auth_headers[user]
+        if not access_token:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            access_token = auth.get_access_token()
+        headers = {
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
         delete_resp = requests.delete(
             f"{self.BASE_URL}/{guid}?rev={rev}", headers=headers
         )

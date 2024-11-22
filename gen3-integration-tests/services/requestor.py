@@ -1,11 +1,10 @@
+import json
 import os
+
 import pytest
 import requests
-import json
-
 from gen3.auth import Gen3Auth
 from services.fence import Fence
-
 from utils import logger
 
 
@@ -116,9 +115,8 @@ class Requestor(object):
 
     def get_request_status(self, request_id: str, user: str = "main_account"):
         """Gets the request_status for the user's request_id in requestor"""
-        status_res = requests.get(
-            f"{self.BASE_URL}/{request_id}", headers=pytest.auth_headers[user]
-        )
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        status_res = auth.curl(path={request_id})
         status_data_json = status_res.json()
         req_status = status_data_json["status"]
 
@@ -127,27 +125,46 @@ class Requestor(object):
     def request_signed(self, request_id: str, user: str = "main_account"):
         """Updates the request to SIGNED status"""
         logger.info(f"Updating the {request_id} to SIGNED status ...")
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        access_token = auth.get_access_token()
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
         requests.put(
             f"{self.BASE_URL}/{request_id}",
             json={"status": "SIGNED"},
-            headers=pytest.auth_headers[user],
+            headers=headers,
         )
 
     def request_approved(self, request_id: str, user: str = "main_account"):
         """Updates the request to APPROVED status"""
         logger.info(f"Updating the {request_id} to APPROVED status ...")
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        access_token = auth.get_access_token()
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
         requests.put(
             f"{self.BASE_URL}/{request_id}",
             json={"status": "APPROVED"},
-            headers=pytest.auth_headers[user],
+            headers=headers,
         )
 
     def request_delete(self, request_id: str, user: str = "main_account"):
         """Deletes the request fro requestor"""
         logger.info(f"Deleting the {request_id} ...")
-        response = requests.delete(
-            f"{self.BASE_URL}/{request_id}", headers=pytest.auth_headers[user]
-        )
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        access_token = auth.get_access_token()
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+        response = requests.delete(f"{self.BASE_URL}/{request_id}", headers=headers)
         response.raise_for_status()
 
     def get_request_list(self, user: str):

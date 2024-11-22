@@ -1,14 +1,13 @@
+import base64
 import json
+
 import pytest
 import requests
-import base64
-
-from utils.misc import retry
-
-from utils import logger
-from pages.login import LoginPage
 from gen3.auth import Gen3Auth
+from pages.login import LoginPage
 from playwright.sync_api import Page
+from utils import logger
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -119,11 +118,12 @@ class Fence(object):
                 },
             )
         else:
-            user_info_response = requests.get(
-                f"{self.BASE_URL}{self.USER_ENDPOINT}",
-                headers=pytest.auth_headers[user],
-            )
-        assert user_info_response.status_code == expected_status
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            access_token = auth.get_access_token()
+            user_info_response = auth.curl(path=f"{self.USER_ENDPOINT}")
+        assert (
+            user_info_response.status_code == expected_status
+        ), f"Expected status {expected_status} but got {user_info_response.status_code}"
         response_data = user_info_response.json()
         logger.debug(f"User info {response_data}")
         return response_data
