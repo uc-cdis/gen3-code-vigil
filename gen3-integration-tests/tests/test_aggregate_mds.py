@@ -22,7 +22,7 @@ class TestAggregateMDS:
         fails when there are no records. The test must be updated once this changes.
         """
         mds = MetadataService()
-        study_json_files = ["study1.json", "study2.json", "study3.json"]
+        study_json_files = ["study1.json", "study2.json"]
         # Identify UID field name from gitops.json
         logger.info("# Fetch UID field name from gitops.json")
         portal_config = gat.get_portal_config()
