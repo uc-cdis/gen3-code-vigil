@@ -68,6 +68,7 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+          HOSTNAME: "hara.dev.planx-pla.net"
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
