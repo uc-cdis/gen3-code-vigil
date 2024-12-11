@@ -146,3 +146,12 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+
+
+def pytest_runtest_logreport(report):
+    status = ""
+    if report.when == "call":
+        status = "PASSED" if report.passed else "FAILED" if report.failed else "SKIPPED"
+    logger.info(
+        f"## RUN LOG: {os.environ.get('REPO')} {os.environ.get('PR_NUM')} {os.environ.get('RUN_NUM')} {status} {report.duration}"
+    )
