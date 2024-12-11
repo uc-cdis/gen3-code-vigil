@@ -106,7 +106,7 @@ jobs:
           # Multiple suites can be executed by adding multiple labels
           - name: Get test labels
             id: get_test_labels
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
@@ -115,7 +115,7 @@ jobs:
 
           - name: Run tests pertaining to specific service
             id: run_service_tests
-            if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
@@ -123,7 +123,7 @@ jobs:
 
           - name: Run tests
             id: run_tests
-            if: ${{ env.SKIP_TESTS != 'true' && !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && !inputs.SERVICE_TO_TEST }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
