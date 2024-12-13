@@ -150,8 +150,17 @@ def pytest_unconfigure(config):
 
 def pytest_runtest_logreport(report):
     status = ""
-    if report.when == "call":
-        status = "PASSED" if report.passed else "FAILED" if report.failed else "SKIPPED"
-        logger.info(
-            f"## RUN LOG: {os.environ.get('REPO')} {os.environ.get('PR_NUM')} {os.environ.get('RUN_NUM')} {report.nodeid} {report.fspath} {status} {report.duration}"
-        )
+    if os.getenv("CI_METRICS_DB_HOST"):
+        if report.when == "call":
+            status = (
+                "PASSED" if report.passed else "FAILED" if report.failed else "SKIPPED"
+            )
+            try:
+                test_suite = report.nodeid.split("::")[-1]
+                test_case = report.nodeid.split("::")[-2]
+            except IndexError:
+                test_suite = "N/A"
+                test_case = "N/A"
+            logger.info(
+                f"## RUN LOG: {os.environ.get('REPO')} {os.environ.get('PR_NUM')} {os.environ.get('RUN_NUM')} {report.nodeid} {report.fspath} {status} {report.duration}"
+            )
