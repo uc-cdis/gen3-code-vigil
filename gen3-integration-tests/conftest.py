@@ -152,6 +152,6 @@ def pytest_runtest_logreport(report):
     status = ""
     if report.when == "call":
         status = "PASSED" if report.passed else "FAILED" if report.failed else "SKIPPED"
-    logger.info(
-        f"## RUN LOG: {os.environ.get('REPO')} {os.environ.get('PR_NUM')} {os.environ.get('RUN_NUM')} {status} {report.duration}"
-    )
+        logger.info(
+            f"## RUN LOG: {os.environ.get('REPO')} {os.environ.get('PR_NUM')} {os.environ.get('RUN_NUM')} {report.nodeid} {report.fspath} {status} {report.duration}"
+        )
