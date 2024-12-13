@@ -25,7 +25,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "refs/heads/${env.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "chore/fence_deploy_azlinux"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
