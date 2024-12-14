@@ -31,6 +31,7 @@ fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
 allure-pytest = "^2.13.5"
+psycopg = "^3.2.3"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
