@@ -37,9 +37,7 @@ on:
         required: true
       CI_SLACK_CHANNEL_ID:
         required: true
-      CI_METRICS_DB_HOST:
-        required: false
-      CI_METRICS_DB_PWD:
+      CI_METRICS_DB_CONN:
         required: false
 
 concurrency:
@@ -72,8 +70,7 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
-          CI_METRICS_DB_HOST: ${{ secrets.CI_METRICS_DB_HOST }}
-          CI_METRICS_DB_PWD: ${{ secrets.CI_METRICS_DB_PWD }}
+          CI_METRICS_DB_CONN: ${{ secrets.CI_METRICS_DB_CONN }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues

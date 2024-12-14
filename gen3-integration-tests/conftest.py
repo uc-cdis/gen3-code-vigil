@@ -151,7 +151,7 @@ def pytest_unconfigure(config):
 
 def pytest_runtest_logreport(report):
     status = ""
-    if os.getenv("CI_METRICS_DB_HOST", ""):
+    if os.getenv("CI_METRICS_DB_CONN"):
         if report.when == "call":
             status = (
                 "PASSED" if report.passed else "FAILED" if report.failed else "SKIPPED"
@@ -169,7 +169,7 @@ def pytest_runtest_logreport(report):
             try:
                 with psycopg.connect(
                     host=os.getenv("CI_METRICS_DB_HOST"),
-                    database="postgres",
+                    dbname="postgres",
                     user="postgres",
                     password=os.getenv("CI_METRICS_DB_PWD"),
                 ) as conn:
@@ -186,6 +186,5 @@ def pytest_runtest_logreport(report):
                                 report.duration,
                             ),
                         )
-                    conn.commit()
             except Exception as e:
                 logger.error(f"Error while saving CI metrics to DB - {e}")
