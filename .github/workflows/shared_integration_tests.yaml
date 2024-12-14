@@ -37,6 +37,10 @@ on:
         required: true
       CI_SLACK_CHANNEL_ID:
         required: true
+      CI_METRICS_DB_HOST:
+        required: false
+      CI_METRICS_DB_PWD:
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
