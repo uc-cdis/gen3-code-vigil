@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 
+import psycopg
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
@@ -146,3 +147,44 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+
+
+def pytest_runtest_logreport(report):
+    status = ""
+    if os.getenv("CI_METRICS_DB_CONN"):
+        if report.when == "call":
+            status = (
+                "PASSED" if report.passed else "FAILED" if report.failed else "SKIPPED"
+            )
+            try:
+                test_case = report.nodeid.split("::")[-1]
+                test_suite = report.nodeid.split("::")[-2]
+            except IndexError:
+                logger.error(
+                    f"Test report does not have test case details - {report.longreprtext}"
+                )
+            logger.info(
+                f"## RUN LOG: {os.environ.get('REPO')} {os.environ.get('PR_NUM')} {os.environ.get('RUN_NUM')} {report.nodeid} {report.fspath} {status} {report.duration}"
+            )
+            try:
+                with psycopg.connect(
+                    host=os.getenv("CI_METRICS_DB_HOST"),
+                    dbname="postgres",
+                    user="postgres",
+                    password=os.getenv("CI_METRICS_DB_PWD"),
+                ) as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO ci_metrics (repo, pr_num, run_num, test_suite, test_case, status, duration) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                            (
+                                os.environ.get("REPO"),
+                                os.environ.get("PR_NUM"),
+                                os.environ.get("RUN_NUM"),
+                                test_suite,
+                                test_case,
+                                status,
+                                report.duration,
+                            ),
+                        )
+            except Exception as e:
+                logger.error(f"Error while saving CI metrics to DB - {e}")
