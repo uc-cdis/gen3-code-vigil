@@ -10,6 +10,7 @@ from utils import logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def wait_for_quay_build(repo, tag):
@@ -67,6 +68,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         "NAMESPACE": namespace,
         "SERVICE": service,
         "VERSION": tag,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -97,7 +99,10 @@ def modify_env_for_test_repo_pr(namespace):
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-modify-env-for-test-repo-pr",
     )
-    params = {"NAMESPACE": namespace}
+    params = {
+        "NAMESPACE": namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+    }
     build_num = job.build_job(params)
     if build_num:
         env_file = os.getenv("GITHUB_ENV")
@@ -131,6 +136,7 @@ def generate_api_keys_for_test_users(namespace):
     )
     params = {
         "NAMESPACE": namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
