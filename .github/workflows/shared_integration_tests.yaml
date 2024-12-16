@@ -12,6 +12,14 @@ on:
       SERVICE_TO_TEST:
         required: false
         type: string
+      TEST_REPO_BRANCH:
+        required: false
+        type: string
+        default: master
+      CLOUD_AUTO_BRANCH:
+        required: false
+        type: string
+        default: master
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -110,7 +118,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
-              ref: master
+              ref: ${{ inputs.TEST_REPO_BRANCH }}
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
@@ -156,6 +164,8 @@ jobs:
           - name: Select CI environment
             if: ${{ env.SKIP_TESTS != 'true' }}
             id: select_ci_env
+            env:
+              CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
             run: |
               env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
               echo "$env_label"
