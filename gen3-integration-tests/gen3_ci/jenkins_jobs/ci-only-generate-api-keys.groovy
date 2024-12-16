@@ -5,7 +5,9 @@
         Username
         e.g., main@example.org
     String parameter JENKINS_NAMESPACE
-    Default value - default
+        Default value - default
+    String parameter CLOUD_AUTO_BRANCH
+        e.g., master
 
     Artifact archived - api_key.json
 */
@@ -95,7 +97,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "chore/fence_deploy_azlinux"]],
+                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

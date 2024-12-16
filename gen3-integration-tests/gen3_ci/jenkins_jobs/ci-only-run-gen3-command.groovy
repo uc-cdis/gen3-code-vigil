@@ -5,6 +5,8 @@
         e.g., gen3 secrets decode portal-config gitops.json | jq '.discoveryConfig.minimalFieldMapping.uid'
     String parameter JENKINS_NAMESPACE
       Default value - default
+    String parameter CLOUD_AUTO_BRANCH
+        e.g., master
 
     Artifact archived - result.txt
 */
@@ -94,7 +96,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "chore/fence_deploy_azlinux"]],
+                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

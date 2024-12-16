@@ -1,6 +1,9 @@
 /*
     String parameter NAMESPACE
         e.g., qa-anvil
+
+    String parameter CLOUD_AUTO_BRANCH
+        e.g., master
 */
 pipeline {
     agent {
@@ -19,7 +22,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "chore/fence_deploy_azlinux"]],
+                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

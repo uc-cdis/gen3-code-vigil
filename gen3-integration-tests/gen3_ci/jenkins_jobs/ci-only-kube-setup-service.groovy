@@ -5,6 +5,9 @@
   String parameter SERVICENAME
     e.g., indexd, fence, etc
 
+  String parameter CLOUD_AUTO_BRANCH
+    e.g., master
+
   Archived artifacts -
 */
 pipeline {
@@ -24,7 +27,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "chore/fence_deploy_azlinux"]],
+                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

@@ -9,6 +9,8 @@
         e.g. chore/update_portal_qabrh
     String parameter JENKINS_NAMESPACE
       Default value - default
+    String parameter CLOUD_AUTO_BRANCH
+      e.g., master
 */
 pipeline {
     agent {
@@ -96,7 +98,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "chore/fence_deploy_azlinux"]],
+                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

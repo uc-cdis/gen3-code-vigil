@@ -9,6 +9,9 @@
     default value - False
     Note : This parameter is needed to be set to True if you want to test the negatve sceanrio
     where you are expecting the job pod to fail.
+
+    String parameter CLOUD_AUTO_BRANCH
+    e.g., master
 */
 pipeline {
     agent {
@@ -27,7 +30,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "chore/fence_deploy_azlinux"]],
+                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
