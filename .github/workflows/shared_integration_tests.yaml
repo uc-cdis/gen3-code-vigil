@@ -72,6 +72,16 @@ jobs:
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CI_METRICS_DB_CONN: ${{ secrets.CI_METRICS_DB_CONN }}
 
+        services:
+          postgres:
+            image: postgres:15
+            ports:
+              - 5432:5432
+            env:
+              POSTGRES_USER: test_user
+              POSTGRES_PASSWORD: test_password  #pragma: allowlist secret
+              POSTGRES_DB: test_db
+
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
           # - name: Enable Step Debugging
