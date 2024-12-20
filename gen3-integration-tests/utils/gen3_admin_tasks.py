@@ -1,18 +1,17 @@
 import json
 import os
-import pytest
-import requests
 import subprocess
 import time
 import uuid
 
+import pytest
+import requests
 from dotenv import load_dotenv
-
-from utils import logger
+from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.jenkins import JenkinsJob
-from utils import TEST_DATA_PATH_OBJECT
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def get_portal_config():
@@ -61,7 +60,10 @@ def get_env_configurations(test_env_namespace: str = ""):
             os.getenv("JENKINS_PASSWORD"),
             "ci-only-fetch-configs",
         )
-        params = {"NAMESPACE": test_env_namespace}
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
         build_num = job.build_job(params)
         if build_num:
             status = job.wait_for_build_completion(build_num)
@@ -117,6 +119,7 @@ def run_gen3_command(
         params = {
             "NAMESPACE": test_env_namespace,
             "COMMAND": command,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -156,6 +159,7 @@ def run_gen3_job(
             "JOB_NAME": job_name,
             "CMD_LINE_PARAMS": cmd_line_params,
             "GEN3_ROLL_ALL": roll_all,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -236,6 +240,7 @@ def check_job_pod(
             "JOB_NAME": job_name,
             "LABEL_NAME": label_name,
             "EXPECT_FAILURE": expect_failure,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -323,6 +328,7 @@ def setup_fence_test_clients(
         params = {
             "NAMESPACE": test_env_namespace,
             "CLIENTS_DATA": clients_data,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -507,6 +513,7 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -572,6 +579,7 @@ def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str =
             "NAMESPACE": test_env_namespace,
             "USERNAME": username,
             "POLICY": policy,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -634,6 +642,7 @@ def update_audit_service_logging(audit_logging: str, test_env_namespace: str = "
         params = {
             "AUDIT_LOGGING": audit_logging,
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -664,6 +673,7 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -692,7 +702,10 @@ def clean_up_indices(test_env_namespace: str = ""):
             os.getenv("JENKINS_PASSWORD"),
             "ci-only-clean-up-indices",
         )
-        params = {"NAMESPACE": test_env_namespace}
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
         build_num = job.build_job(params)
         if build_num:
             status = job.wait_for_build_completion(build_num, max_duration=300)
@@ -720,7 +733,10 @@ def check_indices_after_etl(test_env_namespace: str):
             os.getenv("JENKINS_PASSWORD"),
             "ci-only-check_indices_after_etl",
         )
-        params = {"NAMESPACE": test_env_namespace}
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
         build_num = job.build_job(params)
         if build_num:
             status = job.wait_for_build_completion(build_num, max_duration=300)
@@ -813,6 +829,7 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
             "EXPIRATION": expiration,
             "USERNAME": username,
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -877,6 +894,7 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -907,6 +925,7 @@ def fence_enable_register_users_redirect(test_env_namespace: str = ""):
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -937,6 +956,7 @@ def fence_disable_register_users_redirect(test_env_namespace: str = ""):
         )
         params = {
             "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:
