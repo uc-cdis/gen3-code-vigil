@@ -1,3 +1,5 @@
+import json
+
 import pytest
 import utils.gen3_admin_tasks as gat
 from gen3.auth import Gen3Auth
@@ -6,11 +8,22 @@ from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.dicom import Dicom
 from services.graph import GraphDataTools
-from utils import logger
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 
 @pytest.mark.skipif(
-    "midrc" not in pytest.namespace, reason="DICOM test is specific to MIDRC"
+    "dicom"
+    not in json.loads(
+        (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+    ),
+    reason="DICOM service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "ohif"
+    not in json.loads(
+        (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+    ),
+    reason="OHIF service is not running on this environment",
 )
 @pytest.mark.dicom_viewer
 @pytest.mark.sequential
