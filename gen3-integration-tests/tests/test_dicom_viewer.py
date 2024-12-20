@@ -26,7 +26,7 @@ from utils import TEST_DATA_PATH_OBJECT, logger
     reason="OHIF service is not running on this environment",
 )
 @pytest.mark.dicom_viewer
-@pytest.mark.sequential
+@pytest.mark.serial
 class TestDicomViewer(object):
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
     sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="DICOM_test")
