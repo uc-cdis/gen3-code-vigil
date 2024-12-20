@@ -1,10 +1,11 @@
 # Submission page
 import os
-import pytest
 import time
 
+import pytest
 from cdislogging import get_logger
 from playwright.sync_api import Page, expect
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
@@ -51,16 +52,16 @@ class SubmissionPage(object):
         self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION = "//div[@class='h4-typo'][normalize-space()='core_metadata_collection']/following::div[@class='input-with-icon']"
         self.SUBMISSION_PAGE_SUBMIT_BUTTON = "//button[@type='button']"
 
-    def go_to(self, page: Page):
+    def go_to_submission_page(self, page: Page):
         """Goes to the submission page"""
-        page.go_to(self.BASE_URL)
+        page.goto(self.BASE_URL)
         page.wait_for_selector(self.MAP_BUTTON, state="visible")
         page.wait_for_selector(self.PROJECT_LIST_TABLE, state="visible")
         screenshot(page, "submissionPage")
 
     def go_to_files_page(self, page: Page):
         """Goes to the files page"""
-        page.go_to(self.FILES_URL)
+        page.goto(self.FILES_URL)
         page.wait_for_selector(self.FILES_TABLE, state="visible")
         screenshot(page, "filesPage")
 
@@ -100,22 +101,21 @@ class SubmissionPage(object):
         page.wait_for_selector(self.MAPPING_SUBMIT_BUTTON)
         page.click(self.MAPPING_SUBMIT_BUTTON)
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def check_unmapped_files_submission_page(self, page: Page, text):
-        page.goto(f"{self.BASE_URL}")
+        self.go_to_submission_page(page=page)
         page.wait_for_selector(self.SUBMISSION_HEADER_CLASS, state="visible")
-        time.sleep(5)
         screenshot(page, "CheckUnmappedFiles")
         text_from_page = page.locator(self.MAPPED_FILES_COUNT_AND_SIZE).text_content()
         assert text_from_page == text, f"Expected {text}, but got {text_from_page}"
 
     def map_files(self, page: Page):
-        page.goto(f"{self.BASE_URL}/files")
+        self.go_to_files_page(page=page)
         # Select all files
         map_files_button = page.locator("//button[normalize-space()='Map Files']")
         expect(map_files_button).to_be_visible(timeout=5000)
         page.locator("//input[@id='0']").click()
         page.locator("//button[normalize-space()='Map Files (1)']").click()
-        time.sleep(5)
         screenshot(page, "MappingFile")
 
     def select_submission_fields(self, page):

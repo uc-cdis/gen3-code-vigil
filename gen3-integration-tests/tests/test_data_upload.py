@@ -590,7 +590,6 @@ class TestDataUpload:
             )
 
             # user should see 1 file ready
-            time.sleep(5)
             self.login_page.go_to(page)
             self.submission.check_unmapped_files_submission_page(
                 page, text=f"1 files | 128 B"
