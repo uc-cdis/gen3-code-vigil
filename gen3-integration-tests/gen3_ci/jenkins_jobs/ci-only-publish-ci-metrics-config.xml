@@ -1,0 +1,125 @@
+<flow-definition plugin="workflow-job">
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps">
+        <script>
+            pipeline {
+                agent {
+                    kubernetes {
+                        namespace "\${JENKINS_NAMESPACE}"
+                        yaml """
+                        apiVersion: v1
+                        kind: Pod
+                        metadata:
+                          annotations:
+                            karpenter.sh/do-not-evict: true
+                          labels:
+                            app: ephemeral-ci-run
+                            netnolimit: "yes"
+                        spec:
+                          affinity:
+                            nodeAffinity:
+                              requiredDuringSchedulingIgnoredDuringExecution:
+                                nodeSelectorTerms:
+                                - matchExpressions:
+                                  - key: eks.amazonaws.com/capacityType
+                                    operator: In
+                                    values:
+                                    - ONDEMAND
+                                  - key: karpenter.sh/capacity-type
+                                    operator: In
+                                    values:
+                                    - on-demand
+                          initContainers:
+                          - name: wait-for-jenkins-connection
+                            image: quay.io/cdis/gen3-ci-worker:master
+                            command: ["/bin/sh","-c"]
+                            args: ["while [ $(curl -sw '%{http_code}' http://jenkins-master-service:8080/tcpSlaveAgentListener/ -o /dev/null) -ne 200 ]; do sleep 5; echo 'Waiting for jenkins connection...'; done"]
+                          containers:
+                          - name: jnlp
+                            command: ["/bin/sh","-c"]
+                            args: ["sleep 30; /usr/local/bin/jenkins-agent"]
+                            resources:
+                              requests:
+                                cpu: 500m
+                                memory: 500Mi
+                                ephemeral-storage: 1Gi
+                          - name: shell
+                            image: quay.io/cdis/gen3-ci-worker:master
+                            imagePullPolicy: Always
+                            command:
+                            - sleep
+                            args:
+                            - infinity
+                            resources:
+                              requests:
+                                cpu: 500m
+                                memory: 500Mi
+                                ephemeral-storage: 1Gi
+                            env:
+                            - name: AWS_DEFAULT_REGION
+                              value: us-east-1
+                            - name: JAVA_OPTS
+                              value: "-Xmx3072m"
+                            - name: AWS_ACCESS_KEY_ID
+                              valueFrom:
+                                secretKeyRef:
+                                  name: jenkins-secret
+                                  key: aws_access_key_id
+                            - name: AWS_SECRET_ACCESS_KEY
+                              valueFrom:
+                                secretKeyRef:
+                                  name: jenkins-secret
+                                  key: aws_secret_access_key
+                          serviceAccountName: jenkins-service
+                        """
+                        defaultContainer 'shell'
+                    }
+                }
+                parameters {
+                    string(name: 'CI_METRICS_DB_CONN_STRING', defaultValue: '', description: 'Database connection string')
+                    string(name: 'CI_METRICS_SQL_QUERY', defaultValue: '', description: 'SQL query to insert CI metrics')
+                }
+                stages {
+                    stage('Insert CI Metrics') {
+                        steps {
+                            script {
+                                def insertCIMetrics = { connString, sqlQuery ->
+                                    def dbDriver = "org.postgresql.Driver"
+                                    Sql sql = null
+                                    try {
+                                        sql = Sql.newInstance(connString, dbDriver)
+                                        sql.execute(sqlQuery)
+                                    } catch (Exception e) {
+                                        println "Error while saving CI metrics to DB - ${e.message}"
+                                    } finally {
+                                        if (sql != null) {
+                                            sql.close()
+                                        }
+                                    }
+                                }
+                                // Use the SQL query and connection string from the parameters
+                                def connString = params.CI_METRICS_DB_CONN_STRING
+                                def sqlQuery = params.CI_METRICS_SQL_QUERY
+                                insertCIMetrics(connString, sqlQuery)
+                            }
+                        }
+                    }
+                }
+            }
+        </script>
+        <sandbox>true</sandbox>
+    </definition>
+    <properties>
+        <hudson.model.ParametersDefinitionProperty>
+            <parameterDefinitions>
+                <hudson.model.StringParameterDefinition>
+                    <name>CI_METRICS_DB_CONN_STRING</name>
+                    <description>Connect string of the CI metrics database</description>
+                </hudson.model.StringParameterDefinition>
+                <hudson.model.StringParameterDefinition>
+                    <name>CI_METRICS_SQL_QUERY</name>
+                    <description>Query to insert record into CI metrics database</description>
+                </hudson.model.StringParameterDefinition>
+            </parameterDefinitions>
+        </hudson.model.ParametersDefinitionProperty>
+    </properties>
+</flow-definition>

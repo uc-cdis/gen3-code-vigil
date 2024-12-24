@@ -10,6 +10,7 @@ from utils.misc import retry
 
 class JenkinsJob(object):
     def __init__(self, jenkins_url, username, password, job_name):
+        self.jenkins_url = jenkins_url
         self.job_url = f"{jenkins_url}/job/{job_name}"
         self.auth = (username, password)
         self.job_name = job_name
@@ -59,6 +60,16 @@ class JenkinsJob(object):
             f"{self.job_url}/{build_number}/consoleText", auth=self.auth
         )
         return response.text
+
+    def create_job_from_file(self, job_name, file_path):
+        """Create a Jenkins job using a configuration file."""
+        url = f"{self.url}/createItem?name={job_name}"
+        with open(file_path, "r") as file:
+            xml_config = file.read()
+        response = requests.post(
+            url, self.auth, headers={"Content-Type": "application/xml"}, data=xml_config
+        )
+        return response.status_code, response.text
 
     def build_job(self, parameters=None):
         """
