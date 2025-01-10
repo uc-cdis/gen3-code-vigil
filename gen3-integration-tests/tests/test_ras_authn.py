@@ -3,13 +3,12 @@ RAS AuthN
 """
 
 import os
-import pytest
 
+import pytest
+from pages.login import LoginPage
+from playwright.sync_api import Page
 from services.fence import Fence
 from services.ras import RAS
-from pages.login import LoginPage
-
-from playwright.sync_api import Page
 
 
 @pytest.mark.portal
@@ -166,7 +165,7 @@ class TestRasAuthN:
         self.login_page.go_to(page)
         self.login_page.ras_login(
             page,
-            username=os.environ["CI_TEST_RAS_USERID"],
+            username=os.environ["CI_TEST_RAS_USERID"].lower(),
             password="THIS_IS_AN_INVALID_PASSWORD_FOR_USER_1",
         )
         html_content = page.content()
