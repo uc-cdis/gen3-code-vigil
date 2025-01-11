@@ -80,7 +80,7 @@ class LoginPage(object):
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
             self.ras_login(page)
-            logged_in_user = os.environ["CI_TEST_RAS_USERID"].lower()
+            logged_in_user = os.environ["CI_TEST_RAS_USERID"]
         else:
             logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
@@ -146,7 +146,6 @@ class LoginPage(object):
         portal_test=True,
     ):
         username = username or os.environ["CI_TEST_RAS_USERID"]
-        username = username.lower()
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page

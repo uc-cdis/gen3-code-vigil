@@ -165,7 +165,7 @@ class TestRasAuthN:
         self.login_page.go_to(page)
         self.login_page.ras_login(
             page,
-            username=os.environ["CI_TEST_RAS_USERID"].lower(),
+            username=os.environ["CI_TEST_RAS_USERID"],
             password="THIS_IS_AN_INVALID_PASSWORD_FOR_USER_1",
         )
         html_content = page.content()
