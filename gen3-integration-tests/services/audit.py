@@ -49,6 +49,7 @@ class Audit(object):
                     assert data["data"][0][key] == expected_results[key]
                 return True
             counter += 1
+        # TODO: The below line is added for temporary debugging, it needs to be removed once RAS issue is resolved
         logger.info(auth.curl(path=debug_url))
         logger.error("Waited for 10 minutes but data was not recieved")
         return False
