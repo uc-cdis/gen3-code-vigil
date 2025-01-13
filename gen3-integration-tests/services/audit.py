@@ -1,6 +1,5 @@
 import datetime
 import math
-import pytest
 import time
 
 import pytest
@@ -31,6 +30,7 @@ class Audit(object):
 
     def check_query_results(self, log_category, user, params, expected_results):
         url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
+        debug_url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
         url = url + "?" + "&".join(params)
         counter = 0
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
@@ -49,6 +49,6 @@ class Audit(object):
                     assert data["data"][0][key] == expected_results[key]
                 return True
             counter += 1
-
+        logger.info(auth.curl(path=debug_url))
         logger.error("Waited for 10 minutes but data was not recieved")
         return False
