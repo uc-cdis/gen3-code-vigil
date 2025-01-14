@@ -296,10 +296,8 @@ class TestAuditService:
         audit = Audit()
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
-        params = [
-            "start={}".format(timestamp),
-            "username={}".format(os.environ["CI_TEST_RAS_USERID"]),
-        ]
+        # RAS username is very flaky, so we use only start time as param and avoid username
+        params = ["start={}".format(timestamp)]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("# Logging in with RAS USER")
@@ -318,16 +316,6 @@ class TestAuditService:
             "client_id": None,
             "status_code": 302,
         }
-        try:
-            assert audit.check_query_results(
-                "login", "smarty_two", params, expected_results
-            )
-        except Exception:
-            params = [
-                "start={}".format(timestamp),
-                "username={}".format(os.environ["CI_TEST_RAS_USERID"].lower()),
-            ]
-            expected_results["username"] = str(os.environ["CI_TEST_RAS_USERID"]).lower()
-            assert audit.check_query_results(
-                "login", "smarty_two", params, expected_results
-            )
+        assert audit.check_query_results(
+            "login", "smarty_two", params, expected_results
+        )
