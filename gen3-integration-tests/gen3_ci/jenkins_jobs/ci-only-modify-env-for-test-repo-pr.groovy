@@ -105,7 +105,7 @@ spec:
                 // gitops-qa
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: 'refs/heads/chore/update_env_ohif_viewer']],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cdis-manifest']],
                   submoduleCfg: [],

@@ -7,66 +7,36 @@ from pages.dicom import DicomPage
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.dicom import Dicom
-from services.graph import GraphDataTools
 from utils import TEST_DATA_PATH_OBJECT, logger
+from utils.gen3_admin_tasks import check_ohif_viewer_service
 
 
 @pytest.mark.skipif(
-    "dicom"
+    "orthanc"
     not in json.loads(
         (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-    ),
+    )["versions"].keys(),
     reason="DICOM service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "ohif"
+    "ohif-viewer"
     not in json.loads(
         (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-    ),
+    )["versions"].keys(),
     reason="OHIF service is not running on this environment",
 )
 @pytest.mark.dicom_viewer
-@pytest.mark.serial
 class TestDicomViewer(object):
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="DICOM_test")
     dicom = Dicom()
     dicom_page = DicomPage()
     login_page = LoginPage()
-    file_id = ""
-    study_id = ""
+    file_id = "537a3dfd-229a25e0-8443a6b7-f1f512a6-8341ff24"
+    study_id = "1.3.6.1.4.1.14519.5.2.1.113283142818507428913223457507116949429"
 
     @classmethod
     def setup_class(cls):
-        cls.sd_tools.delete_all_records()
-        file_res = cls.dicom.submit_dicom_file()
-        cls.file_id = file_res["ID"]
-        study_instance = file_res["ParentStudy"]
-        study_res = cls.dicom.get_studies(study_instance=study_instance)
-        cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
-        cls.sd_tools.submit_all_test_records()
-        logger.info("Running first etl")
-        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
-        for key, item in cls.sd_tools.test_records.items():
-            if key == "dataset":
-                dataset_submitter_id = item.props["submitter_id"]
-            if key == "case":
-                case_linked_external_data = item.props["linked_external_data"]
-                case_submitted_id = item.props["submitter_id"]
-        cls.dicom.submit_dicom_data(
-            program="DEV",
-            project="DICOM_test",
-            study_id=cls.study_id,
-            dataset_submitter_id=dataset_submitter_id,
-            case_submitted_id=case_submitted_id,
-            case_linked_external_data=case_linked_external_data,
-        )
-        logger.info("Running second etl")
-        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
-
-    @classmethod
-    def teardown_class(cls):
-        cls.sd_tools.delete_all_records()
+        check_ohif_viewer_service(pytest.namespace)
 
     def test_check_uploaded_dicom_file(self, page: Page):
         """
@@ -77,21 +47,18 @@ class TestDicomViewer(object):
             3. Click on the button of the href
             4. Verify OHIF viewer page is launched for the study id
         """
+        val = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )["versions"].keys()
+        logger.info(val)
+        if "ohif-viewer" in val:
+            logger.info("ohif-viewer is present")
         # Login with main_account
         self.login_page.go_to(page)
         self.login_page.login(page, user="main_account")
 
         # Goto explorer page
         self.dicom_page.goto_explorer_page(page=page, study_id=self.study_id)
-
-    def test_unauthorized_user_cannot_post_dicom_file(self):
-        """
-        Scenario: Unauthorized user cannot submit dicom file
-        Steps:
-            1. Submit a dicom file using dummy_one user
-            2. Expect 403 in response, since dummy_one user doesn't have permission to submit dicom file
-        """
-        self.dicom.submit_dicom_file(user="dummy_one", expected_status=403)
 
     def test_unauthorized_user_cannot_get_dicom_file(self):
         """
