@@ -8,7 +8,6 @@ from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.dicom import Dicom
 from utils import TEST_DATA_PATH_OBJECT, logger
-from utils.gen3_admin_tasks import check_ohif_viewer_service
 
 
 @pytest.mark.skipif(
@@ -33,10 +32,6 @@ class TestDicomViewer(object):
     login_page = LoginPage()
     file_id = "537a3dfd-229a25e0-8443a6b7-f1f512a6-8341ff24"
     study_id = "1.3.6.1.4.1.14519.5.2.1.113283142818507428913223457507116949429"
-
-    @classmethod
-    def setup_class(cls):
-        check_ohif_viewer_service(pytest.namespace)
 
     def test_check_uploaded_dicom_file(self, page: Page):
         """
