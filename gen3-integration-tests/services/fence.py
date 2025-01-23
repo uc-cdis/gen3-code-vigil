@@ -369,7 +369,9 @@ class Fence(object):
         response = requests.get(
             f"{self.BASE_URL}{self.GOOGLE_SA_KEYS_ENDPOINT}", headers=headers
         )
-        logger.info(f"Found {len(response.json())} for user {pytest.users[user]}")
+        logger.info(
+            f"Found {len(response.json()["access_keys"])} for user {pytest.users[user]}"
+        )
         return response.json()["access_keys"], token
 
     def delete_google_sa_keys(self, page, user="main_account"):
