@@ -356,20 +356,27 @@ class Fence(object):
         assert "version" in response.json().keys()
         return response.json()["version"]
 
-    def get_google_sa_keys(self, user="main_account"):
+    def get_google_sa_keys(self, page, user="main_account"):
         """Get the Google SA keys for given user"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = auth.curl(path=self.GOOGLE_SA_KEYS_ENDPOINT)
-        logger.info(f"Found {len(response.json())} for user {pytest.users[user]}")
-        return response.json()
-
-    def delete_google_sa_keys(self, user="main_account"):
-        """Deletes the Google SA keys for given user"""
-        list_sa_keys = self.get_google_sa_keys(user=user)
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        access_token = auth.get_access_token()
+        # Token returned from API key doesnt have Google scope, so login from UI
+        login_page = LoginPage()
+        login_page.go_to(page)
+        token = login_page.login(page)["value"]
         headers = {
-            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+            "Authorization": f"bearer {token}",
+        }
+        response = requests.get(
+            f"{self.BASE_URL}{self.GOOGLE_SA_KEYS_ENDPOINT}", headers=headers
+        )
+        logger.info(f"Found {len(response.json())} for user {pytest.users[user]}")
+        return response.json()["access_keys"], token
+
+    def delete_google_sa_keys(self, page, user="main_account"):
+        """Deletes the Google SA keys for given user"""
+        list_sa_keys, token = self.get_google_sa_keys(page=page, user=user)
+        headers = {
+            "Authorization": f"bearer {token}",
             "Content-Type": "application/json",
         }
         for key_item in list_sa_keys:
