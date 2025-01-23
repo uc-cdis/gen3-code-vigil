@@ -27,6 +27,7 @@ class Fence(object):
         self.MULTIPART_UPLOAD_INIT_ENDPOINT = "/data/multipart/init"
         self.MULTIPART_UPLOAD_ENDPOINT = "/data/multipart/upload"
         self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
+        self.GOOGLE_SA_KEYS_ENDPOINT = "/credentials/google/"
         # Locators
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
@@ -354,3 +355,29 @@ class Fence(object):
         ), f"Expected status code 200 but got {response.status_code}"
         assert "version" in response.json().keys()
         return response.json()["version"]
+
+    def get_google_sa_keys(self, user="main_account"):
+        """Get the Google SA keys for given user"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(path=self.GOOGLE_SA_KEYS_ENDPOINT)
+        logger.info(f"Found {len(response.json())} for user {pytest.users[user]}")
+        return response.json()
+
+    def delete_google_sa_keys(self, user="main_account"):
+        """Deletes the Google SA keys for given user"""
+        list_sa_keys = self.get_google_sa_keys(user=user)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        access_token = auth.get_access_token()
+        headers = {
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+        for key_item in list_sa_keys:
+            sa_key = key_item["name"].split("/")[-1]
+            delete_resp = requests.delete(
+                f"{self.BASE_URL}/{self.GOOGLE_SA_KEYS_ENDPOINT}/{sa_key}",
+                headers=headers,
+            )
+            logger.info(
+                f"Deleted a key for {pytest.users[user]} and got response {delete_resp.status_code}"
+            )

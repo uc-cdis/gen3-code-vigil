@@ -1,5 +1,4 @@
 import pytest
-
 from pages.login import LoginPage
 from services.fence import Fence
 from services.indexd import Indexd
@@ -37,6 +36,8 @@ class TestGoogleDataAccess:
         for key, val in cls.indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["indexd_record_dids"].append(indexd_record[0]["did"])
+        # Delete SA keys from Google
+        cls.fence.delete_google_sa_keys(user="user0_account")
 
     @classmethod
     def teardown_class(cls):

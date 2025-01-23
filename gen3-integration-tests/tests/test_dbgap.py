@@ -119,6 +119,9 @@ class TestDbgap:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
+        # Delete SA Keys for user
+        cls.fence.delete_google_sa_keys(user="main_account")
+
     @classmethod
     def teardown_class(cls):
         # Removing test indexd records
