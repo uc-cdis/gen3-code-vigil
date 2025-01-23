@@ -3,13 +3,12 @@ RAS AuthN
 """
 
 import os
-import pytest
 
+import pytest
+from pages.login import LoginPage
+from playwright.sync_api import Page
 from services.fence import Fence
 from services.ras import RAS
-from pages.login import LoginPage
-
-from playwright.sync_api import Page
 
 
 @pytest.mark.portal

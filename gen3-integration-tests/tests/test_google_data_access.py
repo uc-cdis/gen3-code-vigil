@@ -1,6 +1,6 @@
 import pytest
-
 from pages.login import LoginPage
+from playwright.sync_api import Page
 from services.fence import Fence
 from services.indexd import Indexd
 from utils import logger
@@ -12,6 +12,7 @@ class TestGoogleDataAccess:
     fence = Fence()
     login_page = LoginPage()
     indexd = Indexd()
+    page = Page
     variables = {}
     variables["indexd_record_dids"] = []
     indexd_files = {
@@ -43,7 +44,7 @@ class TestGoogleDataAccess:
         # Deleting indexd records
         cls.indexd.delete_records(cls.variables["indexd_record_dids"])
 
-    def test_google_data_access(self):
+    def test_google_data_access(self, page: Page):
         """
         Scenario: Google Data Access dcf-integration-test-0
         Steps:
@@ -53,6 +54,8 @@ class TestGoogleDataAccess:
         Note : Make sure to run the fence-create google bucket command and perform usersync to setup access for
                google buckets.
         """
+        # Delete SA keys from Google
+        self.fence.delete_google_sa_keys(page=page, user="user0_account")
         qa_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["qa_file"]["did"],
             params=["protocol=gs"],
