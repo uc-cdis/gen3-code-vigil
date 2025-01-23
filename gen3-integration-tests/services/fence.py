@@ -361,7 +361,7 @@ class Fence(object):
         # Token returned from API key doesnt have Google scope, so login from UI
         login_page = LoginPage()
         login_page.go_to(page)
-        token = login_page.login(page)["value"]
+        token = login_page.login(page, user=user)["value"]
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"bearer {token}",
