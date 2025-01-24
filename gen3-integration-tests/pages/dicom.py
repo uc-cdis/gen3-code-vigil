@@ -11,7 +11,7 @@ class DicomPage(object):
         self.EXPLORER_ENDPOINT = f"{self.BASE_URL}/explorer"
         # Locators
         self.IMAGING_STUDIES_TAB = "//h3[normalize-space()='Imaging Studies']"
-        self.OHIF_TOOLS = "//*[@class='flex items-center justify-center space-x-2']"
+        self.CORNERSTONE_CANVAS = "//*[@class='cornerstone-canvas']"
 
     def goto_explorer_page(self, page: Page, study_id):
         page.goto(self.EXPLORER_ENDPOINT)
@@ -27,6 +27,6 @@ class DicomPage(object):
         page.goto(href_url)
         logger.info(page.url)
         assert study_id in page.url, f"Expected {study_id} in {page.url}"
-        ohif_tools = page.locator(self.OHIF_TOOLS)
-        expect(ohif_tools).to_be_visible(timeout=5000)
+        cornerstone_canvas = page.locator(self.CORNERSTONE_CANVAS)
+        expect(cornerstone_canvas).to_be_visible(timeout=5000)
         screenshot(page, "OHIFViewerPage")
