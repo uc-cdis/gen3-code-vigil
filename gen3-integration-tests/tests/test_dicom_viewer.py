@@ -1,13 +1,17 @@
 import json
 
 import pytest
-import utils.gen3_admin_tasks as gat
 from gen3.auth import Gen3Auth
 from pages.dicom import DicomPage
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.dicom import Dicom
-from utils import TEST_DATA_PATH_OBJECT, logger
+from utils import TEST_DATA_PATH_OBJECT
+
+"""
+NOTE: To setup the index data for image study follow setup under
+      (TEST_DATA_PATH_OBJECT / "test_setup" / "dicom_viewer_es") folder.
+"""
 
 
 @pytest.mark.skipif(
@@ -30,8 +34,16 @@ class TestDicomViewer(object):
     dicom = Dicom()
     dicom_page = DicomPage()
     login_page = LoginPage()
-    file_id = "537a3dfd-229a25e0-8443a6b7-f1f512a6-8341ff24"
-    study_id = "1.3.6.1.4.1.14519.5.2.1.113283142818507428913223457507116949429"
+    file_id = ""
+    study_id = ""
+
+    @classmethod
+    def setup_class(cls):
+        file_res = cls.dicom.submit_dicom_file()
+        cls.file_id = file_res["ID"]
+        study_instance = file_res["ParentStudy"]
+        study_res = cls.dicom.get_studies(study_instance=study_instance)
+        cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
 
     def test_check_uploaded_dicom_file(self, page: Page):
         """
@@ -42,18 +54,21 @@ class TestDicomViewer(object):
             3. Click on the button of the href
             4. Verify OHIF viewer page is launched for the study id
         """
-        val = json.loads(
-            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-        )["versions"].keys()
-        logger.info(val)
-        if "ohif-viewer" in val:
-            logger.info("ohif-viewer is present")
         # Login with main_account
         self.login_page.go_to(page)
         self.login_page.login(page, user="main_account")
 
         # Goto explorer page
         self.dicom_page.goto_explorer_page(page=page, study_id=self.study_id)
+
+    def test_unauthorized_user_cannot_post_dicom_file(self):
+        """
+        Scenario: Unauthorized user cannot submit dicom file
+        Steps:
+            1. Submit a dicom file using dummy_one user
+            2. Expect 403 in response, since dummy_one user doesn't have permission to submit dicom file
+        """
+        self.dicom.submit_dicom_file(user="dummy_one", expected_status=403)
 
     def test_unauthorized_user_cannot_get_dicom_file(self):
         """
