@@ -7,6 +7,7 @@ import uuid
 
 import pytest
 from cdislogging import get_logger
+from playwright.sync_api import Page
 from services.fence import Fence
 from services.indexd import Indexd
 
@@ -128,7 +129,7 @@ class TestDbgap:
     @pytest.mark.skip(
         reason="To avoid running usersync multiple times and since ONLY_DBGAP is not used in real time."
     )
-    def test_created_signed_urls_upload_urls(self):
+    def test_created_signed_urls_upload_urls(self, page: Page):
         """
         Scenario: dbGaP Sync: created signed urls (from s3 and gs) to download, try creating urls to upload
         Steps:
@@ -136,6 +137,8 @@ class TestDbgap:
             2. Create S3 signed url. main_account doesn't have access to phs000179 through dbgap
             3. Get Upload presigned url from fence. Fence should not let main_account upload
         """
+        # Delete SA Keys for user
+        self.fence.delete_google_sa_keys(page=page, user="main_account")
         # Create S3 signed url. main_account has access to phs000178 through dbgap
         phs000178_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000178File"]["did"],
@@ -352,13 +355,15 @@ class TestDbgap:
             foo_bar_file_deleted_record == 401
         ), f"Expected 401 status, but got {foo_bar_file_deleted_record}"
 
-    def test_cascading_auth_create_signed_urls(self):
+    def test_cascading_auth_create_signed_urls(self, page: Page):
         """
         Scenario: dbGaP Sync: Cascading Auth - create signed urls from s3 and gs to download
         Steps:
             1. Create S3 signed url. main_account has access to phs001194 through dbgap
             2. Create S3 signed url. main_account has access to phs000571 through dbgap
         """
+        # Delete SA Keys for user
+        self.fence.delete_google_sa_keys(page=page, user="main_account")
         # Create S3 signed url. main_account has access to phs001194 through dbgap
         phs001194_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["parentPhs001194File"]["did"],

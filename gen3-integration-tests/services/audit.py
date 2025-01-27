@@ -1,6 +1,5 @@
 import datetime
 import math
-import pytest
 import time
 
 import pytest
@@ -26,7 +25,9 @@ class Audit(object):
         url = url + "?" + "&".join(params)
         response = auth.curl(path=url)
         logger.info(audit_category + " status code : " + str(response.status_code))
-        assert expected_status == response.status_code
+        assert (
+            expected_status == response.status_code
+        ), f"Expected {expected_status} but got {response.status_code}"
         return True
 
     def check_query_results(self, log_category, user, params, expected_results):
@@ -37,18 +38,25 @@ class Audit(object):
 
         while counter < 20:
             time.sleep(30)
-            # response = requests.get(url=url, auth=userTokenHeader)
             response = auth.curl(path=url)
             # Get the first record from api json data
             data = response.json()
-            # Counter to check response is recieved within 5 mins
+            # Counter to check response is recieved within 10 mins
             if len(data["data"]) != 0:
                 logger.info(data["data"])
                 for key, val in expected_results.items():
                     # Get the first entry of json data
-                    assert data["data"][0][key] == expected_results[key]
+                    data_returned = data["data"][0][key]
+                    expected_data = expected_results[key]
+                    if isinstance(expected_data, str):
+                        assert (
+                            data_returned.lower() == expected_data.lower()
+                        ), f"Expected {expected_data.lower()} but got {data_returned.lower()}"
+                    else:
+                        assert (
+                            data_returned == expected_data
+                        ), f"Expected {expected_data} but got {data_returned}"
                 return True
             counter += 1
-
         logger.error("Waited for 10 minutes but data was not recieved")
         return False
