@@ -19,7 +19,7 @@ on:
       CLOUD_AUTO_BRANCH:
         required: false
         type: string
-        default: master
+        default: refs/heads/master
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
