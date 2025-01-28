@@ -182,10 +182,10 @@ def prepare_ci_environment(namespace):
         )
         result = wait_for_quay_build(quay_repo, quay_tag)
         assert result.lower() == "success"
-        result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
+        result = modify_env_for_service_pr(namespace, quay_repo, quay_tag, cloud_auto_branch)
         assert result.lower() == "success"
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users(namespace)
+    result = generate_api_keys_for_test_users(namespace, cloud_auto_branch)
     assert result.lower() == "success"
     return result
 
