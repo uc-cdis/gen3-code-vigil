@@ -7,7 +7,7 @@ from utils import logger
 from utils.jenkins import JenkinsJob
 
 
-def select_ci_environment(namespaces):
+def select_ci_environment(namespaces, cloud_auto_branch):
     """
     Select available test environment.
     Lock it to prevent being used by other PRs.
@@ -22,6 +22,7 @@ def select_ci_environment(namespaces):
         "AVAILABLE_NAMESPACES": namespaces,
         "REPO": os.getenv("REPO"),
         "BRANCH": os.getenv("BRANCH"),
+        "CLOUD_AUTO_BRANCH": cloud_auto_branch,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -61,8 +62,9 @@ if __name__ == "__main__":
             )
         namespaces = ",".join(res.text.strip().split("\n"))
 
+    cloud_auto_branch = os.getenv("CLOUD_AUTO_BRANCH")
     try:
-        selected_ns = select_ci_environment(namespaces)
+        selected_ns = select_ci_environment(namespaces, cloud_auto_branch)
     except Exception:
         logger.error("Unable to select namespace!")
         raise

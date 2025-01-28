@@ -251,6 +251,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+            env:
+              CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH}}
 
           - name: Generate markdown report
             id: generate_md_report
@@ -301,6 +303,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' || cancelled() }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
+            env:
+              CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH}}
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}

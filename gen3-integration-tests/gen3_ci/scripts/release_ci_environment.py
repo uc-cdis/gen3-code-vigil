@@ -1,11 +1,10 @@
 import os
 
 from utils import logger
-
 from utils.jenkins import JenkinsJob
 
 
-def release_ci_environment(namespace):
+def release_ci_environment(namespace, cloud_auto_branch):
     """Remove the lock from the test environment and make it available for other PRs"""
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
@@ -17,6 +16,7 @@ def release_ci_environment(namespace):
         "NAMESPACE": namespace,
         "REPO": os.getenv("REPO"),
         "BRANCH": os.getenv("BRANCH"),
+        "CLOUD_AUTO_BRANCH": cloud_auto_branch,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -32,5 +32,6 @@ def release_ci_environment(namespace):
 
 if __name__ == "__main__":
     namespace = os.getenv("NAMESPACE")
-    result = release_ci_environment(namespace)
+    cloud_auto_branch = os.getenv("CLOUD_AUTO_BRANCH")
+    result = release_ci_environment(namespace, cloud_auto_branch)
     logger.info(f"RESULT: {result}")
