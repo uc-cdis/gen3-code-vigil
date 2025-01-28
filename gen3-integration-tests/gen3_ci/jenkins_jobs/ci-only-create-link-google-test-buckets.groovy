@@ -6,7 +6,7 @@
     Artifact archived - None
 
     String parameter CLOUD_AUTO_BRANCH
-      e.g., master
+      e.g., refs/heads/master
 */
 pipeline {
     agent {
@@ -94,7 +94,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "*/${params.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
