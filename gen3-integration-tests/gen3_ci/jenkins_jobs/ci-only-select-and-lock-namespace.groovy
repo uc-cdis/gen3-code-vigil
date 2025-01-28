@@ -98,7 +98,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "refs/heads/${CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
