@@ -4,7 +4,7 @@
     String parameter POLICY
         e.g.
     String parameter CLOUD_AUTO_BRANCH
-        e.g., refs/heads/master
+        e.g., master
 */
 pipeline {
     agent {
@@ -23,7 +23,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "${params.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

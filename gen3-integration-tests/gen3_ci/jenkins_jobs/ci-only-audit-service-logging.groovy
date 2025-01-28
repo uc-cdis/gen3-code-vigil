@@ -7,7 +7,7 @@
           false - Disables the audit logging onto the target environment
 
   String parameter CLOUD_AUTO_BRANCH
-    e.g., refs/heads/master
+    e.g., master
 
   Archived artifacts -
 */
@@ -28,7 +28,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "${params.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

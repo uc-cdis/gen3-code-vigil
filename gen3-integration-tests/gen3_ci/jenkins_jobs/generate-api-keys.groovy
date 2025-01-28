@@ -5,7 +5,7 @@
         e.g., qa-anvil
 
     String parameter CLOUD_AUTO_BRANCH
-        e.g., refs/heads/master
+        e.g., master
 
     Artifact archived - {NAMESPACE}_main_account.json, {NAMESPACE}_indexing_account.json
 */
@@ -27,7 +27,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "${params.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
