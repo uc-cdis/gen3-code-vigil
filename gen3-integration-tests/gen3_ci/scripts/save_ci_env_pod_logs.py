@@ -1,11 +1,11 @@
 import os
 
-from utils import logger
 from dotenv import load_dotenv
-
+from utils import logger
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def save_pod_logs(namespace):
@@ -18,6 +18,7 @@ def save_pod_logs(namespace):
     )
     params = {
         "NAMESPACE": namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:

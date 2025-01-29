@@ -6,6 +6,8 @@ import requests
 from utils import logger
 from utils.jenkins import JenkinsJob
 
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
+
 
 def select_ci_environment(namespaces):
     """
@@ -22,6 +24,7 @@ def select_ci_environment(namespaces):
         "AVAILABLE_NAMESPACES": namespaces,
         "REPO": os.getenv("REPO"),
         "BRANCH": os.getenv("BRANCH"),
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -60,7 +63,6 @@ if __name__ == "__main__":
                 f"https://cdistest-public-test-bucket.s3.amazonaws.com/jenkins-envs-{env_pool}.txt"
             )
         namespaces = ",".join(res.text.strip().split("\n"))
-
     try:
         selected_ns = select_ci_environment(namespaces)
     except Exception:

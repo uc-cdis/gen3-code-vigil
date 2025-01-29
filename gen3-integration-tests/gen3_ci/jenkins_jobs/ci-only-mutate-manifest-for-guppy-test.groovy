@@ -1,6 +1,8 @@
 /*
   String parameter NAMESPACE
     e.g., qa-anvil
+  String parameter CLOUD_AUTO_BRANCH
+    e.g., master
 
   Archived artifacts -
 */
@@ -21,7 +23,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
