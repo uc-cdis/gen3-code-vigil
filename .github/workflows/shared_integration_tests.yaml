@@ -3,9 +3,6 @@ name: Integration Tests
 on:
   workflow_call:
     inputs:
-      CLOUD_AUTO_BRANCH:
-        required: false
-        type: string
       # needed to be set if repo name differs in quay
       QUAY_REPO:
         required: false
@@ -16,6 +13,10 @@ on:
         required: false
         type: string
       TEST_REPO_BRANCH:
+        required: false
+        type: string
+        default: master
+      CLOUD_AUTO_BRANCH:
         required: false
         type: string
         default: master
@@ -75,6 +76,7 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+          CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
