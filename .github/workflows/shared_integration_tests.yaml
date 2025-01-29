@@ -3,6 +3,9 @@ name: Integration Tests
 on:
   workflow_call:
     inputs:
+      CLOUD_AUTO_BRANCH:
+        required: false
+        type: string
       # needed to be set if repo name differs in quay
       QUAY_REPO:
         required: false
@@ -13,10 +16,6 @@ on:
         required: false
         type: string
       TEST_REPO_BRANCH:
-        required: false
-        type: string
-        default: master
-      CLOUD_AUTO_BRANCH:
         required: false
         type: string
         default: master
