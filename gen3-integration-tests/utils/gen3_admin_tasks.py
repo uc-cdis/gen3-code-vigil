@@ -11,6 +11,7 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def get_portal_config():
@@ -61,7 +62,7 @@ def get_env_configurations(test_env_namespace: str = ""):
         )
         params = {
             "NAMESPACE": test_env_namespace,
-            "CLOUD_AUTO_BRANCH": os.getenv("CLOUD_AUTO_BRANCH"),
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         }
         build_num = job.build_job(params)
         if build_num:

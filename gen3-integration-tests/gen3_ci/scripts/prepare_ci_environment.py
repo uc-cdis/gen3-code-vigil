@@ -10,6 +10,7 @@ from utils import logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def wait_for_quay_build(repo, tag):
@@ -51,7 +52,7 @@ def wait_for_quay_build(repo, tag):
         return "failure"
 
 
-def modify_env_for_service_pr(namespace, service, tag, cloud_auto_branch):
+def modify_env_for_service_pr(namespace, service, tag):
     """
     Change the image tag for the service under test in the test env's manifest
     Roll the environment
@@ -67,7 +68,7 @@ def modify_env_for_service_pr(namespace, service, tag, cloud_auto_branch):
         "NAMESPACE": namespace,
         "SERVICE": service,
         "VERSION": tag,
-        "CLOUD_AUTO_BRANCH": cloud_auto_branch,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -86,7 +87,7 @@ def modify_env_for_service_pr(namespace, service, tag, cloud_auto_branch):
         return "failure"
 
 
-def modify_env_for_test_repo_pr(namespace, cloud_auto_branch):
+def modify_env_for_test_repo_pr(namespace):
     """
     We can use the test env's manifest as-is (all services point to master branch)
     Roll the environment
@@ -100,7 +101,7 @@ def modify_env_for_test_repo_pr(namespace, cloud_auto_branch):
     )
     params = {
         "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": cloud_auto_branch,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -124,7 +125,7 @@ def modify_env_for_test_repo_pr(namespace, cloud_auto_branch):
         return "failure"
 
 
-def generate_api_keys_for_test_users(namespace, cloud_auto_branch):
+def generate_api_keys_for_test_users(namespace):
     # Accounts used for testing
     test_users = test_setup.get_users()
     job = JenkinsJob(
@@ -135,7 +136,7 @@ def generate_api_keys_for_test_users(namespace, cloud_auto_branch):
     )
     params = {
         "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": cloud_auto_branch,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -165,14 +166,13 @@ def generate_api_keys_for_test_users(namespace, cloud_auto_branch):
 def prepare_ci_environment(namespace):
     """Calls other functions in this module depending on the type of repo under test"""
     repo = os.getenv("REPO")
-    cloud_auto_branch = os.getenv("CLOUD_AUTO_BRANCH")
     # if quay repo name is different from github repo name
     if os.getenv("QUAY_REPO"):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
         quay_repo = repo
     if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
-        result = modify_env_for_test_repo_pr(namespace, cloud_auto_branch)
+        result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
         pass
@@ -182,10 +182,10 @@ def prepare_ci_environment(namespace):
         )
         result = wait_for_quay_build(quay_repo, quay_tag)
         assert result.lower() == "success"
-        result = modify_env_for_service_pr(namespace, quay_repo, quay_tag, cloud_auto_branch)
+        result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
         assert result.lower() == "success"
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users(namespace, cloud_auto_branch)
+    result = generate_api_keys_for_test_users(namespace)
     assert result.lower() == "success"
     return result
 

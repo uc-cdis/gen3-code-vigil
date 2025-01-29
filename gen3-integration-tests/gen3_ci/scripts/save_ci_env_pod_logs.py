@@ -5,9 +5,10 @@ from utils import logger
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
-def save_pod_logs(namespace, cloud_auto_branch):
+def save_pod_logs(namespace):
     """Save logs from all pods at the end of the test run to help with debugging"""
     job = JenkinsJob(
         os.getenv("JENKINS_URL"),
@@ -17,7 +18,7 @@ def save_pod_logs(namespace, cloud_auto_branch):
     )
     params = {
         "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": cloud_auto_branch,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -32,8 +33,7 @@ def save_pod_logs(namespace, cloud_auto_branch):
 
 
 if __name__ == "__main__":
-    cloud_auto_branch = os.getenv("CLOUD_AUTO_BRANCH")
-    job_info = save_pod_logs(os.getenv("NAMESPACE"), cloud_auto_branch)
+    job_info = save_pod_logs(os.getenv("NAMESPACE"))
     if job_info:
         env_file = os.getenv("GITHUB_ENV")
         with open(env_file, "a") as myfile:
