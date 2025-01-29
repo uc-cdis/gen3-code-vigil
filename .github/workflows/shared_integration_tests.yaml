@@ -182,8 +182,8 @@ jobs:
           - name: Prepare CI environment
             id: prep_ci_env
             env:
-              QUAY_REPO: ${{ inputs.QUAY_REPO }}
               CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
