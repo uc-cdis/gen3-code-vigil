@@ -187,6 +187,7 @@ jobs:
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
               UPDATED_FOLDERS=$(echo "$PR_FILES" | sed 's|/.*||' | uniq | sort -u)
+              UPDATED_FOLDERS=$(echo "$UPDATED_FOLDERS" | grep -v "^.github$")
               if [ $(echo "$UPDATED_FOLDERS" | wc -l) -eq 1 ]; then
                 UPDATED_FOLDER=$(echo "$UPDATED_FOLDERS" | uniq | head -n 1)
                 echo "UPDATED_FOLDER=$UPDATED_FOLDER" >> $GITHUB_ENV
