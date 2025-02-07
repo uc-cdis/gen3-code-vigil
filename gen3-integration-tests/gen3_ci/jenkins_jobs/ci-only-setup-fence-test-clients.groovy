@@ -4,6 +4,9 @@
 
     String parameter CLIENTS_DATA
 
+    String parameter CLOUD_AUTO_BRANCH
+        e.g., master
+
     Artifact archived - clients_creds.txt
                       - client_rotate_creds.txt
 */
@@ -24,7 +27,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

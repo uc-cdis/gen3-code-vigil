@@ -103,6 +103,9 @@ class LoginPage(object):
                 .get("topBar", {})
                 .get("useProfileDropdown", "")
             ):
+                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
+                if accept_button:
+                    accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
             expect(
                 page.get_by_role("link").filter(has_text=logged_in_user)

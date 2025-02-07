@@ -4,6 +4,9 @@
     String parameter JENKINS_NAMESPACE
       Default value - default
     Artifact archived - None
+
+    String parameter CLOUD_AUTO_BRANCH
+      e.g., master
 */
 pipeline {
     agent {
@@ -91,7 +94,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

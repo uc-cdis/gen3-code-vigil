@@ -49,6 +49,7 @@ markers = [
   # services
   "argo_wrapper: tests for argo_wrapper",
   "audit: tests for audit-service",
+  "dicom_viewer: tests for dicom-viewer",
   "fence: test for fence service",
   "frontend_framework: tests for frontend-framework",
   "gen3_client: tests for gen3-client / cdis-data-client",

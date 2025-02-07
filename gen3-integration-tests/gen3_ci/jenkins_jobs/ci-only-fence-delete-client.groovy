@@ -1,6 +1,9 @@
 /*
     String parameter NAMESPACE
         e.g. jenkins-blood
+
+    String parameter CLOUD_AUTO_BRANCH
+        e.g., master
 */
 pipeline {
     agent {
@@ -19,7 +22,7 @@ pipeline {
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

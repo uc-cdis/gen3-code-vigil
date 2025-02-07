@@ -91,11 +91,14 @@ def get_client_id_secret():
         if len(entry) == 0:  # Empty line
             continue
         client_name, client_details = entry.split(":")
-        client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
-        pytest.clients[client_name] = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
+        try:
+            client_id, client_secret = re.sub(r"[\'()]", "", client_details).split(", ")
+            pytest.clients[client_name] = {
+                "client_id": client_id,
+                "client_secret": client_secret,
+            }
+        except Exception:
+            logger.error(f"Error getting client id and secret for f{client_name}.")
 
 
 def run_usersync():
