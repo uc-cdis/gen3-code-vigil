@@ -210,7 +210,8 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-        pass
+        result = modify_env_for_manifest_pr(namespace)
+        assert result.lower() == "success"
     else:  # Service repos
         quay_tag = (
             os.getenv("BRANCH").replace("(", "_").replace(")", "_").replace("/", "_")
