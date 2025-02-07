@@ -10,6 +10,7 @@ from utils import logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def wait_for_quay_build(repo, tag):
@@ -67,6 +68,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         "NAMESPACE": namespace,
         "SERVICE": service,
         "VERSION": tag,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -85,9 +87,10 @@ def modify_env_for_service_pr(namespace, service, tag):
         return "failure"
 
 
-def modify_env_for_manifest_pr(namespace, tag):
+def modify_env_for_manifest_pr(namespace):
     """
-    Change the image tag for the service under test in the test env's manifest
+    Change the image tags for the services under test in the test env's manifest
+    Copy the required files like gitops.json, etlmapping.yaml, etc
     Roll the environment
     Run usersync
     """
@@ -99,7 +102,8 @@ def modify_env_for_manifest_pr(namespace, tag):
     )
     params = {
         "NAMESPACE": namespace,
-        "VERSION": tag,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        "UPDATED_FOLDER": os.getenv("UPDATED_FOLDER"),
     }
     build_num = job.build_job(params)
     if build_num:
@@ -130,7 +134,10 @@ def modify_env_for_test_repo_pr(namespace):
         os.getenv("JENKINS_PASSWORD"),
         "ci-only-modify-env-for-test-repo-pr",
     )
-    params = {"NAMESPACE": namespace}
+    params = {
+        "NAMESPACE": namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+    }
     build_num = job.build_job(params)
     if build_num:
         env_file = os.getenv("GITHUB_ENV")
@@ -164,6 +171,7 @@ def generate_api_keys_for_test_users(namespace):
     )
     params = {
         "NAMESPACE": namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
