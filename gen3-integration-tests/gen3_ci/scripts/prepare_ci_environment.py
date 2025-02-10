@@ -87,7 +87,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         return "failure"
 
 
-def modify_env_for_manifest_pr(namespace):
+def modify_env_for_manifest_pr(namespace, updated_folder):
     """
     Change the image tags for the services under test in the test env's manifest
     Copy the required files like gitops.json, etlmapping.yaml, etc
@@ -103,7 +103,7 @@ def modify_env_for_manifest_pr(namespace):
     params = {
         "NAMESPACE": namespace,
         "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-        "UPDATED_FOLDER": os.getenv("UPDATED_FOLDER"),
+        "UPDATED_FOLDER": updated_folder,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -210,7 +210,13 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-        result = modify_env_for_manifest_pr(namespace)
+        updated_folders = os.getenv("UPDATED_FOLDERS", "").splitlines()
+        if len(updated_folders) == 1:
+            updated_folder = updated_folders[0]
+            print(f"Single folder found: {updated_folder}")
+        else:
+            raise Exception("More than one folder or no folder found in the branch.")
+        result = modify_env_for_manifest_pr(namespace, updated_folder)
         assert result.lower() == "success"
     else:  # Service repos
         quay_tag = (
