@@ -87,6 +87,41 @@ def modify_env_for_service_pr(namespace, service, tag):
         return "failure"
 
 
+def modify_env_for_manifest_pr(namespace, updated_folder):
+    """
+    Change the image tags for the services under test in the test env's manifest
+    Copy the required files like gitops.json, etlmapping.yaml, etc
+    Roll the environment
+    Run usersync
+    """
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-modify-env-for-manifest-pr",
+    )
+    params = {
+        "NAMESPACE": namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        "UPDATED_FOLDER": updated_folder,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        env_file = os.getenv("GITHUB_ENV")
+        with open(env_file, "a") as myfile:
+            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
+        status = job.wait_for_build_completion(build_num, max_duration=5400)
+        if status == "Completed":
+            return job.get_build_result(build_num)
+        else:
+            logger.error("Build timed out. Consider increasing max_duration")
+            job.terminate_build(build_num)
+            return "failure"
+    else:
+        logger.error("Build number not found")
+        return "failure"
+
+
 def modify_env_for_test_repo_pr(namespace):
     """
     We can use the test env's manifest as-is (all services point to master branch)
@@ -175,7 +210,14 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-        pass
+        updated_folders = os.getenv("UPDATED_FOLDERS", "").splitlines()
+        if len(updated_folders) == 1:
+            updated_folder = updated_folders[0]
+            print(f"Single folder found: {updated_folder}")
+        else:
+            raise Exception("More than one folder or no folder found in the branch.")
+        result = modify_env_for_manifest_pr(namespace, updated_folder)
+        assert result.lower() == "success"
     else:  # Service repos
         quay_tag = (
             os.getenv("BRANCH").replace("(", "_").replace(")", "_").replace("/", "_")
