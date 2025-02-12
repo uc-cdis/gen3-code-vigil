@@ -1,6 +1,8 @@
 FROM python:3.9-slim-bullseye AS base
 
-ENV appname=gen3-integration-tests
+ENV appname=gen3-integration-tests \
+    NODEJS_VERSION=20
+
 WORKDIR /${appname}
 
 # Install pipx
@@ -26,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     git \
+    openjdk-11-jre \
     && rm -rf /var/lib/apt/lists/*
 
 COPY poetry.lock pyproject.toml /${appname}/
@@ -34,11 +37,6 @@ COPY poetry.lock pyproject.toml /${appname}/
 RUN poetry install --no-interaction
 
 COPY . /${appname}/
-
-# Install Nodejs 20
-# make nodejs a variable!!!!!
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x  | bash && \
-    apt-get install -y nodejs
 
 # Final stage
 FROM base
@@ -53,8 +51,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wamerican \
     git \
     jq \
-    allure \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Nodejs 20 and allure
+RUN curl -fsSL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x  | bash && \
+    apt-get install -y nodejs && \
+    npm install -g allure-commandline --save-dev
 
 # Install kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
