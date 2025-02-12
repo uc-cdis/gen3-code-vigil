@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye as base
+FROM python:3.9-slim-bullseye AS base
 
 ENV appname=gen3-integration-tests
 WORKDIR /${appname}
@@ -64,6 +64,8 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 # Install chromium
 RUN apt-get update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
 
+RUN mkdir output
+
 WORKDIR /${appname}
 
-CMD /bin/bash
+CMD ["/bin/bash"]
