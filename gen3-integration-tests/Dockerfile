@@ -53,6 +53,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wamerican \
     git \
     jq \
+    allure \
     && rm -rf /var/lib/apt/lists/*
 
 # Install kubectl
