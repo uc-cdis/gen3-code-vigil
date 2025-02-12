@@ -12,6 +12,14 @@ on:
       SERVICE_TO_TEST:
         required: false
         type: string
+      TEST_REPO_BRANCH:
+        required: false
+        type: string
+        default: master
+      CLOUD_AUTO_BRANCH:
+        required: false
+        type: string
+        default: master
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -68,6 +76,7 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+          CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
@@ -110,7 +119,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
-              ref: master
+              ref: ${{ inputs.TEST_REPO_BRANCH }}
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
@@ -171,13 +180,13 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
+            env:
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
-            env:
-              QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels

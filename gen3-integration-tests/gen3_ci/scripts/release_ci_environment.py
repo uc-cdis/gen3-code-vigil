@@ -1,8 +1,9 @@
 import os
 
 from utils import logger
-
 from utils.jenkins import JenkinsJob
+
+CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def release_ci_environment(namespace):
@@ -17,6 +18,7 @@ def release_ci_environment(namespace):
         "NAMESPACE": namespace,
         "REPO": os.getenv("REPO"),
         "BRANCH": os.getenv("BRANCH"),
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:

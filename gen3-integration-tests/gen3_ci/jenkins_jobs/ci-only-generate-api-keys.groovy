@@ -5,7 +5,9 @@
         Username
         e.g., main@example.org
     String parameter JENKINS_NAMESPACE
-    Default value - default
+        Default value - default
+    String parameter CLOUD_AUTO_BRANCH
+        e.g., master
 
     Artifact archived - api_key.json
 */
@@ -61,7 +63,7 @@ spec:
     resources:
       requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 3Gi
         ephemeral-storage: 1Gi
     env:
     - name: AWS_DEFAULT_REGION
@@ -95,7 +97,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],
