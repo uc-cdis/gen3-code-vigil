@@ -1,4 +1,4 @@
-name: Integration Tests Image Build on Push
+name: CI
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   CI:
-    name: Build Integration Tests image
+    name: Build Image and Push
     uses: uc-cdis/.github/.github/workflows/image_build_push.yaml@master
     with:
       DOCKERFILE_LOCATION: "./gen3-integration-tests/Dockerfile"
