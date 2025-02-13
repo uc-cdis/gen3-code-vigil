@@ -17,7 +17,9 @@ ENV PATH="/root/.local/bin:${PATH}"
 FROM base AS builder
 
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true \
-    POETRY_VIRTUALENVS_CREATE=1
+    POETRY_VIRTUALENVS_CREATE=1 \
+    DEBIAN_FRONTEND=noninteractive
+
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
