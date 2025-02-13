@@ -19,6 +19,5 @@ jobs:
       DOCKERFILE_LOCATION: "./gen3-integration-tests/Dockerfile"
       OVERRIDE_REPO_NAME: "gen3-integration-tests"
       OVERRIDE_TAG_NAME: "$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
-      BUILD_PLATFORMS: "linux/amd64"
       DOCKERFILE_BUILD_CONTEXT: "./gen3-integration-tests"
     secrets: inherit #pragma: allowlist secret
