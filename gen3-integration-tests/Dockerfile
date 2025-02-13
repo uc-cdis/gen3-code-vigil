@@ -9,7 +9,6 @@ WORKDIR /${appname}
 RUN python3 -m pip install --break-system-packages pipx && \
     python3 -m pipx ensurepath
 
-
 RUN pipx install 'poetry<2.0'
 
 ENV PATH="/root/.local/bin:${PATH}"
