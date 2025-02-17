@@ -215,7 +215,7 @@ def prepare_ci_environment(namespace):
             updated_folder = updated_folders[0]
             print(f"Single folder found: {updated_folder}")
         else:
-            raise Exception("More than one folder or no folder found in the branch.")
+            raise Exception("More than one folder or no folder found in the branch. {updated_folder}")
         result = modify_env_for_manifest_pr(namespace, updated_folder)
         assert result.lower() == "success"
     else:  # Service repos
