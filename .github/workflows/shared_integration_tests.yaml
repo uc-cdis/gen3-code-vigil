@@ -187,7 +187,7 @@ jobs:
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
               UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/' | sed 's|/.*||' | uniq | sort -u | grep -v "^.github$")
-              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+              export UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
