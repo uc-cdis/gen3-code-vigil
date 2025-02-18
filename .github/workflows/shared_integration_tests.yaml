@@ -183,8 +183,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
-              echo $PR_FILES
-              UPDATED_FOLDERS=$(echo "$PR_FILES" | sed 's|/.*||' | grep -v '^\.$' | uniq | sort -u | grep -v "^.github$")
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | uniq | sort -u)
               echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
           # TODO: Improve the logic to do differential updates to the env, not roll all services
