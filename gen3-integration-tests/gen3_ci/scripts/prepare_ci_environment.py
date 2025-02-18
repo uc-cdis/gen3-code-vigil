@@ -210,7 +210,7 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-        updated_folders = os.getenv("UPDATED_FOLDERS", "").splitlines(",")
+        updated_folders = os.getenv("UPDATED_FOLDERS", "").split(",")
         if len(updated_folders) == 1:
             updated_folder = updated_folders[0]
             print(f"Single folder found: {updated_folder}")
