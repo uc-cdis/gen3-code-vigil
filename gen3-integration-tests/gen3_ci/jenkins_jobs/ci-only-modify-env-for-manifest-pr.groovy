@@ -7,6 +7,8 @@
       e.g., master
     String parameter UPDATED_FOLDER
       Folder in repository that was updated
+    String parameter TARGET_REPO
+      Repository from where files will be pulled
 */
 pipeline {
     agent {
@@ -115,14 +117,14 @@ spec:
                   submoduleCfg: [],
                   userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/gitops-qa.git']]
                 ])
-                // cdis-manifest
+                // gitops-qa/cdis-manifest
                 checkout([
                   $class: 'GitSCM',
                   branches: [[name: 'refs/heads/master']],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'temp-cdis-manifest']],
                   submoduleCfg: [],
-                  userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/cdis-manifest.git']]
+                  userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: "https://github.com/uc-cdis/${params.TARGET_REPO}.git"]]
                 ])
             }
         }

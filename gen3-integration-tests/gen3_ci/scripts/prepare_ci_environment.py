@@ -87,7 +87,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         return "failure"
 
 
-def modify_env_for_manifest_pr(namespace, updated_folder):
+def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     """
     Change the image tags for the services under test in the test env's manifest
     Copy the required files like gitops.json, etlmapping.yaml, etc
@@ -104,6 +104,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder):
         "NAMESPACE": namespace,
         "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         "UPDATED_FOLDER": updated_folder,
+        "TARGET_REPO": repo,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -218,7 +219,7 @@ def prepare_ci_environment(namespace):
             raise Exception(
                 f"More than one folder or no folder found in the branch. {updated_folders}"
             )
-        result = modify_env_for_manifest_pr(namespace, updated_folder)
+        result = modify_env_for_manifest_pr(namespace, updated_folder, repo)
         assert result.lower() == "success"
     else:  # Service repos
         quay_tag = (
