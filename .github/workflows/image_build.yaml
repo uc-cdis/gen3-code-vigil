@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to apply to this build. Defaults to 'latest'."
+        default: "latest"
+        required: false
+  push:
+    paths:
+      - gen3-integration-tests/**
+
+jobs:
+  CI:
+    name: Build Image and Push
+    uses: uc-cdis/.github/.github/workflows/image_build_push_native.yaml@master
+    with:
+      DOCKERFILE_LOCATION: "./gen3-integration-tests/Dockerfile"
+      OVERRIDE_REPO_NAME: "gen3-integration-tests"
+      OVERRIDE_TAG_NAME: "$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+      DOCKERFILE_BUILD_CONTEXT: "./gen3-integration-tests"
+    secrets: inherit #pragma: allowlist secret
