@@ -182,9 +182,11 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
+              # Fetch the PR files
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
-              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | uniq | sort -u)
-              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u)
+              UPDATED_FOLDERS_JOINED=$(echo "$UPDATED_FOLDERS" | tr '\n' ',' | sed 's/,$//')  # Remove the trailing comma
+              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS_JOINED" >> $GITHUB_ENV
 
           # TODO: Improve the logic to do differential updates to the env, not roll all services
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync

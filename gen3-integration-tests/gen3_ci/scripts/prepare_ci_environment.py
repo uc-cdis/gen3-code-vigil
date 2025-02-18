@@ -210,12 +210,14 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
-        updated_folders = os.getenv("UPDATED_FOLDERS", "").splitlines()
+        updated_folders = os.getenv("UPDATED_FOLDERS", "").splitlines(",")
         if len(updated_folders) == 1:
             updated_folder = updated_folders[0]
             print(f"Single folder found: {updated_folder}")
         else:
-            raise Exception(f"More than one folder or no folder found in the branch. {updated_folders}")
+            raise Exception(
+                f"More than one folder or no folder found in the branch. {updated_folders}"
+            )
         result = modify_env_for_manifest_pr(namespace, updated_folder)
         assert result.lower() == "success"
     else:  # Service repos
