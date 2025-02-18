@@ -186,8 +186,10 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
+              echo $PR_FILES
               UPDATED_FOLDERS=$(echo "$PR_FILES" | sed 's|/.*||' | grep -v '^\.$' | uniq | sort -u | grep -v "^.github$")
               echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+              echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
 
