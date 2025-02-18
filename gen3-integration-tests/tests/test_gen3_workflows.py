@@ -24,21 +24,13 @@ class TestGen3Workflow(object):
     gen3_workflow = Gen3Workflow()
     valid_user = "main_account"
     invalid_user = "dummy_one"
-    s3_bucket_name = None
     s3_folder_name = "integration-tests"
     s3_file_name = "test-input.txt"
-    storage_info_dict = gen3_workflow.get_storage_info(
-        user=valid_user, expected_status=200
+    s3_storage_config = WorkflowStorageConfig.from_dict(
+        gen3_workflow.get_storage_info(user=valid_user, expected_status=200)
     )
-    s3_storage_config = WorkflowStorageConfig.from_dict(storage_info_dict)
 
     ######################## Test /storage/info endpoint ########################
-    def test_get_storage_info_with_valid_token(self):
-        """Test GET /storage/info with a valid access token."""
-        response = self.gen3_workflow.get_storage_info(
-            user=self.valid_user, expected_status=200
-        )
-        self.s3_bucket_name = response["bucket"]
 
     def test_get_storage_info_without_token(self):
         """Test GET /storage/info without an access token."""
@@ -46,49 +38,33 @@ class TestGen3Workflow(object):
 
     ######################## Test /s3/ endpoint ########################
 
-    @pytest.mark.skipif(
-        not s3_bucket_name,
-        reason="Skipping this test, since a valid s3 bucket name couldn't be found ",
-    )
     def test_any_user_cannot_get_s3_file_with_unsigned_request(self):
         """Unsigned requests should receive 401 even if the user is authorized to get data."""
         self.gen3_workflow.get_bucket_object_with_unsigned_request(
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             user=self.valid_user,
             expected_status=401,
         )
 
-    @pytest.mark.skipif(
-        not s3_bucket_name,
-        reason="Skipping this test, since a valid s3 bucket name couldn't be found ",
-    )
     def test_unauthorized_user_cannot_post_s3_file(self):
         """Unauthorized user should receive 403 when posting a S3 file."""
         self.gen3_workflow.put_bucket_object_with_boto3(
             content="dummy_S3_content",
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.invalid_user,
             expected_status=403,
         )
 
-    @pytest.mark.skipif(
-        not s3_bucket_name,
-        reason="Skipping this test, since a valid s3 bucket name couldn't be found ",
-    )
     def test_unauthorized_user_cannot_get_s3_file(self):
         """Unauthorized user should receive 403 when trying to GET a S3 file."""
         self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.invalid_user,
             expected_status=403,
         )
 
-    @pytest.mark.skipif(
-        not s3_bucket_name,
-        reason="Skipping this test, since a valid s3 bucket name couldn't be found ",
-    )
     def test_happy_path_upload_and_get_s3_file(self):
         """
         POST an S3 file in a `directoy/filename` format,
@@ -99,7 +75,7 @@ class TestGen3Workflow(object):
         input_content = "sample_S3_content"
         self.gen3_workflow.put_bucket_object_with_boto3(
             content=input_content,
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
@@ -107,7 +83,7 @@ class TestGen3Workflow(object):
 
         # Fetch all the contents in the given folder to verify the list-objects functionality
         response_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
-            folder_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/",
+            folder_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
@@ -122,7 +98,7 @@ class TestGen3Workflow(object):
 
         # Fetch the exact file to verify the get-object functionality
         response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
@@ -132,10 +108,6 @@ class TestGen3Workflow(object):
             input_content in response_s3_object
         ), "Stored and retrieved content should match"
 
-    @pytest.mark.skipif(
-        not s3_bucket_name,
-        reason="Skipping this test, since a valid s3 bucket name couldn't be found ",
-    )
     def test_happy_path_delete_s3_file(self):
         """
         POST an S3 file in a `directoy/filename` format,
@@ -145,14 +117,14 @@ class TestGen3Workflow(object):
         input_content = "sample_S3_content"
         self.gen3_workflow.put_bucket_object_with_boto3(
             content=input_content,
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
         )
 
         self.gen3_workflow.delete_bucket_object_with_boto3(
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
@@ -160,7 +132,7 @@ class TestGen3Workflow(object):
 
         # We expect the request to return a response with status 404
         self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=404,
