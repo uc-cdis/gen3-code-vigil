@@ -52,6 +52,7 @@ class Gen3Workflow:
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}"
         self.SERVICE_URL = "/workflows"
+        self.TES_URL = "/ga4gh/tes/v1/"
         self.S3_ENDPOINT_URL = f"{self.BASE_URL}{self.SERVICE_URL}/s3"
 
     def _get_access_token(self, user: str = "main_account") -> str:
@@ -60,7 +61,7 @@ class Gen3Workflow:
         return auth.get_access_token()
 
     def _get_s3_client(
-        self, access_token: str, s3_storage_config: WorkflowStorageConfig = "us-east-1"
+        self, access_token: str, s3_storage_config: WorkflowStorageConfig
     ):
         """Creates and returns an S3 client."""
         return boto3.client(
@@ -199,3 +200,61 @@ class Gen3Workflow:
         self._perform_s3_action(
             "delete", object_path, s3_storage_config, user, expected_status
         )
+
+    def create_tes_task(
+        self, request_body: dict, user: str = "main_account", expected_status=200
+    ) -> str:
+        """
+        Takes in a request body and returns a string containing the task_id
+        """
+        access_token = self._get_access_token(user)
+        tes_task_url = f"{self.TES_URL}/tasks"
+        headers = {"Authorization": f"bearer {access_token}"} if user else {}
+        response = requests.post(url=tes_task_url, headers=headers)
+        assert (
+            response.status_code == expected_status
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}"
+        return response.json()
+
+    def list_tes_tasks(self, user: str = "main_account", expected_status=200):
+        """
+        Takes in a request body and returns a string containing the task_id
+        """
+        access_token = self._get_access_token(user)
+        tes_task_url = f"{self.TES_URL}/tasks/"
+        headers = {"Authorization": f"bearer {access_token}"} if user else {}
+        response = requests.get(url=tes_task_url, headers=headers)
+        assert (
+            response.status_code == expected_status
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}"
+        return response.json()
+
+    def get_tes_task(
+        self, task_id: str, user: str = "main_account", expected_status=200
+    ):
+        """
+        Takes in a request body and returns a string containing the task_id
+        """
+        access_token = self._get_access_token(user)
+        tes_task_url = f"{self.TES_URL}/tasks/{task_id}"
+        headers = {"Authorization": f"bearer {access_token}"} if user else {}
+        response = requests.get(url=tes_task_url, headers=headers)
+        assert (
+            response.status_code == expected_status
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}"
+        return response.json()
+
+    def cancel_tes_task(
+        self, task_id: str, user: str = "main_account", expected_status=200
+    ):
+        """
+        Takes in a request body and returns a string containing the task_id
+        """
+        access_token = self._get_access_token(user)
+        tes_task_url = f"{self.TES_URL}/tasks/{task_id}:cancel"
+        headers = {"Authorization": f"bearer {access_token}"} if user else {}
+        response = requests.post(url=tes_task_url, headers=headers)
+        assert (
+            response.status_code == expected_status
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}"
+        return response.json()

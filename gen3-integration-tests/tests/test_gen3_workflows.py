@@ -137,3 +137,123 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=404,
         )
+
+    ######################## Test /ga4gh/tes/v1/tasks endpoint ########################
+
+    def test_unauthorized_user_cannot_list_tes_tasks(self):
+        """
+        Ensure that an unauthorized user cannot list TES tasks.
+        Expects: HTTP 200 with an empty task list in the response.
+        """
+        response = self.gen3_workflow.list_tes_tasks(
+            user=self.invalid_user,
+            expected_status=200,
+        )
+        assert (
+            "tasks" in response
+            and isinstance(response["tasks"], list)
+            and len(response["tasks"]) == 0
+        ), "Unauthorized users should receive an empty task list."
+
+    def test_unauthorized_user_cannot_create_tes_tasks(self):
+        """
+        Ensure that an unauthorized user cannot create TES tasks.
+        Expects: HTTP 401 Unauthorized response.
+        """
+        response = self.gen3_workflow.create_tes_task(
+            user=self.invalid_user,
+            expected_status=401,
+        )
+
+    def test_happy_path_create_tes_tasks(self):
+        """
+        Verify that an authorized user can successfully create a TES task.
+        Expects: HTTP 200 with an 'id' field in the response.
+        """
+        response = self.gen3_workflow.create_tes_task(
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert "id" in response, "Response should contain a valid 'id' field."
+
+    def test_happy_path_list_tes_tasks(self):
+        """
+        Verify that an authorized user can list TES tasks.
+        Expects: HTTP 200 with a non-empty task list containing the newly created task ID.
+        """
+        response = self.gen3_workflow.create_tes_task(
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert "id" in response, "Response should contain a valid 'id' field."
+        task_id = response["id"]
+
+        response = self.gen3_workflow.list_tes_tasks(
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert (
+            "tasks" in response
+            and isinstance(response["tasks"], list)
+            and len(response["tasks"]) > 0
+        ), "The response should contain a non-empty list of tasks."
+
+        task_list = response["tasks"]
+        assert task_id in (
+            task["id"] for task in task_list
+        ), "The created task ID should be present in the task list."
+
+    def test_happy_path_get_tes_tasks(self):
+        """
+        Verify that an authorized user can retrieve a TES task by ID.
+        Expects: HTTP 200 with a valid status field ('Queued', 'Running', or 'Completed'). #TODO: Verify if the values in the status field are accurate
+        """
+        response = self.gen3_workflow.create_tes_task(
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert "id" in response, "Response should contain a valid 'id' field."
+        task_id = response["id"]
+
+        response = self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert "status" in response and response["status"] in [
+            "Queued",
+            "Running",
+            "Completed",
+        ], "Task status should be 'Queued', 'Running', or 'Completed'."
+
+    def test_happy_path_cancel_tes_tasks(self):
+        """
+        Verify that an authorized user can cancel a TES task.
+        Expects: HTTP 200 and task status changes to 'Cancelled'.
+        """
+        response = self.gen3_workflow.create_tes_task(
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert "id" in response, "Response should contain a valid 'id' field."
+        task_id = response["id"]
+
+        response = self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert "status" in response and response["status"] in [
+            "Queued",
+            "Running",
+            "Completed",
+        ], "Task status should be 'Queued', 'Running', or 'Completed'."
+
+        response = self.gen3_workflow.cancel_tes_task(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert (
+            "status" in response and response["status"] == "Cancelled"
+        ), "Task status should be 'Cancelled' after cancellation."
