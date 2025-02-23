@@ -212,7 +212,7 @@ def prepare_ci_environment(namespace):
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
         updated_folders = os.getenv("UPDATED_FOLDERS", "").split(",")
-        if len(updated_folders) == 0:
+        if len(updated_folders) == 1 and updated_folders[0] == "":
             logger.info("No folders were updated. Skipping tests...")
             # Update SKIP_TESTS to true in GITHUB_ENV
             with open(os.getenv("GITHUB_ENV"), "a") as f:
