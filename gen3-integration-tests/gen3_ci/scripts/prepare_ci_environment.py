@@ -212,13 +212,15 @@ def prepare_ci_environment(namespace):
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa"):  # Manifest repos
         updated_folders = os.getenv("UPDATED_FOLDERS", "").split(",")
-        if len(updated_folders) == 1:
-            updated_folder = updated_folders[0]
-            print(f"Single folder found: {updated_folder}")
+        if len(updated_folders) == 0:
+            logger.info("No folders were updated. Skipping tests...")
+            # Update SKIP_TESTS to true in GITHUB_ENV
+            with open(os.getenv("GITHUB_ENV"), "a") as f:
+                f.write("SKIP_TESTS=true\n")
+            return
         else:
-            raise Exception(
-                f"More than one folder or no folder found in the branch. {updated_folders}"
-            )
+            updated_folder = updated_folders[0]
+            logger.info(f"Setting up env using folder: {updated_folder}")
         result = modify_env_for_manifest_pr(namespace, updated_folder, repo)
         assert result.lower() == "success"
     else:  # Service repos
