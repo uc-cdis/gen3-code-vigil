@@ -218,6 +218,11 @@ def prepare_ci_environment(namespace):
             with open(os.getenv("GITHUB_ENV"), "a") as f:
                 f.write("SKIP_TESTS=true\n")
             return
+        elif len(updated_folders) > 1:
+            # Raise Error if more than 1 folder is updated per PR
+            raise Exception(
+                "More than 1 folder updated, please update only 1 folder per PR..."
+            )
         else:
             updated_folder = updated_folders[0]
             logger.info(f"Setting up env using folder: {updated_folder}")
