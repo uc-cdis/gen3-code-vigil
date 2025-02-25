@@ -24,8 +24,9 @@ fi
 OUTPUT_DIR="$HOME/.gen3"
 mkdir -p "$OUTPUT_DIR"
 
-# Get the first fence pod name
-FENCE_POD=$(kubectl get pods -l app=fence -o jsonpath="{.items[0].metadata.name}")
+# Get running fence pod
+FENCE_POD=$(kubectl get pods -l app=fence -o json | jq -r '.items[0].metadata.name // empty')
+
 if [[ -z "$FENCE_POD" ]]; then
     echo "Error: Could not find a running fence pod."
     exit 1
