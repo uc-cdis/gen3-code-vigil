@@ -258,3 +258,16 @@ class Gen3Workflow:
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}"
         return response.json()
+
+    def empty_bucket_with_boto3(
+        self, s3_storage_config: WorkflowStorageConfig, user: str = "main_account"
+    ):
+        """Special helper method to delete all the objects in a bucket."""
+        access_token = self._get_access_token(user)
+        client = self._get_s3_client(access_token, s3_storage_config)
+        bucket = s3_storage_config.bucket_name
+        object_list = client.list_objects_v2(Bucket=bucket)
+        if "Contents" in object_list:
+            keys = [contents.get("Key") for contents in object_list.get("Contents")]
+            for key in keys:
+                client.delete_object(Bucket=bucket, Key=key)

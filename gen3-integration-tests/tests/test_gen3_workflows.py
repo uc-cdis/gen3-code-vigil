@@ -29,6 +29,7 @@ class TestGen3Workflow(object):
     s3_storage_config = WorkflowStorageConfig.from_dict(
         gen3_workflow.get_storage_info(user=valid_user, expected_status=200)
     )
+    Gen3Workflow.empty_bucket_with_boto3(s3_storage_config)
 
     ######################## Test /storage/info endpoint ########################
 
@@ -153,13 +154,14 @@ class TestGen3Workflow(object):
             "tasks" in response
             and isinstance(response["tasks"], list)
             and len(response["tasks"]) == 0
-        ), "Unauthorized users should receive an empty task list."
+        ), f"Unauthorized users should receive an empty task list.But found {response} instead"
 
     def test_unauthorized_user_cannot_create_tes_tasks(self):
         """
         Ensure that an unauthorized user cannot create TES tasks.
         Expects: HTTP 401 Unauthorized response.
         """
+        # TODO: Work on 401 for user = None, and 403 for user without `create` policy
         response = self.gen3_workflow.create_tes_task(
             user=self.invalid_user,
             expected_status=401,
@@ -174,7 +176,9 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-        assert "id" in response, "Response should contain a valid 'id' field."
+        assert (
+            "id" in response
+        ), f"Response should contain a valid 'id' field. But found {response} instead"
 
     def test_happy_path_list_tes_tasks(self):
         """
@@ -185,7 +189,9 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-        assert "id" in response, "Response should contain a valid 'id' field."
+        assert (
+            "id" in response
+        ), f"Response should contain a valid 'id' field. But found {response} instead"
         task_id = response["id"]
 
         response = self.gen3_workflow.list_tes_tasks(
@@ -196,7 +202,7 @@ class TestGen3Workflow(object):
             "tasks" in response
             and isinstance(response["tasks"], list)
             and len(response["tasks"]) > 0
-        ), "The response should contain a non-empty list of tasks."
+        ), f"The response should contain a non-empty list of tasks. But found {response} instead"
 
         task_list = response["tasks"]
         assert task_id in (
@@ -206,13 +212,15 @@ class TestGen3Workflow(object):
     def test_happy_path_get_tes_tasks(self):
         """
         Verify that an authorized user can retrieve a TES task by ID.
-        Expects: HTTP 200 with a valid status field ('Queued', 'Running', or 'Completed'). #TODO: Verify if the values in the status field are accurate
+        Expects: HTTP 200 and an id field.
         """
         response = self.gen3_workflow.create_tes_task(
             user=self.valid_user,
             expected_status=200,
         )
-        assert "id" in response, "Response should contain a valid 'id' field."
+        assert (
+            "id" in response
+        ), f"Response should contain a valid 'id' field. But found {response} instead"
         task_id = response["id"]
 
         response = self.gen3_workflow.get_tes_task(
@@ -220,11 +228,9 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-        assert "status" in response and response["status"] in [
-            "Queued",
-            "Running",
-            "Completed",
-        ], "Task status should be 'Queued', 'Running', or 'Completed'."
+        assert (
+            "state" in response
+        ), "Task state must exist in response. But found {response} instead."
 
     def test_happy_path_cancel_tes_tasks(self):
         """
@@ -235,7 +241,9 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-        assert "id" in response, "Response should contain a valid 'id' field."
+        assert (
+            "id" in response
+        ), f"Response should contain a valid 'id' field. But found {response} instead"
         task_id = response["id"]
 
         response = self.gen3_workflow.get_tes_task(
@@ -243,17 +251,16 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-        assert "status" in response and response["status"] in [
-            "Queued",
-            "Running",
-            "Completed",
-        ], "Task status should be 'Queued', 'Running', or 'Completed'."
+        assert (
+            "state" in response
+        ), f"Response must have `state` field in it. But found {response} instead"
 
         response = self.gen3_workflow.cancel_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
-        assert (
-            "status" in response and response["status"] == "Cancelled"
-        ), "Task status should be 'Cancelled' after cancellation."
+        assert "state" in response and response["state"] in [
+            "CANCELING",
+            "CANCELED",
+        ], f"Task state should be 'CANCELING', 'CANCELED' after cancellation. But found {response} instead"
