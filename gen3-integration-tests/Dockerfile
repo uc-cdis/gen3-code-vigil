@@ -33,9 +33,6 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check && \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-# Install chromium
-RUN apt-get update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
-
 # Builder stage
 FROM base AS builder
 
@@ -65,6 +62,9 @@ FROM base
 
 COPY --from=builder /${appname}/.venv /${appname}/.venv
 COPY --from=builder /${appname} /${appname}
+
+# Install chromium
+RUN apt-get update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
 
 RUN mkdir output
 
