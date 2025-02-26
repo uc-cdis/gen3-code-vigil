@@ -10,6 +10,12 @@
       Default value - default
     String parameter CLOUD_AUTO_BRANCH
         e.g., master
+    String parameter SERVICE
+        Key from the manifest's versions block
+        e.g., metadata
+    String parameter VERSION
+        Version, specifically the quay image tag
+        e.g., 2023.09
 
     Artifact archived - log.txt
 */
@@ -96,6 +102,12 @@ spec:
         }
         stage('Initial setup') {
             steps {
+                script {
+                    sh '''#!/bin/bash +x
+                        set -e
+                        echo NAMESPACE: $NAMESPACE
+                    '''
+                }
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
@@ -105,6 +117,36 @@ spec:
                   submoduleCfg: [],
                   userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/cloud-automation.git']]
                 ])
+                // gitops-qa
+                checkout([
+                  $class: 'GitSCM',
+                  branches: [[name: 'refs/heads/master']],
+                  doGenerateSubmoduleConfigurations: false,
+                  extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cdis-manifest']],
+                  submoduleCfg: [],
+                  userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/gitops-qa.git']]
+                ])
+            }
+        }
+        stage('Change service version') {
+            steps {
+                dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
+                    script {
+                        def service_value = params.SERVICE
+                        if (service_value != 'None' && service_value.trim()) {
+                          serviceList = SERVICE.split(',')
+                          serviceList.each { SERVICE_NAME ->
+                            currentBranch = "${SERVICE_NAME}:[a-zA-Z0-9._-]*"
+                            targetBranch = "${SERVICE_NAME}:${VERSION}"
+                            echo "Editing cdis-manifest/${NAMESPACE} service ${SERVICE_NAME} to version ${VERSION}"
+                            sh 'sed -i -e "s,'+"${currentBranch},${targetBranch}"+',g" manifest.json'
+                            sh 'cat manifest.json'
+                          }
+                        } else {
+                            echo "Skipping as no value assigned for SERVICE..."
+                        }
+                    }
+                }
             }
         }
         stage('Run Gen3 job') {
