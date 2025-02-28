@@ -122,3 +122,7 @@ def get_users():
     with open(user_list_path) as f:
         users = {row["USER_ID"]: row["EMAIL"] for row in csv.DictReader(f)}
     return users
+
+
+def get_list_of_services_deployed():
+    return gen3_admin_tasks.get_list_of_services_deployed()

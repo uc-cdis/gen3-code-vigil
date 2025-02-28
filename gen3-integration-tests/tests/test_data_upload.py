@@ -54,6 +54,18 @@ class FileRecordWithCCs:
         self.authz = authz
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "indexd" not in pytest.deployed_services,
+    reason="indexd service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
 @pytest.mark.fence
 @pytest.mark.indexd
 @pytest.mark.graph_submission

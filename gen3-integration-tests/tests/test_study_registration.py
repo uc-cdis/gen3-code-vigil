@@ -1,22 +1,26 @@
-import pytest
-import os
-import utils.gen3_admin_tasks as gat
 import json
+import os
 import random
 import time
 
-from utils import logger, TEST_DATA_PATH_OBJECT
-from utils.test_execution import screenshot
-from pages.study_registration import StudyRegistrationPage
-from pages.login import LoginPage
+import pytest
+import utils.gen3_admin_tasks as gat
 from pages.discovery import DiscoveryPage
-from services.requestor import Requestor
+from pages.login import LoginPage
+from pages.study_registration import StudyRegistrationPage
 from services.metadataservice import MetadataService
+from services.requestor import Requestor
+from utils import TEST_DATA_PATH_OBJECT, logger
+from utils.test_execution import screenshot
 
 
 # @pytest.mark.requestor
 # @pytest.mark.mds
 # @pytest.mark.study_registration
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
 @pytest.mark.wip
 @pytest.mark.portal
 class TestStudyRegistration(object):

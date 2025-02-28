@@ -971,3 +971,14 @@ def fence_disable_register_users_redirect(test_env_namespace: str = ""):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         pass
+
+
+def get_list_of_services_deployed():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        return json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )["versions"].keys()
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        pass

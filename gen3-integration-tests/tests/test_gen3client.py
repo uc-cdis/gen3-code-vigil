@@ -12,6 +12,14 @@ from services.indexd import Indexd
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "indexd" not in pytest.deployed_services,
+    reason="indexd service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "ssjdispatcher" not in pytest.deployed_services,
+    reason="ssjdispatcher service is not running on this environment",
+)
 @pytest.mark.indexd
 @pytest.mark.gen3_client
 class TestGen3Client:

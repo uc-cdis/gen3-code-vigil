@@ -6,6 +6,10 @@ from services.indexd import Indexd
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
 class TestGoogleDataAccess:

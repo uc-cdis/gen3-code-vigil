@@ -75,7 +75,7 @@ def pytest_collection_finish(session):
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
         # Run Usersync job
-        setup.run_usersync()
+        # setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -99,6 +99,9 @@ def pytest_configure(config):
         pytest.tested_env = pytest.namespace
     # Compute root_url
     pytest.root_url = f"https://{pytest.hostname}"
+
+    # List of services deployed
+    pytest.deployed_services = setup.get_list_of_services_deployed()
 
     # Clients used for testing
     pytest.clients = {}

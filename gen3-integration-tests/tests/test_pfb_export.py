@@ -1,16 +1,24 @@
-import pytest
-import os
-import requests
-import fastavro
 import json
-
+import os
 from datetime import datetime
-from playwright.sync_api import Page
-from pages.login import LoginPage
+
+import fastavro
+import pytest
+import requests
 from pages.exploration import ExplorationPage
+from pages.login import LoginPage
+from playwright.sync_api import Page
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "wts" not in pytest.deployed_services,
+    reason="wts service is not running on this environment",
+)
 @pytest.mark.pfb
 @pytest.mark.portal
 class TestPFBExport(object):

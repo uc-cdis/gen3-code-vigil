@@ -23,6 +23,18 @@ def page_setup(page):
     page.close()
 
 
+@pytest.mark.skipif(
+    "wts" not in pytest.deployed_services,
+    reason="wts service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "metadata" not in pytest.deployed_services,
+    reason="metadata service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds

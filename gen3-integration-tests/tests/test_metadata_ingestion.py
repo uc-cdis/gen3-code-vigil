@@ -11,6 +11,14 @@ from utils import logger
 nest_asyncio.apply()
 
 
+@pytest.mark.skipif(
+    "metadata" not in pytest.deployed_services,
+    reason="metadata service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "sower" not in pytest.deployed_services,
+    reason="sower service is not running on this environment",
+)
 @pytest.mark.mds
 @pytest.mark.sower
 class TestMetadataIngestion:

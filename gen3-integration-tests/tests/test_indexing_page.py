@@ -13,6 +13,18 @@ from services.indexd import Indexd
 from utils import TEST_DATA_PATH_OBJECT, logger
 
 
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "sower" not in pytest.deployed_services,
+    reason="sower service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "ssjdispatcher" not in pytest.deployed_services,
+    reason="ssjdispatcher service is not running on this environment",
+)
 @pytest.mark.portal
 @pytest.mark.sower
 @pytest.mark.ssjdispatcher

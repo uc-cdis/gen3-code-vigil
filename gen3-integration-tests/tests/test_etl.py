@@ -7,6 +7,10 @@ from services.graph import GraphDataTools
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
 @pytest.mark.tube
 class TestETL:
     @classmethod
