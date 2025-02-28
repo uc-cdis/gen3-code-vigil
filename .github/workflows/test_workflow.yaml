@@ -9,4 +9,4 @@ jobs:
     # You need to use the INSTALLATION_NAME from the previous step
     runs-on: self-hosted
     steps:
-    - run: kubect create ns elise-tet
+    - run: kubectl create ns elise-tet
