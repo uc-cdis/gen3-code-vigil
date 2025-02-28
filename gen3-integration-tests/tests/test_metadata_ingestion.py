@@ -1,4 +1,5 @@
 import asyncio
+import json
 import uuid
 
 import nest_asyncio
@@ -6,7 +7,7 @@ import pytest
 from gen3.auth import Gen3Auth
 from gen3.jobs import INGEST_METADATA_JOB, Gen3Jobs
 from services.metadataservice import MetadataService
-from utils import logger
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 nest_asyncio.apply()
 
@@ -18,6 +19,14 @@ nest_asyncio.apply()
 @pytest.mark.skipif(
     "sower" not in pytest.deployed_services,
     reason="sower service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "ingest-metadata-manifest" not in pytest.enabled_sower_jobs,
+    reason="ingest-metadata-manifest is not part of sower in manifest",
+)
+@pytest.mark.skipif(
+    not pytest.use_agg_mdg_flag,
+    reason="USE_AGG_MDS is not set or is false in manifest",
 )
 @pytest.mark.mds
 @pytest.mark.sower

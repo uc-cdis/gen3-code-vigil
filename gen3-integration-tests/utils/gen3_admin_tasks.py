@@ -982,3 +982,36 @@ def get_list_of_services_deployed():
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         pass
+
+
+def get_enabled_sower_jobs():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if "sower" not in manifest_data.keys():
+            return []
+        else:
+            return [item["name"] for item in manifest_data["sower"]]
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        pass
+
+
+def is_agg_mds_enabled():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if (
+            "metadata" in manifest_data.keys()
+            and "USE_AGG_MDS" in manifest_data["metadata"].keys()
+            and manifest_data["metadata"]["USE_AGG_MDS"]
+        ):
+            return True
+        else:
+            return False
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        pass

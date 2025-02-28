@@ -126,3 +126,11 @@ def get_users():
 
 def get_list_of_services_deployed():
     return gen3_admin_tasks.get_list_of_services_deployed()
+
+
+def get_enabled_sower_jobs():
+    return gen3_admin_tasks.get_enabled_sower_jobs()
+
+
+def check_agg_mds_is_enabled():
+    return gen3_admin_tasks.is_agg_mds_enabled()
