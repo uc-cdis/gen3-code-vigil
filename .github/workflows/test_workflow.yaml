@@ -14,4 +14,4 @@ jobs:
         with:
           version: latest
       - name: Create ns
-        run: kubectl create elise-test
+        run: kubectl create ns elise-test
