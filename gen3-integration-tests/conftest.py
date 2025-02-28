@@ -100,9 +100,6 @@ def pytest_configure(config):
     # Compute root_url
     pytest.root_url = f"https://{pytest.hostname}"
 
-    # List of services deployed
-    pytest.deployed_services = setup.get_list_of_services_deployed()
-
     # Clients used for testing
     pytest.clients = {}
     pytest.rotated_clients = {}
@@ -134,6 +131,9 @@ def pytest_configure(config):
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:
         pytest.root_url_portal = pytest.root_url
+
+    # List of services deployed
+    pytest.deployed_services = setup.get_list_of_services_deployed()
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
