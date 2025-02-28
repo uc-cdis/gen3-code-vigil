@@ -9,4 +9,9 @@ jobs:
     # You need to use the INSTALLATION_NAME from the previous step
     runs-on: self-hosted
     steps:
-    - run: kubectl create ns elise-tet
+      - name: Set Up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      - name: Create ns
+        run: kubectl create elise-test
