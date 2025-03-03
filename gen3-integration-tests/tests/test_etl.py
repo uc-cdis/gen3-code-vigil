@@ -11,6 +11,10 @@ from utils import logger
     "sheepdog" not in pytest.deployed_services,
     reason="sheepdog service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "tube" not in pytest.deployed_services,
+    reason="tube service is not running on this environment",
+)
 @pytest.mark.tube
 class TestETL:
     @classmethod

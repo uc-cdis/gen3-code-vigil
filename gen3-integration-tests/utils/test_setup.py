@@ -134,3 +134,7 @@ def get_enabled_sower_jobs():
 
 def check_agg_mds_is_enabled():
     return gen3_admin_tasks.is_agg_mds_enabled()
+
+
+def check_indexs3client_job_deployed():
+    return gen3_admin_tasks.check_indexs3client_job_deployed()

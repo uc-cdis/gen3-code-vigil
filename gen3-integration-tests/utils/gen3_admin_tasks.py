@@ -16,7 +16,30 @@ CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 def get_portal_config():
     """Fetch portal config from the GUI"""
-    if "heal" in pytest.tested_env:
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = [
+            "kubectl",
+            "get",
+            "cm",
+            "manifest-global",
+            "-o=jsonpath='{.data}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            manifest_data = json.loads(result.stdout)
+        else:
+            logger.info(f"Error in kubectl command: {result.stderr}")
+    if (
+        "frontend_root" in manifest_data.keys()
+        and manifest_data["frontend_root"] == "gen3ff"
+    ):
         res = requests.get(f"{pytest.root_url}/portal/data/config/gitops.json")
     else:
         res = requests.get(f"{pytest.root_url}/data/config/gitops.json")
@@ -1052,5 +1075,39 @@ def is_agg_mds_enabled():
                 return True
             else:
                 return False
+        else:
+            return False
+
+
+def check_indexs3client_job_deployed():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if (
+            "ssjdispatcher" in manifest_data.keys()
+            and "indexs3client"
+            in manifest_data.get("ssjdispatcher", {})
+            .get("job_images", {})
+            .get("indexing", "")
+        ):
+            return True
+        else:
+            return False
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = [
+            "kubectl",
+            "get",
+            "cm",
+            "manifest-ssjdispatcher",
+            "-o=jsonpath='{.data.json}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0 and "indexs3client" in result.stdout.strip():
+            return True
         else:
             return False

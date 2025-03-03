@@ -114,6 +114,10 @@ class TestDataUpload:
         self.indexd.delete_records(self.created_guids)
         self.created_guids = []
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_file_upload_and_download_via_api(self):
         """
         Scenario: Test Upload and Download via api
@@ -210,6 +214,10 @@ class TestDataUpload:
             fence_upload_res.status_code == 403
         ), f"This user should not be able to download.\n{fence_upload_res.content}"
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_data_file_deletion(self):
         """
         Scenario: Test Upload and Download via api
@@ -276,6 +284,10 @@ class TestDataUpload:
             id=file_guid, user="main_account", expected_status=404
         )
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_upload_the_same_file_twice(self):
         """
         Scenario: Upload the same file twice
@@ -357,6 +369,10 @@ class TestDataUpload:
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_file_upload_with_consent_codes(self):
         """
         Scenario: File upload with consent codes
@@ -413,6 +429,10 @@ class TestDataUpload:
             self.indexd, file_record_with_ccs
         )
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_successful_multipart_upload(self):
         """
         Scenario: Successful multipart upload

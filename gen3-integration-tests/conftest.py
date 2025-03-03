@@ -138,6 +138,8 @@ def pytest_configure(config):
     pytest.enabled_sower_jobs = setup.get_enabled_sower_jobs()
     # Is Flag enabled for USE_AGG_MDS
     pytest.use_agg_mdg_flag = setup.check_agg_mds_is_enabled()
+    # Is indexs3client job deployed
+    pytest.indexs3client_job_deployed = setup.check_indexs3client_job_deployed()
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
