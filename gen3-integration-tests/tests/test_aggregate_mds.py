@@ -13,10 +13,6 @@ from utils.test_execution import assert_with_retry
     reason="Metadata service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "ingest-metadata-manifest" not in pytest.enabled_sower_jobs,
-    reason="ingest-metadata-manifest is not part of sower in manifest",
-)
-@pytest.mark.skipif(
     not pytest.use_agg_mdg_flag,
     reason="USE_AGG_MDS is not set or is false in manifest",
 )

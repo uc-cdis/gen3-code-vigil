@@ -981,7 +981,19 @@ def get_list_of_services_deployed():
         )["versions"].keys()
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = [
+            "kubectl",
+            "get",
+            "deployments",
+            "-o=jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("'", "")
+        else:
+            raise Exception("Unable to retrieve deployed services")
 
 
 def get_enabled_sower_jobs():
@@ -995,7 +1007,14 @@ def get_enabled_sower_jobs():
         else:
             return [item["name"] for item in manifest_data["sower"]]
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = ["kubectl", "get", "cm", "manifest-sower", "-o=jsonpath='{.data.json}'"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("'", "")
+        else:
+            return []
 
 
 def is_agg_mds_enabled():
@@ -1014,4 +1033,24 @@ def is_agg_mds_enabled():
             return False
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = [
+            "kubectl",
+            "get",
+            "cm",
+            "manifest-metadata",
+            "-o=jsonpath='{.data.json}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            metadata_output = json.loads(result.stdout)
+            if (
+                "USE_AGG_MDS" in metadata_output.keys()
+                and metadata_output["USE_AGG_MDS"]
+            ):
+                return True
+            else:
+                return False
+        else:
+            return False
