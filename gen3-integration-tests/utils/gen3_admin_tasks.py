@@ -148,10 +148,6 @@ def run_gen3_job(
     """
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        quay_repo = os.getenv("REPO")
-        quay_tag = (
-            os.getenv("BRANCH").replace("(", "_").replace(")", "_").replace("/", "_")
-        )
         job = JenkinsJob(
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
@@ -164,8 +160,6 @@ def run_gen3_job(
             "CMD_LINE_PARAMS": cmd_line_params,
             "GEN3_ROLL_ALL": roll_all,
             "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-            "SERVICE": quay_repo,
-            "VERSION": quay_tag,
         }
         build_num = job.build_job(params)
         if build_num:

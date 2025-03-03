@@ -128,23 +128,22 @@ spec:
                 ])
             }
         }
-        stage('Change service version') {
+        stage('Update manifest.json') {
             steps {
                 dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
                     script {
-                        def service_value = params.SERVICE
-                        if (service_value != 'None' && service_value.trim()) {
-                          serviceList = SERVICE.split(',')
-                          serviceList.each { SERVICE_NAME ->
-                            currentBranch = "${SERVICE_NAME}:[a-zA-Z0-9._-]*"
-                            targetBranch = "${SERVICE_NAME}:${VERSION}"
-                            echo "Editing cdis-manifest/${NAMESPACE} service ${SERVICE_NAME} to version ${VERSION}"
-                            sh 'sed -i -e "s,'+"${currentBranch},${targetBranch}"+',g" manifest.json'
-                            sh 'cat manifest.json'
-                          }
-                        } else {
-                            echo "Skipping as no value assigned for SERVICE..."
-                        }
+                        sh '''#!/bin/bash +x
+                            set -e
+                            export GEN3_HOME=\$WORKSPACE/cloud-automation
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
+                            source $GEN3_HOME/gen3/gen3setup.sh
+                            deploymentImages=$(kubectl -n \${NAMESPACE} get deployments -o=jsonpath='{range .items[*]}"{.metadata.name}":"{.spec.template.spec.containers[*].image}",{"\\n"}{end}' | sed 's/-deployment//')
+                            # Remove last trailing comma
+                            deploymentImages="\${deploymentImages%?}"
+                            formattedImages="{ \${deploymentImages} }"
+                            echo "\${formattedImages}" | jq --argjson newVersions "\$formattedImages" '.versions = $newVersions' manifest.json > tmp_manifest.json && mv tmp_manifest.json manifest.json
+                            cat manifest.json
+                        '''
                     }
                 }
             }
