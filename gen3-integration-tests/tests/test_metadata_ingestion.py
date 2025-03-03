@@ -24,10 +24,6 @@ nest_asyncio.apply()
     "ingest-metadata-manifest" not in pytest.enabled_sower_jobs,
     reason="ingest-metadata-manifest is not part of sower in manifest",
 )
-@pytest.mark.skipif(
-    not pytest.use_agg_mdg_flag,
-    reason="USE_AGG_MDS is not set or is false in manifest",
-)
 @pytest.mark.mds
 @pytest.mark.sower
 class TestMetadataIngestion:
