@@ -17,9 +17,9 @@ CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 def get_portal_config():
     """Fetch portal config from the GUI"""
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        manifest_data = json.loads(
+        manifest_global_data = json.loads(
             (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-        )
+        )["global"]
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [
@@ -33,12 +33,12 @@ def get_portal_config():
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0:
-            manifest_data = json.loads(result.stdout)
+            manifest_global_data = json.loads(result.stdout)
         else:
             logger.info(f"Error in kubectl command: {result.stderr}")
     if (
-        "frontend_root" in manifest_data.keys()
-        and manifest_data["frontend_root"] == "gen3ff"
+        "frontend_root" in manifest_global_data.keys()
+        and manifest_global_data["frontend_root"] == "gen3ff"
     ):
         res = requests.get(f"{pytest.root_url}/portal/data/config/gitops.json")
     else:
