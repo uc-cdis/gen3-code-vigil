@@ -15,17 +15,11 @@ NOTE: To setup the index data for image study follow setup under
 
 
 @pytest.mark.skipif(
-    "orthanc"
-    not in json.loads(
-        (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-    )["versions"].keys(),
-    reason="DICOM service is not running on this environment",
+    "orthanc" not in pytest.deployed_services,
+    reason="Orthanc service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "ohif-viewer"
-    not in json.loads(
-        (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-    )["versions"].keys(),
+    "ohif-viewer" not in pytest.deployed_services,
     reason="OHIF service is not running on this environment",
 )
 @pytest.mark.dicom_viewer

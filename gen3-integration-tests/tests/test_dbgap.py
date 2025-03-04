@@ -99,6 +99,14 @@ new_dbgap_records = {
 }
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "indexd" not in pytest.deployed_services,
+    reason="indexd service is not running on this environment",
+)
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket

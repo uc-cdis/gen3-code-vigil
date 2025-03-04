@@ -9,6 +9,10 @@ from utils import logger
 from utils.test_execution import screenshot
 
 
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
 class TestStudyViewer(object):
     variables = {}
 

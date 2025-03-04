@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 from uuid import uuid4
 
@@ -13,6 +14,26 @@ from services.indexd import Indexd
 from utils import TEST_DATA_PATH_OBJECT, logger
 
 
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "sower" not in pytest.deployed_services,
+    reason="sower service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "ssjdispatcher" not in pytest.deployed_services,
+    reason="ssjdispatcher service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "manifest-indexing" not in pytest.enabled_sower_jobs,
+    reason="manifest-infexing is not part of sower in manifest",
+)
+@pytest.mark.skipif(
+    "indexd-manifest" not in pytest.enabled_sower_jobs,
+    reason="indexd-manifest is not part of sower in manifest",
+)
 @pytest.mark.portal
 @pytest.mark.sower
 @pytest.mark.ssjdispatcher

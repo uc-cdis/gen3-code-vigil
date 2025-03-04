@@ -17,6 +17,10 @@ from utils import logger
 from utils.gen3_admin_tasks import update_audit_service_logging
 
 
+@pytest.mark.skipif(
+    "audit-service" not in pytest.deployed_services,
+    reason="audit-service service is not running on this environment",
+)
 @pytest.mark.audit
 class TestAuditService:
     @classmethod
@@ -159,6 +163,14 @@ class TestAuditService:
 
     @pytest.mark.indexd
     @pytest.mark.fence
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "fence" not in pytest.deployed_services,
+        reason="fence is not running on this environment",
+    )
     def test_audit_download_presignedURL_events(self):
         """
         Scenario: Download presigned URL events

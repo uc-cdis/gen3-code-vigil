@@ -11,6 +11,14 @@ from services.fence import Fence
 from services.ras import RAS
 
 
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
 @pytest.mark.portal
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
