@@ -33,7 +33,7 @@ def get_portal_config():
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0:
-            manifest_global_data = json.loads(result.stdout)
+            manifest_global_data = json.loads(result.stdout.strip().replace("'", ""))
         else:
             logger.info(f"Error in kubectl command: {result.stderr}")
     if (
@@ -1067,7 +1067,7 @@ def is_agg_mds_enabled():
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0:
-            metadata_output = json.loads(result.stdout)
+            metadata_output = json.loads(result.stdout.strip().replace("'", ""))
             if (
                 "USE_AGG_MDS" in metadata_output.keys()
                 and metadata_output["USE_AGG_MDS"]
