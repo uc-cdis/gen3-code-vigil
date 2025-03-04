@@ -108,7 +108,7 @@ class LoginPage(object):
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
             expect(
-                page.get_by_role("div").filter(has_text=logged_in_user)
+                page.get_by_role("link").filter(has_text=logged_in_user)
             ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
@@ -187,8 +187,8 @@ class LoginPage(object):
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
         # Click on Logout button to logout
         else:
-            page.get_by_role("div", name="Logout").click()
-        nav_bar_login_button = page.get_by_role("div", name="Login")
+            page.get_by_role("link", name="Logout").click()
+        nav_bar_login_button = page.get_by_role("link", name="Login")
         screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 
