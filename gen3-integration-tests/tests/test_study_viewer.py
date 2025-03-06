@@ -1,6 +1,7 @@
 import time
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from pages.login import LoginPage
 from pages.study_viewer import StudyViewerPage
 from playwright.sync_api import Page
@@ -12,6 +13,10 @@ from utils.test_execution import screenshot
 @pytest.mark.skipif(
     "portal" not in pytest.deployed_services,
     reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "studyViewerConfig" not in gat.get_portal_config().keys(),
+    reason="studyViewerConfig in not in portal config",
 )
 class TestStudyViewer(object):
     variables = {}

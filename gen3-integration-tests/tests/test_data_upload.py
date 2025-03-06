@@ -10,6 +10,7 @@ import string
 import time
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from pages.login import LoginPage
@@ -579,6 +580,10 @@ class TestDataUpload:
         )
 
     @pytest.mark.portal
+    @pytest.mark.skipif(
+        "midrc" in str(gat.get_portal_config()),
+        reason="data upload UI test cases don't work in midrc environment",
+    )
     def test_map_uploaded_files_in_submission_page(self, page: Page):
         """
         Scenario: Map uploaded files in windmill submission page
@@ -609,36 +614,35 @@ class TestDataUpload:
         logger.info(file_guid)
         logger.info(presigned_url)
 
-        if "midrc" not in pytest.namespace:
-            self.login_page.go_to(page)
-            self.login_page.login(page)
-            # user should see 1 file, but not ready yet
-            self.submission.check_unmapped_files_submission_page(
-                page, text="1 files | 0 B"
-            )
+        self.login_page.go_to(page)
+        self.login_page.login(page)
+        # user should see 1 file, but not ready yet
+        self.submission.check_unmapped_files_submission_page(page, text="1 files | 0 B")
 
-            self.fence.upload_file_using_presigned_url(
-                presigned_url, file_object, file_object["file_size"]
-            )
+        self.fence.upload_file_using_presigned_url(
+            presigned_url, file_object, file_object["file_size"]
+        )
 
-            # user should see 1 file ready
-            self.login_page.go_to(page)
-            self.submission.check_unmapped_files_submission_page(
-                page, text=f"1 files | 128 B"
-            )
+        # user should see 1 file ready
+        self.login_page.go_to(page)
+        self.submission.check_unmapped_files_submission_page(
+            page, text="1 files | 128 B"
+        )
 
-            # Perform mapping
-            self.submission.map_files(page)
-            self.submission.select_submission_fields(page)
+        # Perform mapping
+        self.submission.map_files(page)
+        self.submission.select_submission_fields(page)
 
-            # user should see 0 file ready
-            self.submission.check_unmapped_files_submission_page(
-                page, text="0 files | 0 B"
-            )
+        # user should see 0 file ready
+        self.submission.check_unmapped_files_submission_page(page, text="0 files | 0 B")
 
-            self.login_page.logout(page)
+        self.login_page.logout(page)
 
     @pytest.mark.portal
+    @pytest.mark.skipif(
+        "midrc" in str(gat.get_portal_config()),
+        reason="data upload UI test cases don't work in midrc environment",
+    )
     def test_cannot_see_files_uploaded_by_other_users(self, page: Page):
         """
         Scenario: Cannot see files uploaded by other users
