@@ -103,7 +103,7 @@ class LoginPage(object):
                 .get("topBar", {})
                 .get("useProfileDropdown", "")
             ):
-                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
+                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
                 if accept_button:
                     logger.info("Clicking on Accept button")
                     accept_button.click()
