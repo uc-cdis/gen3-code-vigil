@@ -130,6 +130,10 @@ new_abc_records = {
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
+@pytest.mark.skipif(
+    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
+    reason="frontend_root is set to gen3ff",
+)
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.requires_fence_client

@@ -13,22 +13,19 @@ from utils import logger
 
 
 def check_export_to_pfb_button(data):
-    logger.info(data)
     for button in data:
-        if "type" in button.keys() and button["type"] == "export-to-pfb":
+        if button.get("type") == "export-to-pfb":
             return True
     return False
 
 
 def validate_json_for_export_to_pfb_button(data):
-    for key, val in data.items():
-        if key == "tabTitle" and val in ["Data", "File"]:
-            if check_export_to_pfb_button(data["buttons"]):
-                return True
-        if isinstance(val, list):
-            for item in val:
-                if validate_json_for_export_to_pfb_button(item):
-                    return True
+    if isinstance(data, dict):
+        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
+            return True
+        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
+    if isinstance(data, list):
+        return any(validate_json_for_export_to_pfb_button(item) for item in data)
     return False
 
 
