@@ -25,7 +25,7 @@ def validate_json_for_export_to_pfb_button(data):
         if key == "tabTitle" and val in ["Data", "File"]:
             if check_export_to_pfb_button(data["buttons"]):
                 return True
-        if isinstance(val, list) and key == "explorerConfig":
+        if isinstance(val, list):
             for item in val:
                 if validate_json_for_export_to_pfb_button(item):
                     return True
