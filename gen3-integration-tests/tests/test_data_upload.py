@@ -7,10 +7,8 @@ import math
 import os
 import random
 import string
-import time
 
 import pytest
-import utils.gen3_admin_tasks as gat
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from pages.login import LoginPage
@@ -581,7 +579,7 @@ class TestDataUpload:
 
     @pytest.mark.portal
     @pytest.mark.skipif(
-        "midrc" in str(gat.get_portal_config()),
+        "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
     )
     def test_map_uploaded_files_in_submission_page(self, page: Page):
@@ -640,7 +638,7 @@ class TestDataUpload:
 
     @pytest.mark.portal
     @pytest.mark.skipif(
-        "midrc" in str(gat.get_portal_config()),
+        "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
     )
     def test_cannot_see_files_uploaded_by_other_users(self, page: Page):

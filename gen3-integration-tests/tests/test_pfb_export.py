@@ -5,10 +5,31 @@ from datetime import datetime
 import fastavro
 import pytest
 import requests
+import utils.gen3_admin_tasks as gat
 from pages.exploration import ExplorationPage
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from utils import logger
+
+
+def check_export_to_pfb_button(data):
+    logger.info(data)
+    for button in data:
+        if "type" in button.keys() and button["type"] == "export-to-pfb":
+            return True
+    return False
+
+
+def validate_json_for_export_to_pfb_button(data):
+    for key, val in data.items():
+        if key == "tabTitle" and val in ["Data", "File"]:
+            if check_export_to_pfb_button(data["buttons"]):
+                return True
+        if isinstance(val, list) and key == "explorerConfig":
+            for item in val:
+                if validate_json_for_export_to_pfb_button(item):
+                    return True
+    return False
 
 
 @pytest.mark.skipif(
@@ -18,6 +39,10 @@ from utils import logger
 @pytest.mark.skipif(
     "wts" not in pytest.deployed_services,
     reason="wts service is not running on this environment",
+)
+@pytest.mark.skipif(
+    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    reason="Export to PFB button not present in gitops.json",
 )
 @pytest.mark.pfb
 @pytest.mark.portal
