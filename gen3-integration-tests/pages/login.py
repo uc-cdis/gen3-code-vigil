@@ -108,7 +108,9 @@ class LoginPage(object):
                     logger.info("Clicking on Accept button")
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
-            username = page.locator(f"//*[contains(text(), '{logged_in_user}')]")
+            username = page.locator(
+                f"//*[contains(text(), '{logged_in_user}') or contains(text(), '{logged_in_user.lower()}')]"
+            )
             expect(username).to_be_visible(timeout=10000)
             # expect(
             #     page.get_by_role("link").filter(has_text=logged_in_user)
