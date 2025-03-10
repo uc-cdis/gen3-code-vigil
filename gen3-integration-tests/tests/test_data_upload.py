@@ -582,6 +582,10 @@ class TestDataUpload:
         "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
     )
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_map_uploaded_files_in_submission_page(self, page: Page):
         """
         Scenario: Map uploaded files in windmill submission page

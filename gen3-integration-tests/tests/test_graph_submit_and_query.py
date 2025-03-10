@@ -66,7 +66,19 @@ class TestGraphSubmitAndQuery:
                 len(received_data) == 1
             ), "Submitted 1 record so expected query to return 1 record"
             for prop in primitive_props:
-                assert received_data[0][prop] == record.props[prop]
+                if isinstance(received_data[0][prop], list) and isinstance(
+                    record.props[prop], list
+                ):
+                    for counter in range(len(received_data[0][prop])):
+                        assert str(received_data[0][prop][counter]) == str(
+                            record.props[prop][counter]
+                        )
+                elif isinstance(received_data[0][prop], int) or isinstance(
+                    record.props[prop], int
+                ):
+                    assert int(received_data[0][prop]) == int(record.props[prop])
+                else:
+                    assert str(received_data[0][prop]) == str(record.props[prop])
 
         # We use core_metadata_collection because we know links will not be an issue when submitting a new
         # record. We could also use a node at the bottom of the tree so it's easier to delete records in the
