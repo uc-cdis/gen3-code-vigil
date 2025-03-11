@@ -1,5 +1,6 @@
 # Login Page
 import os
+import re
 import time
 
 import pytest
@@ -109,12 +110,10 @@ class LoginPage(object):
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
             username = page.locator(
-                f"//*[contains(text(), '{logged_in_user}') or contains(text(), '{logged_in_user.lower()}')]"
-            )
+                f"//*[contains(text(), '{logged_in_user}')]"
+            ).locator(has_text=re.compile(logged_in_user, re.IGNORECASE))
+
             expect(username).to_be_visible(timeout=10000)
-            # expect(
-            #     page.get_by_role("link").filter(has_text=logged_in_user)
-            # ).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
