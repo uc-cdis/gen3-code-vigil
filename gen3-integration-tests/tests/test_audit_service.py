@@ -22,6 +22,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
     reason="audit-service service is not running on this environment",
 )
 @pytest.mark.audit
+@pytest.mark.ras
 class TestAuditService:
     @classmethod
     def setup_class(cls):

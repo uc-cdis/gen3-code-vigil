@@ -21,6 +21,7 @@ from services.ras import RAS
 )
 @pytest.mark.portal
 @pytest.mark.fence
+@pytest.mark.ras
 @pytest.mark.requires_fence_client
 class TestRasAuthN:
     fence = Fence()

@@ -45,6 +45,10 @@ class CustomScheduling(LoadScopeScheduling):
         if node.get_closest_marker("workspace"):
             return "__workspace__"
 
+        # Run all tests with marker ras to run serially (same worker)
+        if node.get_closest_marker("ras"):
+            return "__ras__"
+
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
 
