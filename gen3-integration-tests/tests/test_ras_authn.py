@@ -11,8 +11,21 @@ from services.fence import Fence
 from services.ras import RAS
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
+    reason="frontend_root is set to gen3ff",
+)
 @pytest.mark.portal
 @pytest.mark.fence
+@pytest.mark.ras
 @pytest.mark.requires_fence_client
 class TestRasAuthN:
     fence = Fence()

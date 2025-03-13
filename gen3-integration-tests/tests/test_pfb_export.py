@@ -1,16 +1,46 @@
-import pytest
-import os
-import requests
-import fastavro
 import json
-
+import os
 from datetime import datetime
-from playwright.sync_api import Page
-from pages.login import LoginPage
+
+import fastavro
+import pytest
+import requests
+import utils.gen3_admin_tasks as gat
 from pages.exploration import ExplorationPage
+from pages.login import LoginPage
+from playwright.sync_api import Page
 from utils import logger
 
 
+def check_export_to_pfb_button(data):
+    for button in data:
+        if button.get("type") == "export-to-pfb":
+            return True
+    return False
+
+
+def validate_json_for_export_to_pfb_button(data):
+    if isinstance(data, dict):
+        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
+            return True
+        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
+    if isinstance(data, list):
+        return any(validate_json_for_export_to_pfb_button(item) for item in data)
+    return False
+
+
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "wts" not in pytest.deployed_services,
+    reason="wts service is not running on this environment",
+)
+@pytest.mark.skipif(
+    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    reason="Export to PFB button not present in gitops.json",
+)
 @pytest.mark.pfb
 @pytest.mark.portal
 class TestPFBExport(object):
