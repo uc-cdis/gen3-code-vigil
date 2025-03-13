@@ -109,9 +109,7 @@ class LoginPage(object):
                     logger.info("Clicking on Accept button")
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
-            username = page.locator(
-                f"//*[contains(text(), '{logged_in_user}')]"
-            ).filter(has_text=re.compile(logged_in_user, re.IGNORECASE))
+            username = page.locator(has_text=re.compile(logged_in_user, re.IGNORECASE))
             expect(username).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
