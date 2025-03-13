@@ -12,12 +12,16 @@ from services.ras import RAS
 
 
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
+    "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
 @pytest.mark.skipif(
     "portal" not in pytest.deployed_services,
-    reason="fence service is not running on this environment",
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
+    reason="frontend_root is set to gen3ff",
 )
 @pytest.mark.portal
 @pytest.mark.fence
