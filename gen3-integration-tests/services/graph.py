@@ -1,25 +1,23 @@
 import copy
 import json
 import os
-import uuid
-import psutil
-import pytest
 import random
 import string
-import requests
+import uuid
 
-from utils import logger
-from gen3.auth import Gen3Auth
-from gen3.submission import Gen3Submission
+import psutil
+import pytest
+import requests
 from datasimulator.main import (
     initialize_graph,
     run_simulation,
     run_submission_order_generation,
 )
-
-from utils.misc import retry
-from utils import TEST_DATA_PATH_OBJECT
+from gen3.auth import Gen3Auth
+from gen3.submission import Gen3Submission
 from packaging.version import Version
+from utils import TEST_DATA_PATH_OBJECT, logger
+from utils.misc import retry
 
 
 class GraphRecord:
@@ -85,7 +83,7 @@ class GraphDataTools:
                 "manifest.json not found. It should have been fetched by `get_configuration_files`..."
             )
             raise
-            
+
         dictionary_url = manifest.get("global", {}).get("dictionary_url")
         assert dictionary_url, "No dictionary URL in manifest.json"
 
@@ -227,10 +225,10 @@ class GraphDataTools:
         Following the order set by `self.submission_order`, submit all the records in `self.test_records`,
         in the right order.
         """
-        logger.debug(f"submission order: {self.submission_order}")
+        logger.info(f"submission order: {self.submission_order}")
         for node_name in self.submission_order:
-            logger.debug(f"Submitting record for {node_name}")
-            logger.debug(self.test_records[node_name])
+            logger.info(f"Submitting record for {node_name}")
+            logger.info(self.test_records[node_name])
             self.submit_record(self.test_records[node_name])
 
     def submit_new_record(self, node_name: str) -> GraphRecord:
