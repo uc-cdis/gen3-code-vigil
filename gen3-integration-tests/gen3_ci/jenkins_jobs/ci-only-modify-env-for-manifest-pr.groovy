@@ -144,6 +144,12 @@ spec:
                     script {
                         String od = sh(returnStdout: true, script: "jq -r .global.dictionary_url < ${env.TEMP_MANIFEST_HOME}/manifest.json").trim()
                         String pa = sh(returnStdout: true, script: "jq -r .global.portal_app < ${env.TEMP_MANIFEST_HOME}/manifest.json").trim()
+                        // fetch google.enabled from the target environment
+                        sh(returnStatus : true, script: """
+                            if jq --exit-status '.google.enabled' ${env.TEMP_MANIFEST_HOME}/manifest.json >/dev/null; then
+                                jq -r .google.enabled < ${env.TEMP_MANIFEST_HOME}/manifest.json > google_enabled.json;
+                            fi
+                        """)
                         // fetch netpolicy from the target environment
                         sh(returnStatus : true, script: "if cat ${env.TEMP_MANIFEST_HOME}/manifest.json | jq --exit-status '.global.netpolicy' >/dev/null; then "
                           + "jq -r .global.netpolicy < ${env.TEMP_MANIFEST_HOME}/manifest.json > netpolicy.json; "
@@ -181,14 +187,11 @@ spec:
                           sh(returnStdout: true, script: "old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json) && echo \$old | jq -r \'${dels}\' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json && echo \$old | jq '.sower = []' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
                         }
                         sh(returnStdout: true, script: "bs=\$(jq -r .versions < ${env.TEMP_MANIFEST_HOME}/manifest.json) "
-                            + "&& google_present=\$(jq 'has(\"google\")' < ${env.TEMP_MANIFEST_HOME}/manifest.json) "
-                            + "&& google=\$(jq -r '.google // empty' < ${env.TEMP_MANIFEST_HOME}/manifest.json) "
                             + "&& old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json) "
-                            + """&& echo \$old | jq -r --arg od ${od} --arg pa ${pa} --argjson vs \"\$bs\" --argjson gl \"\$google\""""
-                            + " '(.global.dictionary_url) |= \$od"
-                            + / | (.global.portal_app) |=/ + "\$pa"
-                            + / | (.versions) |=/ + "\$vs"
-                            + / | if \$gl != \"\" then (.google |= \$gl) else . end'"  + " > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
+                            + """&& echo \$old | jq -r --arg od ${od} --arg pa ${pa} --argjson vs \"\$bs\""""
+                            + / '(.global.dictionary_url) |=/ + "\$od" + / | (.global.portal_app) |=/ + "\$pa"
+                            + / | (.versions) |=/ + "\$vs" + /'/ + " > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
+                        String parseSowerBlockOutput = sh(returnStdout: true, script: "jq -r '.' sower_block.json").trim()
                         println(parseSowerBlockOutput)
                         if (parseSowerBlockOutput != "null") {
                           // set Jenkins CI service accounts for sower jobs if the property exists
@@ -200,6 +203,21 @@ spec:
                           println(sowerBlock3)
                           sh(returnStdout: true, script: "old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json) && echo \$old | jq -r --argjson sj \"\$(cat sower_block.json)\" '(.sower) = \$sj' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
                         }
+                        // replace google.enabled
+                        sh(returnStdout: true, script: """
+                            old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json)
+
+                            if [ -f "google_enabled.json" ]; then
+                                google_enabled=\$(cat google_enabled.json)
+                            else
+                                google_enabled="no"
+                            fi
+
+                            echo "\$old" | jq -r --arg ge "\$google_enabled" '
+                                .google.enabled = \$ge
+                            ' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json
+                            rm -f google_enabled.json
+                        """)
                         // replace netpolicy
                         sh(returnStdout: true, script: "if [ -f \"netpolicy.json\" ]; then "
                           + "old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json) && echo \$old | jq -r 'del(.global.netpolicy)' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json;"
