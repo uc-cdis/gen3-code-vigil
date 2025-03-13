@@ -181,11 +181,14 @@ spec:
                           sh(returnStdout: true, script: "old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json) && echo \$old | jq -r \'${dels}\' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json && echo \$old | jq '.sower = []' > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
                         }
                         sh(returnStdout: true, script: "bs=\$(jq -r .versions < ${env.TEMP_MANIFEST_HOME}/manifest.json) "
+                            + "&& google_present=\$(jq 'has(\"google\")' < ${env.TEMP_MANIFEST_HOME}/manifest.json) "
+                            + "&& google=\$(jq -r '.google // empty' < ${env.TEMP_MANIFEST_HOME}/manifest.json) "
                             + "&& old=\$(cat ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json) "
-                            + """&& echo \$old | jq -r --arg od ${od} --arg pa ${pa} --argjson vs \"\$bs\""""
-                            + / '(.global.dictionary_url) |=/ + "\$od" + / | (.global.portal_app) |=/ + "\$pa"
-                            + / | (.versions) |=/ + "\$vs" + /'/ + " > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
-                        String parseSowerBlockOutput = sh(returnStdout: true, script: "jq -r '.' sower_block.json").trim()
+                            + """&& echo \$old | jq -r --arg od ${od} --arg pa ${pa} --argjson vs \"\$bs\" --argjson gl \"\$google\""""
+                            + " '(.global.dictionary_url) |= \$od"
+                            + / | (.global.portal_app) |=/ + "\$pa"
+                            + / | (.versions) |=/ + "\$vs"
+                            + / | if \$gl != \"\" then (.google |= \$gl) else . end'"  + " > ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifest.json")
                         println(parseSowerBlockOutput)
                         if (parseSowerBlockOutput != "null") {
                           // set Jenkins CI service accounts for sower jobs if the property exists
