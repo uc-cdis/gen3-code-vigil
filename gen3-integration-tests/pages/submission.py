@@ -57,13 +57,13 @@ class SubmissionPage(object):
         page.goto(self.BASE_URL)
         page.wait_for_selector(self.MAP_BUTTON, state="visible")
         page.wait_for_selector(self.PROJECT_LIST_TABLE, state="visible")
-        screenshot(page, "submissionPage")
+        screenshot(page, "SubmissionPage")
 
     def go_to_files_page(self, page: Page):
         """Goes to the files page"""
         page.goto(self.FILES_URL)
         page.wait_for_selector(self.FILES_TABLE, state="visible")
-        screenshot(page, "filesPage")
+        screenshot(page, "FilesPage")
 
     def construct_checkbox_with_guid(self, guid: str):
         """Constructs checkbox with guid provided in the test"""
@@ -74,7 +74,7 @@ class SubmissionPage(object):
         """Wait for a checkbox with provided guid is clickable"""
         try:
             page.wait_for_selector(selector, timeout=30000, state="attached")
-            screenshot(page, "clickCheckboxUnmappedFiles")
+            screenshot(page, "ClickCheckboxUnmappedFiles")
             return True
         except TimeoutError:
             return False
@@ -119,6 +119,7 @@ class SubmissionPage(object):
         screenshot(page, "MappingFile")
 
     def select_submission_fields(self, page):
+        screenshot(page, "BeforeFillingInFields")
         # Project Selection
         page.locator(self.SUBMISSION_PAGE_PROJECT).click()
         page.click("text='DEV-test'")
