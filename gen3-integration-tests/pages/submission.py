@@ -46,9 +46,9 @@ class SubmissionPage(object):
         self.SUBMISSION_PAGE_SELECT_FIRST_ITEM = '//*[contains(@class, "map-data-model__node-form-section")]//*[contains(@class, "Select-menu-outer") or contains(@class, "react-select__menu")]//*[contains(@class, "Select-option") or contains(@class, "react-select__option")][1]'
         self.SUBMISSION_PAGE_PROJECT = "//div[@class='h4-typo'][normalize-space()='Project']/following-sibling::div[@class='input-with-icon']"
         self.SUBMISSION_PAGE_FILE_NODE = "//div[@class='h4-typo'][normalize-space()='File Node']/following-sibling::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_CATEGORY = "//div[@class='h4-typo'][normalize-space()='data_category']/following::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_TYPE = "//div[@class='h4-typo'][normalize-space()='data_type']/following::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_FORMAT = "//div[@class='h4-typo'][normalize-space()='data_format']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_DATA_CATEGORY = "//div[@class='h4-typo'][normalize-space()='data_category']/following::div[@class='input-with-icon'][1]//input"
+        self.SUBMISSION_PAGE_DATA_TYPE = "//div[@class='h4-typo'][normalize-space()='data_type']/following::div[@class='input-with-icon'][1]//input"
+        self.SUBMISSION_PAGE_DATA_FORMAT = "//div[@class='h4-typo'][normalize-space()='data_format']/following::div[@class='input-with-icon'][1]//input"
         self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION = "//div[@class='h4-typo'][normalize-space()='core_metadata_collection']/following::div[@class='input-with-icon']"
         self.SUBMISSION_PAGE_SUBMIT_BUTTON = "//button[@type='button']"
 
@@ -130,15 +130,15 @@ class SubmissionPage(object):
 
         # data_category Selection
         page.click(self.SUBMISSION_PAGE_DATA_CATEGORY)
-        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+        page.fill(self.SUBMISSION_PAGE_DATA_CATEGORY, "abc")
 
         # data_type Selection
         page.click(self.SUBMISSION_PAGE_DATA_TYPE)
-        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+        page.fill(self.SUBMISSION_PAGE_DATA_TYPE, "abc")
 
         # data_format Selection
         page.click(self.SUBMISSION_PAGE_DATA_FORMAT)
-        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+        page.fill(self.SUBMISSION_PAGE_DATA_FORMAT, "abc")
 
         # core_metadata_collection Selection
         page.click(self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION)
