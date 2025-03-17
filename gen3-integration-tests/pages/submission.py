@@ -130,15 +130,36 @@ class SubmissionPage(object):
 
         # data_category Selection
         page.click(self.SUBMISSION_PAGE_DATA_CATEGORY)
-        page.fill(self.SUBMISSION_PAGE_DATA_CATEGORY, "abc")
+        dropdown_menu = page.locator(".react-select__menu")
+        is_dropdown_present = dropdown_menu.is_visible()
+        if not is_dropdown_present:
+            # Set the field value to "abc" if there is no dropdown box
+            page.fill(self.SUBMISSION_PAGE_DATA_CATEGORY, "abc")
+        else:
+            # Click on the first item in the dropdown box
+            page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
         # data_type Selection
         page.click(self.SUBMISSION_PAGE_DATA_TYPE)
-        page.fill(self.SUBMISSION_PAGE_DATA_TYPE, "abc")
+        dropdown_menu = page.locator(".react-select__menu")
+        is_dropdown_present = dropdown_menu.is_visible()
+        if not is_dropdown_present:
+            # Set the field value to "abc" if there is no dropdown box
+            page.fill(self.SUBMISSION_PAGE_DATA_TYPE, "abc")
+        else:
+            # Click on the first item in the dropdown box
+            page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
         # data_format Selection
         page.click(self.SUBMISSION_PAGE_DATA_FORMAT)
-        page.fill(self.SUBMISSION_PAGE_DATA_FORMAT, "abc")
+        dropdown_menu = page.locator(".react-select__menu")
+        is_dropdown_present = dropdown_menu.is_visible()
+        if not is_dropdown_present:
+            # Set the field value to "abc" if there is no dropdown box
+            page.fill(self.SUBMISSION_PAGE_DATA_FORMAT, "abc")
+        else:
+            # Click on the first item in the dropdown box
+            page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
         # core_metadata_collection Selection
         page.click(self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION)
