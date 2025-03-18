@@ -1,8 +1,7 @@
 # Exploration Page
 import pytest
-
-from utils import logger
 from playwright.sync_api import Page
+from utils import logger
 from utils.test_execution import screenshot
 
 
@@ -26,6 +25,9 @@ class ExplorationPage(object):
             "//a[contains(text(), 'Click here to download your PFB')]"
         )
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
+        self.PFB_EXPORT_RECORDS = (
+            "//div[@class='count-box__number--align-center special-number']"
+        )
 
     def go_to_and_check_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
@@ -62,6 +64,9 @@ class ExplorationPage(object):
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            if page.locator(self.PFB_EXPORT_RECORDS).inner_text() == "0":
+                screenshot(page, "ExportToPFBMessage")
+                pytest.skip("Skipping PFB Export since no data is available")
             pfb_button.click()
             screenshot(page, "ExportToPFBMessage")
         except TimeoutError:
@@ -72,6 +77,9 @@ class ExplorationPage(object):
             page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
             screenshot(page, "FileTabsPage")
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            if page.locator(self.PFB_EXPORT_RECORDS).inner_text() == "0":
+                screenshot(page, "ExportToPFBMessage")
+                pytest.skip("Skipping PFB Export since no data is available")
             pfb_button.click()
             screenshot(page, "ExportToPFBMessage")
 

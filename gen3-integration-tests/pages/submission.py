@@ -46,10 +46,10 @@ class SubmissionPage(object):
         self.SUBMISSION_PAGE_SELECT_FIRST_ITEM = '//*[contains(@class, "map-data-model__node-form-section")]//*[contains(@class, "Select-menu-outer") or contains(@class, "react-select__menu")]//*[contains(@class, "Select-option") or contains(@class, "react-select__option")][1]'
         self.SUBMISSION_PAGE_PROJECT = "//div[@class='h4-typo'][normalize-space()='Project']/following-sibling::div[@class='input-with-icon']"
         self.SUBMISSION_PAGE_FILE_NODE = "//div[@class='h4-typo'][normalize-space()='File Node']/following-sibling::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_CATEGORY = "//div[@class='h4-typo'][normalize-space()='data_category']/following::div[@class='input-with-icon'][1]//input"
-        self.SUBMISSION_PAGE_DATA_TYPE = "//div[@class='h4-typo'][normalize-space()='data_type']/following::div[@class='input-with-icon'][1]//input"
-        self.SUBMISSION_PAGE_DATA_FORMAT = "//div[@class='h4-typo'][normalize-space()='data_format']/following::div[@class='input-with-icon'][1]//input"
         self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION = "//div[@class='h4-typo'][normalize-space()='core_metadata_collection']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_FIELDS = (
+            "//div[@class='h4-typo']/following::div[@class='input-with-icon']"
+        )
         self.SUBMISSION_PAGE_SUBMIT_BUTTON = "//button[@type='button']"
 
     def go_to_submission_page(self, page: Page):
@@ -128,42 +128,23 @@ class SubmissionPage(object):
         page.locator(self.SUBMISSION_PAGE_FILE_NODE).click()
         page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
-        # data_category Selection
-        page.click(self.SUBMISSION_PAGE_DATA_CATEGORY)
-        dropdown_menu = page.locator(".react-select__menu")
-        is_dropdown_present = dropdown_menu.is_visible()
-        if not is_dropdown_present:
-            # Set the field value to "abc" if there is no dropdown box
-            page.fill(self.SUBMISSION_PAGE_DATA_CATEGORY, "abc")
-        else:
-            # Click on the first item in the dropdown box
-            page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
-
-        # data_type Selection
-        page.click(self.SUBMISSION_PAGE_DATA_TYPE)
-        dropdown_menu = page.locator(".react-select__menu")
-        is_dropdown_present = dropdown_menu.is_visible()
-        if not is_dropdown_present:
-            # Set the field value to "abc" if there is no dropdown box
-            page.fill(self.SUBMISSION_PAGE_DATA_TYPE, "abc")
-        else:
-            # Click on the first item in the dropdown box
-            page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
-
-        # data_format Selection
-        page.click(self.SUBMISSION_PAGE_DATA_FORMAT)
-        dropdown_menu = page.locator(".react-select__menu")
-        is_dropdown_present = dropdown_menu.is_visible()
-        if not is_dropdown_present:
-            # Set the field value to "abc" if there is no dropdown box
-            page.fill(self.SUBMISSION_PAGE_DATA_FORMAT, "abc")
-        else:
-            # Click on the first item in the dropdown box
-            page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+        elements = page.locator(self.SUBMISSION_PAGE_FIELDS)
+        # Loop through each element and perform a click operation
+        for i in range(2, elements.count()):
+            elements.nth(i).click()
+            dropdown_menu = page.locator(".react-select__menu")
+            is_dropdown_present = dropdown_menu.is_visible()
+            if not is_dropdown_present:
+                # Set the field value to "abc" if there is no dropdown box
+                page.fill(elements, "abc")
+            else:
+                # Click on the first item in the dropdown box
+                page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
         # core_metadata_collection Selection
         page.click(self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION)
         page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+
         screenshot(page, "BeforeSubmitMappingFile")
 
         # Click on Submit field
