@@ -64,7 +64,7 @@ class ExplorationPage(object):
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            if page.locator(self.PFB_EXPORT_RECORDS).inner_text() == "0":
+            if page.locator(self.PFB_EXPORT_RECORDS).first.inner_text() == "0":
                 screenshot(page, "ExportToPFBMessage")
                 pytest.skip("Skipping PFB Export since no data is available")
             pfb_button.click()
@@ -77,7 +77,7 @@ class ExplorationPage(object):
             page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
             screenshot(page, "FileTabsPage")
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            if page.locator(self.PFB_EXPORT_RECORDS).inner_text() == "0":
+            if page.locator(self.PFB_EXPORT_RECORDS).first.inner_text() == "0":
                 screenshot(page, "ExportToPFBMessage")
                 pytest.skip("Skipping PFB Export since no data is available")
             pfb_button.click()
