@@ -5,6 +5,8 @@
       Default value - default
     String parameter CLOUD_AUTO_BRANCH
       e.g., master
+    String parameter GITOPS_QA_AUTO_BRANCH
+    e.g., master
 */
 pipeline {
     agent {
@@ -107,7 +109,7 @@ spec:
                 // gitops-qa
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.GITOPS_QA_AUTO_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cdis-manifest']],
                   submoduleCfg: [],

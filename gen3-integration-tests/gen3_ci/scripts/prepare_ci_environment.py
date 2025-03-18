@@ -11,6 +11,7 @@ from utils.jenkins import JenkinsJob
 
 load_dotenv()
 CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
+GITOPS_QA_AUTO_BRANCH = os.getenv("GITOPS_QA_AUTO_BRANCH")
 
 
 def wait_for_quay_build(repo, tag):
@@ -69,6 +70,7 @@ def modify_env_for_service_pr(namespace, service, tag):
         "SERVICE": service,
         "VERSION": tag,
         "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        "GITOPS_QA_AUTO_BRANCH": GITOPS_QA_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -102,6 +104,7 @@ def modify_env_for_test_repo_pr(namespace):
     params = {
         "NAMESPACE": namespace,
         "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        "GITOPS_QA_AUTO_BRANCH": GITOPS_QA_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
