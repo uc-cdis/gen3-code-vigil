@@ -135,8 +135,10 @@ class SubmissionPage(object):
             dropdown_menu = page.locator(".react-select__menu")
             is_dropdown_present = dropdown_menu.is_visible()
             if not is_dropdown_present:
+                screenshot(page, f"BeforeSelectField-{i}")
                 # Set the field value to "abc" if there is no dropdown box
-                page.fill(elements, "abc")
+                input_locator = elements.nth(i).locator("//input")
+                input_locator.fill("abc")
             else:
                 # Click on the first item in the dropdown box
                 page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
