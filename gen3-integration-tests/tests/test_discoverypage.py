@@ -39,6 +39,10 @@ def page_setup(page):
     not pytest.use_agg_mdg_flag,
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
+@pytest.mark.skipif(
+    "discoveryConfig" not in gat.get_portal_config().keys(),
+    reason="discoveryConfig in not in portal config",
+)
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds

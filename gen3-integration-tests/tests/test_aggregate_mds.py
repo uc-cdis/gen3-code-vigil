@@ -16,6 +16,10 @@ from utils.test_execution import assert_with_retry
     not pytest.use_agg_mdg_flag,
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
+@pytest.mark.skipif(
+    "discoveryConfig" not in gat.get_portal_config().keys(),
+    reason="discoveryConfig in not in portal config",
+)
 @pytest.mark.mds
 class TestAggregateMDS:
     def test_create_edit_delete_study(self):
