@@ -149,6 +149,7 @@ spec:
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
                             gen3 mutate-guppy-config-for-ci-env \${INDEXNAME}
+                            gen3 roll guppy
                             # Validate pods to roll up
                             gen3 kube-wait4-pods || true
                         '''
