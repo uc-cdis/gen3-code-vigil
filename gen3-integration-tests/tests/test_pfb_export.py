@@ -44,6 +44,19 @@ def validate_json_for_export_to_pfb_button(data):
 @pytest.mark.pfb
 @pytest.mark.portal
 class TestPFBExport(object):
+    @classmethod
+    def setup_class(cls):
+        if "biodatacatalyst" in os.getenv("UPDATED_FOLDERS", ""):
+            gat.mutate_manifest_for_guppy_test(
+                test_env_namespace=pytest.namespace, indexname="pfbexport"
+            )
+
+    @classmethod
+    def teardown_class(cls):
+        # Revert back to jenkins indices if modified in setup_class
+        if "biodatacatalyst" in os.getenv("UPDATED_FOLDERS", ""):
+            gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
+
     def test_pfb_export(self, page: Page):
         """
         Scenario: Test PFB Export

@@ -656,9 +656,11 @@ def update_audit_service_logging(audit_logging: str, test_env_namespace: str = "
         pass
 
 
-def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
+def mutate_manifest_for_guppy_test(
+    test_env_namespace: str = "", indexname: str = "jenkins"
+):
     """
-    Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
+    Runs jenkins job to point guppy to preferred indices
     """
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
@@ -666,11 +668,12 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
             os.getenv("JENKINS_PASSWORD"),
-            "ci-only-mutate-manifest-for-guppy-test",
+            "ci-only-mutate-guppy-config",
         )
         params = {
             "NAMESPACE": test_env_namespace,
             "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+            "INDEXNAME": indexname,
         }
         build_num = job.build_job(params)
         if build_num:
