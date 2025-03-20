@@ -158,9 +158,4 @@ spec:
             }
         }
     }
-    post {
-        always {
-            archiveArtifacts artifacts: 'ci-only-mutate-guppy-config/log.txt'
-        }
-    }
 }
