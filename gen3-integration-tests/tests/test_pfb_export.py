@@ -42,6 +42,7 @@ def validate_json_for_export_to_pfb_button(data):
     reason="Export to PFB button not present in gitops.json",
 )
 @pytest.mark.pfb
+@pytest.mark.guppy
 @pytest.mark.portal
 class TestPFBExport(object):
     @classmethod
