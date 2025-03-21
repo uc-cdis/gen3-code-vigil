@@ -49,6 +49,10 @@ class CustomScheduling(LoadScopeScheduling):
         if node.get_closest_marker("ras"):
             return "__ras__"
 
+        # Run all tests with marker guppy to run serially (same worker)
+        if node.get_closest_marker("guppy"):
+            return "__guppy__"
+
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
 
