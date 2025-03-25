@@ -58,18 +58,23 @@ jobs:
           echo "PR_NAMESPACE=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
           kubectl create namespace $PR_NAMESPACE || true
 
-      # Pass in the dynamic hostname for each PR
-      - name: Set hostname and create "values-override.yaml"
-        if: ${{ env.SKIP_TESTS != 'true' }}
-        uses: actions/checkout@v2
-        uses: 1arp/create-a-file-action@0.4.5
-        with:
-          path: 'helm_values'
-          isAbsolutePath: false
-          file: 'values-override.yaml'
-          content: |
-            global:
-              hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
+      # # Pass in the dynamic hostname for each PR
+      # - name: Set hostname and create "values-override.yaml"
+      #   if: ${{ env.SKIP_TESTS != 'true' }}
+      #   uses: 1arp/create-a-file-action@0.4.5
+      #   with:
+      #     path: 'helm_values'
+      #     isAbsolutePath: false
+      #     file: 'values-override.yaml'
+      #     content: |
+      #       global:
+      #         hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
+
+      - name:
+        uses: "finnp/create-file-action@master"
+        env:
+          FILE_NAME: "dir/fileName.txt"
+          FILE_DATA: "file content"
 
       # This will set the image tag for service PRs
       - name: Append to values.yaml with the image version for service PRs
