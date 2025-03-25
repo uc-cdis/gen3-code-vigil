@@ -16,14 +16,24 @@ jobs:
       # Setup gh cli on self hosted runner
       - name: Install GitHub CLI
         run: |
-          (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget -y)) \
-            && sudo mkdir -p -m 755 /etc/apt/keyrings \
-                  && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
-                  && cat $out | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
-            && sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
-            && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-            && sudo apt update \
-            && sudo apt install gh -y
+          GH_VERSION="2.69.0"
+          ARCH="linux_amd64"
+          GH_FILENAME="gh_${GH_VERSION}_${ARCH}.tar.gz"
+          GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_FILENAME}"
+
+          # Create temp directory
+          mkdir -p /tmp/gh-cli && cd /tmp/gh-cli
+
+          # Download and extract
+          curl -sSL "$GH_URL" -o "$GH_FILENAME"
+          tar -xzf "$GH_FILENAME"
+
+          # Move binary to /usr/local/bin
+          sudo cp "gh_${GH_VERSION}_${ARCH}/bin/gh" /usr/local/bin/
+
+          # Optional: clean up
+          cd ~
+          rm -rf /tmp/gh-cli
 
       # Skip integration tests when the following PR labels are present:
       # not-ready-for-ci / decommission-environment
