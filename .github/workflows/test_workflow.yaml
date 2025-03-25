@@ -70,11 +70,13 @@ jobs:
       #       global:
       #         hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
 
-      - name:
-        uses: "finnp/create-file-action@master"
-        env:
-          FILE_NAME: "dir/fileName.txt"
-          FILE_DATA: "file content"
+      - name: test
+        run: |
+          cat <<EOF > my-file.txt
+          global:
+          hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
+          EOF
+
 
       # This will set the image tag for service PRs
       - name: Append to values.yaml with the image version for service PRs
