@@ -13,6 +13,34 @@ jobs:
       # - name: Enable Step Debugging
       #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+      - name: Install GitHub CLI
+        run: |
+          # Detect the OS
+          if [ -f /etc/os-release ]; then
+            . /etc/os-release
+            OS=$ID
+          fi
+
+          if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
+            type -p curl >/dev/null || sudo apt update && sudo apt install curl -y
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+              sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
+              https://cli.github.com/packages stable main" | \
+              sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+            sudo apt update
+            sudo apt install gh -y
+
+          elif [[ "$OS" == "amzn" || "$OS" == "rhel" || "$OS" == "centos" ]]; then
+            sudo dnf install -y dnf-plugins-core
+            sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+            sudo dnf install -y gh
+          else
+            echo "Unsupported OS: $OS"
+            exit 1
+          fi
+
       # Setup gh cli on self hosted runner
       - name: Install the gh cli
         uses: ksivamuthu/actions-setup-gh-cli@<VERSION>
