@@ -2,12 +2,7 @@
 name: Helm Integration Tests
 
 on:
-  pull_request:
-    branches:
-      - '**'
-  push:
-    branches:
-      - '**'
+  pull_request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
