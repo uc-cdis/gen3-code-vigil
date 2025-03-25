@@ -16,31 +16,9 @@ jobs:
       # Setup gh cli on self hosted runner
       - name: Install GitHub CLI
         run: |
-          # Detect the OS
-          if [ -f /etc/os-release ]; then
-            . /etc/os-release
-            OS=$ID
-          fi
-
-          if [[ "$OS" == "ubuntu" || "$OS" == "debian" ]]; then
-            type -p curl >/dev/null || sudo apt update && sudo apt install curl -y
-            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
-              sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-            sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] \
-              https://cli.github.com/packages stable main" | \
-              sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-            sudo apt update
-            sudo apt install gh -y
-
-          elif [[ "$OS" == "amzn" || "$OS" == "rhel" || "$OS" == "centos" ]]; then
-            sudo dnf install -y dnf-plugins-core
-            sudo dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-            sudo dnf install -y gh
-          else
-            echo "Unsupported OS: $OS"
-            exit 1
-          fi
+          type -p yum-config-manager >/dev/null || sudo yum install yum-utils
+          sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+          sudo yum install gh
 
       # Skip integration tests when the following PR labels are present:
       # not-ready-for-ci / decommission-environment
