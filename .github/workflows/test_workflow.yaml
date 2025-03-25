@@ -13,10 +13,18 @@ jobs:
       # - name: Enable Step Debugging
       #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+      # Setup gh cli on self hosted runner
+      - name: Install the gh cli
+        uses: ksivamuthu/actions-setup-gh-cli@<VERSION>
+        with:
+          version: 2.24.3
+
       # Skip integration tests when the following PR labels are present:
       # not-ready-for-ci / decommission-environment
       - name: Skip integration tests for specific PR labels
         working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
               echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
@@ -80,7 +88,7 @@ jobs:
 
       - name: test
         run: |
-          cat <<EOF > my-file.txt
+          cat <<EOF > helm_values/values-override.yaml
           global:
           hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
           EOF
@@ -120,7 +128,7 @@ jobs:
         run: |
           helm repo add gen3 https://helm.gen3.org
           helm repo update
-          helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f \
+          helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f helm_values/values-override.yaml \
             --namespace ${{ env.PR_NAMESPACE }} \
             --wait
 
