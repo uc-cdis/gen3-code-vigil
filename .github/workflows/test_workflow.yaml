@@ -14,133 +14,133 @@ concurrency:
 
 jobs:
   integration_tests:
-      runs-on: self-hosted
+    runs-on: self-hosted
 
-      defaults:
-        run:
-          # the test directory in gen3-code-vigil
-          working-directory: gen3-integration-tests
+    defaults:
+      run:
+        # the test directory in gen3-code-vigil
+        working-directory: gen3-integration-tests
 
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        REPO: ${{ github.event.repository.name }}
-        REPO_FN: ${{ github.event.repository.full_name }}
-        BRANCH: ${{ github.event.pull_request.head.ref }}
-        PR_NUM: ${{ github.event.pull_request.number }}
-        COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-        RUN_NUM: ${{ github.run_number }}
-        CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
-        CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
-        CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
-        CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
-        CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
-        CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.event.repository.name }}
+      REPO_FN: ${{ github.event.repository.full_name }}
+      BRANCH: ${{ github.event.pull_request.head.ref }}
+      PR_NUM: ${{ github.event.pull_request.number }}
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_NUM: ${{ github.run_number }}
+      CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+      CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+      CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
+      CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
+      CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
+      CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
 
-      steps:
-        # # Enable step debugging. Uncomment this to debug pipeline issues
-        # - name: Enable Step Debugging
-        #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
+    steps:
+      # # Enable step debugging. Uncomment this to debug pipeline issues
+      # - name: Enable Step Debugging
+      #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
-        # Skip integration tests when the following PR labels are present:
-        # not-ready-for-ci / decommission-environment
-        - name: Skip integration tests for specific PR labels
-          working-directory: ${{ github.workspace }}
-          run: |
-            if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
-                echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
-                echo "SKIP_TESTS=true" >> $GITHUB_ENV
-            fi
-
-        # Checkout current repo
-        - name: Checkout current repo
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          uses: actions/checkout@v4
-
-        # Skip tests when there are only markdown files
-        - name: Skip integration tests if PR contains only Markdown files
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          working-directory: ${{ github.workspace }}
-          run: |
-            git fetch -q
-            FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | grep -o '\S\+\.\S\+'  | grep -v '@' | awk -F . '{print $NF}' | sort -u)
-            echo $FILE_TYPES
-
-            # Check if the only file type is markdown
-            if [[ "$FILE_TYPES" == "md" ]]; then
-              echo "All files are markdown, skipping step."
+      # Skip integration tests when the following PR labels are present:
+      # not-ready-for-ci / decommission-environment
+      - name: Skip integration tests for specific PR labels
+        working-directory: ${{ github.workspace }}
+        run: |
+          if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
+              echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
-            fi
+          fi
 
-        # Checkout master branch of gen3-code-vigil when another repo is under test
-        - name: Checkout integration test code
-          if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
-          uses: actions/checkout@v4
-          with:
-            repository: uc-cdis/gen3-code-vigil
-            ref: ${{ inputs.TEST_REPO_BRANCH }}
+      # Checkout current repo
+      - name: Checkout current repo
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        uses: actions/checkout@v4
 
-        # Create PR namespace
-        - name: Create namespace
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          run: |
-            echo "PR_NAMESPACE=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-            kubectl create namespace $PR_NAMESPACE || true
+      # Skip tests when there are only markdown files
+      - name: Skip integration tests if PR contains only Markdown files
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          git fetch -q
+          FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | grep -o '\S\+\.\S\+'  | grep -v '@' | awk -F . '{print $NF}' | sort -u)
+          echo $FILE_TYPES
 
-        # Pass in the dynamic hostname for each PR
-        - name: Set hostname and create "values-override.yaml"
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          uses: 1arp/create-a-file-action@0.4.5
-          with:
-            path: 'helm_values'
-            isAbsolutePath: false
-            file: 'values-override.yaml'
-            content: |
-              global:
-                hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
+          # Check if the only file type is markdown
+          if [[ "$FILE_TYPES" == "md" ]]; then
+            echo "All files are markdown, skipping step."
+            echo "SKIP_TESTS=true" >> $GITHUB_ENV
+          fi
 
-        # This will set the image tag for service PRs
-        - name: Append to values.yaml with the image version for service PRs
-          if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST == 'true'}}
-          run: |
-            IMAGE_TAG=$(echo "${GITHUB_REF#refs/*/}" | tr / _)
-            echo "${{ inputs.SERVICE_TO_TEST }}:" >> helm_values/values.yaml
-            echo "  image:" >> helm_values/values.yaml
-            echo "    tag: $IMAGE_TAG" >> helm_values/values.yaml
+      # Checkout master branch of gen3-code-vigil when another repo is under test
+      - name: Checkout integration test code
+        if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/gen3-code-vigil
+          ref: ${{ inputs.TEST_REPO_BRANCH }}
 
-        # This is used for running specific test suites by labeling the PR with the test class
-        # Multiple suites can be executed by adding multiple labels
-        - name: Get test labels
-          id: get_test_labels
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          continue-on-error: true  # if this fails, we still need to run clean-up steps
-          run: |
-            test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
-            echo $test_label
-            echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+      # Create PR namespace
+      - name: Create namespace
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        run: |
+          echo "PR_NAMESPACE=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          kubectl create namespace $PR_NAMESPACE || true
 
-        # Will install the gen3 helm charts to specific PR namespace and set the tests to run
-        - name: Prepare CI environment
-          id: prep_ci_env
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          continue-on-error: true  # if this fails, we still need to run clean-up steps
-          run: |
-            helm repo add gen3 https://helm.gen3.org
-            helm repo update
-            helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f \
-              --namespace ${{ env.PR_NAMESPACE }} \
-              --wait
+      # Pass in the dynamic hostname for each PR
+      - name: Set hostname and create "values-override.yaml"
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        uses: 1arp/create-a-file-action@0.4.5
+        with:
+          path: 'helm_values'
+          isAbsolutePath: false
+          file: 'values-override.yaml'
+          content: |
+            global:
+              hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
 
-        # Will trigger gen3-code-vigil test suite
-        - name: Run Helm Tests
-          id: run_tests
-          if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-          run: helm test gen3 --namespace $PR_NAMESPACE
+      # This will set the image tag for service PRs
+      - name: Append to values.yaml with the image version for service PRs
+        if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST == 'true'}}
+        run: |
+          IMAGE_TAG=$(echo "${GITHUB_REF#refs/*/}" | tr / _)
+          echo "${{ inputs.SERVICE_TO_TEST }}:" >> helm_values/values.yaml
+          echo "  image:" >> helm_values/values.yaml
+          echo "    tag: $IMAGE_TAG" >> helm_values/values.yaml
 
-        - name: Debug logging
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          continue-on-error: true  # if this fails, we still need to run clean-up steps
-          run: |
-            echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
+      # This is used for running specific test suites by labeling the PR with the test class
+      # Multiple suites can be executed by adding multiple labels
+      - name: Get test labels
+        id: get_test_labels
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        continue-on-error: true  # if this fails, we still need to run clean-up steps
+        run: |
+          test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+          echo $test_label
+          echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+
+      # Will install the gen3 helm charts to specific PR namespace and set the tests to run
+      - name: Prepare CI environment
+        id: prep_ci_env
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        continue-on-error: true  # if this fails, we still need to run clean-up steps
+        run: |
+          helm repo add gen3 https://helm.gen3.org
+          helm repo update
+          helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f \
+            --namespace ${{ env.PR_NAMESPACE }} \
+            --wait
+
+      # Will trigger gen3-code-vigil test suite
+      - name: Run Helm Tests
+        id: run_tests
+        if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+        run: helm test gen3 --namespace $PR_NAMESPACE
+
+      - name: Debug logging
+        if: ${{ env.SKIP_TESTS != 'true' }}
+        continue-on-error: true  # if this fails, we still need to run clean-up steps
+        run: |
+          echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
 #modify allure report generation
           # - name: Generate allure report
