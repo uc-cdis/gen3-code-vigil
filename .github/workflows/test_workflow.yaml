@@ -1,4 +1,4 @@
-name: Tets
+name: Testing
 on:
   push:
     branches:
@@ -8,7 +8,6 @@ jobs:
   Explore-GitHub-Actions:
     # You need to use the INSTALLATION_NAME from the previous step
     runs-on: self-hosted
-
     steps:
       # # Enable step debugging. Uncomment this to debug pipeline issues
       # - name: Enable Step Debugging
@@ -62,6 +61,7 @@ jobs:
       # Pass in the dynamic hostname for each PR
       - name: Set hostname and create "values-override.yaml"
         if: ${{ env.SKIP_TESTS != 'true' }}
+        uses: actions/checkout@v2
         uses: 1arp/create-a-file-action@0.4.5
         with:
           path: 'helm_values'
