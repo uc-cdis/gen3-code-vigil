@@ -16,9 +16,9 @@ jobs:
       # Setup gh cli on self hosted runner
       - name: Install GitHub CLI
         run: |
-          type -p yum-config-manager >/dev/null || sudo yum install yum-utils
-          sudo yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-          sudo yum install gh
+          type -p yum-config-manager >/dev/null || yum install yum-utils
+          yum-config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+          yum install gh
 
       # Skip integration tests when the following PR labels are present:
       # not-ready-for-ci / decommission-environment
