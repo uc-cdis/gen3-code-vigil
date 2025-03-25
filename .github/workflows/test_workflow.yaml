@@ -13,6 +13,7 @@ jobs:
       # - name: Enable Step Debugging
       #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+      # Setup gh cli on self hosted runner
       - name: Install GitHub CLI
         run: |
           # Detect the OS
@@ -40,12 +41,6 @@ jobs:
             echo "Unsupported OS: $OS"
             exit 1
           fi
-
-      # Setup gh cli on self hosted runner
-      - name: Install the gh cli
-        uses: ksivamuthu/actions-setup-gh-cli@<VERSION>
-        with:
-          version: 2.24.3
 
       # Skip integration tests when the following PR labels are present:
       # not-ready-for-ci / decommission-environment
