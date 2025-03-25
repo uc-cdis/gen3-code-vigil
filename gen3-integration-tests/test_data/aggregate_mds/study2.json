@@ -15,48 +15,50 @@
         "year_awarded": "2019",
         "project_title": "[AUTOTEST Title] Testing Aggregate Metadata Service",
 		"data": {
-                "data_type": [
-                    "Imaging",
-                    "Questionnaire/Survey/Assessment",
-                    "Questionnaire/Survey/Assessment - validated instrument",
-                    "Questionnaire/Survey/Assessment - unvalidated instrument",
-                    "Biophysical",
-                    "Genomic"
-                ],
-                "data_source": [
-                    "Researcher Collected/Measured",
-                    "Patient-Reported",
-                    "Administrative"
-                ],
-                "data_orientation": [
-                    "Quantitative"
-                ],
-                "subject_data_level_available": [
-                    "Individual - Unaggregated"
-                ],
-                "subject_data_unit_of_analysis": [
-                    "Individual"
-                ],
-                "subject_data_unit_of_collection": [
-                    "Individual"
-                ],
-                "subject_geographic_data_level_available": [
-                    "Zip code"
-                ],
-                "subject_geographic_data_level_collected": [
-                    "Exact location"
-                ]
-            },
-            "findings": {
-                "primary_publications": [],
-                "primary_study_findings": [],
-                "secondary_publications": []
-            },
-		"minimal_info": {
-			"study_name": "[AUTOTEST Title] Testing Aggregate Metadata Service",
-			"study_description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim",
-			"alternative_study_name": "Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu",
-			"alternative_study_description": "In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim."
+            "data_type": [
+                "Imaging",
+                "Questionnaire/Survey/Assessment",
+                "Questionnaire/Survey/Assessment - validated instrument",
+                "Questionnaire/Survey/Assessment - unvalidated instrument",
+                "Biophysical",
+                "Genomic"
+            ],
+            "data_source": [
+                "Researcher Collected/Measured",
+                "Patient-Reported",
+                "Administrative"
+            ],
+            "data_orientation": [
+                "Quantitative"
+            ],
+            "subject_data_level_available": [
+                "Individual - Unaggregated"
+            ],
+            "subject_data_unit_of_analysis": [
+                "Individual"
+            ],
+            "subject_data_unit_of_collection": [
+                "Individual"
+            ],
+            "subject_geographic_data_level_available": [
+                "Zip code"
+            ],
+            "subject_geographic_data_level_collected": [
+                "Exact location"
+            ]
+        },
+        "findings": {
+            "primary_publications": [],
+            "primary_study_findings": [],
+            "secondary_publications": []
+        },
+        "study_metadata": {
+            "minimal_info": {
+                "study_name": "[AUTOTEST Title] Testing Aggregate Metadata Service",
+                "study_description": "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim",
+                "alternative_study_name": "Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu",
+                "alternative_study_description": "In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim."
+            }
         },
         "dataset_1_title": "",
         "dataset_2_title": "",
