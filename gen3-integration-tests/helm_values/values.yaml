@@ -1,5 +1,4 @@
 global:
-  hostname:
   dictionaryUrl: https://s3.amazonaws.com/dictionary-artifacts/anvil/master/schema.json
   aws:
     awsAccessKeyId: test
