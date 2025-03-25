@@ -34,6 +34,7 @@ jobs:
           # Optional: clean up
           cd ~
           rm -rf /tmp/gh-cli
+          gh --version
 
       # Skip integration tests when the following PR labels are present:
       # not-ready-for-ci / decommission-environment
@@ -102,12 +103,12 @@ jobs:
       #       global:
       #         hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
 
-      - name: test
-        run: |
-          cat <<EOF > helm_values/values-override.yaml
-          global:
+        - name: Create values-override.yaml file
+          run: |
+            cat <<EOF > helm_values/values-override.yaml
+        global:
           hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
-          EOF
+        EOF
 
 
       # This will set the image tag for service PRs
