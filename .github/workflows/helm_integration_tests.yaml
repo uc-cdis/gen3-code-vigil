@@ -1,7 +1,7 @@
 name: Helm Integration Tests
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       # needed to be set if repo name differs in quay
       QUAY_REPO:
