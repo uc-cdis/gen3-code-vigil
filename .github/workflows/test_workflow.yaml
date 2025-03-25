@@ -51,11 +51,19 @@ jobs:
           repository: uc-cdis/gen3-code-vigil
           ref: ${{ inputs.TEST_REPO_BRANCH }}
 
+      # Setup kubectl
+      - name: Set Up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+
       # Create PR namespace
       - name: Create namespace
         if: ${{ env.SKIP_TESTS != 'true' }}
+        env:
+          PR_NUM: ${{ github.event.pull_request.number }}
         run: |
-          echo "PR_NAMESPACE=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          echo "PR_NAMESPACE=pr-$PR_NUM" >> $GITHUB_ENV
           kubectl create namespace $PR_NAMESPACE || true
 
       # # Pass in the dynamic hostname for each PR
@@ -97,6 +105,12 @@ jobs:
           test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
           echo $test_label
           echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+
+      # Setup helm
+      - name: Set Up kubectl
+        uses: azure/setup-helm@v4.3.0
+        with:
+          version: latest
 
       # Will install the gen3 helm charts to specific PR namespace and set the tests to run
       - name: Prepare CI environment
