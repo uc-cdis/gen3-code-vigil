@@ -103,11 +103,11 @@ jobs:
       #       global:
       #         hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
 
-        - name: Create values-override.yaml file
-          run: |
-            mkdir -p helm_values
-            echo "global:" > helm_values/values-override.yaml
-            echo "  hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io" >> helm_values/values-override.yaml
+      - name: Create values-override.yaml file
+        run: |
+          mkdir -p helm_values
+          echo "global:" > helm_values/values-override.yaml
+          echo "  hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io" >> helm_values/values-override.yaml
 
       # This will set the image tag for service PRs
       - name: Append to values.yaml with the image version for service PRs
