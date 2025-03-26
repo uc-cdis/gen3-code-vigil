@@ -174,6 +174,10 @@ jobs:
               else
                 poetry run python -m gen3_ci.scripts.select_ci_environment
               fi
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
+              fi
+
 
           # TODO: Improve the logic to do differential updates to the env, not roll all services
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
@@ -187,6 +191,9 @@ jobs:
             run: |
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              fi
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels
@@ -206,6 +213,9 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
 
           - name: Run tests
             id: run_tests
@@ -214,6 +224,9 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -229,12 +242,19 @@ jobs:
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+              fi
 
           - name: Upload allure report to S3
             id: upload_allure_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+            run: |
+              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
+              fi
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
@@ -252,8 +272,11 @@ jobs:
             continue-on-error: true
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
+              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
+              fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
+                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
                 if [ ! -d output ]; then
@@ -262,7 +285,7 @@ jobs:
                 if [ ! -f "output/report.md" ]; then
                   touch "output/report.md"
                 fi
-                echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+                echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
               fi
 
           - name: Render report to the PR
