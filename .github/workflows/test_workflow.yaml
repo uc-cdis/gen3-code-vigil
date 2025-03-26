@@ -13,6 +13,7 @@ jobs:
     runs-on: self-hosted
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #Won't work until in an actual workflow
       REPO: ${{ github.event.repository.name }}
       REPO_FN: ${{ github.event.repository.full_name }}
       BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -114,6 +115,7 @@ jobs:
 
       - name: Create values-override.yaml file
         run: |
+          cd gen3-integration-tests
           mkdir -p helm_values
           echo "global:" > helm_values/values-override.yaml
           echo "  hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io" >> helm_values/values-override.yaml
