@@ -92,12 +92,14 @@ jobs:
         with:
           version: latest
 
-      # Create PR namespace
-      - name: Create namespace
+      # Create PR namespace and PR hostname env var
+      - name: Create namespace and env vars
         if: ${{ env.SKIP_TESTS != 'true' }}
         run: |
-          PR_NAMESPACE=PR${PR_NUM}
+          PR_NAMESPACE=pr-${PR_NUM}
+          PR_HOSTNAME=PR${PR_NUM}
           echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
+          echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
           kubectl create namespace $PR_NAMESPACE || true
 
       # # Pass in the dynamic hostname for each PR
@@ -117,7 +119,7 @@ jobs:
           cd gen3-integration-tests
           mkdir -p helm_values
           echo "global:" > helm_values/values-override.yaml
-          echo "  hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io" >> helm_values/values-override.yaml
+          echo "  hostname: ${{ env.PR_HOSTNAME }}.planx-ci.io" >> helm_values/values-override.yaml
           cat helm_values/values-override.yaml
 
       # This will set the image tag for service PRs
