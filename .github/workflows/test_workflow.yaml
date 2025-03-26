@@ -8,6 +8,9 @@ jobs:
   Explore-GitHub-Actions:
     # You need to use the INSTALLATION_NAME from the previous step
     runs-on: self-hosted
+    env:
+      PR_NUM: ${{ github.event.pull_request.number }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       # # Enable step debugging. Uncomment this to debug pipeline issues
       # - name: Enable Step Debugging
@@ -40,8 +43,6 @@ jobs:
       # # not-ready-for-ci / decommission-environment
       # - name: Skip integration tests for specific PR labels
       #   working-directory: ${{ github.workspace }}
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   run: |
       #     if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
       #         echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
@@ -85,10 +86,10 @@ jobs:
       # Create PR namespace
       - name: Create namespace
         if: ${{ env.SKIP_TESTS != 'true' }}
-        env:
-          PR_NUM: ${{ github.event.pull_request.number }}
         run: |
+          echo $PR_NUM
           echo "PR_NAMESPACE=pr-$PR_NUM" >> $GITHUB_ENV
+          echo $PR_NAMESPACE
           kubectl create namespace $PR_NAMESPACE || true
 
       # # Pass in the dynamic hostname for each PR
@@ -108,6 +109,7 @@ jobs:
           mkdir -p helm_values
           echo "global:" > helm_values/values-override.yaml
           echo "  hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io" >> helm_values/values-override.yaml
+          cat helm_values/values-override.yaml
 
       # This will set the image tag for service PRs
       - name: Append to values.yaml with the image version for service PRs
