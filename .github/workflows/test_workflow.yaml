@@ -96,9 +96,8 @@ jobs:
       - name: Create namespace
         if: ${{ env.SKIP_TESTS != 'true' }}
         run: |
-          echo $PR_NUM
-          echo "PR_NAMESPACE=pr-$PR_NUM" >> $GITHUB_ENV
-          echo $PR_NAMESPACE
+          PR_NAMESPACE=PR${PR_NUM}
+          echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
           kubectl create namespace $PR_NAMESPACE || true
 
       # # Pass in the dynamic hostname for each PR
@@ -158,7 +157,7 @@ jobs:
           echo "running ls and pwd"
           ls
           pwd
-          helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f helm_values/values-override.yaml \
+          helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
             --namespace ${{ env.PR_NAMESPACE }} \
             --wait
 
