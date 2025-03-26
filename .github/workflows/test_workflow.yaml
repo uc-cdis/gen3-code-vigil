@@ -3,14 +3,22 @@ on:
   push:
     branches:
       - '**'
+  pull_request:
+    branches:
+      - '**'
 
 jobs:
   Explore-GitHub-Actions:
     # You need to use the INSTALLATION_NAME from the previous step
     runs-on: self-hosted
     env:
-      PR_NUM: ${{ github.event.pull_request.number }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.event.repository.name }}
+      REPO_FN: ${{ github.event.repository.full_name }}
+      BRANCH: ${{ github.event.pull_request.head.ref }}
+      PR_NUM: ${{ github.event.pull_request.number }}
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_NUM: ${{ github.run_number }}
     steps:
       # # Enable step debugging. Uncomment this to debug pipeline issues
       # - name: Enable Step Debugging
@@ -145,6 +153,9 @@ jobs:
         run: |
           helm repo add gen3 https://helm.gen3.org
           helm repo update
+          echo "running ls and pwd"
+          ls
+          pwd
           helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f helm_values/values-override.yaml \
             --namespace ${{ env.PR_NAMESPACE }} \
             --wait
