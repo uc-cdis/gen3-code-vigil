@@ -278,7 +278,7 @@ class Fence(object):
         )
         assert (
             response.status_code == expected_status
-        ), f"Expected status 200 but got {response.status_code}"
+        ), f"Expected status {expected_status} but got {response.status_code}"
         if expected_status != 200:
             return
         return response.json()
