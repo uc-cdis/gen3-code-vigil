@@ -262,7 +262,7 @@ class Fence(object):
         ), f"Expected status 200 but got {response.status_code}"
         return response.json()
 
-    def complete_mulitpart_upload(
+    def complete_multipart_upload(
         self, key, upload_id, parts, user, expected_status=200
     ):
         logger.info(parts)
