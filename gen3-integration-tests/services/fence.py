@@ -262,10 +262,7 @@ class Fence(object):
         ), f"Expected status 200 but got {response.status_code}"
         return response.json()
 
-    def complete_multipart_upload(
-        self, key, upload_id, parts, user, expected_status=200
-    ):
-        logger.info(parts)
+    def complete_multipart_upload(self, key, upload_id, parts, user):
         headers = {
             "Content-Type": "application/json",
         }
@@ -276,12 +273,7 @@ class Fence(object):
             auth=auth,
             headers=headers,
         )
-        assert (
-            response.status_code == expected_status
-        ), f"Expected status {expected_status} but got {response.status_code}"
-        if expected_status != 200:
-            return
-        return response.json()
+        return response.status_code
 
     def upload_file_using_presigned_url(self, presigned_url, file_data, file_size):
         headers = {"Content-Length": str(file_size)}
