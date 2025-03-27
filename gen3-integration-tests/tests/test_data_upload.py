@@ -457,7 +457,7 @@ class TestDataUpload:
             parts_summary.append({"PartNumber": part_number, "ETag": etag})
 
         # Complete the multipart upload.
-        self.fence.complete_mulitpart_upload(
+        self.fence.complete_multipart_upload(
             key=key,
             upload_id=init_multipart_upload_res["uploadId"],
             parts=parts_summary,
@@ -533,7 +533,7 @@ class TestDataUpload:
             parts_summary.append({"PartNumber": part_number, "ETag": f"{etag}fake"})
 
         # Complete the multipart upload using a fake ETag, which should fail.
-        self.fence.complete_mulitpart_upload(
+        self.fence.complete_multipart_upload(
             key=key,
             upload_id=init_multipart_upload_res["uploadId"],
             parts=parts_summary,
