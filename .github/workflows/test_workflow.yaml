@@ -156,6 +156,7 @@ jobs:
           helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
             --namespace ${{ env.PR_NAMESPACE }}
           echo "test"
+          sleep 60
           kubectl wait --for=condition=Ready pod -l app=gen3-elasticsearch-master --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
           echo "test1"
           kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
