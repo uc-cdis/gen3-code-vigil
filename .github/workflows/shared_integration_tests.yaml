@@ -104,7 +104,7 @@ jobs:
             working-directory: ${{ github.workspace }}
             run: |
               git fetch -q
-              FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | grep -o '\S\+\.\S\+'  | grep -v '@' | awk -F . '{print $NF}' | sort -u)
+              FILE_TYPES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -v '@' | awk -F . '{print $NF}' | sort -u)
               echo $FILE_TYPES
 
               # Check if the only file type is markdown
