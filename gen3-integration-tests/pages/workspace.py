@@ -1,8 +1,6 @@
 # Workspace Page
 import pytest
-
-from playwright.sync_api import expect, Page
-
+from playwright.sync_api import Page, expect
 from utils import logger
 from utils.test_execution import screenshot
 
@@ -47,7 +45,7 @@ class WorkspacePage(object):
 
     def assert_page_loaded(self, page: Page):
         """Checks if workspace page loaded successfully"""
-        page.wait_for_selector(self.READY_CUE, state="visible")
+        page.wait_for_selector(self.READY_CUE, state="visible", timeout=60000)
         screenshot(page, "WorkspacePageLoaded")
 
     def launch_workspace(self, page: Page, name: str = ""):

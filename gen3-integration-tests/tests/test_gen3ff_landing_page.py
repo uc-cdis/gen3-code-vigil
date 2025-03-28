@@ -8,6 +8,14 @@ from utils import logger
 @pytest.mark.skipif(
     "heal" not in pytest.tested_env, reason="Gen3 FF is deployed only in HEAL"
 )
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "frontend-framework" not in pytest.deployed_services,
+    reason="frontend-framework service is not running on this environment",
+)
 @pytest.mark.portal
 @pytest.mark.frontend_framework
 class TestGen3FFLandingPage(object):

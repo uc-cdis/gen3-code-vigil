@@ -1,17 +1,21 @@
+import json
 import os
+import re
+import time
+
 import pytest
 import requests
-import json
-import time
-import re
-
-from utils import logger, TEST_DATA_PATH_OBJECT
+from playwright.sync_api import Page, expect
+from requests.exceptions import ConnectionError, RequestException, Timeout
+from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.test_execution import screenshot
-from playwright.sync_api import expect, Page
-from requests.exceptions import RequestException, ConnectionError, Timeout
 
 
 # TODO : enable this test after the manifest PRs are ready to roll
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
 @pytest.mark.wip
 @pytest.mark.portal
 class TestDataGuids(object):

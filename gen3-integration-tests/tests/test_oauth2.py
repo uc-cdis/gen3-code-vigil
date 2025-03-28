@@ -2,19 +2,26 @@
 OAUTH2
 """
 
-import os
-import pytest
-import re
 import base64
 import json
+import os
+import re
 
-from services.fence import Fence
+import pytest
 from pages.login import LoginPage
+from playwright.sync_api import Page
+from services.fence import Fence
 from utils import logger
 
-from playwright.sync_api import Page
 
-
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    pytest.manifest.get("google", {}).get("enabled", "") != "yes",
+    reason="google setup is not enabled",
+)
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
 class TestOauth2:

@@ -3,17 +3,20 @@ Logn Page
 """
 
 import os
+
 import pytest
-
-from pages.login import LoginPage
-from utils.test_execution import screenshot
-
-from playwright.sync_api import Page, expect
 from cdislogging import get_logger
+from pages.login import LoginPage
+from playwright.sync_api import Page, expect
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
 @pytest.mark.portal
 class TestLoginPage:
     login_page = LoginPage()

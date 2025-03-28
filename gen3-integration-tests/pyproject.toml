@@ -58,6 +58,7 @@ markers = [
   "manifestservice: tests for manifest service",
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
+  "ras: tests for ras",
   "requestor: tests for requestor service",
   "sower: tests for sower service",
   "ssjdispatcher: tests for ssjdispatcher service",
