@@ -1,8 +1,5 @@
 name: Testing
 on:
-  push:
-    branches:
-      - '**'
   pull_request:
     branches:
       - '**'
@@ -143,7 +140,7 @@ jobs:
           echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
       # Setup helm
-      - name: Set Up kubectl
+      - name: Set Up Helm
         uses: azure/setup-helm@v4.3.0
         with:
           version: latest
@@ -156,12 +153,13 @@ jobs:
         run: |
           helm repo add gen3 https://helm.gen3.org
           helm repo update
-          echo "running ls and pwd"
-          ls
-          pwd
           helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
-            --namespace ${{ env.PR_NAMESPACE }} \
-            --wait
+            --namespace ${{ env.PR_NAMESPACE }}
+          kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
+          kubectl wait --for=condition=complete job/etl-manual --namespace={{ env.PR_NAMESPACE }}  --timeout=5m
+          kubectl rollout restart deployment guppy-deployment
+          kubectl wait --for=condition=Ready pod --all --namespace=my-{ env.PR_NAMESPACE }} --timeout=5m
+
 
       # Will trigger gen3-code-vigil test suite
       - name: Run Helm Tests
