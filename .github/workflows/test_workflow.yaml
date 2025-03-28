@@ -155,7 +155,7 @@ jobs:
           helm repo update
           helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
             --namespace ${{ env.PR_NAMESPACE }}
-          kubectl wait --for=condition=Ready pod -l app=gen3-elasticsearch-master --namespace={ env.PR_NAMESPACE }} --timeout=5m
+          kubectl wait --for=condition=Ready -l app=gen3-elasticsearch-master --namespace={ env.PR_NAMESPACE }} --timeout=5m
           kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
           kubectl wait --for=condition=complete job/etl-manual --namespace={{ env.PR_NAMESPACE }}  --timeout=5m
           kubectl rollout restart deployment guppy-deployment
