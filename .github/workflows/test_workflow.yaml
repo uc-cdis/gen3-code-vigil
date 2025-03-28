@@ -97,7 +97,7 @@ jobs:
         if: ${{ env.SKIP_TESTS != 'true' }}
         run: |
           PR_NAMESPACE=pr-${PR_NUM}
-          PR_HOSTNAME=PR${PR_NUM}
+          PR_HOSTNAME=pr${PR_NUM}
           echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
           echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
           kubectl create namespace $PR_NAMESPACE || true
