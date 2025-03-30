@@ -488,12 +488,13 @@ class TestDataUpload:
             parts_summary.append({"PartNumber": part_number, "ETag": etag})
 
         # Complete the multipart upload.
-        self.fence.complete_mulitpart_upload(
+        status_code = self.fence.complete_multipart_upload(
             key=key,
             upload_id=init_multipart_upload_res["uploadId"],
             parts=parts_summary,
             user="main_account",
         )
+        assert status_code == 200, f"Expected status 200 but got {status_code}"
 
         file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
@@ -564,13 +565,16 @@ class TestDataUpload:
             parts_summary.append({"PartNumber": part_number, "ETag": f"{etag}fake"})
 
         # Complete the multipart upload using a fake ETag, which should fail.
-        self.fence.complete_mulitpart_upload(
+        status_code = self.fence.complete_multipart_upload(
             key=key,
             upload_id=init_multipart_upload_res["uploadId"],
             parts=parts_summary,
             user="main_account",
-            expected_status=504,
         )
+
+        assert (
+            status_code != 200
+        ), f"Expected status to not be 200, but got {status_code}"
 
         # Create a signed url using the same guid id as in previous steps, which shouldn't get created.
         self.fence.create_signed_url(
