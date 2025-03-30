@@ -43,8 +43,13 @@ def validate_json_for_export_to_pfb_button(data):
     "wts" not in pytest.deployed_services,
     reason="wts service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "guppy" not in pytest.deployed_services,
+    reason="guppy service is not running on this environment",
+)
 @pytest.mark.tube
-class TestETL:
+@pytest.mark.guppy
+class TestETLPfbExport:
     @classmethod
     def setup_class(cls):
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
@@ -59,7 +64,7 @@ class TestETL:
     def teardown_class(cls):
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("UPDATED_FOLDERS", "") != "":
+            if os.getenv("REPO") == "cdis-manifest":
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
 
     def test_etl_and_pfb_export(self, page: Page):
@@ -83,10 +88,10 @@ class TestETL:
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("UPDATED_FOLDERS", "") != "":
-                gat.run_gen3_command(
-                    "gen3 mutate-guppy-config-for-pfb-export-test",
-                    test_env_namespace=pytest.namespace,
+            if os.getenv("REPO") == "cdis-manifest":
+                # Guppy config is changed to use index names from etlMapping.yaml from the manifest's folder
+                gat.mutate_manifest_for_guppy_test(
+                    test_env_namespace=pytest.namespace, indexname="manifest"
                 )
             login_page = LoginPage()
             exploration_page = ExplorationPage()

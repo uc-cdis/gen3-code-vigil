@@ -22,6 +22,11 @@ NOTE: To setup the index data for image study follow setup under
     "ohif-viewer" not in pytest.deployed_services,
     reason="OHIF service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "guppy" not in pytest.deployed_services,
+    reason="guppy service is not running on this environment",
+)
+@pytest.mark.guppy
 @pytest.mark.dicom_viewer
 class TestDicomViewer(object):
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])

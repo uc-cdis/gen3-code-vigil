@@ -123,16 +123,13 @@ spec:
             steps {
                 dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
                     script {
-                        sh '''#!/bin/bash +x
+                        sh '''#!/bin/bash -x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            deploymentImages=$(kubectl -n \${NAMESPACE} get deployments -o=jsonpath='{range .items[*]}"{.metadata.name}":"{.spec.template.spec.containers[*].image}",{"\\n"}{end}' | sed 's/-deployment//')
-                            # Remove last trailing comma
-                            deploymentImages="\${deploymentImages%?}"
-                            formattedImages="{ \${deploymentImages} }"
-                            echo "\${formattedImages}" | jq --argjson newVersions "\$formattedImages" '.versions = $newVersions' manifest.json > tmp_manifest.json && mv tmp_manifest.json manifest.json
+                            deploymentImages=$(kubectl -n \${NAMESPACE} get cm manifest-all -o jsonpath='{.data.json}' | jq '.versions')
+                            echo "\${deploymentImages}" | jq --argjson newVersions "\$deploymentImages" '.versions = $newVersions' manifest.json > tmp_manifest.json && mv tmp_manifest.json manifest.json
                             cat manifest.json
                         '''
                     }
@@ -143,12 +140,31 @@ spec:
             steps {
                 dir("ci-only-mutate-guppy-config") {
                     script {
-                        sh '''#!/bin/bash +x
+                        sh '''#!/bin/bash -x
                             set -e
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            gen3 mutate-guppy-config-for-ci-env \${INDEXNAME}
+                            if [ "\${INDEXNAME}" == "jenkins" ]; then
+                              echo "Executing commands for jenkins..."
+                              g3kubectl -n \${NAMESPACE} get configmap manifest-guppy -o yaml > original_guppy_config.yaml
+                              sed -i 's/"index": "[^"]*_subject"/"index": "'${INDEXNAME}_subject_alias'"/' original_guppy_config.yaml
+                              sed -i '/"index": ".*_file"/ { /midrc/! s/"index": ".*_file"/"index": "'${INDEXNAME}_file_alias'"/ }' original_guppy_config.yaml
+                              sed -i 's/"config_index": "[^"]*-config"/"config_index": "'${INDEXNAME}_configs_alias'"/' original_guppy_config.yaml
+                            else
+                              echo "Executing other commands..."
+                              g3kubectl -n \${NAMESPACE} get configmap manifest-guppy -o yaml > original_guppy_config.yaml
+                              etlMapping=$(kubectl -n \${NAMESPACE} get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}')
+                              guppyConfig="$(yq '{indices:[.mappings[]|{index:.name,type:.doc_type}],auth_filter_field:"auth_resource_path"}' <<< "$etlMapping")"
+
+                              subject_index=$(echo "$guppyConfig" | jq -r '.indices[] | select(.type == "subject") | .index')
+                              file_index=$(echo "$guppyConfig" | jq -r '.indices[] | select(.type == "file") | .index')
+                              sed -i 's/"index": "[^"]*_subject_alias"/"index": "'${subject_index}'"/' original_guppy_config.yaml
+                              sed -i '/"index": ".*_file_alias"/ { /midrc/! s/"index": ".*_file_alias"/"index": "'${file_index}'"/ }' original_guppy_config.yaml
+                            fi
+                            cat original_guppy_config.yaml
+                            g3kubectl -n \${NAMESPACE} delete configmap manifest-guppy
+                            g3kubectl -n \${NAMESPACE} apply -f original_guppy_config.yaml
                             gen3 roll guppy
                             # Validate pods to roll up
                             gen3 kube-wait4-pods || true
