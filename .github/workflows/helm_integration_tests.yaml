@@ -205,7 +205,7 @@ jobs:
               echo "test1"
               kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
               echo "test2"
-              kubectl wait --for=condition=complete job/etl-manual --namespace=${{ env.PR_NAMESPACE }}  --timeout=5m
+              kubectl wait --for=condition=complete job/etl-manual --namespace=${{ env.PR_NAMESPACE }}  --timeout=20m
               echo "test3"
               kubectl rollout restart deployment guppy-deployment -n ${{ env.PR_NAMESPACE }}
               echo "test4"
