@@ -200,6 +200,8 @@ jobs:
               echo "test"
               sleep 60
               kubectl wait --for=condition=Ready pod -l app=gen3-elasticsearch-master --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
+              kubectl create job --from=cronjob/usersync usersync-manual -n ${{ env.PR_NAMESPACE }}
+              kubectl wait --for=condition=complete job/usersync-manual --namespace=${{ env.PR_NAMESPACE }}  --timeout=5m
               echo "test1"
               kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
               echo "test2"
