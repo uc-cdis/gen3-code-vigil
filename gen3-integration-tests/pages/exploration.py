@@ -75,7 +75,7 @@ class ExplorationPage(object):
 
     def check_pfb_status(self, page: Page):
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for()
+        wait_footer_locator.wait_for(timeout=60000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
         success_footer_locator.wait_for(timeout=420000)
