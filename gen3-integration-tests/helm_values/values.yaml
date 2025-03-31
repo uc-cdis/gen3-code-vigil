@@ -1030,7 +1030,7 @@ etl:
   tube:
     image:
       repository: "quay.io/cdis/tube"
-      tag: "master"
+      tag: "2024.12"
   etlMapping:
     mappings:
       - name: ci.planx-ci.io_subject
