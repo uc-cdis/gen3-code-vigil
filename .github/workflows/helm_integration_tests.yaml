@@ -151,22 +151,14 @@ jobs:
               echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $PR_NAMESPACE || true
 
-          - name: Create values-override.yaml file
-            run: |
-              cd gen3-integration-tests
-              mkdir -p helm_values
-              echo "global:" > helm_values/values-override.yaml
-              echo "  hostname: ${{ env.PR_HOSTNAME }}.planx-ci.io" >> helm_values/values-override.yaml
-              cat helm_values/values-override.yaml
-
-          # This will set the image tag for service PRs
-          - name: Append to values.yaml with the image version for service PRs
-            if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST == 'true'}}
-            run: |
-              IMAGE_TAG=$(echo "${GITHUB_REF#refs/*/}" | tr / _)
-              echo "${{ inputs.SERVICE_TO_TEST }}:" >> helm_values/values.yaml
-              echo "  image:" >> helm_values/values.yaml
-              echo "    tag: $IMAGE_TAG" >> helm_values/values.yaml
+          # # This will set the image tag for service PRs
+          # - name: Append to values.yaml with the image version for service PRs
+          #   if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST == 'true'}}
+          #   run: |
+          #     IMAGE_TAG=$(echo "${GITHUB_REF#refs/*/}" | tr / _)
+          #     echo "${{ inputs.SERVICE_TO_TEST }}:" >> helm_values/values.yaml
+          #     echo "  image:" >> helm_values/values.yaml
+          #     echo "    tag: $IMAGE_TAG" >> helm_values/values.yaml
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels
@@ -193,28 +185,15 @@ jobs:
             run: |
               helm repo add gen3 https://helm.gen3.org
               helm repo update
-              # PUll file from gen3-gitops
-              # Run new modify manifest script
-              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
+              # TO DO: add all of this to new modify values script, including new ES index dbRestore:
+              # disabling guppy until the above is completed.
+              # remove usersync run from helm test job as well.
+              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}
-              echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
+              echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}"
-              sleep 60
-              for pod in $(kubectl get pods -n ${{ env.PR_NAMESPACE }} -o name | grep -v guppy); do
-                kubectl wait --for=condition=Ready -n ${{ env.PR_NAMESPACE }} "$pod"
-              done
 
-              # kubectl wait --for=condition=Ready pod -l app=gen3-elasticsearch-master --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
-              # kubectl create job --from=cronjob/usersync usersync-manual -n ${{ env.PR_NAMESPACE }}
-              # kubectl wait --for=condition=complete job/usersync-manual --namespace=${{ env.PR_NAMESPACE }}  --timeout=5m
-              # echo "test1"
-              # kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
-              # echo "test2"
-              # kubectl wait --for=condition=complete job/etl-manual --namespace=${{ env.PR_NAMESPACE }}  --timeout=20m
-              # echo "test3"
-              # kubectl rollout restart deployment guppy-deployment -n ${{ env.PR_NAMESPACE }}
-              # echo "test4"
-              # kubectl wait --for=condition=Ready pod --all --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
+              kubectl wait --for=condition=Ready pod --all --namespace=${{ env.PR_NAMESPACE }} --timeout=15m
 
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests

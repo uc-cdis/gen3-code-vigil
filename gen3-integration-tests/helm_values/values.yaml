@@ -1201,7 +1201,8 @@ guppy:
     requests:
       memory: "105Mi"
       cpu: "15m"
-  enabled: true
+  enabled: false
+  #TO DO Re-enable once ES index restore is added to modify values script
   dbRestore: false
   image:
     repository: quay.io/cdis/guppy
