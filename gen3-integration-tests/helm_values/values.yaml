@@ -1023,14 +1023,15 @@ portal:
 
 etl:
   enabled: true
-  spark:
-    image:
-      repository: "quay.io/cdis/gen3-spark"
-      tag: "master"
-  tube:
-    image:
-      repository: "quay.io/cdis/tube"
-      tag: "2024.12"
+  image:
+    spark:
+      image:
+        repository: "quay.io/cdis/gen3-spark"
+        tag: "master"
+    tube:
+      image:
+        repository: "quay.io/cdis/tube"
+        tag: "2024.12"
   etlMapping:
     mappings:
       - name: ci.planx-ci.io_subject
