@@ -200,8 +200,8 @@ jobs:
               echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}"
               sleep 60
-              for pod in $(kubectl get pods -n my-namespace -o name | grep -v guppy); do
-                kubectl wait --for=condition=Ready -n my-namespace "$pod"
+              for pod in $(kubectl get pods -n ${{ env.PR_NAMESPACE }} -o name | grep -v guppy); do
+                kubectl wait --for=condition=Ready -n ${{ env.PR_NAMESPACE }} "$pod"
               done
 
               # kubectl wait --for=condition=Ready pod -l app=gen3-elasticsearch-master --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
