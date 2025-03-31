@@ -49,10 +49,10 @@ jobs:
     integration_tests:
         runs-on: self-hosted
 
-        defaults:
-          run:
-            # the test directory in gen3-code-vigil
-            working-directory: gen3-integration-tests
+        # defaults:
+        #   run:
+        #     # the test directory in gen3-code-vigil
+        #     working-directory: gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
