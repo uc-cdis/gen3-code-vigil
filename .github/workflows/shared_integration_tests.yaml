@@ -84,7 +84,7 @@ jobs:
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
           # Ensure the PR is run under the same org as an Internal PR
-          # and by external forks/PRs
+          # and not by external forks/PRs
           - name: Check if PR is from the same organization
             if: github.repository.owner.login == github.event.pull_request.head.repo.owner.login
             run:  |
