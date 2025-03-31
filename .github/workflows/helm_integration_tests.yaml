@@ -73,6 +73,29 @@ jobs:
           # - name: Enable Step Debugging
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+          # Setup gh cli on self hosted runner
+          - name: Install GitHub CLI
+            run: |
+              GH_VERSION="2.69.0"
+              ARCH="linux_amd64"
+              GH_FILENAME="gh_${GH_VERSION}_${ARCH}.tar.gz"
+              GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_FILENAME}"
+
+              # Create temp directory
+              mkdir -p /tmp/gh-cli && cd /tmp/gh-cli
+
+              # Download and extract
+              curl -sSL "$GH_URL" -o "$GH_FILENAME"
+              tar -xzf "$GH_FILENAME"
+
+              # Move binary to /usr/local/bin
+              sudo cp "gh_${GH_VERSION}_${ARCH}/bin/gh" /usr/local/bin/
+
+              # Optional: clean up
+              cd ~
+              rm -rf /tmp/gh-cli
+              gh --version
+
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
@@ -111,24 +134,29 @@ jobs:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
 
-          # Create PR namespace
-          - name: Create namespace
+          # Setup kubectl
+          - name: Set Up kubectl
+            uses: azure/setup-kubectl@v3
+            with:
+              version: latest
+
+          # Create PR namespace and PR hostname env var
+          - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
-              echo "PR_NAMESPACE=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+              PR_NAMESPACE=pr-${PR_NUM}
+              PR_HOSTNAME=pr${PR_NUM}
+              echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
+              echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $PR_NAMESPACE || true
 
-          # Pass in the dynamic hostname for each PR
-          - name: Set hostname and create "values-override.yaml"
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: 1arp/create-a-file-action@0.4.5
-            with:
-              path: 'helm_values'
-              isAbsolutePath: false
-              file: 'values-override.yaml'
-              content: |
-                global:
-                  hostname: ${{ env.PR_NAMESPACE }}.planx-ci.io
+          - name: Create values-override.yaml file
+            run: |
+              cd gen3-integration-tests
+              mkdir -p helm_values
+              echo "global:" > helm_values/values-override.yaml
+              echo "  hostname: ${{ env.PR_HOSTNAME }}.planx-ci.io" >> helm_values/values-override.yaml
+              cat helm_values/values-override.yaml
 
           # This will set the image tag for service PRs
           - name: Append to values.yaml with the image version for service PRs
@@ -150,6 +178,12 @@ jobs:
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
+            # Setup helm
+          - name: Set Up Helm
+            uses: azure/setup-helm@v4.3.0
+            with:
+              version: latest
+
           # Will install the gen3 helm charts to specific PR namespace and set the tests to run
           - name: Prepare CI environment
             id: prep_ci_env
@@ -158,9 +192,21 @@ jobs:
             run: |
               helm repo add gen3 https://helm.gen3.org
               helm repo update
-              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f helm_values/values.yaml -f \
-                --namespace ${{ env.PR_NAMESPACE }} \
-                --wait
+              # PUll file from gen3-gitops
+              # Run new modify manifest script
+              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" -f gen3-integration-tests/helm_values/values.yaml -f gen3-integration-tests/helm_values/values-override.yaml \
+                --namespace ${{ env.PR_NAMESPACE }}
+              echo "test"
+              sleep 60
+              kubectl wait --for=condition=Ready pod -l app=gen3-elasticsearch-master --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
+              echo "test1"
+              kubectl create job --from=cronjob/etl-cronjob etl-manual -n ${{ env.PR_NAMESPACE }}
+              echo "test2"
+              kubectl wait --for=condition=complete job/etl-manual --namespace=${{ env.PR_NAMESPACE }}  --timeout=5m
+              echo "test3"
+              kubectl rollout restart deployment guppy-deployment -n ${{ env.PR_NAMESPACE }}
+              echo "test4"
+              kubectl wait --for=condition=Ready pod --all --namespace=${{ env.PR_NAMESPACE }} --timeout=5m
 
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests

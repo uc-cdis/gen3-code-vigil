@@ -14,7 +14,7 @@ fence:
   image:
     repository: quay.io/cdis/fence
     pullPolicy: IfNotPresent
-    tag: '2025.01'
+    tag: 'master'
 
   usersync:
     usersync: true
@@ -116,6 +116,7 @@ portal:
   gitops:
     json: |
       {
+        "gaTrackingId": "UA-119127212-2",
         "argoTemplate": "gwas-template",
         "graphql": {
           "boardCounts": [
@@ -635,7 +636,7 @@ portal:
           },
           "minimalFieldMapping": {
             "authzField": "authz",
-            "tagsListFieldName": "tfags",
+            "tagsListFieldName": "tags",
             "dataAvailabilityField": "data_availability",
             "uid": "project_number"
           },
@@ -1022,10 +1023,14 @@ portal:
 
 etl:
   enabled: true
-  image:
-    tube:
-      repository: quay.io/cdis/tube
-      tag: master
+  spark:
+    image:
+      repository: "quay.io/cdis/gen3-spark"
+      tag: "master"
+  tube:
+    image:
+      repository: "quay.io/cdis/tube"
+      tag: "master"
   etlMapping:
     mappings:
       - name: ci.planx-ci.io_subject
@@ -1192,30 +1197,50 @@ etl:
                 fn: set
 
 guppy:
+  # Lower cost
+  resources:
+    requests:
+      memory: "105Mi"
+      cpu: "15m"
+  enabled: true
+  dbRestore: false
   image:
     repository: quay.io/cdis/guppy
     tag: master
-  enabled: true
-  dbRestore: false
   indices:
-  - index: ci_subject
-    type: subject
-  - index: ci_file
-    type: file
-  - index: ci_imaging_study
-    type: imaging_study
-  configIndex: ci_configs
+    - index: ci_subject_alias
+      type: subject
+    - index: ci_file_alias
+      type: file
+    - index: ci_cmc_alias
+      type: clinical_trials
+    - index: ci_midrc_dataset_alias
+      type: dataset
+    - index: ci_midrc_case_alias
+      type: case
+    - index: ci_midrc_imaging_data_file_alias
+      type: imaging_data_file
+    - index: ci_midrc_imaging_study_alias
+      type: imaging_study
+  configIndex: ci_configs_alias
+  authFilterField: auth_resource_path
+
 
 indexd:
-  image:
-    repository: quay.io/cdis/indexd
-    tag: master
+  resources:
+    requests:
+      memory: "105Mi"
+      cpu: "15m"
   defaultPrefix: ""
+  enabled: true
+  image:
+    repository: "quay.io/cdis/indexd"
+    tag: "master"
 
 metadata:
   image:
     repository: quay.io/cdis/metadata-service
-    tag: '2024.11'
+    tag: 'master'
   enabled: true
   useAggMds: "True"
   aggMdsNamespace: default
@@ -1235,7 +1260,7 @@ sower:
     bucket: 'sower-bucket'
   image:
     repository: quay.io/cdis/sower
-    tag: '2024.10'
+    tag: 'master'
   enabled: true
   serviceAccount:
     # -- (bool) Specifies whether a service account should be created.
@@ -1408,7 +1433,7 @@ sower:
 ssjdispatcher:
   image:
     repository: quay.io/cdis/ssjdispatcher
-    tag: '2024.10'
+    tag: 'master'
   enabled: true
   indexing: quay.io/cdis/indexs3client:master
   ssjcreds:
@@ -1423,17 +1448,26 @@ ssjdispatcher:
     name: "ssjdispatcher-service-account"
 
 sheepdog:
-  image:
-    repository: quay.io/cdis/sheepdog
-    tag: 'bug_auth-audience'
+  resources:
+    requests:
+      memory: "105Mi"
+      cpu: "15m"
   enabled: true
   authNamespace: ''
+  image:
+    repository: "quay.io/cdis/sheepdog"
+    tag: "master"
 
 peregrine:
-  image:
-    repository: quay.io/cdis/peregrine
-    tag: 'feat_jq-audience'
+  resources:
+    requests:
+      memory: "105Mi"
+      cpu: "15m"
   enabled: true
+  image:
+    repository: "quay.io/cdis/peregrine"
+    tag: "master"
+    pullPolicy: Always
   env:
     - name: AWS_ACCESS_KEY_ID
       value: test
@@ -1445,10 +1479,10 @@ peregrine:
       value: 'us-east-1'
 
 requestor:
-  image:
-    repository: quay.io/cdis/requestor
-    tag: '2024.10'
   enabled: true
+  image:
+    repository: "quay.io/cdis/requestor"
+    tag: "master"
 
 audit:
   env:
@@ -1466,7 +1500,6 @@ audit:
       value: 'http://localstack.localstack.svc.cluster.local:4566'
     - name: AWS_DEFAULT_REGION
       value: 'us-east-1'
-
   image:
     repository: quay.io/cdis/audit-service
     tag: '2025.01'
@@ -1479,16 +1512,20 @@ audit:
   enabled: true
 
 ambassador:
-  image:
-    repository: quay.io/datawire/ambassador
-    tag: '1.4.2'
   enabled: true
+  image:
+    repository: "quay.io/datawire/ambassador"
+    tag: "1.4.2"
 
 arborist:
-  image:
-    repository: quay.io/cdis/arborist
-    tag: '2024.10'
+  resources:
+    requests:
+      memory: "105Mi"
+      cpu: "15m"
   enabled: true
+  image:
+    repository: "quay.io/cdis/arborist"
+    tag: "master"
 
 revproxy:
   ingress:
@@ -1505,10 +1542,10 @@ revproxy:
         cpu: "15m"
 
 wts:
-  image:
-    repository: quay.io/cdis/workspace-token-service
-    tag: '2024.10'
   enabled: true
+  image:
+    repository: "quay.io/cdis/workspace-token-service"
+    tag: "master"
 
 manifestservice:
   image:
@@ -1534,3 +1571,15 @@ manifestservice:
       value: /var/gen3/config/config.json
     - name: GEN3_DEBUG
       value: "False"
+
+dicom-viewer:
+  enabled: true
+  image:
+    repository: "quay.io/cdis/ohif-viewer"
+    tag: "master"
+
+dicom-server:
+  enabled: true
+  image:
+    repository: "quay.io/cdis/gen3-orthanc"
+    tag: "master"
