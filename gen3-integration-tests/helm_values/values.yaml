@@ -106,10 +106,6 @@ hatchery:
       fs-gid: 100
 
 portal:
-  resources:
-    requests:
-      cpu: "0.2"
-      memory: 1Gi
   image:
     repository: quay.io/cdis/data-portal
     tag: master

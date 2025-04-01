@@ -192,7 +192,10 @@ jobs:
                 --namespace ${{ env.PR_NAMESPACE }}
               echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}"
+              sleep 60
+              echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
               kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
+              echo "kubectl wait --for=condition=complete job -l app=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
               kubectl wait --for=condition=complete job -l app=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
 
 
