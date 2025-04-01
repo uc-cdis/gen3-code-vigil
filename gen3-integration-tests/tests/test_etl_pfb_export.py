@@ -40,10 +40,6 @@ def validate_json_for_export_to_pfb_button(data):
     reason="tube service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "wts" not in pytest.deployed_services,
-    reason="wts service is not running on this environment",
-)
-@pytest.mark.skipif(
     "guppy" not in pytest.deployed_services,
     reason="guppy service is not running on this environment",
 )
