@@ -188,13 +188,34 @@ jobs:
               # TO DO: add all of this to new modify values script, including new ES index dbRestore:
               # disabling guppy until the above is completed.
               # remove usersync run from helm test job as well.
-              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
-                --namespace ${{ env.PR_NAMESPACE }}
-              echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
-                --namespace ${{ env.PR_NAMESPACE }}"
-              sleep 60
-              echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
-              kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
+              # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
+              #   --namespace ${{ env.PR_NAMESPACE }}
+              # echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
+              #   --namespace ${{ env.PR_NAMESPACE }}"
+              # sleep 60
+              # echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
+              # kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
+
+              export timeout=900
+              export interval=10
+
+              end=$((SECONDS + timeout))
+              while [ $SECONDS -lt $end ]; do
+                not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
+                  -o json | jq '[.items[].status.conditions[] | select(.type == "Ready" and .status != "True")] | length')
+
+                if [ "$not_ready" -eq 0 ]; then
+                  echo "✅ All pods are Ready"
+                  exit 0
+                fi
+
+                echo "⏳ Waiting... ($not_ready pods not ready)"
+                sleep $interval
+              done
+
+              echo "❌ Timeout: Pods not ready"
+              kubectl get pods -n ${{ env.PR_NAMESPACE }}
+              exit 1
 
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests
