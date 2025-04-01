@@ -1534,7 +1534,7 @@ revproxy:
     enabled: true
     className: cloudflare-tunnel
     hosts:
-      - host:
+      - host: pr161.planx-ci.io
         paths:
           - path: /
             pathType: Prefix
