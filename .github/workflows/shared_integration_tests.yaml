@@ -83,6 +83,14 @@ jobs:
           # - name: Enable Step Debugging
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+          # Ensure the PR is run under the same org as an Internal PR
+          # and not by external forks/PRs
+          - name: Check if PR is from the same organization
+            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
+            run:  |
+              echo "Skip pull requests from repositories not within the same organization"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
