@@ -105,7 +105,6 @@ hatchery:
       user-uid: 1000
       fs-gid: 100
 
-
 portal:
   resources:
     limits:
