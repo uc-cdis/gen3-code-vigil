@@ -105,6 +105,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
         "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
         "UPDATED_FOLDER": updated_folder,
         "TARGET_REPO": repo,
+        "TARGET_BRANCH": os.getenv("BRANCH"),
     }
     build_num = job.build_job(params)
     if build_num:

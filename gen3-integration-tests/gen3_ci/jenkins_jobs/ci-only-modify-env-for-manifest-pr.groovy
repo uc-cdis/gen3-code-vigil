@@ -9,6 +9,8 @@
       Folder in repository that was updated
     String parameter TARGET_REPO
       Repository from where files will be pulled
+    String parameter TARGET_BRANCH
+      Branch of the TARGET_REPO to be tested
 */
 pipeline {
     agent {
@@ -120,7 +122,7 @@ spec:
                 // gitops-qa/cdis-manifest
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: 'refs/heads/master']],
+                  branches: [[name: "refs/heads/${params.TARGET_BRANCH}"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'temp-cdis-manifest']],
                   submoduleCfg: [],
