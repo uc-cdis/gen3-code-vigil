@@ -188,9 +188,9 @@ jobs:
               # TO DO: add all of this to new modify values script, including new ES index dbRestore:
               # disabling guppy until the above is completed.
               # remove usersync run from helm test job as well.
-              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
+              helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" --set revproxy.ingress.hosts[0].host="${{ env.PR_HOSTNAME }}" -f gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}
-              echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL='-k ${{ env.TEST_LABEL }}' --set tests.SERVICE_TO_TEST='${{ inputs.SERVICE_TO_TEST }}' --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" -f gen3-integration-tests/helm_values/values.yaml \
+              echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="-k ${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.planx-ci.io" --set revproxy.ingress.hosts[0].host="${{ env.PR_HOSTNAME }}" -f gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}"
               sleep 60
               # echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
@@ -202,18 +202,18 @@ jobs:
               end=$((SECONDS + timeout))
               while [ $SECONDS -lt $end ]; do
                 not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
-                  -o json | jq '[.items[].status.conditions[] | select(.type == "Ready" and .status != "True")] | length')
+                  -o json | jq '[.items[] | select(.status.containerStatuses[]?.ready != true)] | length')
 
                 if [ "$not_ready" -eq 0 ]; then
-                  echo "✅ All pods are Ready"
+                  echo "✅ All pods containers are Ready"
                   exit 0
                 fi
 
-                echo "⏳ Waiting... ($not_ready pods not ready)"
+                echo "⏳ Waiting... ($not_ready pods have containers not ready)"
                 sleep $interval
               done
 
-              echo "❌ Timeout: Pods not ready"
+              echo "❌ Timeout: Pods' containers not ready"
               kubectl get pods -n ${{ env.PR_NAMESPACE }}
               exit 1
 
@@ -229,10 +229,14 @@ jobs:
             run: |
               echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
-          # - name: Copy logs from pod to runner
-          #   run: |
-          #     POD_NAME=$(kubectl get pod -n mynamespace -l app=myapp -o jsonpath="{.items[0].metadata.name}")
-          #     kubectl cp ${{ env.PR_NAMESPACE }}/$POD_NAME:allure-results allure-results -c code-vigil
+          - name: Copy logs from pod to runner
+            run: |
+              POD_NAME=$(kubectl get pods -n your-namespace -o jsonpath="{.items[?(@.metadata.name.startsWith('gen3-integration-tests'))].metadata.name}")
+
+              kubectl cp ${{ env.PR_NAMESPACE }}/$POD_NAME:allure-results allure-results -c code-vigil
+              ls
+              cd allure-results
+              ls
 
 
 
