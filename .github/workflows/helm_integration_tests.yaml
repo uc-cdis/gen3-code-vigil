@@ -197,7 +197,7 @@ jobs:
               # kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
 
               export timeout=900
-              export interval=10
+              export interval=20
 
               end=$((SECONDS + timeout))
               while [ $SECONDS -lt $end ]; do
