@@ -195,9 +195,6 @@ jobs:
               sleep 60
               echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
               kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
-              echo "kubectl wait --for=condition=complete job -l app=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
-              kubectl wait --for=condition=complete job -l app=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
-
 
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests
@@ -210,6 +207,13 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
+
+          # - name: Copy logs from pod to runner
+          #   run: |
+          #     POD_NAME=$(kubectl get pod -n mynamespace -l app=myapp -o jsonpath="{.items[0].metadata.name}")
+          #     kubectl cp ${{ env.PR_NAMESPACE }}/$POD_NAME:allure-results allure-results -c code-vigil
+
+
 
 #modify allure report generation
           # - name: Generate allure report
