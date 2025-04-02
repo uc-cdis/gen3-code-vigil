@@ -16,6 +16,7 @@ from utils import logger
     reason="tube service is not running on this environment",
 )
 @pytest.mark.tube
+@pytest.mark.etl
 class TestETL:
     @classmethod
     def setup_class(cls):
