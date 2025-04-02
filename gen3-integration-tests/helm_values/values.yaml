@@ -1534,7 +1534,7 @@ revproxy:
     enabled: true
     annotations:
       alb.ingress.kubernetes.io/scheme: internet-facing
-      alb.ingress.kubernetes.io/tags: Environment='devplanetv2'
+      alb.ingress.kubernetes.io/tags: Environment=devplanetv2
       alb.ingress.kubernetes.io/certificate-arn: 'arn:aws:acm:us-east-1:433568766270:certificate/e877810e-1416-4499-8780-1c43c75bfd49'
       alb.ingress.kubernetes.io/group.name: devplanetv2
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
