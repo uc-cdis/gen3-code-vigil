@@ -33,40 +33,41 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "CI Default Env Configuration Folder Path: ${cdis_manifest}"
     echo "New Env Configuration Folder Path: ${temp_cdis_manifest}"
 
-    ###########################################################################
+    ###############################################################################
     # Make sure the blocks of values.yaml in cdis_manifest are in reflection of
     # the blocks of values.yaml in temp_cdis_manifest.
-    ###########################################################################
+    ###############################################################################
     # Get all the top-level keys from both files
-    keys_file1=$(yq eval 'keys' $cdis_manifest/values.yaml -o=json | jq -r '.[]')
-    keys_file2=$(yq eval 'keys' $temp_cdis_manifest/values.yaml -o=json | jq -r '.[]')
+    keys_ci=$(yq eval 'keys' $cdis_manifest/values.yaml -o=json | jq -r '.[]')
+    keys_manifest=$(yq eval 'keys' $temp_cdis_manifest/values.yaml -o=json | jq -r '.[]')
 
-    # Remove blocks from file1 that are not present in file2
-    for key in $keys_file1; do
-    if ! echo "$keys_file2" | grep -q "^$key$"; then
+    # Remove blocks from $cdis_manifest/values.yaml that are not present in $temp_cdis_manifest/values.yaml
+    for key in $keys_ci; do
+    if ! echo "$keys_manifest" | grep -q "^$key$"; then
         yq eval "del(.$key)" -i $cdis_manifest/values.yaml
     fi
     done
 
-    # Add blocks from file2 that are not present in file1
-    for key in $keys_file2; do
-    if ! echo "$keys_file1" | grep -q "^$key$"; then
+    # Add blocks from $temp_cdis_manifest/values.yaml that are not present in $cdis_manifest/values.yaml
+    for key in $keys_manifest; do
+    if ! echo "$keys_ci" | grep -q "^$key$"; then
         yq eval ". |= . + {\"$key\": $(yq eval .$key $temp_cdis_manifest/values.yaml -o=json)}" -i $cdis_manifest/values.yaml
     fi
     done
 
-    ###########################################################################
-    # Update image.tags for each block of values.yaml in cdis_manifest
-    # with image.tags for each block of values.yaml in $temp_cdis_manifest.
-    ###########################################################################
-    for key in $keys_file2; do
-    image_tag_value=$(yq eval ".${key}.image.tag" "$file2" 2>/dev/null)
+    ###############################################################################
+    # Update images for each service from $temp_cdis_manifest/values.yaml
+    ###############################################################################
+    for key in $keys_manifest; do
+    image_tag_value=$(yq eval ".${key}.image.tag" $temp_cdis_manifest/values.yaml 2>/dev/null)
     if [ ! -z "$image_tag_value" ]; then
-        yq eval ".${key}.image.tag = \"$image_tag_value\"" -i "$file1"
+        yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $cdis_manifest/values.yaml
     fi
     done
 
+    ###############################################################################
     # Perform operations for global and other sections under values.yaml
+    ###############################################################################
     keys=("global.dictionaryUrl"
      "global.portalApp"
      "global.netpolicy"
@@ -79,12 +80,24 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         ci_value=$(yq eval ".$key // \"key not found\"" $cdis_manifest/values.yaml)
         manifest_value=$(yq eval ".$key // \"key not found\"" $temp_cdis_manifest/values.yaml)
         if [ "$manifest_value" = "key not found" ]; then
-            echo "The key '$key' is not present in the YAML file."
+            echo "The key '$key' is not present in the Manifest YAML file."
         else
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
         fi
     done
+
+    ###############################################################################
+    # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
+    ###############################################################################
+    if [[ -f $temp_cdis_manifest/portal.yaml ]]; then
+        # Update the image tag
+        image_tag_value=$(yq eval ".portal.image.tag" $temp_cdis_manifest/portal.yaml 2>/dev/null)
+        yq eval ".portal.image.tag = \"$image_tag_value\"" -i $cdis_manifest/portal.yaml
+        # Update the gitops json
+        gitops_json_value=$(yq eval ".portal.gitops.json" $temp_cdis_manifest/portal.yaml 2>/dev/null)
+        yq eval ".portal.gitops.json = \"$gitops_json_value\"" -i $cdis_manifest/portal.yaml
+    fi
 fi
 
 # Perform general steps to bring up the env after the values are set.
