@@ -1529,7 +1529,6 @@ arborist:
     repository: "quay.io/cdis/arborist"
     tag: "master"
 
-
 revproxy:
   ingress:
     enabled: true
