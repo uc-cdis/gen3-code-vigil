@@ -119,12 +119,13 @@ jobs:
             with:
               node-version: 20
 
-          - name: Setup Java
+          - name: Setup Java and AWS CLI
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
               sudo apt-get update
               sudo apt install openjdk-11-jre -y
+              sudo apt install awscli
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
@@ -154,14 +155,6 @@ jobs:
             uses: azure/setup-kubectl@v3
             with:
               version: latest
-
-          # Install aws cli
-          - name: install-aws-cli
-            uses: unfor19/install-aws-cli-action@v1
-            with:
-              version: 2                         # default
-              verbose: false                     # default
-              arch: amd64                        # allowed values: amd64, arm64
 
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
