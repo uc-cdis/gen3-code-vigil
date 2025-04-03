@@ -248,9 +248,13 @@ jobs:
           - name: Copy logs from pod to runner
             if: always()
             run: |
+              echo "apply job"
               kubectl apply -f gen3-integration-tests/helm_values/allure-collector.yaml
+              echo "wait for job"
               kubectl wait --for=condition=complete job/allure-collector
+              echo "set collector pod env"
               export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
+              echo "cp"
               kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
               ls
               cd allure-results
