@@ -220,6 +220,7 @@ jobs:
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests
             id: run_tests
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
             run: helm test gen3 --namespace $PR_NAMESPACE
 
@@ -230,6 +231,7 @@ jobs:
               echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
           - name: Copy logs from pod to runner
+            if: always()
             run: |
               POD_NAME=$(kubectl get pods -n your-namespace -o jsonpath="{.items[?(@.metadata.name.startsWith('gen3-integration-tests'))].metadata.name}")
 
@@ -313,7 +315,7 @@ jobs:
           #   if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
           #   run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
-##ADD CLEANUP LOGIC- or create cronjob to tear down ns
+##ADD CLEANUP LOGIC- or create cronjob to tear down ns or don't cleanup if set a specific label on PR
 
     # - name: Cleanup
     #   if: always()
