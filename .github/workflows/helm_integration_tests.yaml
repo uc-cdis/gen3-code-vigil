@@ -279,11 +279,13 @@ jobs:
               export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
               echo "cp"
               kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
+              mkdir output
+              cp /allure-results /output
               ls
               cd allure-results
               ls
 
-#modify allure report generation
+            #modify allure report generation
           - name: Generate allure report
             id: generate_allure_report
             # if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
@@ -310,9 +312,10 @@ jobs:
             if: always()
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+              # poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
               pwd
               ls
+              # use bash script from "save_ci_env_pod_logs.sh"
 
           - name: Generate markdown report
             id: generate_md_report
@@ -321,8 +324,6 @@ jobs:
             continue-on-error: true
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
-              ls
-              pwd
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
               fi
@@ -335,6 +336,8 @@ jobs:
                 fi
                 echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
               fi
+              ls
+              pwd
 
           - name: Render report to the PR
             id: publish_md_report
