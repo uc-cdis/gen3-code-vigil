@@ -11,6 +11,8 @@ spec:
         - name: allure-results
           persistentVolumeClaim:
             claimName: allure-results-pvc
+        - name: output
+          emptyDir: {}
       containers:
         - name: collector
           image: alpine
@@ -20,6 +22,3 @@ spec:
               mountPath: /gen3-integration-tests/allure-results
             - name: output
               mountPath: /output
-      volumes:
-        - name: output
-          emptyDir: {}
