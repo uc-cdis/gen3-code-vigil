@@ -196,6 +196,7 @@ jobs:
               git checkout feat/ci-patch
               helm dependency update
               cd ..
+              pwd
               helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}
               echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f gen3-integration-tests/helm_values/values.yaml \
