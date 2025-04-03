@@ -274,7 +274,7 @@ jobs:
             run: |
               echo "apply job"
               kubectl apply -f gen3-integration-tests/helm_values/allure-collector.yaml
-              sleep 10
+              sleep 30
               echo "set collector pod env"
               export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
               echo "cp"
