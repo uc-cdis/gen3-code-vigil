@@ -119,6 +119,13 @@ jobs:
             with:
               node-version: 20
 
+          # gen3-integration-tests run with python 3.9
+          - name: Set up Python
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/setup-python@v5
+            with:
+              python-version: '3.9'
+
           - name: Setup Java and AWS CLI
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
@@ -126,6 +133,8 @@ jobs:
               sudo apt-get update
               sudo apt install openjdk-11-jre -y
               sudo apt install awscli -y
+              python -m pip install --upgrade pip
+              pip install poetry
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
