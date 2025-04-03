@@ -155,6 +155,14 @@ jobs:
             with:
               version: latest
 
+          # Install aws cli
+          - name: install-aws-cli
+            uses: unfor19/install-aws-cli-action@v1
+            with:
+              version: 2                         # default
+              verbose: false                     # default
+              arch: amd64                        # allowed values: amd64, arm64
+
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' }}
