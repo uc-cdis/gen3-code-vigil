@@ -125,7 +125,7 @@ jobs:
               sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
               sudo apt-get update
               sudo apt install openjdk-11-jre -y
-              sudo apt install awscli
+              sudo apt install awscli -y
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
