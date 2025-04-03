@@ -33,7 +33,7 @@ def validate_json_for_export_to_pfb_button(data):
 
 @pytest.mark.skipif(
     "portal" not in pytest.deployed_services,
-    reason="fence service is not running on this environment",
+    reason="portal service is not running on this environment",
 )
 @pytest.mark.skipif(
     not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
