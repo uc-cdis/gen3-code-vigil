@@ -120,10 +120,10 @@ jobs:
               node-version: 20
 
           - name: Setup Java
-            uses: actions/setup-java@v4
-            with:
-              distribution: 'temurin' # See 'Supported distributions' for available options
-              java-version: '21'
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              apt update
+              apt install default-jdk -y
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
