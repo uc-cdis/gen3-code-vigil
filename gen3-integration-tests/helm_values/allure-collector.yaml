@@ -16,7 +16,7 @@ spec:
       containers:
         - name: collector
           image: alpine
-          command: ["sh", "-c", "cp -r /gen3-integration-tests/allure-results /output"]
+          command: ["sh", "-c", "cp -r /gen3-integration-tests/allure-results /output && sleep 30"]
           volumeMounts:
             - name: allure-results
               mountPath: /gen3-integration-tests/allure-results
