@@ -112,12 +112,20 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
 
-            # allure report generation needs node
+          # allure report generation needs node
           - name: Set up node
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/setup-node@v4
             with:
               node-version: 20
+
+          # Install gen3-integration-tests dependencies
+          - name: Install dependencies
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              python -m pip install --upgrade pip
+              pip install poetry
+              poetry install
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
