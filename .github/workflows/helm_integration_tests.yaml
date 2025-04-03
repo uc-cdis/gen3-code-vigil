@@ -122,8 +122,8 @@ jobs:
           - name: Setup Java
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
-              apt update
-              apt install default-jdk -y
+              sudo apt update
+              sudo apt install default-jdk -y
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
