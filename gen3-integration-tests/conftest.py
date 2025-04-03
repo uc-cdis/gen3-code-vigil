@@ -49,7 +49,7 @@ class CustomScheduling(LoadScopeScheduling):
         if node.get_closest_marker("ras"):
             return "__ras__"
 
-        # Run all tests with marker guppy to run serially (same worker)
+        # Group all tests that affect ES indices and run them on the same worker serially
         if (
             node.get_closest_marker("guppy")
             or node.get_closest_marker("etl")
