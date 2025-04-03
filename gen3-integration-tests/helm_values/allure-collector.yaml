@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: allure-collector
+  namespace: pr-161
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: allure-results
+          persistentVolumeClaim:
+            claimName: allure-results-pvc
+      containers:
+        - name: collector
+          image: alpine
+          command: ["sh", "-c", "cp -r /gen3-integration-tests/allure-results /output"]
+          volumeMounts:
+            - name: allure-results
+              mountPath: /gen3-integration-tests/allure-results
+            - name: output
+              mountPath: /output
+      volumes:
+        - name: output
+          emptyDir: {}
