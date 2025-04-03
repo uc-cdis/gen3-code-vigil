@@ -280,8 +280,7 @@ jobs:
               echo "cp"
               kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
               mkdir output
-              cp /allure-results /output
-              ls
+              cp allure-results/ output/
               cd allure-results
               ls
 
