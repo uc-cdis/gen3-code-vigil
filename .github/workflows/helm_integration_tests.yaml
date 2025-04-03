@@ -260,56 +260,57 @@ jobs:
               ls
 
 #modify allure report generation
-          # - name: Generate allure report
-          #   id: generate_allure_report
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     npm install -g allure-commandline --save-dev
-          #     allure generate allure-results -o allure-report --clean
+          - name: Generate allure report
+            id: generate_allure_report
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            if: always()
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              npm install -g allure-commandline --save-dev
+              allure generate allure-results -o allure-report --clean
 
-          # - name: Upload allure report to S3
-          #   id: upload_allure_report
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
-          #   env:
-          #     AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-          #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-          #     AWS_DEFAULT_REGION: 'us-east-1'
+          - name: Upload allure report to S3
+            id: upload_allure_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+              AWS_DEFAULT_REGION: 'us-east-1'
 
-          # - name: Archive pod logs from CI environment
-          #   id: archive_pod_logs
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+          - name: Archive pod logs from CI environment
+            id: archive_pod_logs
+            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
-          # - name: Generate markdown report
-          #   id: generate_md_report
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-          #   continue-on-error: true
-          #   # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
-          #   run: |
-          #     if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-          #       echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
-          #     fi
-          #     if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-          #       if [ ! -d output ]; then
-          #         mkdir output
-          #       fi
-          #       if [ ! -f "output/report.md" ]; then
-          #         touch "output/report.md"
-          #       fi
-          #       echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
-          #     fi
+          - name: Generate markdown report
+            id: generate_md_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true
+            # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
+            run: |
+              if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
+                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
+              fi
+              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
+                if [ ! -d output ]; then
+                  mkdir output
+                fi
+                if [ ! -f "output/report.md" ]; then
+                  touch "output/report.md"
+                fi
+                echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+              fi
 
-          # - name: Render report to the PR
-          #   id: publish_md_report
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
-          #   env:
-          #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          - name: Render report to the PR
+            id: publish_md_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # - name: Generate Slack report
           #   id: generate_slack_report
