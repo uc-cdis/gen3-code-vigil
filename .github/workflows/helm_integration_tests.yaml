@@ -124,7 +124,6 @@ jobs:
             with:
               distribution: 'temurin' # See 'Supported distributions' for available options
               java-version: '21'
-            run: java HelloWorldApp.java
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
