@@ -309,7 +309,10 @@ jobs:
             # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
             if: always()
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+            run: |
+              poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
+              pwd
+              ls
 
           - name: Generate markdown report
             id: generate_md_report
@@ -318,6 +321,8 @@ jobs:
             continue-on-error: true
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
+              ls
+              pwd
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
               fi
