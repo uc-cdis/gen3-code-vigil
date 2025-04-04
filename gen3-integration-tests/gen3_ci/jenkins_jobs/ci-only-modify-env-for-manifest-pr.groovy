@@ -268,6 +268,8 @@ spec:
                     config_location = "${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/portal/gitops.json"
                     if (fileExists(config_location)) {
                       sh(script: "sed -i '/\"requiredCerts\":/d' ${config_location}")
+                      String portalBlock = sh(returnStdout: true, script: "cat ${config_location}")
+                      println(portalBlock)
                     }
                   }
                   // Aggregate Metadata Config
@@ -281,22 +283,6 @@ spec:
                   if (folders.contains('etlMapping.yaml')) {
                     println('Copying etl mapping config from ${env.TEMP_MANIFEST_HOME}/etlMapping.yaml into ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/...')
                     sh(script: "cp -rf ${env.TEMP_MANIFEST_HOME}/etlMapping.yaml ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/")
-                  }
-                  // List manifests folder
-                  println("###List manifests folder...")
-                  if(folders.contains('manifests')){
-                    List<String> manifests_sub_folders = sh(returnStdout: true, script: "ls ${env.TEMP_MANIFEST_HOME}/manifests").split()
-                    // Overwrite mariner folder
-                    println("###Overwrite  mariner folder...")
-                    if(manifests_sub_folders.contains('mariner')){
-                      sh(returnStdout: true, script: "cp -rf ${env.TEMP_MANIFEST_HOME}/manifests/mariner ${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifests")
-                      sh(returnStdout: true, script: "echo \$(cat ${env.TEMP_MANIFEST_HOME}/manifests/mariner/mariner.json)")
-                      // replace s3 bucket
-                      println("###Replace s3 bucket in mariner.json...")
-                      config_location = "${env.MANIFEST_HOME}/${NAMESPACE}.planx-pla.net/manifests/mariner/mariner.json"
-                      sh(returnStdout: true, script: "echo \$(cat ${config_location})")
-                      sh(returnStdout: true, script: "jq '.storage.s3.name=\"qaplanetv1--${NAMESPACE}--mariner-707767160287\"' ${config_location} > mariner_tmp.json && mv mariner_tmp.json ${config_location}")
-                    }
                   }
                 }
             }
