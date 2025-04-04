@@ -38,8 +38,8 @@ on:
         required: true
       CI_SLACK_BOT_TOKEN:
         required: true
-      # CI_SLACK_CHANNEL_ID:
-      #   required: true
+      CI_SLACK_CHANNEL_ID:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -201,67 +201,67 @@ jobs:
             with:
               version: latest
 
-          # # Will install the gen3 helm charts to specific PR namespace and set the tests to run
-          # - name: Prepare CI environment
-          #   id: prep_ci_env
-          #   if: ${{ env.SKIP_TESTS != 'true' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     # helm repo add gen3 https://helm.gen3.org
-          #     # helm repo update
-          #     # uncomment the above after testing ^^^^
+          # Will install the gen3 helm charts to specific PR namespace and set the tests to run
+          - name: Prepare CI environment
+            id: prep_ci_env
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              # helm repo add gen3 https://helm.gen3.org
+              # helm repo update
+              # uncomment the above after testing ^^^^
 
-          #     # TO DO: add all of this to new modify values script, including new ES index dbRestore:
-          #     # disabling guppy until the above is completed.
-          #     # remove usersync run from helm test job as well.
+              # TO DO: add all of this to new modify values script, including new ES index dbRestore:
+              # disabling guppy until the above is completed.
+              # remove usersync run from helm test job as well.
 
-          #     git clone https://github.com/uc-cdis/gen3-helm.git
-          #     cd gen3-helm/helm/gen3
-          #     git checkout feat/ci-patch
-          #     helm dependency update
-          #     cd ..
-          #     pwd
-          #     helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #       --namespace ${{ env.PR_NAMESPACE }}
-          #     echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #       --namespace ${{ env.PR_NAMESPACE }}"
+              git clone https://github.com/uc-cdis/gen3-helm.git
+              cd gen3-helm/helm/gen3
+              git checkout feat/ci-patch
+              helm dependency update
+              cd ..
+              pwd
+              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+                --namespace ${{ env.PR_NAMESPACE }}
+              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+                --namespace ${{ env.PR_NAMESPACE }}"
 
-          #     # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #     #   --namespace ${{ env.PR_NAMESPACE }}
-          #     # echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #     #   --namespace ${{ env.PR_NAMESPACE }}"
-          #     # uncomment after testing
-          #     sleep 60
-          #     echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
-          #     kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
+              # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              #   --namespace ${{ env.PR_NAMESPACE }}
+              # echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              #   --namespace ${{ env.PR_NAMESPACE }}"
+              # uncomment after testing
+              sleep 60
+              echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
+              kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
 
-          #     export timeout=900
-          #     export interval=20
+              export timeout=900
+              export interval=20
 
-          #     end=$((SECONDS + timeout))
-          #     while [ $SECONDS -lt $end ]; do
-          #       not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
-          #         -o json | jq '[.items[] | select((.status.phase != "Running") or (.status.containerStatuses[]?.ready != true))] | length')
+              end=$((SECONDS + timeout))
+              while [ $SECONDS -lt $end ]; do
+                not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
+                  -o json | jq '[.items[] | select((.status.phase != "Running") or (.status.containerStatuses[]?.ready != true))] | length')
 
-          #       if [ "$not_ready" -eq 0 ]; then
-          #         echo "✅ All pods containers are Ready"
-          #         exit 0
-          #       fi
+                if [ "$not_ready" -eq 0 ]; then
+                  echo "✅ All pods containers are Ready"
+                  exit 0
+                fi
 
-          #       echo "⏳ Waiting... ($not_ready pods have containers not ready)"
-          #       sleep $interval
-          #     done
+                echo "⏳ Waiting... ($not_ready pods have containers not ready)"
+                sleep $interval
+              done
 
-          #     echo "❌ Timeout: Pods' containers not ready"
-          #     kubectl get pods -n ${{ env.PR_NAMESPACE }}
-          #     exit 1
+              echo "❌ Timeout: Pods' containers not ready"
+              kubectl get pods -n ${{ env.PR_NAMESPACE }}
+              exit 1
 
-          # # Will trigger gen3-code-vigil test suite
-          # - name: Run Helm Tests
-          #   id: run_tests
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-          #   run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }}
+          # Will trigger gen3-code-vigil test suite
+          - name: Run Helm Tests
+            id: run_tests
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }}
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -269,17 +269,17 @@ jobs:
             run: |
               echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
-          # - name: Copy logs from pod to runner
-          #   if: always()
-          #   run: |
-          #     echo "apply job"
-          #     kubectl apply -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/gen3_ci/scripts/helm_setup/allure-collector.yaml
-          #     sleep 20
-          #     export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
-          #     kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
-          #     mkdir output
-          #     cp -r allure-results/ output/
-          #     cd allure-results
+          - name: Copy logs from pod to runner
+            if: always()
+            run: |
+              echo "apply job"
+              kubectl apply -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/gen3_ci/scripts/helm_setup/allure-collector.yaml
+              sleep 20
+              export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
+              kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
+              mkdir output
+              cp -r allure-results/ output/
+              cd allure-results
 
           - name: Generate allure report
             id: generate_allure_report
@@ -329,8 +329,6 @@ jobs:
                 fi
                 echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
               fi
-              ls
-              pwd
 
           - name: Render report to the PR
             id: publish_md_report
@@ -341,35 +339,30 @@ jobs:
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          # - name: Generate Slack report
-          #   id: generate_slack_report
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-          #   continue-on-error: true # if this fails, we still need to run clean-up steps
-          #   run: poetry run python -m gen3_ci.scripts.generate_slack_report
+          - name: Generate Slack report
+            id: generate_slack_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
-          # - name: Publish report to Slack
-          #   id: slack_notify
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   uses: slackapi/slack-github-action@v1.25.0
-          #   with:
-          #     channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
-          #     payload-file-path: "./gen3-integration-tests/slack_report.json"
-          #   env:
-          #     SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+          - name: Publish report to Slack
+            id: slack_notify
+            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v1.25.0
+            with:
+              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              payload-file-path: "./gen3-integration-tests/slack_report.json"
+            env:
+              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
 
-          # - name: Mark workflow as failed for unsuccessful test runs
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
-          #   run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
+          - name: Mark workflow as failed for unsuccessful test runs
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
+            run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
-##ADD CLEANUP LOGIC- or create cronjob to tear down ns or don't cleanup if set a specific label on PR
-
-    # - name: Cleanup
-    #   if: always()
-    #   run: |
-    #     helm uninstall <release-name> --namespace <namespace>
-
-      # - name: Set Namespace Name
-      #   run: echo "PR_NAMESPACE=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-      # - name: Delete Namespace
-      #   run: kubectl delete namespace $PR_NAMESPACE || true
+          - name: Cleanup
+            if: always()
+            run: |
+              helm uninstall gen3 helm --namespace ${{ env.PR_NAMESPACE }}
+              sleep 20
+              # kubectl delete ns ${{ env.PR_NAMESPACE }}
