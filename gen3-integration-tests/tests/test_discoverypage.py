@@ -23,6 +23,26 @@ def page_setup(page):
     page.close()
 
 
+@pytest.mark.skipif(
+    "wts" not in pytest.deployed_services,
+    reason="wts service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "metadata" not in pytest.deployed_services,
+    reason="metadata service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    not pytest.use_agg_mdg_flag,
+    reason="USE_AGG_MDS is not set or is false in manifest",
+)
+@pytest.mark.skipif(
+    "discoveryConfig" not in gat.get_portal_config().keys(),
+    reason="discoveryConfig in not in portal config",
+)
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds

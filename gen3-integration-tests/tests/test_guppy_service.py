@@ -9,6 +9,10 @@ from services.guppy import Guppy
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "guppy" not in pytest.deployed_services,
+    reason="guppy service is not running on this environment",
+)
 @pytest.mark.guppy
 class TestGuppyService:
     @classmethod

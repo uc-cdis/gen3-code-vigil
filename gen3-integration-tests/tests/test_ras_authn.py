@@ -9,10 +9,29 @@ from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.fence import Fence
 from services.ras import RAS
+from utils import gen3_admin_tasks as gat
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
+    reason="frontend_root is set to gen3ff",
+)
+@pytest.mark.skipif(
+    gat.get_portal_config().get("components", {}).get("appName", "")
+    == "VA Data Commons",
+    reason="Skipping RAS Auth N tests for VA env",
+)
 @pytest.mark.portal
 @pytest.mark.fence
+@pytest.mark.ras
 @pytest.mark.requires_fence_client
 class TestRasAuthN:
     fence = Fence()

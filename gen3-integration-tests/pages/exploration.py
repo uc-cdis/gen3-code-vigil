@@ -1,8 +1,7 @@
 # Exploration Page
 import pytest
-
-from utils import logger
 from playwright.sync_api import Page
+from utils import logger
 from utils.test_execution import screenshot
 
 
@@ -72,12 +71,11 @@ class ExplorationPage(object):
             page.wait_for_selector(self.EXPORT_TO_PFB_BUTTON)
             screenshot(page, "FileTabsPage")
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            pfb_button.click()
             screenshot(page, "ExportToPFBMessage")
 
     def check_pfb_status(self, page: Page):
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for()
+        wait_footer_locator.wait_for(timeout=60000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
         success_footer_locator.wait_for(timeout=420000)
