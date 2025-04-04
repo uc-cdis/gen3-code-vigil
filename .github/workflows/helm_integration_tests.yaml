@@ -308,7 +308,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo "running save_ci_env_pods_logs.sh"
-              /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/gen3_ci/scripts/helm_setup/save_ci_env_pod_logs.sh
+              ./runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/gen3_ci/scripts/helm_setup/save_ci_env_pod_logs.sh
 
           - name: Generate markdown report
             id: generate_md_report
