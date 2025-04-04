@@ -310,6 +310,9 @@ jobs:
               echo "running save_ci_env_pods_logs.sh"
               ls
               pwd
+              cd gen3-integration-tests
+              ls
+              pwd
               cd gen3_ci
               ls
               pwd
