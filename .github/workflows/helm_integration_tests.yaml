@@ -232,8 +232,6 @@ jobs:
               #   --namespace ${{ env.PR_NAMESPACE }}"
               # uncomment after testing
               sleep 60
-              echo "kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m"
-              kubectl wait --for=condition=Ready pod -l app!=gen3job -n ${{ env.PR_NAMESPACE }} --timeout=15m
 
               export timeout=900
               export interval=20
