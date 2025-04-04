@@ -272,7 +272,7 @@ jobs:
             run: |
               echo "apply job"
               kubectl apply -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/gen3_ci/scripts/helm_setup/allure-collector.yaml
-              sleep 20
+              sleep 30
               export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
               kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
               mkdir output
