@@ -372,7 +372,9 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
             # run: poetry run python -m gen3_ci.scripts.generate_slack_report
-            run: python gen3_ci/scripts/generate_slack_report.py
+            run: |
+              export PYTHONPATH=gen3-integration-tests python gen3-integration-tests/gen3_ci/scripts/generate_slack_report.py
+              python gen3_ci/scripts/generate_slack_report.py
 
           - name: Publish report to Slack
             id: slack_notify
@@ -392,7 +394,7 @@ jobs:
           - name: Cleanup
             if: always()
             run: |
-              helm uninstall gen3 helm --namespace ${{ env.PR_NAMESPACE }}
+              helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
               kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
               sleep 20
               # kubectl delete ns ${{ env.PR_NAMESPACE }}
