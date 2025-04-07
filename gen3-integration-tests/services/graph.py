@@ -378,9 +378,12 @@ class GraphDataTools:
         self.submit_record(record=metadata)
         return metadata'''
 
-    def submit_links_for_record(
-        self, record: GraphRecord, new_submitter_ids=False, user="main_account"
-    ) -> None:
+    def regenerate_graph_data(self):
+        logger.info("Regenerating the graph data")
+        self._generate_graph_data()
+        self._load_test_records()
+
+    def submit_links_for_record(self, record: GraphRecord, user="main_account") -> None:
         """
         Submits a graph link for the node
         Args:
@@ -406,15 +409,7 @@ class GraphDataTools:
                     )
                     raise
 
-                self.submit_links_for_record(linked_node, new_submitter_ids)
-                if new_submitter_ids:
-                    res = "".join(
-                        random.choices(string.ascii_lowercase + string.digits, k=5)
-                    )
-                    new_id = f"{linked_node.props['type']}_{res}"
-                    linked_node.props["submitter_id"] = new_id
-                    record.props[prop]["submitter_id"] = new_id
-                    self.linked_test_submitter_ids[prop] = new_id
+                self.submit_links_for_record(linked_node)
                 self.submit_record(record=linked_node)
 
     def get_node_with_submitter_id(self, submitter_id: str) -> dict:

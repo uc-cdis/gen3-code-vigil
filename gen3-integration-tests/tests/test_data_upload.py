@@ -413,13 +413,14 @@ class TestDataUpload:
         )
 
         # submit metadata for this file
-        # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
+        # generate new graph data and use that to submit the same file again
+        self.sd_tools.regenerate_graph_data()
         file_type_node = self.sd_tools.get_file_record()
         file_type_node.props["object_id"] = file_guid
         file_type_node.props["file_size"] = file_size
         file_type_node.props["md5sum"] = file_md5
         file_type_node.props["submitter_id"] = "submitter_id_new_value"
-        self.sd_tools.submit_links_for_record(file_type_node, new_submitter_ids=True)
+        self.sd_tools.submit_links_for_record(file_type_node)
 
         self.sd_tools.submit_record(record=file_type_node)
         # check that the file can be downloaded
