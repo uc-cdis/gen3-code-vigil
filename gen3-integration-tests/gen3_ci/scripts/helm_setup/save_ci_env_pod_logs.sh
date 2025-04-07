@@ -17,7 +17,7 @@ gen3_logs_snapshot_container() {
   fi
   local fileName
   fileName="${podName}.${containerName}.log"
-  if kubectl logs "$podName" -c "$containerName" --limit-bytes 250000 > "$fileName" && gzip -f "$fileName"; then
+  if kubectl logs "$podName" -c "$containerName" -n pr-161 --limit-bytes 250000 > "$fileName" && gzip -f "$fileName"; then
     echo "${fileName}.gz"
     return 0
   fi
@@ -29,7 +29,7 @@ gen3_logs_snapshot_container() {
 #
 # For each pod for which we can list the containers, get the pod name and get its list of containers
 # (container names + initContainers names). Diplay them as lines of "<pod name>  <container name>".
-kubectl get pods -o json | \
+kubectl get pods -o json -n pr-161 | \
   jq -r '.items | map(select(.status.phase != "Pending" and .status.phase != "Unknown")) | .[] | .metadata.name as $pod | (.spec.containers + .spec.initContainers) | map(select(.name != "pause" and .name != "jupyterhub")) | .[] | {pod: $pod, cont: .name} | "\(.pod)  \(.cont)"' | \
   while read -r line; do
     gen3_logs_snapshot_container $line
