@@ -266,6 +266,7 @@ jobs:
               fi
               echo "running ls *"
               ls *
+              cat output/report.md
 
           - name: Render report to the PR
             id: publish_md_report

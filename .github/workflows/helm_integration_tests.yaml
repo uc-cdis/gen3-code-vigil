@@ -49,10 +49,10 @@ jobs:
     integration_tests:
         runs-on: self-hosted
 
-        # defaults:
-        #   run:
-        #     # the test directory in gen3-code-vigil
-        #     working-directory: gen3-integration-tests
+        defaults:
+          run:
+            # the test directory in gen3-code-vigil
+            working-directory: gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -277,9 +277,8 @@ jobs:
               echo "running ls *"
               ls *
               kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
-              mkdir output
-              cp -r allure-results/ output/
-              cd allure-results
+              # mkdir output
+              # cp -r allure-results/ output/
               echo "running ls *"
               ls *
 
@@ -329,6 +328,11 @@ jobs:
             continue-on-error: true
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
+              echo "running ls *"
+              ls *
+              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
+              fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
                 echo "allure report index.html should be posted in PR"
