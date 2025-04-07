@@ -74,6 +74,14 @@ jobs:
           # - name: Enable Step Debugging
           #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
 
+          # Checkout master branch of gen3-code-vigil when another repo is under test
+          - name: Checkout integration test code
+            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
+            uses: actions/checkout@v4
+            with:
+              repository: uc-cdis/gen3-code-vigil
+              ref: ${{ inputs.TEST_REPO_BRANCH }}
+
           # Setup gh cli on self hosted runner
           - name: Install GitHub CLI
             run: |
@@ -151,13 +159,13 @@ jobs:
                 echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
-          # Checkout master branch of gen3-code-vigil when another repo is under test
-          - name: Checkout integration test code
-            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
-            uses: actions/checkout@v4
-            with:
-              repository: uc-cdis/gen3-code-vigil
-              ref: ${{ inputs.TEST_REPO_BRANCH }}
+          # # Checkout master branch of gen3-code-vigil when another repo is under test
+          # - name: Checkout integration test code
+          #   if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
+          #   uses: actions/checkout@v4
+          #   with:
+          #     repository: uc-cdis/gen3-code-vigil
+          #     ref: ${{ inputs.TEST_REPO_BRANCH }}
 
           # Setup kubectl
           - name: Set Up kubectl
