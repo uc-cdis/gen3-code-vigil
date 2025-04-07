@@ -59,11 +59,8 @@ pipeline {
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            deploymentImages=$(kubectl -n \${NAMESPACE} get deployments -o=jsonpath='{range .items[*]}"{.metadata.name}":"{.spec.template.spec.containers[*].image}",{"\\n"}{end}' | sed 's/-deployment//')
-                            # Remove last trailing comma
-                            deploymentImages="\${deploymentImages%?}"
-                            formattedImages="{ \${deploymentImages} }"
-                            echo "\${formattedImages}" | jq --argjson newVersions "\$formattedImages" '.versions = $newVersions' manifest.json > tmp_manifest.json && mv tmp_manifest.json manifest.json
+                            deploymentImages=$(kubectl -n \${NAMESPACE} get cm manifest-all -o jsonpath='{.data.json}' | jq '.versions')
+                            echo "\${deploymentImages}" | jq --argjson newVersions "\$deploymentImages" '.versions = $newVersions' manifest.json > tmp_manifest.json && mv tmp_manifest.json manifest.json
                             cat manifest.json
                         '''
                     }
