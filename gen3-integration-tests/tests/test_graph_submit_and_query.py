@@ -243,7 +243,7 @@ class TestGraphSubmitAndQuery:
             3. Verify last node name is present response.
         """
         logger.info("Submitting test records")
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         # Query path from last node to first node.
         first_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         last_node = self.sd_tools.test_records[self.sd_tools.submission_order[-1]]
@@ -324,7 +324,7 @@ class TestGraphSubmitAndQuery:
         login_page = LoginPage()
         files_landing_page = FilesLandingPage()
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -369,7 +369,7 @@ class TestGraphSubmitAndQuery:
             7. Validate file_name, GUID, Type and data_format of file record matches in metadata
         """
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -441,7 +441,7 @@ class TestGraphSubmitAndQuery:
             6. Verify "Authentication Error: could not parse authorization header" message was recieved
         """
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -469,7 +469,7 @@ class TestGraphSubmitAndQuery:
         """
         indexd = Indexd()
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
@@ -492,7 +492,7 @@ class TestGraphSubmitAndQuery:
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         file_record.props["urls"] = test_url
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
@@ -521,7 +521,7 @@ class TestGraphSubmitAndQuery:
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         file_record = self.sd_tools.get_file_record()
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         did = self.sd_tools.get_indexd_id_from_graph_id(unique_id=file_record.unique_id)
         record = indexd.get_record(indexd_guid=did)
