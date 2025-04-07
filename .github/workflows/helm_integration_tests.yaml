@@ -391,10 +391,10 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
-          - name: Cleanup
-            if: always()
-            run: |
-              helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-              kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
-              sleep 20
-              # kubectl delete ns ${{ env.PR_NAMESPACE }}
+          # - name: Cleanup
+          #   if: always()
+          #   run: |
+          #     helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
+          #     kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
+          #     sleep 20
+          #     # kubectl delete ns ${{ env.PR_NAMESPACE }}

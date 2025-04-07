@@ -206,6 +206,11 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              "echo running ls *"
+              ls *
+              "cat output/report.md"
+              ls *
+              cat output/report.md
 
           - name: Run tests
             id: run_tests
@@ -214,6 +219,10 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              ls *
+              "cat output/report.md"
+              ls *
+              cat output/report.md
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
