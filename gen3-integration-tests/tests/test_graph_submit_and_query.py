@@ -243,7 +243,7 @@ class TestGraphSubmitAndQuery:
             3. Verify last node name is present response.
         """
         logger.info("Submitting test records")
-        self.sd_tools.submit_links_for_record(file_record)
+        self.sd_tools.submit_all_test_records()
         # Query path from last node to first node.
         first_node = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
         last_node = self.sd_tools.test_records[self.sd_tools.submission_order[-1]]
@@ -268,7 +268,7 @@ class TestGraphSubmitAndQuery:
             )
         file_record = self.sd_tools.get_file_record()
         file_record.props["consent_codes"] += ["CC1", "CC2"]
-        self.sd_tools.submit_all_test_records()
+        self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
 
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
