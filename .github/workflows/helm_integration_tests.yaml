@@ -229,9 +229,9 @@ jobs:
               helm dependency update
               cd ..
               pwd
-              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f helm_values/values.yaml \
+              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}
-              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f helm_values/values.yaml \
+              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}"
 
               # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
