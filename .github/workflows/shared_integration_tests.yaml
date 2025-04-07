@@ -318,8 +318,7 @@ jobs:
             with:
               channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
               payload-file-path: "./gen3-integration-tests/slack_report.json"
-            env:
-              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              slack-bot-token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
 
           - name: Release CI environment
             id: release_ci_env
