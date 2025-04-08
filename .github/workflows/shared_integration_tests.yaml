@@ -320,6 +320,7 @@ jobs:
               method: chat.postMessage
               payload-file-path: "./gen3-integration-tests/slack_report.json"
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-templated: true
 
           - name: Release CI environment
             id: release_ci_env
