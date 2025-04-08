@@ -288,6 +288,8 @@ jobs:
               kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
               # mkdir output
               # cp -r allure-results/ output/
+              mkdir output
+              mv allure-results/report.md output/
               echo "running ls *"
               ls *
 
