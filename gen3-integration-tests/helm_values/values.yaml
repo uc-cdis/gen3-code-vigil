@@ -1458,7 +1458,7 @@ sheepdog:
   authNamespace: ''
   image:
     repository: "quay.io/cdis/sheepdog"
-    tag: "master"
+    tag: "bug_auth-audience"
 
 peregrine:
   resources:
@@ -1468,7 +1468,7 @@ peregrine:
   enabled: true
   image:
     repository: "quay.io/cdis/peregrine"
-    tag: "master"
+    tag: "feat_jq-audience"
     pullPolicy: Always
   env:
     - name: AWS_ACCESS_KEY_ID
