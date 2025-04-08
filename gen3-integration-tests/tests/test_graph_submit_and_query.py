@@ -163,7 +163,9 @@ class TestGraphSubmitAndQuery:
         """
         # Verify parent record does not exist
         parent_record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
-        parent_response = self.sd_tools.query_record_fields(parent_record)
+        parent_response = self.sd_tools.query_record_fields(
+            parent_record, {"project_id": "jenkins"}
+        )
 
         # Validate no records are returned for the node
         assert (
