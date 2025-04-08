@@ -217,58 +217,58 @@ jobs:
             with:
               version: latest
 
-          # # Will install the gen3 helm charts to specific PR namespace and set the tests to run
-          # - name: Prepare CI environment
-          #   id: prep_ci_env
-          #   if: ${{ env.SKIP_TESTS != 'true' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     # helm repo add gen3 https://helm.gen3.org
-          #     # helm repo update
-          #     # uncomment the above after testing ^^^^
+          # Will install the gen3 helm charts to specific PR namespace and set the tests to run
+          - name: Prepare CI environment
+            id: prep_ci_env
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              # helm repo add gen3 https://helm.gen3.org
+              # helm repo update
+              # uncomment the above after testing ^^^^
 
-          #     # TO DO: add all of this to new modify values script, including new ES index dbRestore:
-          #     # disabling guppy until the above is completed.
-          #     # remove usersync run from helm test job as well.
+              # TO DO: add all of this to new modify values script, including new ES index dbRestore:
+              # disabling guppy until the above is completed.
+              # remove usersync run from helm test job as well.
 
-          #     git clone https://github.com/uc-cdis/gen3-helm.git
-          #     cd gen3-helm/helm/gen3
-          #     git checkout feat/ci-patch
-          #     helm dependency update
-          #     cd ..
-          #     pwd
-          #     helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #       --namespace ${{ env.PR_NAMESPACE }}
-          #     echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #       --namespace ${{ env.PR_NAMESPACE }}"
+              git clone https://github.com/uc-cdis/gen3-helm.git
+              cd gen3-helm/helm/gen3
+              git checkout feat/ci-patch
+              helm dependency update
+              cd ..
+              pwd
+              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+                --namespace ${{ env.PR_NAMESPACE }}
+              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+                --namespace ${{ env.PR_NAMESPACE }}"
 
-          #     # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #     #   --namespace ${{ env.PR_NAMESPACE }}
-          #     # echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-          #     #   --namespace ${{ env.PR_NAMESPACE }}"
-          #     # uncomment after testing
-          #     sleep 60
+              # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              #   --namespace ${{ env.PR_NAMESPACE }}
+              # echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              #   --namespace ${{ env.PR_NAMESPACE }}"
+              # uncomment after testing
+              sleep 60
 
-          #     export timeout=900
-          #     export interval=20
+              export timeout=900
+              export interval=20
 
-          #     end=$((SECONDS + timeout))
-          #     while [ $SECONDS -lt $end ]; do
-          #       not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
-          #         -o json | jq '[.items[] | select((.status.phase != "Running") or (.status.containerStatuses[]?.ready != true))] | length')
+              end=$((SECONDS + timeout))
+              while [ $SECONDS -lt $end ]; do
+                not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
+                  -o json | jq '[.items[] | select((.status.phase != "Running") or (.status.containerStatuses[]?.ready != true))] | length')
 
-          #       if [ "$not_ready" -eq 0 ]; then
-          #         echo "✅ All pods containers are Ready"
-          #         exit 0
-          #       fi
+                if [ "$not_ready" -eq 0 ]; then
+                  echo "✅ All pods containers are Ready"
+                  exit 0
+                fi
 
-          #       echo "⏳ Waiting... ($not_ready pods have containers not ready)"
-          #       sleep $interval
-          #     done
+                echo "⏳ Waiting... ($not_ready pods have containers not ready)"
+                sleep $interval
+              done
 
-          #     echo "❌ Timeout: Pods' containers not ready"
-          #     kubectl get pods -n ${{ env.PR_NAMESPACE }}
-          #     exit 1
+              echo "❌ Timeout: Pods' containers not ready"
+              kubectl get pods -n ${{ env.PR_NAMESPACE }}
+              exit 1
 
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests
@@ -303,15 +303,14 @@ jobs:
               mkdir output
               mkdir allure-results
 
-              alias aws="aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566"
               export AWS_DEFAULT_REGION=us-east-1
               export AWS_ACCESS_KEY_ID=test
               export AWS_SECRET_ACCESS_KEY=test
 
-              aws s3 ls
-              aws s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/report.md" output/
-              aws s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/allure-results" allure-results/ --recursive
-              aws s3 rb "${{ env.PR_HOSTNAME }}.ci.planx-pla.net" --force
+              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 ls
+              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/report.md" output/
+              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/allure-results" allure-results/ --recursive
+              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 rb "${{ env.PR_HOSTNAME }}.ci.planx-pla.net" --force
               echo "running ls*"
               ls *
 
