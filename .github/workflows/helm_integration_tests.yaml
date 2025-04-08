@@ -266,7 +266,8 @@ jobs:
           - name: Run Helm Tests
             id: run_tests
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            if: always()
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
             run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }}
 
           - name: Debug logging
