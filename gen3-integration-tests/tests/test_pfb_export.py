@@ -52,15 +52,14 @@ def validate_json_for_export_to_pfb_button(data):
 @pytest.mark.guppy
 @pytest.mark.portal
 class TestPFBExport(object):
+    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+
     @classmethod
     def setup_class(cls):
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins2"
-        )
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        cls.sd_tools.submit_all_test_records()
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
             if os.getenv("REPO") == "cdis-manifest":
@@ -72,6 +71,7 @@ class TestPFBExport(object):
     @classmethod
     def teardown_class(cls):
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
+        cls.sd_tools.delete_all_records()
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
             if os.getenv("REPO") == "cdis-manifest":
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
