@@ -22,7 +22,7 @@ def get_failed_suites():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {','.join(failed_suites)}`",
+                "text": f"To label & retry, just send the following message:\n `@qabot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {','.join(failed_suites)}`",
             },
         }
         return failed_suites_block
@@ -124,7 +124,7 @@ def generate_slack_report():
         logger.info(
             "Pod logs were not archived. Skipping pod logs url block generation."
         )
-    # qa-bot replay command with failed suites labeled in the PR
+    # qabot replay command with failed suites labeled in the PR
     if test_result == "Failed":
         failed_suites_block = get_failed_suites()
         if failed_suites_block:
