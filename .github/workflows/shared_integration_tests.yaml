@@ -314,12 +314,13 @@ jobs:
             id: slack_notify
             if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v1.25.0
+            uses: slackapi/slack-github-action@v2.0.0
             with:
-              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              method: chat.postMessage
               payload-file-path: "./gen3-integration-tests/slack_report.json"
-            env:
-              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload: |
+                channel: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
           - name: Release CI environment
             id: release_ci_env
