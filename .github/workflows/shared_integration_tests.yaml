@@ -77,6 +77,7 @@ jobs:
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
+          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
@@ -319,8 +320,6 @@ jobs:
               method: chat.postMessage
               payload-file-path: "./gen3-integration-tests/slack_report.json"
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload: |
-                channel: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
           - name: Release CI environment
             id: release_ci_env
