@@ -41,7 +41,7 @@ on:
         required: true
       CI_TEST_RAS_2_PASSWORD:
         required: true
-      CI_SLACK_TOKEN:
+      CI_SLACK_BOT_TOKEN:
         required: true
       CI_SLACK_CHANNEL_ID:
         required: true
@@ -331,7 +331,7 @@ jobs:
             uses: slackapi/slack-github-action@v2.0.0
             with:
               method: chat.postMessage
-              token: ${{ secrets.CI_SLACK_TOKEN }}
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               # payload-file-path: "./gen3-integration-tests/slack_report.json"
               payload: |
                 channel: ${{ secrets.CI_SLACK_CHANNEL_ID }}
