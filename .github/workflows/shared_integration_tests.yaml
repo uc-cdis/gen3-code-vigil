@@ -80,10 +80,6 @@ jobs:
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
-          # Enable step debugging. Uncomment this to debug pipeline issues
-          - name: Enable Step Debugging
-            run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
-
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
