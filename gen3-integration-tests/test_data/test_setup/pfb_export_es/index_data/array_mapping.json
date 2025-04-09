@@ -1,0 +1,12 @@
+{
+    "mappings" : {
+      "properties" : {
+        "array" : {
+          "type" : "keyword"
+        },
+        "timestamp" : {
+          "type" : "date"
+        }
+      }
+    }
+  }

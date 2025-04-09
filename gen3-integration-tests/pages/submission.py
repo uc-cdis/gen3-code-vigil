@@ -46,10 +46,10 @@ class SubmissionPage(object):
         self.SUBMISSION_PAGE_SELECT_FIRST_ITEM = '//*[contains(@class, "map-data-model__node-form-section")]//*[contains(@class, "Select-menu-outer") or contains(@class, "react-select__menu")]//*[contains(@class, "Select-option") or contains(@class, "react-select__option")][1]'
         self.SUBMISSION_PAGE_PROJECT = "//div[@class='h4-typo'][normalize-space()='Project']/following-sibling::div[@class='input-with-icon']"
         self.SUBMISSION_PAGE_FILE_NODE = "//div[@class='h4-typo'][normalize-space()='File Node']/following-sibling::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_CATEGORY = "//div[@class='h4-typo'][normalize-space()='data_category']/following::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_TYPE = "//div[@class='h4-typo'][normalize-space()='data_type']/following::div[@class='input-with-icon']"
-        self.SUBMISSION_PAGE_DATA_FORMAT = "//div[@class='h4-typo'][normalize-space()='data_format']/following::div[@class='input-with-icon']"
         self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION = "//div[@class='h4-typo'][normalize-space()='core_metadata_collection']/following::div[@class='input-with-icon']"
+        self.SUBMISSION_PAGE_FIELDS = (
+            "//div[@class='h4-typo']/following::div[@class='input-with-icon']"
+        )
         self.SUBMISSION_PAGE_SUBMIT_BUTTON = "//button[@type='button']"
 
     def go_to_submission_page(self, page: Page):
@@ -57,13 +57,13 @@ class SubmissionPage(object):
         page.goto(self.BASE_URL)
         page.wait_for_selector(self.MAP_BUTTON, state="visible")
         page.wait_for_selector(self.PROJECT_LIST_TABLE, state="visible")
-        screenshot(page, "submissionPage")
+        screenshot(page, "SubmissionPage")
 
     def go_to_files_page(self, page: Page):
         """Goes to the files page"""
         page.goto(self.FILES_URL)
         page.wait_for_selector(self.FILES_TABLE, state="visible")
-        screenshot(page, "filesPage")
+        screenshot(page, "FilesPage")
 
     def construct_checkbox_with_guid(self, guid: str):
         """Constructs checkbox with guid provided in the test"""
@@ -74,7 +74,7 @@ class SubmissionPage(object):
         """Wait for a checkbox with provided guid is clickable"""
         try:
             page.wait_for_selector(selector, timeout=30000, state="attached")
-            screenshot(page, "clickCheckboxUnmappedFiles")
+            screenshot(page, "ClickCheckboxUnmappedFiles")
             return True
         except TimeoutError:
             return False
@@ -119,6 +119,7 @@ class SubmissionPage(object):
         screenshot(page, "MappingFile")
 
     def select_submission_fields(self, page):
+        screenshot(page, "BeforeFillingInFields")
         # Project Selection
         page.locator(self.SUBMISSION_PAGE_PROJECT).click()
         page.click("text='DEV-test'")
@@ -127,21 +128,25 @@ class SubmissionPage(object):
         page.locator(self.SUBMISSION_PAGE_FILE_NODE).click()
         page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
-        # data_category Selection
-        page.click(self.SUBMISSION_PAGE_DATA_CATEGORY)
-        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
-
-        # data_type Selection
-        page.click(self.SUBMISSION_PAGE_DATA_TYPE)
-        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
-
-        # data_format Selection
-        page.click(self.SUBMISSION_PAGE_DATA_FORMAT)
-        page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+        elements = page.locator(self.SUBMISSION_PAGE_FIELDS)
+        # Loop through each element and perform a click operation
+        for i in range(2, elements.count()):
+            elements.nth(i).click()
+            dropdown_menu = page.locator(".react-select__menu")
+            is_dropdown_present = dropdown_menu.is_visible()
+            if not is_dropdown_present:
+                screenshot(page, f"BeforeSelectField-{i}")
+                # Set the field value to "abc" if there is no dropdown box
+                input_locator = elements.nth(i).locator("//input")
+                input_locator.fill("abc")
+            else:
+                # Click on the first item in the dropdown box
+                page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
 
         # core_metadata_collection Selection
         page.click(self.SUBMISSION_PAGE_CORE_METEDATA_COLLECTION)
         page.click(self.SUBMISSION_PAGE_SELECT_FIRST_ITEM)
+
         screenshot(page, "BeforeSubmitMappingFile")
 
         # Click on Submit field
