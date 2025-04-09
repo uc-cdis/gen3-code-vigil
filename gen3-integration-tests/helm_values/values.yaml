@@ -1583,13 +1583,13 @@ manifestservice:
       value: "False"
 
 dicom-viewer:
-  enabled: true
+  enabled: false
   image:
     repository: "quay.io/cdis/ohif-viewer"
     tag: "master"
 
 dicom-server:
-  enabled: true
+  enabled: false
   image:
     repository: "quay.io/cdis/gen3-orthanc"
     tag: "master"
