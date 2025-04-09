@@ -77,12 +77,9 @@ jobs:
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
+          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
-          # # Enable step debugging. Uncomment this to debug pipeline issues
-          # - name: Enable Step Debugging
-          #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
-
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
@@ -325,15 +322,14 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            # continue-on-error: true  # if this fails, we still need to run clean-up steps
             uses: slackapi/slack-github-action@v2.0.0
             with:
               method: chat.postMessage
-              payload-file-path: "./gen3-integration-tests/slack_report.json"
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload: |
-                channel: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              payload-file-path: "./gen3-integration-tests/slack_report.json"
+              payload-templated: true
 
           - name: Release CI environment
             id: release_ci_env
