@@ -331,11 +331,11 @@ jobs:
             uses: slackapi/slack-github-action@v2.0.0
             with:
               method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_TOKEN }}
               # payload-file-path: "./gen3-integration-tests/slack_report.json"
               payload: |
-                channel: ${{ secrets.CI_SLACK_CHANNEL_ID }},
-                text: "Just testing ...",
-              token: ${{ secrets.CI_SLACK_TOKEN }}
+                channel: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+                text: "Just testing ..."
               # payload-templated: true
 
           # - name: Release CI environment
