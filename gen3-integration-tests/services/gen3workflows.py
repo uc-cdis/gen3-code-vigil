@@ -55,6 +55,10 @@ class Gen3Workflow:
         self.TES_URL = "/ga4gh/tes/v1/"
         self.S3_ENDPOINT_URL = f"{self.BASE_URL}{self.SERVICE_URL}/s3"
 
+    ############################
+    ##### Helper Functions #####
+    ############################
+
     def _get_access_token(self, user: str = "main_account") -> str:
         """Helper function to retrieve an access token."""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
@@ -77,38 +81,6 @@ class Gen3Workflow:
         # cleaner than using the string.split() method
         bucket, _, key = object_path.partition("/")
         return bucket, key
-
-    def get_storage_info(self, user: str = "main_account", expected_status=200) -> Dict:
-        """Makes a GET request to the `/storage/info` endpoint."""
-        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/info"
-        headers = (
-            {
-                "Content-Type": "application/json",
-                "Authorization": f"bearer {self._get_access_token(user)}",
-            }
-            if user
-            else {}
-        )
-
-        response = requests.get(url=storage_url, headers=headers)
-        assert (
-            response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}"
-        storage_info = response.json()
-        assert isinstance(storage_info, dict), "Expected a valid JSON response"
-        return storage_info
-
-    def get_bucket_object_with_unsigned_request(
-        self, object_path: str, user: str = "main_account", expected_status=401
-    ):
-        """Attempts to get an object without signing the request, expecting a failure."""
-        access_token = self._get_access_token(user)
-        s3_url = f"{self.S3_ENDPOINT_URL}/{object_path}"
-        headers = {"Authorization": f"bearer {access_token}"}
-        response = requests.get(url=s3_url, headers=headers)
-        assert (
-            response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an unsigned GET request to {s3_url}"
 
     def _perform_s3_action(
         self,
@@ -141,6 +113,80 @@ class Gen3Workflow:
         ), f"Expected {expected_status}, got {response['ResponseMetadata']['HTTPStatusCode']} when making an s3 request to perform {action} action on {bucket=} and {key=} "
         return response
 
+    #############################
+    ##### /storage endpoint #####
+    #############################
+
+    def get_storage_info(self, user: str = "main_account", expected_status=200) -> Dict:
+        """Makes a GET request to the `/storage/info` endpoint."""
+        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/info"
+        headers = (
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {self._get_access_token(user)}",
+            }
+            if user
+            else {"Content-Type": "application/json"}
+        )
+
+        response = requests.get(url=storage_url, headers=headers)
+        assert (
+            response.status_code == expected_status
+        ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}"
+        storage_info = response.json()
+        assert isinstance(storage_info, dict), "Expected a valid JSON response"
+        return storage_info
+
+    def delete_user_bucket(
+        self, user: str = "main_account", ignore_missing=True, expected_status=204
+    ) -> None:
+        """
+        Makes a DELETE request to the `/storage/user-bucket` endpoint.
+        This endpoint is used to delete the user's bucket in the Gen3 Workflow service.
+        Args:
+            user (str): The user whose bucket is to be deleted. Defaults to "main_account".
+            ignore_missing (bool): If True, suppress error when the bucket does not exist (i.e., 404).
+            expected_status (int): Expected successful status code (default: 204 No Content).
+        Raises:
+            AssertionError: If the response status code does not match the expected status.
+
+        """
+        delete_bucket_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
+        headers = (
+            {
+                "Content-Type": "application/json",
+                "Authorization": f"bearer {self._get_access_token(user)}",
+            }
+            if user
+            else {}
+        )
+        response = requests.delete(url=delete_bucket_url, headers=headers)
+
+        # If ignore_missing is True, we allow 404 as a valid response status
+        allowed_statuses = (
+            [expected_status, 404] if ignore_missing else [expected_status]
+        )
+
+        assert (
+            response.status_code in allowed_statuses
+        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {delete_bucket_url}"
+
+    ###############################################
+    ###### /s3 endpoint and boto3 functions #######
+    ###############################################
+
+    def get_bucket_object_with_unsigned_request(
+        self, object_path: str, user: str = "main_account", expected_status=401
+    ):
+        """Attempts to get an object without signing the request, expecting a failure."""
+        access_token = self._get_access_token(user)
+        s3_url = f"{self.S3_ENDPOINT_URL}/{object_path}"
+        headers = {"Authorization": f"bearer {access_token}"}
+        response = requests.get(url=s3_url, headers=headers)
+        assert (
+            response.status_code == expected_status
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an unsigned GET request to {s3_url}"
+
     def get_bucket_object_with_boto3(
         self,
         object_path: str,
@@ -154,6 +200,7 @@ class Gen3Workflow:
                 "get", object_path, s3_storage_config, user, expected_status
             )
             return response["Body"].read().decode("utf-8")
+
         except botocore.exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code == "NoSuchKey":
@@ -201,6 +248,10 @@ class Gen3Workflow:
             "delete", object_path, s3_storage_config, user, expected_status
         )
 
+    ######################################################
+    ######### /ga4gh/tes/v1/ endpoint functions ##########
+    ######################################################
+
     def create_tes_task(
         self, request_body: dict, user: str = "main_account", expected_status=200
     ) -> str:
@@ -209,8 +260,12 @@ class Gen3Workflow:
         """
         access_token = self._get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks"
-        headers = {"Authorization": f"bearer {access_token}"} if user else {}
-        response = requests.post(url=tes_task_url, headers=headers)
+
+        response = requests.post(
+            url=tes_task_url,
+            headers={"Authorization": f"bearer {access_token}"} if user else {},
+            data=request_body,
+        )
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}"
@@ -218,12 +273,15 @@ class Gen3Workflow:
 
     def list_tes_tasks(self, user: str = "main_account", expected_status=200):
         """
-        Takes in a request body and returns a string containing the task_id
+        Takes in a request body and returns a list of task objects
         """
         access_token = self._get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks/"
-        headers = {"Authorization": f"bearer {access_token}"} if user else {}
-        response = requests.get(url=tes_task_url, headers=headers)
+
+        response = requests.get(
+            url=tes_task_url,
+            headers={"Authorization": f"bearer {access_token}"} if user else {},
+        )
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}"
@@ -233,12 +291,15 @@ class Gen3Workflow:
         self, task_id: str, user: str = "main_account", expected_status=200
     ):
         """
-        Takes in a request body and returns a string containing the task_id
+        Takes in a request body and returns a task object
         """
         access_token = self._get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks/{task_id}"
-        headers = {"Authorization": f"bearer {access_token}"} if user else {}
-        response = requests.get(url=tes_task_url, headers=headers)
+
+        response = requests.get(
+            url=tes_task_url,
+            headers={"Authorization": f"bearer {access_token}"} if user else {},
+        )
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}"
@@ -248,26 +309,16 @@ class Gen3Workflow:
         self, task_id: str, user: str = "main_account", expected_status=200
     ):
         """
-        Takes in a request body and returns a string containing the task_id
+        Takes in a request body and returns a task object with status 'CANCELING' or 'CANCELED'
         """
         access_token = self._get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks/{task_id}:cancel"
-        headers = {"Authorization": f"bearer {access_token}"} if user else {}
-        response = requests.post(url=tes_task_url, headers=headers)
+
+        response = requests.post(
+            url=tes_task_url,
+            headers={"Authorization": f"bearer {access_token}"} if user else {},
+        )
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}"
         return response.json()
-
-    def empty_bucket_with_boto3(
-        self, s3_storage_config: WorkflowStorageConfig, user: str = "main_account"
-    ):
-        """Special helper method to delete all the objects in a bucket."""
-        access_token = self._get_access_token(user)
-        client = self._get_s3_client(access_token, s3_storage_config)
-        bucket = s3_storage_config.bucket_name
-        object_list = client.list_objects_v2(Bucket=bucket)
-        if "Contents" in object_list:
-            keys = [contents.get("Key") for contents in object_list.get("Contents")]
-            for key in keys:
-                client.delete_object(Bucket=bucket, Key=key)

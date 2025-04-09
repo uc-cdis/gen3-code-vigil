@@ -1,8 +1,9 @@
 import json
+import time
 
 import pytest
 from services.gen3workflows import Gen3Workflow, WorkflowStorageConfig
-from utils import TEST_DATA_PATH_OBJECT
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 
 def is_service_missing(service_name: str):
@@ -26,10 +27,13 @@ class TestGen3Workflow(object):
     invalid_user = "dummy_one"
     s3_folder_name = "integration-tests"
     s3_file_name = "test-input.txt"
+
+    # Ensure the bucket is wiped before running the tests
+    gen3_workflow.delete_user_bucket()
+
     s3_storage_config = WorkflowStorageConfig.from_dict(
         gen3_workflow.get_storage_info(user=valid_user, expected_status=200)
     )
-    Gen3Workflow.empty_bucket_with_boto3(s3_storage_config)
 
     ######################## Test /storage/info endpoint ########################
 
@@ -91,7 +95,7 @@ class TestGen3Workflow(object):
         )
         assert (
             isinstance(response_contents, list) and len(response_contents) > 0
-        ), "Expected the function to return a list of at least one item but received: {response_contents}"
+        ), f"Expected the function to return a list of at least one item but received: {response_contents}"
         assert (
             "Key" in response_contents[0]
             and response_contents["Key"] == f"{self.s3_folder_name}/{self.s3_file_name}"
@@ -169,68 +173,86 @@ class TestGen3Workflow(object):
 
     def test_happy_path_create_tes_tasks(self):
         """
-        Verify that an authorized user can successfully create a TES task.
+        Test Case: Verify that an authorized user can successfully create a TES task.
         Expects: HTTP 200 with an 'id' field in the response.
         """
-        response = self.gen3_workflow.create_tes_task(
+        body = {
+            "name": "Hello world",
+            "description": "Demonstrates the most basic echo task.",
+            "executors": [
+                {"image": "alpine", "command": ["echo", "hello beautiful world!"]}
+            ],
+            "tags": {"user": "bar"},
+        }
+
+        create_task_response = self.gen3_workflow.create_tes_task(
+            request_body=body,
             user=self.valid_user,
             expected_status=200,
         )
         assert (
-            "id" in response
-        ), f"Response should contain a valid 'id' field. But found {response} instead"
+            "id" in create_task_response
+        ), f"Create tasks response should contain a valid 'id' field. But found {create_task_response} instead"
+        task_id = create_task_response["id"]
 
-    def test_happy_path_list_tes_tasks(self):
         """
-        Verify that an authorized user can list TES tasks.
+        Test Case: Verify that an authorized user can list TES tasks.
         Expects: HTTP 200 with a non-empty task list containing the newly created task ID.
         """
-        response = self.gen3_workflow.create_tes_task(
+
+        list_tasks_response = self.gen3_workflow.list_tes_tasks(
             user=self.valid_user,
             expected_status=200,
         )
         assert (
-            "id" in response
-        ), f"Response should contain a valid 'id' field. But found {response} instead"
-        task_id = response["id"]
+            "tasks" in list_tasks_response
+            and isinstance(list_tasks_response["tasks"], list)
+            and len(list_tasks_response["tasks"]) > 0
+        ), f"The List tasks response should contain a non-empty list of tasks. But found {list_tasks_response} instead"
 
-        response = self.gen3_workflow.list_tes_tasks(
-            user=self.valid_user,
-            expected_status=200,
-        )
-        assert (
-            "tasks" in response
-            and isinstance(response["tasks"], list)
-            and len(response["tasks"]) > 0
-        ), f"The response should contain a non-empty list of tasks. But found {response} instead"
-
-        task_list = response["tasks"]
+        task_list = list_tasks_response["tasks"]
         assert task_id in (
             task["id"] for task in task_list
         ), "The created task ID should be present in the task list."
 
-    def test_happy_path_get_tes_tasks(self):
         """
-        Verify that an authorized user can retrieve a TES task by ID.
+        Test Case: Verify that an authorized user can retrieve a TES task by ID.
         Expects: HTTP 200 and an id field.
         """
-        response = self.gen3_workflow.create_tes_task(
-            user=self.valid_user,
-            expected_status=200,
-        )
-        assert (
-            "id" in response
-        ), f"Response should contain a valid 'id' field. But found {response} instead"
-        task_id = response["id"]
-
-        response = self.gen3_workflow.get_tes_task(
+        get_tasks_response = self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
         assert (
-            "state" in response
-        ), "Task state must exist in response. But found {response} instead."
+            "state" in get_tasks_response
+        ), f"Task state must exist in response. But found {get_tasks_response} instead."
+
+        valid_states = ["QUEUED", "RUNNING", "COMPLETED"]
+        assert (
+            get_tasks_response["state"] in valid_states
+        ), f"Task state must be one of {valid_states} in response. But found {get_tasks_response['state']} instead."
+
+        # Wait for the task to complete (This is a blocking call)
+        retying = 0
+        max_retries = 10
+        while get_tasks_response["state"] != "COMPLETED" and retying < max_retries:
+            time.sleep(30)  # sleep for few seconds before checking the status again
+            retying += 1
+            get_tasks_response = self.gen3_workflow.get_tes_task(
+                task_id=task_id,
+                user=self.valid_user,
+                expected_status=200,
+            )
+            logger.debug(
+                f"Retry count: {retying}, Task state: {get_tasks_response['state']}"
+            )
+            if get_tasks_response["state"] in ["FAILED", "CANCELED"]:
+                assert False, "The TES task was expected to succeed, but it failed."
+
+        assert (
+            get_tasks_response["state"] == "COMPLETED"
+        ), f"The TES task did not complete within the expected time frame. Task state must be 'COMPLETED'. But found {get_tasks_response['state']} instead."
 
     def test_happy_path_cancel_tes_tasks(self):
         """
