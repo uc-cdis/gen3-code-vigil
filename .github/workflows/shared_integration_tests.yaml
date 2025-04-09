@@ -333,9 +333,9 @@ jobs:
               method: chat.postMessage
               # payload-file-path: "./gen3-integration-tests/slack_report.json"
               payload: |
-                "channel": "CPG3R0R9Q",
+                "channel": ${{ secrets.CI_SLACK_CHANNEL_ID }},
                 "text": "Just testing ...",
-              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              token: ${{ secrets.CI_SLACK_TOKEN }}
               # payload-templated: true
 
           # - name: Release CI environment
