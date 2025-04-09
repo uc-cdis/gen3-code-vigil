@@ -1,16 +1,23 @@
+import json
+import os
+
 import pytest
 import requests
-import os
-import json
-
-from gen3.auth import Gen3Auth
-from services.requestor import Requestor
-from services.fence import Fence
 import utils.gen3_admin_tasks as gat
-
+from gen3.auth import Gen3Auth
+from services.fence import Fence
+from services.requestor import Requestor
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "requestor" not in pytest.deployed_services,
+    reason="requestor service is not running on this environment",
+)
 @pytest.mark.client_credentials
 @pytest.mark.fence
 @pytest.mark.requestor

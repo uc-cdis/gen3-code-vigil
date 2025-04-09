@@ -187,6 +187,18 @@ jobs:
               fi
 
 
+          - name: Get modified folders
+            # This is applicable for Manifest PRs only
+            id: get_modified_folders
+            env:
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
+            if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa') }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
+              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+
           # TODO: Improve the logic to do differential updates to the env, not roll all services
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
           # Generate API keys for test users for the environment
@@ -197,6 +209,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
+              echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then

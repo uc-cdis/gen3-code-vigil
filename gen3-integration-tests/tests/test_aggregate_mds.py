@@ -8,6 +8,18 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.test_execution import assert_with_retry
 
 
+@pytest.mark.skipif(
+    "metadata" not in pytest.deployed_services,
+    reason="Metadata service is not running on this environment",
+)
+@pytest.mark.skipif(
+    not pytest.use_agg_mdg_flag,
+    reason="USE_AGG_MDS is not set or is false in manifest",
+)
+@pytest.mark.skipif(
+    "discoveryConfig" not in gat.get_portal_config().keys(),
+    reason="discoveryConfig in not in portal config",
+)
 @pytest.mark.mds
 class TestAggregateMDS:
     def test_create_edit_delete_study(self):
