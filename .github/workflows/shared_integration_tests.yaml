@@ -333,8 +333,8 @@ jobs:
               method: chat.postMessage
               # payload-file-path: "./gen3-integration-tests/slack_report.json"
               payload: |
-                "channel": ${{ secrets.CI_SLACK_CHANNEL_ID }},
-                "text": "Just testing ...",
+                channel: ${{ secrets.CI_SLACK_CHANNEL_ID }},
+                text: "Just testing ...",
               token: ${{ secrets.CI_SLACK_TOKEN }}
               # payload-templated: true
 
