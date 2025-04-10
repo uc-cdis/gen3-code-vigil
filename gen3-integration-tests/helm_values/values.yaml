@@ -1029,9 +1029,6 @@ etl:
     spark:
       repository: "quay.io/cdis/gen3-spark"
       tag: "master"
-    tube:
-      repository: "quay.io/cdis/tube"
-      tag: "2024.12"
   etlMapping:
     mappings:
       - name: ci.planx-ci.io_subject
@@ -1597,4 +1594,4 @@ dicom-server:
 # -- (map) Environment variables that control which tests are run.
 tests:
   # -- (bool) Set to true if running in Github action
-  githubaction: true
+  uploadArtifacts: true

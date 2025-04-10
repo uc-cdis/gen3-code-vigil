@@ -24,6 +24,8 @@ on:
         required: true
       QA_DASHBOARD_S3_PATH:
         required: true
+      QA_HELM_ARTIFACT_S3_PATH:
+        required: true
       CI_TEST_ORCID_USERID:
         required: true
       CI_TEST_ORCID_PASSWORD:
@@ -143,12 +145,12 @@ jobs:
               rm -rf /tmp/gh-cli
               gh --version
 
-          # allure report generation needs node
-          - name: Set up node
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-node@v4
-            with:
-              node-version: 20
+          # # allure report generation needs node
+          # - name: Set up node
+          #   if: ${{ env.SKIP_TESTS != 'true' }}
+          #   uses: actions/setup-node@v4
+          #   with:
+          #     node-version: 20
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
@@ -189,6 +191,7 @@ jobs:
               PR_HOSTNAME=pr${PR_NUM}
               echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
               echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
+              echo "ARTIFACT_PATH=$REPO/$PR_NUM/$RUN_NUM" >> $GITHUB_ENV
               kubectl create namespace $PR_NAMESPACE || true
 
           # # This will set the image tag for service PRs
@@ -211,7 +214,7 @@ jobs:
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
-            # Setup helm
+          # Setup helm
           - name: Set Up Helm
             uses: azure/setup-helm@v4.3.0
             with:
@@ -237,9 +240,9 @@ jobs:
               helm dependency update
               cd ..
               pwd
-              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set .Values.tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set .Values.tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set .Values.tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set .Values.tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}
-              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set .Values.tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set .Values.tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set .Values.tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set .Values.tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}"
 
               # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
@@ -284,57 +287,85 @@ jobs:
             run: |
               echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
-          - name: Copy logs from pod to runner
-            if: always()
-            run: |
-              # echo "apply job"
-              # kubectl apply -f gen3_ci/scripts/helm_setup/allure-collector.yaml
-              # sleep 30
-              # export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
-              # echo "running ls *"
-              # ls *
-              # kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
-              # # mkdir output
-              # # cp -r allure-results/ output/
-              # mkdir output
-              # mv allure-results/report.md output/
-              # echo "running ls *"
-              # ls *
-              mkdir output
-              mkdir allure-results
+          # - name: Copy logs from pod to runner
+          #   if: always()
+          #   run: |
+          #     # echo "apply job"
+          #     # kubectl apply -f gen3_ci/scripts/helm_setup/allure-collector.yaml
+          #     # sleep 30
+          #     # export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
+          #     # echo "running ls *"
+          #     # ls *
+          #     # kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
+          #     # # mkdir output
+          #     # # cp -r allure-results/ output/
+          #     # mkdir output
+          #     # mv allure-results/report.md output/
+          #     # echo "running ls *"
+          #     # ls *
+          #     mkdir output
+          #     mkdir allure-results
 
-              export AWS_DEFAULT_REGION=us-east-1
-              export AWS_ACCESS_KEY_ID=test
-              export AWS_SECRET_ACCESS_KEY=test
+          #     export AWS_DEFAULT_REGION=us-east-1
+          #     export AWS_ACCESS_KEY_ID=test
+          #     export AWS_SECRET_ACCESS_KEY=test
 
-              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 ls
-              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/report.md" output/
-              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/allure-results" allure-results/ --recursive
-              aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 rb "${{ env.PR_HOSTNAME }}.ci.planx-pla.net" --force
-              echo "running ls*"
-              ls *
+          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 ls
+          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/report.md" output/
+          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/allure-results" allure-results/ --recursive
+          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 rb "${{ env.PR_HOSTNAME }}.ci.planx-pla.net" --force
+          #     echo "running ls*"
+          #     ls *
+          #     aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+          #     if [ $? -ne 0 ]; then
+          #       echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
+          #     fi
+          #   env:
+          #     AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+          #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          #     AWS_DEFAULT_REGION: 'us-east-1'
+          #     QA_HELM_ARTIFACT_S3_PATH
 
-          - name: Generate allure report
-            id: generate_allure_report
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
-            if: always()
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              npm install -g allure-commandline --save-dev
-              allure generate allure-results -o allure-report --clean
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
-              fi
-              echo "running ls *"
-              ls *
+          # - name: Generate allure report
+          #   id: generate_allure_report
+          #   # if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+          #   if: always()
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   run: |
+          #     npm install -g allure-commandline --save-dev
+          #     allure generate allure-results -o allure-report --clean
+          #     if [ $? -ne 0 ]; then
+          #       echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+          #     fi
+          #     echo "running ls *"
+          #     ls *
 
-          - name: Upload allure report to S3
-            id: upload_allure_report
+          # - name: Upload allure report to S3
+          #   id: upload_allure_report
+          #   # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   run: |
+          #     aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+          #     if [ $? -ne 0 ]; then
+          #       echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
+          #     fi
+          #   env:
+          #     AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+          #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+          #     AWS_DEFAULT_REGION: 'us-east-1'
+
+
+          - name: Download artifacts from S3
+            id: download_allure_report
             # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              # mkdir allure-report
+              # mkdir output
+              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/allure-report ./allure-report
+              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
@@ -365,7 +396,7 @@ jobs:
               if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
-              if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
+              if [ "${{ steps.download_allure_report.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
                 echo "allure report index.html should be posted in PR"
               fi
