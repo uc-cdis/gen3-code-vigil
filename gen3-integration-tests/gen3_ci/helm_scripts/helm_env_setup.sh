@@ -90,13 +90,35 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ###############################################################################
     # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
     ###############################################################################
-    if [[ -f $temp_cdis_manifest/portal.yaml ]]; then
-        # Update the image tag
-        image_tag_value=$(yq eval ".portal.image.tag" $temp_cdis_manifest/portal.yaml 2>/dev/null)
-        yq eval ".portal.image.tag = \"$image_tag_value\"" -i $cdis_manifest/portal.yaml
-        # Update the gitops json
-        gitops_json_value=$(yq eval ".portal.gitops.json" $temp_cdis_manifest/portal.yaml 2>/dev/null)
-        yq eval ".portal.gitops.json = \"$gitops_json_value\"" -i $cdis_manifest/portal.yaml
+    if [ ! -f "$cdis_manifest/portal.yaml" ]; then
+        cp "$temp_cdis_manifest/portal.yaml" "$cdis_manifest/portal.yaml"
+    else
+        if [ -f "$temp_cdis_manifest/portal.yaml" ]; then
+            # Update the image tag
+            image_tag_value=$(yq eval ".portal.image.tag" $temp_cdis_manifest/portal.yaml 2>/dev/null)
+            yq eval ".portal.image.tag = \"$image_tag_value\"" -i $cdis_manifest/portal.yaml
+            # Update the gitops json
+            gitops_json_value=$(yq eval ".portal.gitops.json" $temp_cdis_manifest/portal.yaml 2>/dev/null)
+            yq eval ".portal.gitops.json = \"$gitops_json_value\"" -i $cdis_manifest/portal.yaml
+        fi
+    fi
+
+
+    ###############################################################################
+    # Check if manifest etl.yaml exists and perform operations on ci etl.yaml
+    ###############################################################################
+    if [ ! -f "$cdis_manifest/etl.yaml" ]; then
+        cp "$temp_cdis_manifest/etl.yaml" "$cdis_manifest/etl.yaml"
+    else
+        if [ -f "$temp_cdis_manifest/etl.yaml" ]; then
+            # Update spark section
+            yq eval "if (.etl.image | has(\"spark\")) then .etl.image.spark = load(\"$temp_cdis_manifest/etl.yaml\") | .etl.image.spark else . end" -i "$cdis_manifest/etl.yaml"
+            yq eval "if (.etl.image | has(\"spark\") | not) then del(.etl.image.spark) else . end" -i "$cdis_manifest/etl.yaml"
+
+            # Update tube section
+            yq eval "if (.etl.image | has(\"tube\")) then .etl.image.tube = load(\"$temp_cdis_manifest/etl.yaml\") | .etl.image.tube else . end" -i "$cdis_manifest/etl.yaml"
+            yq eval "if (.etl.image | has(\"tube\") | not) then del(.etl.image.tube) else . end" -i "$cdis_manifest/etl.yaml"
+        fi
     fi
 fi
 

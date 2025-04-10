@@ -1,12 +1,13 @@
 import json
 import os
+import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from utils import logger, test_setup
+from utils import HELM_SCRIPTS_PATH_OBJECT, logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
@@ -52,39 +53,56 @@ def wait_for_quay_build(repo, tag):
         return "failure"
 
 
+def setup_env_for_helm(arguments):
+    file_path = HELM_SCRIPTS_PATH_OBJECT / "helm_env_setup.sh"
+    result = subprocess.run([file_path] + arguments, capture_output=True, text=True)
+    if result.returncode == 0:
+        logger.info("Script executed successfully. Output:")
+        logger.info(result.stdout)
+    else:
+        logger.info("Script execution failed. Error:")
+        logger.info(result.stderr)
+
+
 def modify_env_for_service_pr(namespace, service, tag):
     """
     Change the image tag for the service under test in the test env's manifest
     Roll the environment
     Run usersync
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-modify-env-for-service-pr",
-    )
-    params = {
-        "NAMESPACE": namespace,
-        "SERVICE": service,
-        "VERSION": tag,
-        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        env_file = os.getenv("GITHUB_ENV")
-        with open(env_file, "a") as myfile:
-            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-        status = job.wait_for_build_completion(build_num, max_duration=5400)
-        if status == "Completed":
-            return job.get_build_result(build_num)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-modify-env-for-service-pr",
+        )
+        params = {
+            "NAMESPACE": namespace,
+            "SERVICE": service,
+            "VERSION": tag,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            env_file = os.getenv("GITHUB_ENV")
+            with open(env_file, "a") as myfile:
+                myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
+            status = job.wait_for_build_completion(build_num, max_duration=5400)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                logger.error("Build timed out. Consider increasing max_duration")
+                job.terminate_build(build_num)
+                return "failure"
         else:
-            logger.error("Build timed out. Consider increasing max_duration")
-            job.terminate_build(build_num)
+            logger.error("Build number not found")
             return "failure"
-    else:
-        logger.error("Build number not found")
-        return "failure"
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        arguments = [namespace, "service-env-setup", service, tag]
+        setup_env_for_helm(arguments)
 
 
 def modify_env_for_manifest_pr(namespace, updated_folder, repo):
@@ -94,34 +112,40 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     Roll the environment
     Run usersync
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-modify-env-for-manifest-pr",
-    )
-    params = {
-        "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-        "UPDATED_FOLDER": updated_folder,
-        "TARGET_REPO": repo,
-        "TARGET_BRANCH": os.getenv("BRANCH"),
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        env_file = os.getenv("GITHUB_ENV")
-        with open(env_file, "a") as myfile:
-            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-        status = job.wait_for_build_completion(build_num, max_duration=5400)
-        if status == "Completed":
-            return job.get_build_result(build_num)
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-modify-env-for-manifest-pr",
+        )
+        params = {
+            "NAMESPACE": namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+            "UPDATED_FOLDER": updated_folder,
+            "TARGET_REPO": repo,
+            "TARGET_BRANCH": os.getenv("BRANCH"),
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            env_file = os.getenv("GITHUB_ENV")
+            with open(env_file, "a") as myfile:
+                myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
+            status = job.wait_for_build_completion(build_num, max_duration=5400)
+            if status == "Completed":
+                return job.get_build_result(build_num)
+            else:
+                logger.error("Build timed out. Consider increasing max_duration")
+                job.terminate_build(build_num)
+                return "failure"
         else:
-            logger.error("Build timed out. Consider increasing max_duration")
-            job.terminate_build(build_num)
+            logger.error("Build number not found")
             return "failure"
-    else:
-        logger.error("Build number not found")
-        return "failure"
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        arguments = [namespace, "manifest-env-setup", namespace, updated_folder]
+        setup_env_for_helm(arguments)
 
 
 def modify_env_for_test_repo_pr(namespace):
@@ -130,36 +154,42 @@ def modify_env_for_test_repo_pr(namespace):
     Roll the environment
     Run usersync
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-modify-env-for-test-repo-pr",
-    )
-    params = {
-        "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        env_file = os.getenv("GITHUB_ENV")
-        with open(env_file, "a") as myfile:
-            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-        status = job.wait_for_build_completion(build_num, max_duration=5400)
-        if status == "Completed":
-            res = job.get_build_result(build_num)
-            logger.info(
-                f"ci-only-modify-env-for-test-repo-pr job's build {build_num} completed \
-                with status {res}"
-            )
-            return res
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-modify-env-for-test-repo-pr",
+        )
+        params = {
+            "NAMESPACE": namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            env_file = os.getenv("GITHUB_ENV")
+            with open(env_file, "a") as myfile:
+                myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
+            status = job.wait_for_build_completion(build_num, max_duration=5400)
+            if status == "Completed":
+                res = job.get_build_result(build_num)
+                logger.info(
+                    f"ci-only-modify-env-for-test-repo-pr job's build {build_num} completed \
+                    with status {res}"
+                )
+                return res
+            else:
+                logger.error("Build timed out. Consider increasing max_duration")
+                job.terminate_build(build_num)
+                return "failure"
         else:
-            logger.error("Build timed out. Consider increasing max_duration")
-            job.terminate_build(build_num)
+            logger.error("Build number not found")
             return "failure"
-    else:
-        logger.error("Build number not found")
-        return "failure"
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        arguments = [namespace, "test-env-setup"]
+        setup_env_for_helm(arguments)
 
 
 def generate_api_keys_for_test_users(namespace):
