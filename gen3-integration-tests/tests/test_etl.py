@@ -7,20 +7,29 @@ from services.graph import GraphDataTools
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "tube" not in pytest.deployed_services,
+    reason="tube service is not running on this environment",
+)
 @pytest.mark.tube
+@pytest.mark.etl
 class TestETL:
+    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+
     @classmethod
     def setup_class(cls):
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
-        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-        sd_tools = GraphDataTools(
-            auth=auth, program_name="jnkns", project_code="jenkins2"
-        )
         logger.info("Submitting test records")
-        sd_tools.submit_all_test_records()
+        cls.sd_tools.submit_all_test_records()
 
     @classmethod
     def teardown_class(cls):
+        cls.sd_tools.delete_all_records()
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
 
     def test_etl(self):

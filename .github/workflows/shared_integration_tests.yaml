@@ -77,12 +77,9 @@ jobs:
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
+          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
-          # # Enable step debugging. Uncomment this to debug pipeline issues
-          # - name: Enable Step Debugging
-          #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
-
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
@@ -187,6 +184,18 @@ jobs:
               fi
 
 
+          - name: Get modified folders
+            # This is applicable for Manifest PRs only
+            id: get_modified_folders
+            env:
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
+            if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa') }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
+              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+
           # TODO: Improve the logic to do differential updates to the env, not roll all services
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
           # Generate API keys for test users for the environment
@@ -197,6 +206,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
+              echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
@@ -312,14 +322,14 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v1.25.0
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            # continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v2.0.0
             with:
-              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./gen3-integration-tests/slack_report.json"
-            env:
-              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-templated: true
 
           - name: Release CI environment
             id: release_ci_env

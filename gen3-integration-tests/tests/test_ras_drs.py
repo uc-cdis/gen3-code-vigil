@@ -3,16 +3,15 @@ RAS DRS
 """
 
 import os
-import pytest
-import requests
 import time
 
+import pytest
+import requests
 from cdislogging import get_logger
-from services.indexd import Indexd
-from services.fence import Fence
-from services.ras import RAS
-
 from playwright.sync_api import Page
+from services.fence import Fence
+from services.indexd import Indexd
+from services.ras import RAS
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -42,8 +41,17 @@ indexd_files = {
 }
 
 
+@pytest.mark.skipif(
+    "indexd" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "indexd" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
 @pytest.mark.indexd
 @pytest.mark.fence
+@pytest.mark.ras
 @pytest.mark.skip(reason="RAS Passport creation is broken")
 class TestRasDrs:
     indexd = Indexd()
