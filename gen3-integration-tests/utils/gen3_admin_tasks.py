@@ -204,7 +204,9 @@ def fence_delete_expired_clients():
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Delete expired clients
-        delete_explired_clients_cmd = "kubectl exec -i $(kubectl get pods -l app=fence -o jsonpath='{.items[0].metadata.name}') -- fence-create client-delete-expired"
+        delete_explired_clients_cmd = (
+            "kubectl exec $(gen3 pod fence) -- fence-create client-delete-expired"
+        )
         delete_explired_client_result = subprocess.run(
             delete_explired_clients_cmd,
             stdout=subprocess.PIPE,
@@ -345,15 +347,15 @@ def setup_fence_test_clients(
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         hostname = os.getenv("HOSTNAME")
 
-        # Get the pod name for fence app
-        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
-        else:
-            raise Exception("Unable to retrieve fence-deployment pod")
+        # # Get the pod name for fence app
+        # cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        # result = subprocess.run(
+        #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        # )
+        # if result.returncode == 0:
+        #     fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+        # else:
+        #     raise Exception("Unable to retrieve fence-deployment pod")
 
         # Create clients
         for line in clients_data.split("\n")[1:]:
@@ -371,8 +373,7 @@ def setup_fence_test_clients(
             delete_cmd = [
                 "kubectl",
                 "exec",
-                "-i",
-                fence_pod_name,
+                "$(gen3 pod fence)",
                 "--",
                 "fence-create",
                 "client-delete",
@@ -389,8 +390,7 @@ def setup_fence_test_clients(
             create_cmd = [
                 "kubectl",
                 "exec",
-                "-i",
-                fence_pod_name,
+                "$(gen3 pod fence)",
                 "--",
                 "fence-create",
             ]
@@ -471,8 +471,7 @@ def setup_fence_test_clients(
             rotate_client_command = [
                 "kubectl",
                 "exec",
-                "-i",
-                fence_pod_name,
+                "$(gen3 pod fence)",
                 "--",
                 "fence-create",
                 "client-rotate",
@@ -525,14 +524,14 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Get the pod name for fence app
-        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
-        else:
-            raise Exception("Unable to retrieve fence-deployment pod")
+        # cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        # result = subprocess.run(
+        #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        # )
+        # if result.returncode == 0:
+        #     fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+        # else:
+        #     raise Exception("Unable to retrieve fence-deployment pod")
 
         # Delete clients
         for line in clients_data.split("\n")[1:]:
@@ -543,8 +542,7 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
             delete_cmd = [
                 "kubectl",
                 "exec",
-                "-i",
-                fence_pod_name,
+                "$(gen3 pod fence)",
                 "--",
                 "fence-create",
                 "client-delete",
@@ -590,27 +588,26 @@ def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str =
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = [
-            "kubectl",
-            "get",
-            "pods",
-            "-l",
-            "app=fence",
-            "-o",
-            "jsonpath='{.items[0].metadata.name}'",
-        ]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            fence_pod_name = result.stdout.strip().replace("'", "")
-        else:
-            raise Exception("Unable to retrieve fence-deployment pod")
+        # cmd = [
+        #     "kubectl",
+        #     "get",
+        #     "pods",
+        #     "-l",
+        #     "app=fence",
+        #     "-o",
+        #     "jsonpath='{.items[0].metadata.name}'",
+        # ]
+        # result = subprocess.run(
+        #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        # )
+        # if result.returncode == 0:
+        #     fence_pod_name = result.stdout.strip().replace("'", "")
+        # else:
+        #     raise Exception("Unable to retrieve fence-deployment pod")
         cmd = [
             "kubectl",
             "exec",
-            "-i",
-            fence_pod_name,
+            "$(gen3 pod fence)",
             "--",
             "curl",
             "-X",
@@ -845,20 +842,19 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        # Get the pod name for fence app
-        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
-        else:
-            raise Exception("Unable to retrieve fence-deployment pod")
+        # # Get the pod name for fence app
+        # cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        # result = subprocess.run(
+        #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        # )
+        # if result.returncode == 0:
+        #     fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+        # else:
+        #     raise Exception("Unable to retrieve fence-deployment pod")
         cmd = [
             "kubectl",
             "exec",
-            "-i",
-            fence_pod_name,
+            "$(gen3 pod fence)",
             "--",
             "fence-create",
             "token-create",
