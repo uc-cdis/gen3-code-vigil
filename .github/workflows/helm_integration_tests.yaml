@@ -145,13 +145,6 @@ jobs:
               rm -rf /tmp/gh-cli
               gh --version
 
-          # # allure report generation needs node
-          # - name: Set up node
-          #   if: ${{ env.SKIP_TESTS != 'true' }}
-          #   uses: actions/setup-node@v4
-          #   with:
-          #     node-version: 20
-
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -169,15 +162,15 @@ jobs:
           #     poetry install
 
           # TODO: may be able to modify/slim down these steps
-          - name: Setup Java and AWS CLI
+          - name: Setup AWS CLI
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
               sudo apt-get update
-              sudo apt install openjdk-11-jre -y
+              # sudo apt install openjdk-11-jre -y
               sudo apt install awscli -y
-              python -m pip install --upgrade pip
-              pip install poetry
+              # python -m pip install --upgrade pip
+              # pip install poetry
 
           # Setup kubectl
           - name: Set Up kubectl
@@ -195,15 +188,6 @@ jobs:
               echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
               echo "ARTIFACT_PATH=$REPO/$PR_NUM/$RUN_NUM" >> $GITHUB_ENV
               kubectl create namespace $PR_NAMESPACE || true
-
-          # # This will set the image tag for service PRs
-          # - name: Append to values.yaml with the image version for service PRs
-          #   if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST == 'true'}}
-          #   run: |
-          #     IMAGE_TAG=$(echo "${GITHUB_REF#refs/*/}" | tr / _)
-          #     echo "${{ inputs.SERVICE_TO_TEST }}:" >> helm_values/values.yaml
-          #     echo "  image:" >> helm_values/values.yaml
-          #     echo "    tag: $IMAGE_TAG" >> helm_values/values.yaml
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels
@@ -295,18 +279,19 @@ jobs:
                 fi
 
                 echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
-                echo "$not_ready_json" | jq -r '.[] |
-                  "🔍 Pod: \(.metadata.name)\n    Phase: \(.status.phase)\n    Ready Statuses:\n" +
-                  (
-                    [.status.containerStatuses[]? | "    - \(.name): ready=\(.ready)"] | join("\n")
-                  ) + "\n"'
-
                 sleep $interval
               done
 
               echo "❌ Timeout: Pods' containers not ready"
+              echo "$not_ready_json" | jq -r '.[] |
+                .metadata.name as $pod_name |
+                .status.containerStatuses[]?
+                | select(.ready != true)
+                | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
+
               kubectl get pods -n "${{ env.PR_NAMESPACE }}"
               exit 1
+
 
           # Will trigger gen3-code-vigil test suite
           - name: Run Helm Tests
@@ -321,75 +306,6 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
-
-          # - name: Copy logs from pod to runner
-          #   if: always()
-          #   run: |
-          #     # echo "apply job"
-          #     # kubectl apply -f gen3_ci/scripts/helm_setup/allure-collector.yaml
-          #     # sleep 30
-          #     # export COLLECTOR_POD=$(kubectl get pods -n pr-161 -l job-name=allure-collector -o jsonpath="{.items[0].metadata.name}")
-          #     # echo "running ls *"
-          #     # ls *
-          #     # kubectl cp pr-161/$COLLECTOR_POD:/output/allure-results ./allure-results
-          #     # # mkdir output
-          #     # # cp -r allure-results/ output/
-          #     # mkdir output
-          #     # mv allure-results/report.md output/
-          #     # echo "running ls *"
-          #     # ls *
-          #     mkdir output
-          #     mkdir allure-results
-
-          #     export AWS_DEFAULT_REGION=us-east-1
-          #     export AWS_ACCESS_KEY_ID=test
-          #     export AWS_SECRET_ACCESS_KEY=test
-
-          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 ls
-          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/report.md" output/
-          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 cp "s3://${{ env.PR_HOSTNAME }}.ci.planx-pla.net/output/allure-results" allure-results/ --recursive
-          #     aws --endpoint-url=http://localstack.localstack.svc.cluster.local:4566 s3 rb "${{ env.PR_HOSTNAME }}.ci.planx-pla.net" --force
-          #     echo "running ls*"
-          #     ls *
-          #     aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
-          #     if [ $? -ne 0 ]; then
-          #       echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
-          #     fi
-          #   env:
-          #     AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-          #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-          #     AWS_DEFAULT_REGION: 'us-east-1'
-          #     QA_HELM_ARTIFACT_S3_PATH
-
-          # - name: Generate allure report
-          #   id: generate_allure_report
-          #   # if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
-          #   if: always()
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     npm install -g allure-commandline --save-dev
-          #     allure generate allure-results -o allure-report --clean
-          #     if [ $? -ne 0 ]; then
-          #       echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
-          #     fi
-          #     echo "running ls *"
-          #     ls *
-
-          # - name: Upload allure report to S3
-          #   id: upload_allure_report
-          #   # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
-          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
-          #     if [ $? -ne 0 ]; then
-          #       echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
-          #     fi
-          #   env:
-          #     AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-          #     AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-          #     AWS_DEFAULT_REGION: 'us-east-1'
-
 
           - name: Download summary from S3
             id: download_allure_summary
@@ -459,9 +375,14 @@ jobs:
 
           - name: Generate Slack report
             id: generate_slack_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.generate_slack_report
+            run: |
+              docker run --rm \
+              -v "$PWD":/app \
+              -w /app \
+              quay.io/cdis/gen3-integration-tests:master \
+              poetry run python -m gen3_ci.scripts.generate_slack_report
 
           - name: Publish report to Slack
             id: slack_notify
@@ -483,7 +404,7 @@ jobs:
             if: always()
             run: |
               # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-              kubectl delete jobs -l "helm.sh/hook=test" ${{ env.PR_NAMESPACE }}
+              kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
               # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
               # sleep 20
               # kubectl delete ns ${{ env.PR_NAMESPACE }}
