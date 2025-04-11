@@ -221,11 +221,6 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
-              "echo running ls *"
-              ls *
-              "cat output/report.md"
-              ls *
-              cat output/report.md
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
@@ -237,10 +232,6 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
-              ls *
-              "cat output/report.md"
-              ls *
-              cat output/report.md
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
@@ -304,9 +295,6 @@ jobs:
                 fi
                 echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
               fi
-              echo "running ls *"
-              ls *
-              cat output/report.md
 
           - name: Render report to the PR
             id: publish_md_report

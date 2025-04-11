@@ -315,7 +315,7 @@ jobs:
             run: |
               # mkdir allure-report
               # mkdir output
-              # aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/allure-report ./allure-report
+              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/allure-report ./allure-report
               aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
@@ -378,11 +378,12 @@ jobs:
             # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
             run: |
-              docker run --rm \
-              -v "$PWD":/app \
-              -w /app \
-              quay.io/cdis/gen3-integration-tests:master \
-              poetry run python -m gen3_ci.scripts.generate_slack_report
+              docker create --name gen3-slack-report quay.io/cdis/gen3-integration-tests:master \
+                bash -c "poetry run python -m gen3_ci.scripts.generate_slack_report"
+              docker cp ./allure-report gen3-slack-report:gen3-integration-tests/allure-report
+              docker start -a gen3-slack-report
+              docker cp gen3-slack-report:/gen3-integration-tests/slack_report.json ./slack_report.json
+              docker rm gen3-slack-report
 
           - name: Publish report to Slack
             id: slack_notify
