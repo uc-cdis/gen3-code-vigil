@@ -314,7 +314,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             if: always()
             # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-            run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }}
+            run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }} --timeout 15m
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -479,11 +479,11 @@ jobs:
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
 
-          # - name: Cleanup
-          #   if: always()
-          #   run: |
-          #     helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-          #     helm test gen3 --cleanup
-          #     kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
-          #     sleep 20
-          #     # kubectl delete ns ${{ env.PR_NAMESPACE }}
+          - name: Cleanup
+            if: always()
+            run: |
+              # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
+              kubectl delete jobs -l "helm.sh/hook=test" ${{ env.PR_NAMESPACE }}
+              # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
+              # sleep 20
+              # kubectl delete ns ${{ env.PR_NAMESPACE }}
