@@ -159,14 +159,14 @@ jobs:
             with:
               python-version: '3.9'
 
-          # Install gen3-integration-tests dependencies
-          # TODO: may be able to modify/slim down these steps
-          - name: Install dependencies
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              python -m pip install --upgrade pip
-              pip install poetry
-              poetry install
+          # # Install gen3-integration-tests dependencies
+          # # TODO: may be able to modify/slim down these steps
+          # - name: Install dependencies
+          #   if: ${{ env.SKIP_TESTS != 'true' }}
+          #   run: |
+          #     python -m pip install --upgrade pip
+          #     pip install poetry
+          #     poetry install
 
           # TODO: may be able to modify/slim down these steps
           - name: Setup Java and AWS CLI
@@ -253,22 +253,59 @@ jobs:
               export timeout=900
               export interval=20
 
+              # end=$((SECONDS + timeout))
+              # while [ $SECONDS -lt $end ]; do
+              #   not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} -o json | \
+              #     jq '[.items[]
+              #       | select((.metadata.deletionTimestamp == null)
+              #         and ((.status.phase != "Running")
+              #           or (.status.containerStatuses[]?.ready != true))
+              #       )] | length')
+
+              #   if [ "$not_ready" -eq 0 ]; then
+              #     echo "✅ All pods containers are Ready"
+              #     exit 0
+              #   fi
+
+              #   echo "⏳ Waiting... ($not_ready pods have containers not ready)"
+              #   sleep $interval
+              # done
+
+              # echo "❌ Timeout: Pods' containers not ready"
+              # kubectl get pods -n ${{ env.PR_NAMESPACE }}
+              # exit 1
+
               end=$((SECONDS + timeout))
               while [ $SECONDS -lt $end ]; do
-                not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} \
-                  -o json | jq '[.items[] | select((.status.phase != "Running") or (.status.containerStatuses[]?.ready != true))] | length')
+                # Get JSON for not-ready, non-terminating pods
+                not_ready_json=$(kubectl get pods -l app!=gen3job -n "${{ env.PR_NAMESPACE }}" -o json | \
+                  jq '[.items[]
+                    | select(
+                        (.metadata.deletionTimestamp == null) and
+                        ((.status.phase != "Running") or
+                        (.status.containerStatuses[]?.ready != true))
+                      )
+                  ]')
 
-                if [ "$not_ready" -eq 0 ]; then
+                not_ready_count=$(echo "$not_ready_json" | jq 'length')
+
+                if [ "$not_ready_count" -eq 0 ]; then
                   echo "✅ All pods containers are Ready"
                   exit 0
                 fi
 
-                echo "⏳ Waiting... ($not_ready pods have containers not ready)"
+                echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
+                echo "$not_ready_json" | jq -r '.[] |
+                  "🔍 Pod: \(.metadata.name)\n    Phase: \(.status.phase)\n    Ready Statuses:\n" +
+                  (
+                    [.status.containerStatuses[]? | "    - \(.name): ready=\(.ready)"] | join("\n")
+                  ) + "\n"'
+
                 sleep $interval
               done
 
               echo "❌ Timeout: Pods' containers not ready"
-              kubectl get pods -n ${{ env.PR_NAMESPACE }}
+              kubectl get pods -n "${{ env.PR_NAMESPACE }}"
               exit 1
 
           # Will trigger gen3-code-vigil test suite
