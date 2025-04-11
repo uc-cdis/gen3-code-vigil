@@ -456,11 +456,11 @@ def setup_fence_test_clients(
                 text=True,
                 timeout=10,
             )
-            if result.returncode == 0:
+            if create_result.returncode == 0:
                 client_info = create_result.stdout.strip().split("\n")[-1]
             else:
                 raise Exception(
-                    f"Unable to create client for {client_name}. Response: {create_result.stderr.strip()}"
+                    f"Unable to create client {client_name}. Response: {create_result.stderr.strip()}"
                 )
             with open(clients_file_path, "+a") as outfile:
                 outfile.write(f"{client_name}:{client_info}\n")
@@ -488,7 +488,7 @@ def setup_fence_test_clients(
                 client_info = rotate_result.stdout.strip().split("\n")[-1]
             else:
                 raise Exception(
-                    f"Unable to create client for {client}. Response: {rotate_result.stderr.strip()}"
+                    f"Unable to rotate client {client}. Response: {rotate_result.stderr.strip()}"
                 )
             with open(rotated_clients_file_path, "+a") as outfile:
                 outfile.write(f"{client}:{client_info}\n")
