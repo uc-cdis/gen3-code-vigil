@@ -22,7 +22,7 @@ def release_ci_environment(namespace):
     }
     build_num = job.build_job(params)
     if build_num:
-        status = job.wait_for_build_completion(build_num)
+        status = job.wait_for_build_completion(build_num, sleep_duration=10)
         if status == "Completed":
             return job.get_build_result(build_num)
         else:
