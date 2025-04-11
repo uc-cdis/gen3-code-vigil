@@ -1595,3 +1595,5 @@ dicom-server:
 tests:
   # -- (bool) Set to true if running in Github action
   uploadArtifacts: true
+  image:
+    tag: feat_GPE-1747

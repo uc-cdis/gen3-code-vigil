@@ -160,6 +160,7 @@ jobs:
               python-version: '3.9'
 
           # Install gen3-integration-tests dependencies
+          # TODO: may be able to modify/slim down these steps
           - name: Install dependencies
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
@@ -167,6 +168,7 @@ jobs:
               pip install poetry
               poetry install
 
+          # TODO: may be able to modify/slim down these steps
           - name: Setup Java and AWS CLI
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
@@ -240,15 +242,11 @@ jobs:
               helm dependency update
               cd ..
               pwd
-              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set .Values.tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set .Values.tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set .Values.tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set .Values.tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set .Values.tests.artifactCreds.secondaryFullPath="${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM" --set .Values.tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set .Values.tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set .Values.tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set .Values.tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
                 --namespace ${{ env.PR_NAMESPACE }}
-              echo "helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set .Values.tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set .Values.tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set .Values.tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set .Values.tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-                --namespace ${{ env.PR_NAMESPACE }}"
 
               # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
               #   --namespace ${{ env.PR_NAMESPACE }}
-              # echo "helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-              #   --namespace ${{ env.PR_NAMESPACE }}"
               # uncomment after testing
               sleep 60
 
@@ -356,33 +354,33 @@ jobs:
           #     AWS_DEFAULT_REGION: 'us-east-1'
 
 
-          - name: Download artifacts from S3
-            id: download_allure_report
+          - name: Download summary from S3
+            id: download_allure_summary
             # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               # mkdir allure-report
               # mkdir output
-              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/allure-report ./allure-report
+              # aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/allure-report ./allure-report
               aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
               if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
+                echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
               fi
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
               AWS_DEFAULT_REGION: 'us-east-1'
 
-          - name: Archive pod logs from CI environment
-            id: archive_pod_logs
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
-            if: always()
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              kubectl get pods -o json | jq -r '.items | map(select(.status.phase != "Pending" and .status.phase != "Unknown")) | .[] | .metadata.name as $pod | (.spec.containers + .spec.initContainers) | map(select(.name != "pause" and .name != "jupyterhub")) | .[] | {pod: $pod, cont: .name} | "\(.pod)  \(.cont)"'
-              echo "running save_ci_env_pods_logs.sh"
-              bash gen3_ci/scripts/helm_setup/save_ci_env_pod_logs.sh
+          # - name: Archive pod logs from CI environment
+          #   id: archive_pod_logs
+          #   # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
+          #   if: always()
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   run: |
+          #     kubectl get pods -o json | jq -r '.items | map(select(.status.phase != "Pending" and .status.phase != "Unknown")) | .[] | .metadata.name as $pod | (.spec.containers + .spec.initContainers) | map(select(.name != "pause" and .name != "jupyterhub")) | .[] | {pod: $pod, cont: .name} | "\(.pod)  \(.cont)"'
+          #     echo "running save_ci_env_pods_logs.sh"
+          #     bash gen3_ci/scripts/helm_setup/save_ci_env_pod_logs.sh
 
           - name: Generate markdown report
             id: generate_md_report
@@ -396,7 +394,7 @@ jobs:
               if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
-              if [ "${{ steps.download_allure_report.outcome }}" == "success" ]; then
+              if [ "${{ steps.download_allure_summary.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
                 echo "allure report index.html should be posted in PR"
               fi
