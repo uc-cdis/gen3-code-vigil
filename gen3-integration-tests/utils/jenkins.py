@@ -124,7 +124,7 @@ class JenkinsJob(object):
             else:
                 # TODO log the link to the blue ocean console instead
                 logger.info(
-                    f"({elapsed}s) Waiting for completion of job {self.job_url}/{build_number}..."
+                    f"({int(elapsed)}s) Waiting for completion of job {self.job_url}/{build_number}..."
                 )
                 time.sleep(sleep_duration)
         return status
