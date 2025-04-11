@@ -108,6 +108,7 @@ class JenkinsJob(object):
         start = time.time()
         status = None
 
+        logger.info(f"Waiting for job completion for up to {max_duration}s")
         while True:
             elapsed = time.time() - start
             if not self.is_build_running(build_number):
@@ -121,7 +122,7 @@ class JenkinsJob(object):
             else:
                 # TODO log the link to the blue ocean console instead
                 logger.info(
-                    f"Waiting for completion of job {self.job_url}/{build_number} ..."
+                    f"({elapsed}s) Waiting for completion of job {self.job_url}/{build_number}..."
                 )
                 time.sleep(60)
         return status
