@@ -1,7 +1,6 @@
 name: Helm Integration Tests
 
 on:
-  # workflow_dispatch:
   workflow_call:
     inputs:
       # needed to be set if repo name differs in quay
@@ -48,330 +47,306 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-    integration_tests:
-        runs-on: self-hosted
+  integration_tests:
+      runs-on: self-hosted
 
-        defaults:
-          run:
-            # the test directory in gen3-code-vigil
-            working-directory: gen3-integration-tests
+      defaults:
+        run:
+          # the test directory in gen3-code-vigil
+          working-directory: gen3-integration-tests
 
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.event.repository.name }}
-          REPO_FN: ${{ github.event.repository.full_name }}
-          BRANCH: ${{ github.event.pull_request.head.ref }}
-          PR_NUM: ${{ github.event.pull_request.number }}
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          RUN_NUM: ${{ github.run_number }}
-          CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
-          CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
-          CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
-          CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
-          CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
-          CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
-          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO: ${{ github.event.repository.name }}
+        REPO_FN: ${{ github.event.repository.full_name }}
+        BRANCH: ${{ github.event.pull_request.head.ref }}
+        PR_NUM: ${{ github.event.pull_request.number }}
+        COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+        RUN_NUM: ${{ github.run_number }}
+        CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+        CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+        CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
+        CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
+        CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
+        CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+        SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
-        steps:
-          # # Enable step debugging. Uncomment this to debug pipeline issues
-          # - name: Enable Step Debugging
-          #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
+      steps:
+        # Ensure the PR is run under the same org as an Internal PR
+        # and not by external forks/PRs
+        - name: Check if PR is from the same organization
+          if: github.repository_owner != github.event.pull_request.head.repo.owner.login
+          run:  |
+            echo "Skip pull requests from repositories not within the same organization"
+            echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
-          # Ensure the PR is run under the same org as an Internal PR
-          # and not by external forks/PRs
-          - name: Check if PR is from the same organization
-            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
-            run:  |
-              echo "Skip pull requests from repositories not within the same organization"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
-          # Skip integration tests when the following PR labels are present:
-          # not-ready-for-ci / decommission-environment
-          - name: Skip integration tests for specific PR labels
-            working-directory: ${{ github.workspace }}
-            run: |
-              if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
-                  echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
-                  echo "SKIP_TESTS=true" >> $GITHUB_ENV
-              fi
-
-          # Checkout current repo
-          - name: Checkout current repo
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
-
-          # Skip tests when there are only markdown files
-          - name: Skip integration tests if PR contains only Markdown files
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            working-directory: ${{ github.workspace }}
-            run: |
-              git fetch -q
-              FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | grep -o '\S\+\.\S\+'  | grep -v '@' | awk -F . '{print $NF}' | sort -u)
-              echo $FILE_TYPES
-
-              # Check if the only file type is markdown
-              if [[ "$FILE_TYPES" == "md" ]]; then
-                echo "All files are markdown, skipping step."
+        # Skip integration tests when the following PR labels are present:
+        # not-ready-for-ci / decommission-environment
+        - name: Skip integration tests for specific PR labels
+          working-directory: ${{ github.workspace }}
+          run: |
+            if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
+                echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
                 echo "SKIP_TESTS=true" >> $GITHUB_ENV
+            fi
+
+        # Checkout current repo
+        - name: Checkout current repo
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          uses: actions/checkout@v4
+
+        # Skip tests when there are only markdown files
+        - name: Skip integration tests if PR contains only Markdown files
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          working-directory: ${{ github.workspace }}
+          run: |
+            git fetch -q
+            FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | grep -o '\S\+\.\S\+'  | grep -v '@' | awk -F . '{print $NF}' | sort -u)
+            echo $FILE_TYPES
+
+            # Check if the only file type is markdown
+            if [[ "$FILE_TYPES" == "md" ]]; then
+              echo "All files are markdown, skipping step."
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+            fi
+
+        # Checkout master branch of gen3-code-vigil when another repo is under test
+        - name: Checkout integration test code
+          if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
+          uses: actions/checkout@v4
+          with:
+            repository: uc-cdis/gen3-code-vigil
+            ref: ${{ inputs.TEST_REPO_BRANCH }}
+
+        # Setup gh cli on self hosted runner
+        - name: Install GitHub CLI
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            GH_VERSION="2.69.0"
+            ARCH="linux_amd64"
+            GH_FILENAME="gh_${GH_VERSION}_${ARCH}.tar.gz"
+            GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_FILENAME}"
+
+            # Create temp directory
+            mkdir -p /tmp/gh-cli && cd /tmp/gh-cli
+
+            # Download and extract
+            curl -sSL "$GH_URL" -o "$GH_FILENAME"
+            tar -xzf "$GH_FILENAME"
+
+            # Move binary to /usr/local/bin
+            sudo cp "gh_${GH_VERSION}_${ARCH}/bin/gh" /usr/local/bin/
+
+            # Optional: clean up
+            cd ~
+            rm -rf /tmp/gh-cli
+            gh --version
+
+        # gen3-integration-tests run with python 3.9
+        - name: Set up Python
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          uses: actions/setup-python@v5
+          with:
+            python-version: '3.9'
+
+        # Setup aws cli
+        - name: Setup AWS CLI
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            sudo apt-get update
+            sudo apt install awscli -y
+
+        # Setup kubectl
+        - name: Set Up kubectl
+          uses: azure/setup-kubectl@v3
+          with:
+            version: latest
+
+        # Create PR namespace and PR hostname env var
+        - name: Create namespace and env vars
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            PR_NAMESPACE=pr-${PR_NUM}
+            PR_HOSTNAME=pr${PR_NUM}
+            echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
+            echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
+            echo "ARTIFACT_PATH=$REPO/$PR_NUM/$RUN_NUM" >> $GITHUB_ENV
+            kubectl create namespace $PR_NAMESPACE || true
+
+        # This is used for running specific test suites by labeling the PR with the test class
+        # Multiple suites can be executed by adding multiple labels
+        - name: Get test labels
+          id: get_test_labels
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: |
+            test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+            echo $test_label
+            echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+
+        # Setup helm
+        - name: Set Up Helm
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          uses: azure/setup-helm@v4.3.0
+          with:
+            version: latest
+
+        # Will install the gen3 helm charts to specific PR namespace and set the tests to run
+        - name: Prepare CI environment
+          id: prep_ci_env
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: |
+            # helm repo add gen3 https://helm.gen3.org
+            # helm repo update
+            # uncomment the above after testing ^^^^
+
+            # TO DO: add all of this to new modify values script, including new ES index dbRestore:
+            # disabling guppy until the above is completed.
+            # remove usersync run from helm test job as well.
+
+            git clone https://github.com/uc-cdis/gen3-helm.git
+            cd gen3-helm/helm/gen3
+            git checkout feat/ci-patch
+            helm dependency update
+            cd ..
+            pwd
+            helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.artifactCreds.secondaryFullPath="${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM" --set tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+              --namespace ${{ env.PR_NAMESPACE }}
+
+            # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
+            #   --namespace ${{ env.PR_NAMESPACE }}
+            # uncomment after testing
+            sleep 60
+
+            export timeout=900
+            export interval=20
+
+            end=$((SECONDS + timeout))
+            while [ $SECONDS -lt $end ]; do
+              # Get JSON for not-ready, non-terminating pods
+              not_ready_json=$(kubectl get pods -l app!=gen3job -n "${{ env.PR_NAMESPACE }}" -o json | \
+                jq '[.items[]
+                  | select(
+                      (.metadata.deletionTimestamp == null) and
+                      ((.status.phase != "Running") or
+                      (.status.containerStatuses[]?.ready != true))
+                    )
+                ]')
+
+              not_ready_count=$(echo "$not_ready_json" | jq 'length')
+
+              if [ "$not_ready_count" -eq 0 ]; then
+                echo "✅ All pods containers are Ready"
+                exit 0
               fi
 
-          # Checkout master branch of gen3-code-vigil when another repo is under test
-          - name: Checkout integration test code
-            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
-            uses: actions/checkout@v4
-            with:
-              repository: uc-cdis/gen3-code-vigil
-              ref: ${{ inputs.TEST_REPO_BRANCH }}
+              echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
+              sleep $interval
+            done
 
-          # Setup gh cli on self hosted runner
-          - name: Install GitHub CLI
-            run: |
-              GH_VERSION="2.69.0"
-              ARCH="linux_amd64"
-              GH_FILENAME="gh_${GH_VERSION}_${ARCH}.tar.gz"
-              GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_FILENAME}"
+            echo "❌ Timeout: Pods' containers not ready"
+            echo "$not_ready_json" | jq -r '.[] |
+              .metadata.name as $pod_name |
+              .status.containerStatuses[]?
+              | select(.ready != true)
+              | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
 
-              # Create temp directory
-              mkdir -p /tmp/gh-cli && cd /tmp/gh-cli
-
-              # Download and extract
-              curl -sSL "$GH_URL" -o "$GH_FILENAME"
-              tar -xzf "$GH_FILENAME"
-
-              # Move binary to /usr/local/bin
-              sudo cp "gh_${GH_VERSION}_${ARCH}/bin/gh" /usr/local/bin/
-
-              # Optional: clean up
-              cd ~
-              rm -rf /tmp/gh-cli
-              gh --version
-
-          # gen3-integration-tests run with python 3.9
-          - name: Set up Python
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-python@v5
-            with:
-              python-version: '3.9'
-
-          # # Install gen3-integration-tests dependencies
-          # # TODO: may be able to modify/slim down these steps
-          # - name: Install dependencies
-          #   if: ${{ env.SKIP_TESTS != 'true' }}
-          #   run: |
-          #     python -m pip install --upgrade pip
-          #     pip install poetry
-          #     poetry install
-
-          # TODO: may be able to modify/slim down these steps
-          - name: Setup AWS CLI
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-              sudo apt-get update
-              # sudo apt install openjdk-11-jre -y
-              sudo apt install awscli -y
-              # python -m pip install --upgrade pip
-              # pip install poetry
-
-          # Setup kubectl
-          - name: Set Up kubectl
-            uses: azure/setup-kubectl@v3
-            with:
-              version: latest
-
-          # Create PR namespace and PR hostname env var
-          - name: Create namespace and env vars
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              PR_NAMESPACE=pr-${PR_NUM}
-              PR_HOSTNAME=pr${PR_NUM}
-              echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
-              echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
-              echo "ARTIFACT_PATH=$REPO/$PR_NUM/$RUN_NUM" >> $GITHUB_ENV
-              kubectl create namespace $PR_NAMESPACE || true
-
-          # This is used for running specific test suites by labeling the PR with the test class
-          # Multiple suites can be executed by adding multiple labels
-          - name: Get test labels
-            id: get_test_labels
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
-              echo $test_label
-              echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
-
-          # Setup helm
-          - name: Set Up Helm
-            uses: azure/setup-helm@v4.3.0
-            with:
-              version: latest
-
-          # Will install the gen3 helm charts to specific PR namespace and set the tests to run
-          - name: Prepare CI environment
-            id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              # helm repo add gen3 https://helm.gen3.org
-              # helm repo update
-              # uncomment the above after testing ^^^^
-
-              # TO DO: add all of this to new modify values script, including new ES index dbRestore:
-              # disabling guppy until the above is completed.
-              # remove usersync run from helm test job as well.
-
-              git clone https://github.com/uc-cdis/gen3-helm.git
-              cd gen3-helm/helm/gen3
-              git checkout feat/ci-patch
-              helm dependency update
-              cd ..
-              pwd
-              helm upgrade --install gen3 gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.artifactCreds.secondaryFullPath="${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM" --set tests.artifactCreds.artifactPath="${{ env.ARTIFACT_PATH }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set tests.artifactCreds.artifactBucketName="${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}" --set tests.artifactCreds.awsAccessKeyId="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"  --set tests.artifactCreds.awsSecretAccessKey="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-                --namespace ${{ env.PR_NAMESPACE }}
-
-              # helm upgrade --install gen3 gen3/gen3 --set tests.TEST_LABEL="${{ env.TEST_LABEL }}" --set tests.SERVICE_TO_TEST="${{ inputs.SERVICE_TO_TEST }}" --set global.hostname="${{ env.PR_HOSTNAME }}.ci.planx-pla.net" -f /runner/_work/gen3-code-vigil/gen3-code-vigil/gen3-integration-tests/helm_values/values.yaml \
-              #   --namespace ${{ env.PR_NAMESPACE }}
-              # uncomment after testing
-              sleep 60
-
-              export timeout=900
-              export interval=20
-
-              end=$((SECONDS + timeout))
-              while [ $SECONDS -lt $end ]; do
-                # Get JSON for not-ready, non-terminating pods
-                not_ready_json=$(kubectl get pods -l app!=gen3job -n "${{ env.PR_NAMESPACE }}" -o json | \
-                  jq '[.items[]
-                    | select(
-                        (.metadata.deletionTimestamp == null) and
-                        ((.status.phase != "Running") or
-                        (.status.containerStatuses[]?.ready != true))
-                      )
-                  ]')
-
-                not_ready_count=$(echo "$not_ready_json" | jq 'length')
-
-                if [ "$not_ready_count" -eq 0 ]; then
-                  echo "✅ All pods containers are Ready"
-                  exit 0
-                fi
-
-                echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
-                sleep $interval
-              done
-
-              echo "❌ Timeout: Pods' containers not ready"
-              echo "$not_ready_json" | jq -r '.[] |
-                .metadata.name as $pod_name |
-                .status.containerStatuses[]?
-                | select(.ready != true)
-                | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
-
-              kubectl get pods -n "${{ env.PR_NAMESPACE }}"
-              exit 1
+            kubectl get pods -n "${{ env.PR_NAMESPACE }}"
+            exit 1
 
 
-          # Will trigger gen3-code-vigil test suite
-          - name: Run Helm Tests
-            id: run_tests
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            if: always()
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-            run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }} --timeout 15m
+        # Will trigger gen3-code-vigil test suite
+        - name: Run Helm Tests
+          id: run_tests
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+          run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }} --timeout 15m
 
-          - name: Debug logging
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
+        - name: Debug logging
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: |
+            echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
-          - name: Download summary from S3
-            id: download_allure_summary
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              echo "running aws sync"
-              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/ ./allure-report
-              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
+        - name: Download summary from S3
+          id: download_allure_summary
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: |
+            echo "running aws sync"
+            aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/ ./allure-report
+            aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
+            if [ $? -ne 0 ]; then
+              echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
+            fi
+          env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+            AWS_DEFAULT_REGION: 'us-east-1'
+
+        - name: Generate markdown report
+          id: generate_md_report
+          if: ${{ env.SKIP_TESTS != 'true' && steps.download_allure_summary.outcome == 'success' }}
+          continue-on-error: true
+          # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
+          run: |
+            if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+              echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
+            fi
+            if [ "${{ steps.download_allure_summary.outcome }}" == "success" ]; then
+              echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
+            fi
+            if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
+              if [ ! -d output ]; then
+                mkdir output
               fi
-
-            env:
-              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-              AWS_DEFAULT_REGION: 'us-east-1'
-
-          - name: Generate markdown report
-            id: generate_md_report
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-            if: always()
-            continue-on-error: true
-            # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
-            run: |
-              echo "running ls *"
-              ls *
-              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
-                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
+              if [ ! -f "output/report.md" ]; then
+                touch "output/report.md"
               fi
-              if [ "${{ steps.download_allure_summary.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
-                echo "allure report index.html should be posted in PR"
-              fi
-              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-                if [ ! -d output ]; then
-                  echo "mkdir output"
-                  mkdir output
-                fi
-                if [ ! -f "output/report.md" ]; then
-                  touch "output/report.md"
-                  echo "touch output/report.md"
-                fi
-                echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
-                echo "logs"
-              fi
+              echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+            fi
 
-          - name: Render report to the PR
-            id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        - name: Render report to the PR
+          id: publish_md_report
+          if: ${{ env.SKIP_TESTS != 'true' && steps.download_allure_summary.outcome == 'success' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          - name: Generate Slack report
-            id: generate_slack_report
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-            continue-on-error: true # if this fails, we still need to run clean-up steps
-            run: |
-              docker create --name gen3-slack-report quay.io/cdis/gen3-integration-tests:master \
-                bash -c "poetry run python -m gen3_ci.scripts.generate_slack_report"
-              docker cp ./allure-report gen3-slack-report:gen3-integration-tests/allure-report
-              docker start -a gen3-slack-report
-              docker cp gen3-slack-report:/gen3-integration-tests/slack_report.json ./slack_report.json
-              docker rm gen3-slack-report
+        - name: Generate Slack report
+          id: generate_slack_report
+          if: ${{ env.SKIP_TESTS != 'true' && steps.download_allure_summary.outcome == 'success' }}
+          continue-on-error: true # if this fails, we still need to run clean-up steps
+          run: |
+            docker create --name gen3-slack-report quay.io/cdis/gen3-integration-tests:master \
+              bash -c "poetry run python -m gen3_ci.scripts.generate_slack_report"
+            docker cp ./allure-report gen3-slack-report:gen3-integration-tests/allure-report
+            docker start -a gen3-slack-report
+            docker cp gen3-slack-report:/gen3-integration-tests/slack_report.json ./slack_report.json
+            docker rm gen3-slack-report
 
-          - name: Publish report to Slack
-            id: slack_notify
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-            # continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v2.0.0
-            with:
-              method: chat.postMessage
-              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./gen3-integration-tests/slack_report.json"
-              payload-templated: true
+        - name: Publish report to Slack
+          id: slack_notify
+          # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+          # continue-on-error: true  # if this fails, we still need to run clean-up steps
+          uses: slackapi/slack-github-action@v2.0.0
+          with:
+            method: chat.postMessage
+            token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+            payload-file-path: "./gen3-integration-tests/slack_report.json"
+            payload-templated: true
 
-          - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
-            run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
+        - name: Mark workflow as failed for unsuccessful test runs
+          if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
+          run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
-          - name: Cleanup
-            if: always()
-            run: |
-              # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-              kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
-              # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
-              # sleep 20
-              # kubectl delete ns ${{ env.PR_NAMESPACE }}
+        - name: Cleanup
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
+            kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
+            # sleep 20
+            # kubectl delete ns ${{ env.PR_NAMESPACE }}
