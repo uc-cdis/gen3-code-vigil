@@ -5,6 +5,10 @@ from services.manifestservice import ManifestService
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "manifestservice" not in pytest.deployed_services,
+    reason="manifestservice service is not running on this environment",
+)
 @pytest.mark.manifestservice
 class TestManifestService:
     def test_manifest_service(self):

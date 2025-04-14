@@ -7,6 +7,10 @@ from utils import logger
 from utils.test_execution import screenshot
 
 
+@pytest.mark.skipif(
+    "argo-wrapper" not in pytest.deployed_services,
+    reason="argo-wrapper service is not running on this environment",
+)
 @pytest.mark.argo_wrapper
 @pytest.mark.wip
 class TestArgoWrapper(object):
