@@ -237,28 +237,6 @@ jobs:
               export timeout=900
               export interval=20
 
-              # end=$((SECONDS + timeout))
-              # while [ $SECONDS -lt $end ]; do
-              #   not_ready=$(kubectl get pods -l app!=gen3job -n ${{ env.PR_NAMESPACE }} -o json | \
-              #     jq '[.items[]
-              #       | select((.metadata.deletionTimestamp == null)
-              #         and ((.status.phase != "Running")
-              #           or (.status.containerStatuses[]?.ready != true))
-              #       )] | length')
-
-              #   if [ "$not_ready" -eq 0 ]; then
-              #     echo "✅ All pods containers are Ready"
-              #     exit 0
-              #   fi
-
-              #   echo "⏳ Waiting... ($not_ready pods have containers not ready)"
-              #   sleep $interval
-              # done
-
-              # echo "❌ Timeout: Pods' containers not ready"
-              # kubectl get pods -n ${{ env.PR_NAMESPACE }}
-              # exit 1
-
               end=$((SECONDS + timeout))
               while [ $SECONDS -lt $end ]; do
                 # Get JSON for not-ready, non-terminating pods
@@ -309,8 +287,7 @@ jobs:
 
           - name: Download summary from S3
             id: download_allure_summary
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               # mkdir allure-report
@@ -320,20 +297,13 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
               fi
+              echo "running ls *"
+              ls *
+              ls allure-report/widgets/
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
               AWS_DEFAULT_REGION: 'us-east-1'
-
-          # - name: Archive pod logs from CI environment
-          #   id: archive_pod_logs
-          #   # if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
-          #   if: always()
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     kubectl get pods -o json | jq -r '.items | map(select(.status.phase != "Pending" and .status.phase != "Unknown")) | .[] | .metadata.name as $pod | (.spec.containers + .spec.initContainers) | map(select(.name != "pause" and .name != "jupyterhub")) | .[] | {pod: $pod, cont: .name} | "\(.pod)  \(.cont)"'
-          #     echo "running save_ci_env_pods_logs.sh"
-          #     bash gen3_ci/scripts/helm_setup/save_ci_env_pod_logs.sh
 
           - name: Generate markdown report
             id: generate_md_report
@@ -366,8 +336,7 @@ jobs:
 
           - name: Render report to the PR
             id: publish_md_report
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-            if: always()
+            if: ${{ env.SKIP_TESTS != 'true' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
@@ -401,11 +370,11 @@ jobs:
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
 
-          - name: Cleanup
-            if: always()
-            run: |
-              # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-              kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
-              # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
-              # sleep 20
-              # kubectl delete ns ${{ env.PR_NAMESPACE }}
+          # - name: Cleanup
+          #   if: always()
+          #   run: |
+          #     # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
+          #     kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
+          #     # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
+          #     # sleep 20
+          #     # kubectl delete ns ${{ env.PR_NAMESPACE }}
