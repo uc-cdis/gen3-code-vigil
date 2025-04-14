@@ -70,6 +70,7 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
           # # Enable step debugging. Uncomment this to debug pipeline issues
@@ -290,16 +291,13 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              # mkdir allure-report
-              # mkdir output
+              echo "running aws sync"
               aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/ ./allure-report
               aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
               fi
-              echo "running ls *"
-              ls *
-              ls allure-report/widgets/
+
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
