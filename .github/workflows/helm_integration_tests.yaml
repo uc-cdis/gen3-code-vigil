@@ -356,24 +356,24 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v1.25.0
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            # continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v2.0.0
             with:
-              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./gen3-integration-tests/slack_report.json"
-            env:
-              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
-          # - name: Cleanup
-          #   if: always()
-          #   run: |
-          #     # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-          #     kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
-          #     # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
-          #     # sleep 20
-          #     # kubectl delete ns ${{ env.PR_NAMESPACE }}
+          - name: Cleanup
+            if: always()
+            run: |
+              # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
+              kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
+              # kubectl delete jobs --all --namespace ${{ env.PR_NAMESPACE }}
+              # sleep 20
+              # kubectl delete ns ${{ env.PR_NAMESPACE }}
