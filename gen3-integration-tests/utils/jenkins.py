@@ -99,7 +99,9 @@ class JenkinsJob(object):
         else:
             raise Exception(f"Failed to get jenkins job output: {response.status_code}")
 
-    def wait_for_build_completion(self, build_number, max_duration=1200):
+    def wait_for_build_completion(
+        self, build_number, max_duration=1200, sleep_duration=60
+    ):
         """
         Wait for a run to complete.
         Default maximum wait time is 20 minutes, and can be configured.
@@ -108,6 +110,7 @@ class JenkinsJob(object):
         start = time.time()
         status = None
 
+        logger.info(f"Waiting for job completion for up to {max_duration}s")
         while True:
             elapsed = time.time() - start
             if not self.is_build_running(build_number):
@@ -121,9 +124,9 @@ class JenkinsJob(object):
             else:
                 # TODO log the link to the blue ocean console instead
                 logger.info(
-                    f"Waiting for completion of job {self.job_url}/{build_number} ..."
+                    f"({int(elapsed)}s) Waiting for completion of job {self.job_url}/{build_number} ..."
                 )
-                time.sleep(60)
+                time.sleep(sleep_duration)
         return status
 
     @retry(times=2, delay=10, exceptions=(AssertionError,))
