@@ -292,7 +292,7 @@ jobs:
             run: |
               # mkdir allure-report
               # mkdir output
-              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/allure-report ./allure-report
+              aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/ ./allure-report
               aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
@@ -368,7 +368,6 @@ jobs:
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
-
 
           # - name: Cleanup
           #   if: always()
