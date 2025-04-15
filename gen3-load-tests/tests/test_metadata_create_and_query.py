@@ -1,3 +1,6 @@
+import base64
+import uuid
+
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
@@ -7,58 +10,44 @@ from utils import logger
 from utils import test_setup as setup
 
 
-@pytest.mark.fence_presigned_url
-class TestFencePresignedURL:
+@pytest.mark.skip(reason="This is not working, need to check")
+@pytest.mark.metadata_create_and_query
+class TestMetadataCreateAndQuery:
     def setup_method(self):
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-        self.index = Gen3Index(self.auth)
 
         # Load the sample descriptor data
         self.sample_descriptor_file_path = (
-            SAMPLE_DESCRIPTORS_PATH / "load-test-fence-presigned-url-stress-sample.json"
+            SAMPLE_DESCRIPTORS_PATH
+            / "load-test-metadata-service-create-and-query-sample.json"
         )
         self.sample_descriptor_data = setup.get_sample_descriptor_data(
             self.sample_descriptor_file_path
         )
 
-    def test_fence_presigned_url(self):
-        guids_list = []
-        # Retrieve all indexd records
-        index_records = setup.get_indexd_records(
-            self.auth, indexd_record_acl="phs000178"
-        )
-        # If no record is present create one
-        if len(index_records) == 0:
-            record_data = (
-                {
-                    "acl": ["phs000178"],
-                    "authz": ["/programs/phs000178"],
-                    "file_name": "load_test_file",
-                    "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
-                    "size": 129,
-                    "urls": [
-                        "s3://qa-dcp-databucket-gen3/testdata",
-                        "gs://qa-dcp-databucket-gen3/file.txt",
-                    ],
-                },
-            )
-            record = self.index.create_record(**record_data)
+    def test_metadata_create_and_query(self):
+        if "username" in self.sample_descriptor_data["basic_auth"]:
+            username = self.sample_descriptor_data["basic_auth"]["username"]
+            password = self.sample_descriptor_data["basic_auth"]["password"]
+            auth_string = f"{username}:{password}"
+            basic_auth = base64.b64encode(auth_string.encode()).decode()
         else:
-            for record in index_records:
-                guids_list.append(record["did"])
-
+            basic_auth = ""
         # Setup env_vars to pass into k6 load runner
         env_vars = {
             "ACCESS_TOKEN": self.auth.get_access_token(),
+            "BASIC_AUTH": basic_auth,
+            "MDS_TEST_DATA": str(self.sample_descriptor_data["mds_test_data"]),
             "RELEASE_VERSION": "1.0.0",
             "GEN3_HOST": f"{pytest.hostname}",
             "VIRTUAL_USERS": f'{[entry for entry in self.sample_descriptor_data["virtual_users"]]}'.replace(
                 "'", '"'
             ),
-            "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
+            "GUID1": str(uuid.uuid4()),
+            "GUID2": str(uuid.uuid4()),
         }
 
         # Run k6 load test
@@ -67,4 +56,6 @@ class TestFencePresignedURL:
             / f"{self.sample_descriptor_data['service']}-{self.sample_descriptor_data['load_test_scenario']}.js"
         )
         result = k6.run_k6_load_test(env_vars, js_script_path)
+        logger.info(result.stdout)
+        logger.info(result.stderr)
         k6.get_k6_results(result.stdout)

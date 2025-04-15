@@ -1,32 +1,34 @@
 import pytest
 from gen3.auth import Gen3Auth
+from gen3.index import Gen3Index
 from utils import K6_LOAD_TESTING_SCRIPTS_PATH, SAMPLE_DESCRIPTORS_PATH
 from utils import k6_load_test as k6
 from utils import logger
 from utils import test_setup as setup
 
 
-@pytest.mark.sheepdog_import_clinical_metadata
-class TestSheepdogImportClinicalMetadata:
+@pytest.mark.indexd_create_indexd_records
+class TestIndexdCreateIndexdRecords:
     def setup_method(self):
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
-            refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
+            refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
         )
 
         # Load the sample descriptor data
         self.sample_descriptor_file_path = (
-            SAMPLE_DESCRIPTORS_PATH / "load-test-sheepdog-import-clinical-metadata.json"
+            SAMPLE_DESCRIPTORS_PATH / "load-test-indexd-create-indexd-records.json"
         )
         self.sample_descriptor_data = setup.get_sample_descriptor_data(
             self.sample_descriptor_file_path
         )
 
-    def test_sheepdog_import_clinical_metadata(self):
+    def test_create_indexd_records(self):
         env_vars = {
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "RELEASE_VERSION": "1.0.0",
             "GEN3_HOST": f"{pytest.hostname}",
+            "API_KEY": pytest.api_keys["indexing_account"]["api_key"],
             "VIRTUAL_USERS": f'{[entry for entry in self.sample_descriptor_data["virtual_users"]]}'.replace(
                 "'", '"'
             ),

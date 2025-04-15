@@ -7,24 +7,24 @@ from utils import logger
 from utils import test_setup as setup
 
 
-@pytest.mark.fence_presigned_url
-class TestFencePresignedURL:
+@pytest.mark.indexd_drs_endpoint
+class TestIndexdDrsEndpoint:
     def setup_method(self):
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-        self.index = Gen3Index(self.auth)
 
         # Load the sample descriptor data
         self.sample_descriptor_file_path = (
-            SAMPLE_DESCRIPTORS_PATH / "load-test-fence-presigned-url-stress-sample.json"
+            SAMPLE_DESCRIPTORS_PATH
+            / "load-test-indexd-drs-endpoint-bottleneck-sample.json"
         )
         self.sample_descriptor_data = setup.get_sample_descriptor_data(
             self.sample_descriptor_file_path
         )
 
-    def test_fence_presigned_url(self):
+    def test_create_indexd_records(self):
         guids_list = []
         # Retrieve all indexd records
         index_records = setup.get_indexd_records(
@@ -50,15 +50,15 @@ class TestFencePresignedURL:
             for record in index_records:
                 guids_list.append(record["did"])
 
-        # Setup env_vars to pass into k6 load runner
         env_vars = {
-            "ACCESS_TOKEN": self.auth.get_access_token(),
+            "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
             "RELEASE_VERSION": "1.0.0",
             "GEN3_HOST": f"{pytest.hostname}",
+            "ACCESS_TOKEN": self.auth.get_access_token(),
             "VIRTUAL_USERS": f'{[entry for entry in self.sample_descriptor_data["virtual_users"]]}'.replace(
                 "'", '"'
             ),
-            "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
+            "SIGNED_URL_PROTOCOL": "s3",
         }
 
         # Run k6 load test

@@ -44,6 +44,12 @@ addopts = "--log-cli-level=ERROR"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
+  # load testing
+  "fence_presigned_url: run load test for fence presigned_url",
+  "indexd_create_indexd_records: run load test for indexd create_indexd_records",
+  "indexd_drs_endpoint: run load test for indexd drs_endpoint",
+  "metadata_create_and_query: run load test for metadata - create_and_query",
+  "sheepdog_import_clinical_metadata: run load test for sheepdog - import_clinical_metadata",
 ]
 pythonpath = "."
 md_report = "true"
