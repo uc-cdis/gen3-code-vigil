@@ -25,8 +25,8 @@ class DicomPage(object):
         expect(study_id_href).to_be_visible(timeout=30000)
         href_url = study_id_href.get_attribute("href")
         page.goto(href_url)
-        logger.info(page.url)
+        logger.info(f"Current URL: {page.url}")
         assert study_id in page.url, f"Expected {study_id} in {page.url}"
         cornerstone_canvas = page.locator(self.CORNERSTONE_CANVAS)
-        expect(cornerstone_canvas).to_be_visible(timeout=30000)
         screenshot(page, "OHIFViewerPage")
+        expect(cornerstone_canvas).to_be_visible(timeout=30000)
