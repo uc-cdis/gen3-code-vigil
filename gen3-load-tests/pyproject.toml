@@ -1,0 +1,53 @@
+[tool.poetry]
+name = "gen3-load-tests"
+version = "0.1.0"
+description = "Gen3 Load Tests"
+authors = ["CTDS UChicago <cdis@uchicago.edu>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/uc-cdis/gen3-code-vigil"
+package-mode = false
+include = [
+  "NOTICE",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+cdislogging = "<2"
+data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
+filelock = "<4"
+gen3 = "<5"
+pytest = "^7.4.0"
+pytest-datadir = "^1.4.1"
+pytest-env = "^1.0.0"
+pytest-html = "^3.2.0"
+pytest-md-report = "^0.5.0"
+pytest-playwright = "^0.4.3"
+pytest-xdist = "^3.3.1"
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+pypfb = "^0.5.29"
+fastavro = "^1.8.2"
+psutil = "^5.9.8"
+nest-asyncio = "^1.6.0"
+allure-pytest = "^2.13.5"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--log-cli-level=ERROR"
+markers = [
+  # general
+  "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
+]
+pythonpath = "."
+md_report = "true"
+md_report_verbose = 0
+md_report_output = "output/report.md"
+md_report_flavor = "gfm"
+md_report_skip_color = "#FFA500"
