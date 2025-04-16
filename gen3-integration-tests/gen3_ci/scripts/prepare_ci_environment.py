@@ -5,9 +5,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import pytest
 import requests
 from dotenv import load_dotenv
-from utils import HELM_SCRIPTS_PATH_OBJECT, logger, test_setup
+from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
@@ -54,7 +55,7 @@ def wait_for_quay_build(repo, tag):
 
 
 def setup_env_for_helm(arguments):
-    file_path = HELM_SCRIPTS_PATH_OBJECT / "helm_env_setup.sh"
+    file_path = HELM_SCRIPTS_PATH_OBJECT / "env_setup.sh"
     result = subprocess.run([file_path] + arguments, capture_output=True, text=True)
     if result.returncode == 0:
         logger.info("Script executed successfully. Output:")
@@ -101,7 +102,8 @@ def modify_env_for_service_pr(namespace, service, tag):
             return "failure"
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        arguments = [namespace, "service-env-setup", service, tag]
+        helm_branch = os.getenv("HELM_BRANCH")
+        arguments = [namespace, "service-env-setup", helm_branch, service, tag]
         setup_env_for_helm(arguments)
 
 
@@ -144,7 +146,14 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
             return "failure"
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        arguments = [namespace, "manifest-env-setup", namespace, updated_folder]
+        helm_branch = os.getenv("HELM_BRANCH")
+        arguments = [
+            namespace,
+            "manifest-env-setup",
+            helm_branch,
+            namespace,
+            updated_folder,
+        ]
         setup_env_for_helm(arguments)
 
 
@@ -188,7 +197,8 @@ def modify_env_for_test_repo_pr(namespace):
             return "failure"
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        arguments = [namespace, "test-env-setup"]
+        helm_branch = os.getenv("HELM_BRANCH")
+        arguments = [namespace, "test-env-setup", helm_branch]
         setup_env_for_helm(arguments)
 
 
@@ -234,15 +244,19 @@ def generate_api_keys_for_test_users(namespace):
         return "SUCCESS"
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        # Wait for the job pod to start
         cmd = [
-            "kubectl",
-            "get",
-            "pods",
-            f"--selector=job-name={job_name}",
-            "-o",
-            "jsonpath='{.items[0].status.phase}'",
+            "bash",
+            (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
+            (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
+            pytest.hostname,
         ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("'", "")
+        else:
+            raise Exception(f"Got error: {result.stderr}")
 
 
 def prepare_ci_environment(namespace):
