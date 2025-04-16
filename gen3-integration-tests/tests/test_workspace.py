@@ -9,6 +9,10 @@ from utils import logger
 
 
 @pytest.mark.skipif(
+    "ambassador" not in pytest.deployed_services,
+    reason="ambassador service is not running on this environment",
+)
+@pytest.mark.skipif(
     "wts" not in pytest.deployed_services,
     reason="wts service is not running on this environment",
 )
