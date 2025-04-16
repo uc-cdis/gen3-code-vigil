@@ -49,7 +49,7 @@ class SubmissionPage(object):
         self.SUBMISSION_PAGE_FIELDS = (
             "//div[@class='h4-typo']/following::div[@class='input-with-icon']"
         )
-        self.SUBMIT_BUTTON = "//button[@type='button']"
+        self.SUBMIT_BUTTON = "//button[contains(text(),'Submit')]"
 
     def go_to_submission_page(self, page: Page):
         """Goes to the submission page"""
