@@ -32,7 +32,6 @@ class SubmissionPage(object):
         self.PROJECT_SELECT_INPUT = "//input[@id='react-select-2-input']"
         self.FILE_NODE_SELECT_INPUT = "//input[@id='react-select-3-input']"
         self.REQUIRED_FIELDS = "//div[@class='map-data-model__detail-section']"
-        self.MAPPING_SUBMIT_BUTTON = "//button[contains(text(),'Submit')]"
         self.FILE_READY = "//p[text()='1 files mapped successfully!']"
         self.SUBMISSION_HEADER_CLASS = "//div[@class='submission-header']"
         self.UNMAPPED_FILE_ROW_CLASS = ".map-files__table-row"
@@ -50,7 +49,7 @@ class SubmissionPage(object):
         self.SUBMISSION_PAGE_FIELDS = (
             "//div[@class='h4-typo']/following::div[@class='input-with-icon']"
         )
-        self.SUBMISSION_PAGE_SUBMIT_BUTTON = "//button[@type='button']"
+        self.SUBMIT_BUTTON = "//button[@type='button']"
 
     def go_to_submission_page(self, page: Page):
         """Goes to the submission page"""
@@ -98,8 +97,8 @@ class SubmissionPage(object):
                 page.keyboard.press("Enter")
             except Exception as e:
                 logger.info(f"Error encountered while filling the form : {e}")
-        page.wait_for_selector(self.MAPPING_SUBMIT_BUTTON)
-        page.click(self.MAPPING_SUBMIT_BUTTON)
+        page.wait_for_selector(self.SUBMIT_BUTTON)
+        page.click(self.SUBMIT_BUTTON)
 
     @retry(times=3, delay=10, exceptions=(AssertionError))
     def check_unmapped_files_submission_page(self, page: Page, text):
@@ -150,4 +149,4 @@ class SubmissionPage(object):
         screenshot(page, "BeforeSubmitMappingFile")
 
         # Click on Submit field
-        page.locator(self.MAPPING_SUBMIT_BUTTON).click()
+        page.locator(self.SUBMIT_BUTTON).click()
