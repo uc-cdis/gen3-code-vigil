@@ -150,4 +150,4 @@ class SubmissionPage(object):
         screenshot(page, "BeforeSubmitMappingFile")
 
         # Click on Submit field
-        page.locator(self.SUBMISSION_PAGE_SUBMIT_BUTTON).click()
+        page.locator(self.MAPPING_SUBMIT_BUTTON).click()
