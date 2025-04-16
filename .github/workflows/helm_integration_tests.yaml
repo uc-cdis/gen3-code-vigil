@@ -159,6 +159,14 @@ jobs:
         #     poetry show
         #     poetry run playwright install chromium
 
+        # Setup aws cli
+        - name: Setup AWS CLI
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            sudo apt-get update
+            sudo apt install awscli -y
+
         # Configure credentials to access cluster.
         - name: Configure AWS credentials
           if: ${{ env.SKIP_TESTS != 'true' }}
