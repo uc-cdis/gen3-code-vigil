@@ -193,41 +193,56 @@ def modify_env_for_test_repo_pr(namespace):
 
 
 def generate_api_keys_for_test_users(namespace):
-    # Accounts used for testing
-    test_users = test_setup.get_users()
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-generate-api-keys",
-    )
-    params = {
-        "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            res = job.get_build_result(build_num)
-            if res.lower() == "success":
-                for user in test_users:
-                    api_key = json.loads(
-                        job.get_artifact_content(build_num, f"{namespace}_{user}.json")
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        # Accounts used for testing
+        test_users = test_setup.get_users()
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-generate-api-keys",
+        )
+        params = {
+            "NAMESPACE": namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                res = job.get_build_result(build_num)
+                if res.lower() == "success":
+                    for user in test_users:
+                        api_key = json.loads(
+                            job.get_artifact_content(
+                                build_num, f"{namespace}_{user}.json"
+                            )
+                        )
+                        with open(
+                            Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
+                        ) as key_file:
+                            json.dump(api_key, key_file)
+                else:
+                    raise Exception(
+                        "Generation of API keys failed, please check job logs for details"
                     )
-                    with open(
-                        Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
-                    ) as key_file:
-                        json.dump(api_key, key_file)
             else:
-                raise Exception(
-                    "Generation of API keys failed, please check job logs for details"
-                )
+                raise Exception("Build timed out. Consider increasing max_duration")
         else:
-            raise Exception("Build timed out. Consider increasing max_duration")
-    else:
-        raise Exception("Build number not found")
-    return "SUCCESS"
+            raise Exception("Build number not found")
+        return "SUCCESS"
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        # Wait for the job pod to start
+        cmd = [
+            "kubectl",
+            "get",
+            "pods",
+            f"--selector=job-name={job_name}",
+            "-o",
+            "jsonpath='{.items[0].status.phase}'",
+        ]
 
 
 def prepare_ci_environment(namespace):
