@@ -60,9 +60,11 @@ def setup_env_for_helm(arguments):
     if result.returncode == 0:
         logger.info("Script executed successfully. Output:")
         logger.info(result.stdout)
+        return "SUCCESS"
     else:
         logger.info("Script execution failed. Error:")
         logger.info(result.stderr)
+        return "failure"
 
 
 def modify_env_for_service_pr(namespace, service, tag):
@@ -104,7 +106,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
         arguments = [namespace, "service-env-setup", helm_branch, service, tag]
-        setup_env_for_helm(arguments)
+        return setup_env_for_helm(arguments)
 
 
 def modify_env_for_manifest_pr(namespace, updated_folder, repo):
@@ -154,7 +156,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
             namespace,
             updated_folder,
         ]
-        setup_env_for_helm(arguments)
+        return setup_env_for_helm(arguments)
 
 
 def modify_env_for_test_repo_pr(namespace):
@@ -199,7 +201,7 @@ def modify_env_for_test_repo_pr(namespace):
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
         arguments = [namespace, "test-env-setup", helm_branch]
-        setup_env_for_helm(arguments)
+        return setup_env_for_helm(arguments)
 
 
 def generate_api_keys_for_test_users(namespace):
