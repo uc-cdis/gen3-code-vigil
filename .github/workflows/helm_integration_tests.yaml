@@ -41,6 +41,8 @@ on:
         required: true
       CI_SLACK_CHANNEL_ID:
         required: true
+      EKS_CLUSTER_NAME:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -48,7 +50,7 @@ concurrency:
 
 jobs:
   integration_tests:
-      runs-on: self-hosted
+      runs-on: ubuntu-latest
 
       defaults:
         run:
@@ -70,6 +72,7 @@ jobs:
         CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
         CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
         SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+        EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
 
       steps:
         # Ensure the PR is run under the same org as an Internal PR
@@ -118,30 +121,6 @@ jobs:
             repository: uc-cdis/gen3-code-vigil
             ref: ${{ inputs.TEST_REPO_BRANCH }}
 
-        # Setup gh cli on self hosted runner
-        - name: Install GitHub CLI
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          run: |
-            GH_VERSION="2.69.0"
-            ARCH="linux_amd64"
-            GH_FILENAME="gh_${GH_VERSION}_${ARCH}.tar.gz"
-            GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_FILENAME}"
-
-            # Create temp directory
-            mkdir -p /tmp/gh-cli && cd /tmp/gh-cli
-
-            # Download and extract
-            curl -sSL "$GH_URL" -o "$GH_FILENAME"
-            tar -xzf "$GH_FILENAME"
-
-            # Move binary to /usr/local/bin
-            sudo cp "gh_${GH_VERSION}_${ARCH}/bin/gh" /usr/local/bin/
-
-            # Optional: clean up
-            cd ~
-            rm -rf /tmp/gh-cli
-            gh --version
-
         # gen3-integration-tests run with python 3.9
         - name: Set up Python
           if: ${{ env.SKIP_TESTS != 'true' }}
@@ -149,13 +128,18 @@ jobs:
           with:
             python-version: '3.9'
 
-        # Setup aws cli
-        - name: Setup AWS CLI
+        - name: Set up Go
           if: ${{ env.SKIP_TESTS != 'true' }}
-          run: |
-            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-            sudo apt-get update
-            sudo apt install awscli -y
+          uses: actions/setup-go@v5
+          with:
+            go-version: '1.17'
+
+        # allure report generation needs node
+        - name: Set up node
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          uses: actions/setup-node@v4
+          with:
+            node-version: 20
 
         # Setup kubectl
         - name: Set Up kubectl
@@ -163,6 +147,33 @@ jobs:
           with:
             version: latest
 
+        # Install gen3-integration-tests dependencies
+        # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+        - name: Install dependencies
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            sudo apt-get install -y --reinstall wamerican
+            python -m pip install --upgrade pip
+            pip install poetry
+            poetry install
+            poetry show
+            poetry run playwright install chromium
+
+        # Configure credentials to access cluster.
+        - name: Configure AWS credentials
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          uses: aws-actions/configure-aws-credentials@v1
+          with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: "us-east-1"
+
+        # Create kubeconfig to point at cluster.
+        - name: Update kube config
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
+
+        # NOTE: Add in repo name
         # Create PR namespace and PR hostname env var
         - name: Create namespace and env vars
           if: ${{ env.SKIP_TESTS != 'true' }}
@@ -174,6 +185,13 @@ jobs:
             echo "ARTIFACT_PATH=$REPO/$PR_NUM/$RUN_NUM" >> $GITHUB_ENV
             kubectl create namespace $PR_NAMESPACE || true
 
+        # Setup helm
+        - name: Set Up Helm
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          uses: azure/setup-helm@v4.3.0
+          with:
+            version: latest
+
         # This is used for running specific test suites by labeling the PR with the test class
         # Multiple suites can be executed by adding multiple labels
         - name: Get test labels
@@ -184,13 +202,6 @@ jobs:
             test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
             echo $test_label
             echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
-
-        # Setup helm
-        - name: Set Up Helm
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          uses: azure/setup-helm@v4.3.0
-          with:
-            version: latest
 
         # Will install the gen3 helm charts to specific PR namespace and set the tests to run
         - name: Prepare CI environment
@@ -209,6 +220,7 @@ jobs:
             git clone https://github.com/uc-cdis/gen3-helm.git
             cd gen3-helm/helm/gen3
             git checkout feat/ci-patch
+            # https://github.com/uc-cdis/cloud-automation/blob/master/.github/workflows/integration_tests.yaml#L15
             helm dependency update
             cd ..
             pwd
@@ -256,13 +268,27 @@ jobs:
             kubectl get pods -n "${{ env.PR_NAMESPACE }}"
             exit 1
 
-
-        # Will trigger gen3-code-vigil test suite
-        - name: Run Helm Tests
-          id: run_tests
+        - name: Run tests pertaining to specific service
+          id: run_service_tests
+          if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
           continue-on-error: true  # if this fails, we still need to run clean-up steps
-          if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-          run: helm test gen3 --namespace ${{ env.PR_NAMESPACE }} --timeout 15m
+          run: |
+            mkdir output
+            GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+            if [ $? -ne 0 ]; then
+              echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+            fi
+
+        - name: Run tests
+          id: run_tests
+          if: ${{ env.SKIP_TESTS != 'true' && !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: |
+            mkdir output
+            GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+            if [ $? -ne 0 ]; then
+              echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+            fi
 
         - name: Debug logging
           if: ${{ env.SKIP_TESTS != 'true' }}
@@ -270,16 +296,25 @@ jobs:
           run: |
             echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
-        - name: Download summary from S3
-          id: download_allure_summary
-          if: ${{ env.SKIP_TESTS != 'true' }}
+        - name: Generate allure report
+          id: generate_allure_report
+          if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
           continue-on-error: true  # if this fails, we still need to run clean-up steps
           run: |
-            echo "running aws sync"
-            aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/ ./allure-report
-            aws s3 sync s3://${{ secrets.QA_HELM_ARTIFACT_S3_PATH }}/$ARTIFACT_PATH/output ./output
+            npm install -g allure-commandline --save-dev
+            allure generate allure-results -o allure-report --clean
             if [ $? -ne 0 ]; then
-              echo "PR_ERROR_MSG=Failed to download allure summary from s3 bucket" >> $GITHUB_ENV
+              echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+            fi
+
+        - name: Upload allure report to S3
+          id: upload_allure_report
+          if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+          continue-on-error: true  # if this fails, we still need to run clean-up steps
+          run: |
+            aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+            if [ $? -ne 0 ]; then
+              echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
             fi
           env:
             AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
@@ -318,15 +353,9 @@ jobs:
 
         - name: Generate Slack report
           id: generate_slack_report
-          if: ${{ env.SKIP_TESTS != 'true' && steps.download_allure_summary.outcome == 'success' }}
+          if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
           continue-on-error: true # if this fails, we still need to run clean-up steps
-          run: |
-            docker create --name gen3-slack-report quay.io/cdis/gen3-integration-tests:master \
-              bash -c "poetry run python -m gen3_ci.scripts.generate_slack_report"
-            docker cp ./allure-report gen3-slack-report:gen3-integration-tests/allure-report
-            docker start -a gen3-slack-report
-            docker cp gen3-slack-report:/gen3-integration-tests/slack_report.json ./slack_report.json
-            docker rm gen3-slack-report
+          run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
         - name: Publish report to Slack
           id: slack_notify
