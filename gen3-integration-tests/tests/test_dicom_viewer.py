@@ -44,6 +44,8 @@ class TestDicomViewer(object):
         study_res = cls.dicom.get_studies(study_instance=study_instance)
         cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
 
+    # TODO: Enable this test once orthanc changes are deployed on midrc prod
+    @pytest.mark.skip(reason="Temporarily Disbaled")
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file
