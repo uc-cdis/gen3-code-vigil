@@ -128,11 +128,11 @@ install_helm_chart() {
   #For custom helm branch
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
-    helm upgrade --install gen3 gen3-helm/helm/gen3 -f helm_values/values.yaml
+    helm upgrade --install gen3 gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}.ci.planx-pla.net" -f helm_values/values.yaml -n "${NAMESPACE}"
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    helm upgrade --install gen3 gen3/gen3 -f helm_values/values.yaml
+    helm upgrade --install gen3 gen3/gen3 --set global.hostname="${HOSTNAME}.ci.planx-pla.net" -f values.yaml -n "${NAMESPACE}"
   fi
   return 0
 }
@@ -144,7 +144,7 @@ wait_for_pods_ready() {
   end=$((SECONDS + timeout))
   while [ $SECONDS -lt $end ]; do
     # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${PR_NAMESPACE}" -o json | \
+    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${NAMESPACE}" -o json | \
       jq '[.items[]
         | select(
             (.metadata.deletionTimestamp == null) and
@@ -171,7 +171,7 @@ wait_for_pods_ready() {
     | select(.ready != true)
     | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
 
-  kubectl get pods -n "${PR_NAMESPACE}"
+  kubectl get pods -n "${NAMESPACE}"
   return 1
 }
 

@@ -158,9 +158,10 @@ jobs:
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
             #try without apt get update
-            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-            sudo apt-get update
-            sudo apt-get install -y wamerican
+            # sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            # sudo apt-get update
+            # sudo apt-get install -y wamerican
+            wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
             python -m pip install --upgrade pip
             pip install poetry
             poetry install
@@ -219,12 +220,11 @@ jobs:
         - name: Create namespace and env vars
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
-            PR_NAMESPACE=pr-${PR_NUM}
-            PR_HOSTNAME=pr${PR_NUM}
-            echo "PR_NAMESPACE=$PR_NAMESPACE" >> $GITHUB_ENV
-            echo "PR_HOSTNAME=$PR_HOSTNAME" >> $GITHUB_ENV
-            echo "ARTIFACT_PATH=$REPO/$PR_NUM/$RUN_NUM" >> $GITHUB_ENV
-            kubectl create namespace $PR_NAMESPACE || true
+            NAMESPACE=pr-${PR_NUM}
+            HOSTNAME=pr${PR_NUM}
+            echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+            echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+            kubectl create namespace $NAMESPACE || true
 
         # Setup helm
         - name: Set Up Helm
@@ -379,7 +379,7 @@ jobs:
         - name: Cleanup
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
-            # helm delete gen3 --namespace ${{ env.PR_NAMESPACE }}
-            kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.PR_NAMESPACE }}
+            # helm delete gen3 --namespace ${{ env.NAMESPACE }}
+            kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.NAMESPACE }}
             # sleep 20
-            # kubectl delete ns ${{ env.PR_NAMESPACE }}
+            # kubectl delete ns ${{ env.NAMESPACE }}
