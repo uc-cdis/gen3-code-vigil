@@ -77,6 +77,7 @@ jobs:
         CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
         SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
         EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
+        GEN3_INSTANCE_TYPE: "HELM_LOCAL"
 
       steps:
         # Ensure the PR is run under the same org as an Internal PR
@@ -157,9 +158,9 @@ jobs:
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
             #try without apt get update
-            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-            sudo apt-get update
-            sudo apt-get install -y --reinstall wamerican
+            #sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            #sudo apt-get update
+            sudo apt-get install -y wamerican
             python -m pip install --upgrade pip
             pip install poetry
             poetry install
@@ -277,7 +278,7 @@ jobs:
           continue-on-error: true  # if this fails, we still need to run clean-up steps
           run: |
             mkdir output
-            GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+            GEN3_INSTANCE_TYPE="HELM_LOCAL" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
             if [ $? -ne 0 ]; then
               echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
             fi
@@ -288,7 +289,7 @@ jobs:
           continue-on-error: true  # if this fails, we still need to run clean-up steps
           run: |
             mkdir output
-            GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+            GEN3_INSTANCE_TYPE="HELM_LOCAL" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
             if [ $? -ne 0 ]; then
               echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
             fi
