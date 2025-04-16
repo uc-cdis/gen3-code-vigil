@@ -124,51 +124,64 @@ elif [ "$setup_type" == "service-env-setup" ]; then
 #     fi
 # fi
 
-# For custom helm branch
-if [ "$helm_branch" != "master" ]; then
-    git clone https://github.com/uc-cdis/gen3-helm.git@${helm_branch}
-    helm upgrade --install gen3 gen3-helm/helm/gen3 -f values.yaml
-else
+install_helm_chart() {
+  #For custom helm branch
+  if [ "$helm_branch" != "master" ]; then
+    git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
+    helm upgrade --install gen3 gen3-helm/helm/gen3 -f helm_values/values.yaml
+  else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    helm upgrade --install gen3 gen3/gen3 -f values.yaml
-fi
+    helm upgrade --install gen3 gen3/gen3 -f helm_values/values.yaml
+  fi
+  return 0
+}
 
-export timeout=900
-export interval=20
+wait_for_pods_ready() {
+  export timeout=900
+  export interval=20
 
-end=$((SECONDS + timeout))
-while [ $SECONDS -lt $end ]; do
+  end=$((SECONDS + timeout))
+  while [ $SECONDS -lt $end ]; do
     # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${{ env.PR_NAMESPACE }}" -o json | \
-    jq '[.items[]
+    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${PR_NAMESPACE}" -o json | \
+      jq '[.items[]
         | select(
             (.metadata.deletionTimestamp == null) and
             ((.status.phase != "Running") or
             (.status.containerStatuses[]?.ready != true))
         )
-    ]')
+      ]')
 
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
 
     if [ "$not_ready_count" -eq 0 ]; then
-    echo "✅ All pods containers are Ready"
-    exit 0
+      echo "✅ All pods containers are Ready"
+      return 0
     fi
 
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
-done
+  done
 
-echo "❌ Timeout: Pods' containers not ready"
-echo "$not_ready_json" | jq -r '.[] |
+  echo "❌ Timeout: Pods' containers not ready"
+  echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
     .status.containerStatuses[]?
     | select(.ready != true)
     | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
 
-kubectl get pods -n "${{ env.PR_NAMESPACE }}"
-exit 1
+  kubectl get pods -n "${PR_NAMESPACE}"
+  return 1
+}
+
+# 🚀 Run the helm install and then wait for pods if successful
+if install_helm_chart; then
+  wait_for_pods_ready
+else
+  echo "❌ Helm chart installation failed"
+  exit 1
+fi
 
 kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
 kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
