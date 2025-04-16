@@ -173,6 +173,7 @@ jobs:
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
             aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
+            aws sts get-caller-identity
 
         # NOTE: Add in repo name
         # Create PR namespace and PR hostname env var
