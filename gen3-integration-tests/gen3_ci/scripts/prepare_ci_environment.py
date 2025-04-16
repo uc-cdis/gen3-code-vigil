@@ -56,6 +56,8 @@ def wait_for_quay_build(repo, tag):
 
 def setup_env_for_helm(arguments):
     file_path = HELM_SCRIPTS_PATH_OBJECT / "env_setup.sh"
+    logger.info(f"File path: {file_path}")
+    logger.info(f"Argument: {arguments}")
     result = subprocess.run([file_path] + arguments, capture_output=True, text=True)
     if result.returncode == 0:
         logger.info("Script executed successfully. Output:")
