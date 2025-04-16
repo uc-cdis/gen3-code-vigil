@@ -1,9 +1,8 @@
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from utils import K6_LOAD_TESTING_SCRIPTS_PATH, SAMPLE_DESCRIPTORS_PATH
+from utils import SAMPLE_DESCRIPTORS_PATH
 from utils import k6_load_test as k6
-from utils import logger
 from utils import test_setup as setup
 
 
@@ -14,7 +13,10 @@ class TestFencePresignedURL:
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-        self.index = Gen3Index(self.auth)
+        index_auth = Gen3Auth(
+            refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
+        )
+        self.index = Gen3Index(index_auth)
 
         # Load the sample descriptor data
         self.sample_descriptor_file_path = (
@@ -62,9 +64,9 @@ class TestFencePresignedURL:
         }
 
         # Run k6 load test
-        js_script_path = (
-            K6_LOAD_TESTING_SCRIPTS_PATH
-            / f"{self.sample_descriptor_data['service']}-{self.sample_descriptor_data['load_test_scenario']}.js"
-        )
-        result = k6.run_k6_load_test(env_vars, js_script_path)
-        k6.get_k6_results(result.stdout)
+        service = self.sample_descriptor_data["service"]
+        load_test_scenario = self.sample_descriptor_data["load_test_scenario"]
+        result = k6.run_k6_load_test(env_vars, service, load_test_scenario)
+
+        # Process the results
+        k6.get_k6_results(result, service, load_test_scenario)
