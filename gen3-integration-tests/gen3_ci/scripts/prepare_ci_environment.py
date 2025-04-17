@@ -252,7 +252,7 @@ def generate_api_keys_for_test_users(namespace):
             "bash",
             (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
             (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
-            pytest.hostname,
+            os.getenv("HOSTNAME"),
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
