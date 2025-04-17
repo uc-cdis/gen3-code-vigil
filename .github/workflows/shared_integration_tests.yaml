@@ -167,7 +167,8 @@ jobs:
           - name: Handle nightly-run reporting
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
-              is_nightly_run=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | contains("nightly-run"))) | .[0].name')
+              is_nightly_run=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
+              echo $is_nightly_run
               if [[ -n "$is_nightly_run" ]]; then
                 echo "NIGHTLY_RUN=TRUE" >> $GITHUB_ENV
 
