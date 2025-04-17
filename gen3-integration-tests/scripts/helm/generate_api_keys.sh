@@ -48,13 +48,10 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     fi
 
     # Request API key
-    echo "TEST1"
-    echo "curl -s -o '$OUTPUT_DIR/${HOSTNAME}_${username}.json' -w '%{http_code}' -X POST 'https://$HOSTNAME/user/credentials/api'"
-    RESPONSE=$(curl -o "$OUTPUT_DIR/${HOSTNAME}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
+    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
-    echo "TEST 2"
 
     # Validate API response
     if [[ "$RESPONSE" -ne 200 ]]; then
@@ -62,7 +59,7 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
-    echo "Saved API key in file: $OUTPUT_DIR/${HOSTNAME}_${username}.json"
+    echo "Saved API key in file: $OUTPUT_DIR/${NAMESPACE}_${username}.json"
 done
 
 echo "API key generation completed successfully!"
