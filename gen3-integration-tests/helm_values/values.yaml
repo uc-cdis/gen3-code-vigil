@@ -1590,10 +1590,3 @@ dicom-server:
   image:
     repository: "quay.io/cdis/gen3-orthanc"
     tag: "master"
-
-# -- (map) Environment variables that control which tests are run.
-tests:
-  # -- (bool) Set to true if running in Github action
-  uploadArtifacts: true
-  image:
-    tag: feat_GPE-1747
