@@ -168,8 +168,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               is_nightly_run=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
-              echo $is_nightly_run
-              if [[ -n is_nightly_run ]]; then
+              echo "$is_nightly_run"
+              if [[ -n $is_nightly_run ]]; then
                 echo "NIGHTLY_RUN=TRUE" >> $GITHUB_ENV
 
           # TODO: Rely on a database in AWS to make this faster
