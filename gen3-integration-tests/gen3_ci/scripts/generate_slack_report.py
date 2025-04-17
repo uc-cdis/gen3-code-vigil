@@ -41,6 +41,7 @@ def get_test_result_and_metrics():
         with open(allure_summary_path) as f:
             summary_json = json.load(f)
         statistic_json = summary_json["statistic"]
+        logger.info(f"Allure Report Summary Statistic: \n {statistic_json}")
         time_json = summary_json["time"]
         total = int(statistic_json["total"])
         passed = int(statistic_json["passed"])
