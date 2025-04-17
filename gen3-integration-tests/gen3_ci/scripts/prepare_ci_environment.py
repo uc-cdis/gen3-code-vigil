@@ -258,7 +258,8 @@ def generate_api_keys_for_test_users(namespace):
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0:
-            return result.stdout.strip().replace("'", "")
+            logger.info(result.stdout.strip().replace("'", ""))
+            return "SUCCESS"
         else:
             logger.info(result.stdout)
             raise Exception(f"Got error: {result.stderr}")
