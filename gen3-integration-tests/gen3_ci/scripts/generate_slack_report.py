@@ -131,7 +131,7 @@ def generate_slack_report():
             slack_report_json["blocks"].append(failed_suites_block)
 
     is_nightly_run = os.getenv("IS_NIGHTLY_RUN")
-    if is_nightly_run == "TRUE":
+    if is_nightly_run == "true":
         slack_report_json["channel"] = os.getenv("#nightly-builds")
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
