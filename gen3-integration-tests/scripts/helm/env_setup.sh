@@ -124,6 +124,8 @@ elif [ "$setup_type" == "service-env-setup" ]; then
 #     fi
 fi
 
+
+echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
   if [ "$helm_branch" != "master" ]; then
