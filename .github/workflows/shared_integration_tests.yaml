@@ -100,9 +100,10 @@ jobs:
 
           # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
           - name: Handle nightly build reporting
+            working-directory: ${{ github.workspace }}
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
-              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
+              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
               echo "nightly_label"
               if [[ -n $nightly_label ]]; then
                   echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
