@@ -249,7 +249,6 @@ def generate_api_keys_for_test_users(namespace):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [
-            "bash",
             (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
             (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
             os.getenv("HOSTNAME"),

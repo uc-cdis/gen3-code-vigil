@@ -6,7 +6,7 @@
 set -euo pipefail  # Exit on errors, undefined variables, and failed pipes.
 
 # Validate arguments
-if [[ $# -ne 2 ]]; then
+if [[ $# -ne 3 ]]; then
     echo "Usage: $0 <path-to-user.csv> <hostname> <namespace>"
     exit 1
 fi
