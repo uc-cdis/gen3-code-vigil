@@ -128,11 +128,11 @@ install_helm_chart() {
   #For custom helm branch
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
-    helm upgrade --install gen3 gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}.ci.planx-pla.net" -f helm_values/values.yaml -n "${NAMESPACE}"
+    helm upgrade --install gen3 gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}.planx-pla.net" -f helm_values/values.yaml -n "${NAMESPACE}"
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    helm upgrade --install gen3 gen3/gen3 --set global.hostname="${HOSTNAME}.ci.planx-pla.net" -f values.yaml -n "${NAMESPACE}"
+    helm upgrade --install gen3 gen3/gen3 --set global.hostname="${HOSTNAME}.planx-pla.net" -f values.yaml -n "${NAMESPACE}"
   fi
   return 0
 }
