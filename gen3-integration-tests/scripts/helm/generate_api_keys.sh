@@ -24,6 +24,7 @@ fi
 # Create output directory if it doesn't exist
 OUTPUT_DIR="$HOME/.gen3"
 mkdir -p "$OUTPUT_DIR"
+chmod -R 755 "$OUTPUT_DIR"
 
 # Get running fence pod
 FENCE_POD=$(kubectl get pods -l app=fence -o json -n "$NAMESPACE" | jq -r '.items[0].metadata.name // empty')
