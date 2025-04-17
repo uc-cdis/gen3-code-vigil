@@ -122,7 +122,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
 #             yq eval "if (.etl.image | has(\"tube\") | not) then del(.etl.image.tube) else . end" -i "$cdis_manifest/etl.yaml"
 #         fi
 #     fi
-# fi
+fi
 
 install_helm_chart() {
   #For custom helm branch
