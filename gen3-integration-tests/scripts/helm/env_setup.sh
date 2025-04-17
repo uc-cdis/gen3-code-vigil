@@ -134,6 +134,7 @@ install_helm_chart() {
       echo "Helm chart installed!"
     else
       return 1
+    fi
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
@@ -141,6 +142,7 @@ install_helm_chart() {
       echo "Helm chart installed!"
     else
       return 1
+    fi
   fi
   return 0
 }
