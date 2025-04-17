@@ -164,6 +164,13 @@ jobs:
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
+          - name: Handle nightly-run reporting
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              is_nightly_run=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | contains("nightly-run"))) | .[0].name')
+              if [[ -n "$is_nightly_run" ]]; then
+                echo "NIGHTLY_RUN=TRUE" >> $GITHUB_ENV
+
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
