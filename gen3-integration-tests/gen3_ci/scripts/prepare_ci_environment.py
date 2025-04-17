@@ -260,6 +260,7 @@ def generate_api_keys_for_test_users(namespace):
         if result.returncode == 0:
             return result.stdout.strip().replace("'", "")
         else:
+            logger.info(result.stdout)
             raise Exception(f"Got error: {result.stderr}")
 
 

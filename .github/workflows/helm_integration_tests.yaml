@@ -252,10 +252,6 @@ jobs:
             UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
             echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
-        - name: Prepare CI environment
-          run: |
-            sleep 100000000000000
-
         # Will install the gen3 helm charts to specific PR namespace and set the tests to run
         - name: Prepare CI environment
           id: prep_ci_env
