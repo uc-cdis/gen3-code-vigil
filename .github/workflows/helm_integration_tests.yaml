@@ -216,8 +216,8 @@ jobs:
         - name: Create namespace and env vars
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
-            NAMESPACE=pr-${PR_NUM}
-            HOSTNAME=pr${PR_NUM}
+            NAMESPACE=${REPO}-pr-${PR_NUM}
+            HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
             echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
             echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
             kubectl create namespace $NAMESPACE || true
