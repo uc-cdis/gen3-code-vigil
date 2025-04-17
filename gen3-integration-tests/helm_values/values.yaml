@@ -1548,6 +1548,7 @@ revproxy:
         memory: "105Mi"
         cpu: "15m"
 
+
 wts:
   enabled: true
   image:
