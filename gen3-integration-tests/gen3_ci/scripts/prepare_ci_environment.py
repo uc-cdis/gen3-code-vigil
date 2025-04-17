@@ -251,7 +251,7 @@ def generate_api_keys_for_test_users(namespace):
         cmd = [
             (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
             (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
-            f'os.getenv("HOSTNAME").planx-pla.net',
+            f'{os.getenv("HOSTNAME")}.planx-pla.net',
             os.getenv("NAMESPACE"),
         ]
         result = subprocess.run(
