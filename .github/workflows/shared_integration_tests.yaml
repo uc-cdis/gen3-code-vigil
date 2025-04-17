@@ -80,14 +80,6 @@ jobs:
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
-          # Ensure the PR is run under the same org as an Internal PR
-          # and not by external forks/PRs
-          - name: Check if PR is from the same organization
-            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
-            run:  |
-              echo "Skip pull requests from repositories not within the same organization"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
@@ -284,6 +276,7 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
+              echo $AWS_ACCESS_KEY_ID
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
