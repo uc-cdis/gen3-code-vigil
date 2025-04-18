@@ -20,6 +20,7 @@ on:
         required: false
         type: string
         default: master
+      # Use this to determine which folder of ci under gen3-gitops to use
       CI_ENV:
         required: false
         type: string
@@ -166,7 +167,6 @@ jobs:
             pip install poetry
             poetry install
             poetry show
-            sudo npx playwright install-deps
             poetry run playwright install chromium
 
         # REMOVE WHEN GH HOSTED
