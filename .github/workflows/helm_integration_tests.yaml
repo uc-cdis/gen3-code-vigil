@@ -20,7 +20,6 @@ on:
         required: false
         type: string
         default: master
-      # Use this to determine which folder of ci under gen3-gitops to use
       CI_ENV:
         required: false
         type: string
