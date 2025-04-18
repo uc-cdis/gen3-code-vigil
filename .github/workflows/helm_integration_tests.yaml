@@ -167,7 +167,7 @@ jobs:
             pip install poetry
             poetry install
             poetry show
-            sudo apt-get install -y wget libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libgbm1 libasound2 libxcomposite1 libxrandr2 xorg xvfb libxtst6 libxshmfence1 libxdamage1 libxfixes3 libxkbcommon0 libwayland-cursor0 libwayland-egl1 libwayland-client0
+            sudo npx playwright install-deps
             poetry run playwright install chromium
 
         # REMOVE WHEN GH HOSTED
