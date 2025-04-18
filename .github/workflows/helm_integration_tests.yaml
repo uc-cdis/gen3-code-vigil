@@ -20,6 +20,11 @@ on:
         required: false
         type: string
         default: master
+      # Use this to determine which folder of ci under gen3-gitops to use
+      CI_ENV:
+        required: false
+        type: string
+        default: default
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -215,9 +220,10 @@ jobs:
         # Create PR namespace and PR hostname env var
         - name: Create namespace and env vars
           if: ${{ env.SKIP_TESTS != 'true' }}
+          # Change the HOSTNAME with full domain name
           run: |
             NAMESPACE=${REPO}-pr-${PR_NUM}
-            HOSTNAME=${REPO}-pr${PR_NUM}.ci
+            HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
             echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
             echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
             kubectl create namespace $NAMESPACE || true

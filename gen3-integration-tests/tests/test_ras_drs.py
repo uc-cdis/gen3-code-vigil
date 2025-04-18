@@ -62,7 +62,7 @@ class TestRasDrs:
 
     env_vars = ["CI_TEST_RAS_USERID", "CI_TEST_RAS_PASSWORD", "CLIENT_ID", "SECRET_ID"]
     scope = "openid profile email ga4gh_passport_v1"
-    ga4gh_url = f"{pytest.namespace}.planx-pla.net/ga4gh/drs/v1/objects"
+    ga4gh_url = f"{pytest.hostname}/ga4gh/drs/v1/objects"
 
     @classmethod
     def setup_class(cls):
