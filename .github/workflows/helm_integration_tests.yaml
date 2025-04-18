@@ -167,6 +167,7 @@ jobs:
             pip install poetry
             poetry install
             poetry show
+            sudo playwright install-deps
             poetry run playwright install chromium
 
         # REMOVE WHEN GH HOSTED
