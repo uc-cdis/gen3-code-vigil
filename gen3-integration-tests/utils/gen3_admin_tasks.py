@@ -182,13 +182,21 @@ def run_gen3_job(
         # job_pod = f"{job_name}-{uuid.uuid4()}"
         if job_name == "etl":
             job_name = "etl-cronjob"
-        cmd = ["kubectl", "delete", "job", job_name]
+        cmd = ["kubectl", "-n", test_env_namespace, "delete", "job", job_name]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if not result.returncode == 0:
             logger.info(
                 f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
             )
-        cmd = ["kubectl", "create", "job", f"--from=cronjob/{job_name}", job_name]
+        cmd = [
+            "kubectl",
+            "-n",
+            test_env_namespace,
+            "create",
+            "job",
+            f"--from=cronjob/{job_name}",
+            job_name,
+        ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
@@ -213,7 +221,11 @@ def fence_delete_expired_clients():
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Delete expired clients
-        delete_explired_clients_cmd = "kubectl exec -i $(kubectl get pods -l app=fence -o jsonpath='{.items[0].metadata.name}') -- fence-create client-delete-expired"
+        delete_explired_clients_cmd = (
+            "kubectl exec -n "
+            + pytest.namespace
+            + " -i $(kubectl get pods -l app=fence -o jsonpath='{.items[0].metadata.name}') -- fence-create client-delete-expired"
+        )
         delete_explired_client_result = subprocess.run(
             delete_explired_clients_cmd,
             stdout=subprocess.PIPE,
@@ -263,6 +275,8 @@ def check_job_pod(
         # Wait for the job pod to start
         cmd = [
             "kubectl",
+            "-n",
+            test_env_namespace,
             "get",
             "pods",
             f"--selector=job-name={job_name}",
@@ -355,7 +369,7 @@ def setup_fence_test_clients(
         hostname = os.getenv("HOSTNAME")
 
         # Get the pod name for fence app
-        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -534,7 +548,7 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Get the pod name for fence app
-        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -551,6 +565,8 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
             # Delete existing client if it exists
             delete_cmd = [
                 "kubectl",
+                "-n",
+                test_env_namespace,
                 "exec",
                 "-i",
                 fence_pod_name,
@@ -601,6 +617,8 @@ def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str =
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [
             "kubectl",
+            "-n",
+            test_env_namespace,
             "get",
             "pods",
             "-l",
@@ -618,6 +636,8 @@ def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str =
 
         cmd = [
             "kubectl",
+            "-n",
+            test_env_namespace,
             "exec",
             "-i",
             fence_pod_name,
@@ -759,7 +779,11 @@ def check_indices_after_etl(test_env_namespace: str):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        get_alias_cmd = "kubectl get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
+        get_alias_cmd = (
+            "kubectl -n "
+            + test_env_namespace
+            + "get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
+        )
         get_alias_result = subprocess.run(
             get_alias_cmd,
             stdout=subprocess.PIPE,
@@ -856,7 +880,7 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Get the pod name for fence app
-        cmd = ["kubectl", "get", "pods", "-l", "app=fence"]
+        cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -994,6 +1018,8 @@ def get_list_of_services_deployed():
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [
             "kubectl",
+            "-n",
+            pytest.namespace,
             "get",
             "deployments",
             "-o=jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'",
@@ -1018,7 +1044,15 @@ def get_enabled_sower_jobs():
         else:
             return [item["name"] for item in manifest_data["sower"]]
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = ["kubectl", "get", "cm", "manifest-sower", "-o=jsonpath='{.data.json}'"]
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "get",
+            "cm",
+            "manifest-sower",
+            "-o=jsonpath='{.data.json}'",
+        ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
@@ -1046,6 +1080,8 @@ def is_agg_mds_enabled():
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [
             "kubectl",
+            "-n",
+            pytest.namespace,
             "get",
             "cm",
             "manifest-metadata",
@@ -1087,6 +1123,8 @@ def check_indexs3client_job_deployed():
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [
             "kubectl",
+            "-n",
+            pytest.namespace,
             "get",
             "cm",
             "manifest-ssjdispatcher",
