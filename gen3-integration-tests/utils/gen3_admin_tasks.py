@@ -77,7 +77,16 @@ def get_env_configurations(test_env_namespace: str = ""):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = ["kubectl", "get", "configmap", "manifest-global", "-o", "json"]
+        cmd = [
+            "kubectl",
+            "-n",
+            test_env_namespace,
+            "get",
+            "configmap",
+            "manifest-global",
+            "-o",
+            "json",
+        ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
