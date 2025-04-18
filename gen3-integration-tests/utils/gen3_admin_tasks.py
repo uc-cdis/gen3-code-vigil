@@ -305,6 +305,8 @@ def check_job_pod(
         # Wait for the job to complete
         cmd = [
             "kubectl",
+            "-n",
+            test_env_namespace,
             "get",
             "job",
             job_name,
@@ -316,6 +318,15 @@ def check_job_pod(
             result = subprocess.run(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
+            get_pods_cmd = "kubectl -n " + test_env_namespace + "get pods"
+            get_pods_cmd = subprocess.run(
+                get_pods_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+            logger.info(get_pods_cmd.stdout)
             if result.stdout.replace("'", "") == "True":
                 job_completed = True
                 break
