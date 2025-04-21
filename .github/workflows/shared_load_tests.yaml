@@ -105,6 +105,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             id: select_ci_env
             run: |
+              echo $GITHUB_WORKSPACE
               poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci.scripts.select_ci_environment "jenkins-perf"
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
