@@ -1,0 +1,163 @@
+{
+    "metrics": {
+        "http_req_failed": {
+            "passes": 2,
+            "fails": 26609,
+            "value": 0.00007515689000789148
+        },
+        "vus_max": {
+            "min": 20,
+            "max": 20,
+            "value": 20
+        },
+        "http_req_tls_handshaking": {
+            "max": 538.767,
+            "p(90)": 102.591,
+            "p(95)": 107.0795,
+            "avg": 93.28583307654766,
+            "min": 70.338,
+            "med": 90.954
+        },
+        "http_req_waiting": {
+            "avg": 170.36438690766997,
+            "min": 62.836,
+            "med": 149.336,
+            "max": 1168.133,
+            "p(90)": 240.108,
+            "p(95)": 282.57849999999996
+        },
+        "http_req_duration": {
+            "med": 149.638,
+            "max": 1168.292,
+            "p(90)": 240.321,
+            "p(95)": 282.801,
+            "avg": 170.61596133178094,
+            "min": 63.089,
+            "thresholds": {
+                "p(95)<15000": false,
+                "avg<3000": false
+            }
+        },
+        "iterations": {
+            "rate": 29.349092031794196,
+            "count": 26610
+        },
+        "iteration_duration": {
+            "med": 383.326125,
+            "max": 1614.502041,
+            "p(90)": 479.3983253,
+            "p(95)": 529.2051060999999,
+            "avg": 406.5336297956426,
+            "min": 327.238958
+        },
+        "vus": {
+            "min": 1,
+            "max": 19,
+            "value": 19
+        },
+        "data_sent": {
+            "count": 58863075,
+            "rate": 64922.12722470515
+        },
+        "http_reqs": {
+            "count": 26611,
+            "rate": 29.3501949664816
+        },
+        "http_req_sending": {
+            "avg": 0.06890338581789465,
+            "min": 0.007,
+            "med": 0.06,
+            "max": 8.859,
+            "p(90)": 0.096,
+            "p(95)": 0.114
+        },
+        "checks": {
+            "passes": 26609,
+            "fails": 0,
+            "value": 1
+        },
+        "data_received": {
+            "rate": 205218.9234858704,
+            "count": 186066252
+        },
+        "failed_requests": {
+            "passes": 0,
+            "fails": 26609,
+            "thresholds": {
+                "rate<0.1": false
+            },
+            "value": 0
+        },
+        "http_req_connecting": {
+            "med": 37.452,
+            "max": 1049.992,
+            "p(90)": 44.122,
+            "p(95)": 46.7315,
+            "avg": 40.80206358272884,
+            "min": 24.911
+        },
+        "http_req_receiving": {
+            "avg": 0.18267103829243564,
+            "min": 0.018,
+            "med": 0.122,
+            "max": 23.787,
+            "p(90)": 0.278,
+            "p(95)": 0.4714999999999988
+        },
+        "group_duration": {
+            "max": 1614.314584,
+            "p(90)": 435.498125,
+            "p(95)": 479.1100788999999,
+            "avg": 253.55994425378142,
+            "min": 100.006959,
+            "med": 327.027834
+        },
+        "http_req_duration{expected_response:true}": {
+            "max": 1168.292,
+            "p(90)": 240.3222,
+            "p(95)": 282.8018,
+            "avg": 170.62192190612282,
+            "min": 111.027,
+            "med": 149.643
+        },
+        "http_req_blocked": {
+            "p(90)": 144.126,
+            "p(95)": 150.7515,
+            "avg": 134.18621483597,
+            "min": 103.127,
+            "med": 128.808,
+            "max": 1313.345
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "Creating indexd records": {
+                "name": "Creating indexd records",
+                "path": "::Creating indexd records",
+                "id": "7409d4bf1bd88887bccebb521a85d434",
+                "groups": {
+                    "wait 0.1s between requests": {
+                        "name": "wait 0.1s between requests",
+                        "path": "::Creating indexd records::wait 0.1s between requests",
+                        "id": "d76cfb666bcbb1bedfd77794a885b20b",
+                        "groups": {},
+                        "checks": {}
+                    }
+                },
+                "checks": {
+                    "is status 200": {
+                        "id": "39792825b9e73ca9efa7b579377b12e8",
+                        "passes": 26609,
+                        "fails": 0,
+                        "name": "is status 200",
+                        "path": "::Creating indexd records::is status 200"
+                    }
+                }
+            }
+        },
+        "checks": {},
+        "name": ""
+    }
+}

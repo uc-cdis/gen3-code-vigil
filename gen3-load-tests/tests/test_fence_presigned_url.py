@@ -1,8 +1,7 @@
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from utils import SAMPLE_DESCRIPTORS_PATH
-from utils import k6_load_test as k6
+from utils import SAMPLE_DESCRIPTORS_PATH, load_test
 from utils import test_setup as setup
 
 
@@ -52,7 +51,7 @@ class TestFencePresignedURL:
             for record in index_records:
                 guids_list.append(record["did"])
 
-        # Setup env_vars to pass into k6 load runner
+        # Setup env_vars to pass into load runner
         env_vars = {
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "RELEASE_VERSION": "1.0.0",
@@ -66,7 +65,7 @@ class TestFencePresignedURL:
         # Run k6 load test
         service = self.sample_descriptor_data["service"]
         load_test_scenario = self.sample_descriptor_data["load_test_scenario"]
-        result = k6.run_k6_load_test(env_vars, service, load_test_scenario)
+        result = load_test.run_load_test(env_vars, service, load_test_scenario)
 
         # Process the results
-        k6.get_k6_results(result, service, load_test_scenario)
+        load_test.get_results(result, service, load_test_scenario)

@@ -1,7 +1,6 @@
 import pytest
 from gen3.auth import Gen3Auth
-from utils import SAMPLE_DESCRIPTORS_PATH
-from utils import k6_load_test as k6
+from utils import SAMPLE_DESCRIPTORS_PATH, load_test
 from utils import test_setup as setup
 
 
@@ -34,7 +33,7 @@ class TestSheepdogImportClinicalMetadata:
         # Run k6 load test
         service = self.sample_descriptor_data["service"]
         load_test_scenario = self.sample_descriptor_data["load_test_scenario"]
-        result = k6.run_k6_load_test(env_vars, service, load_test_scenario)
+        result = load_test.run_load_test(env_vars, service, load_test_scenario)
 
         # Process the results
-        k6.get_k6_results(result, service, load_test_scenario)
+        load_test.get_results(result, service, load_test_scenario)
