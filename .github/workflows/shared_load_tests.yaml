@@ -104,11 +104,9 @@ jobs:
           - name: Select CI environment
             if: ${{ env.SKIP_TESTS != 'true' }}
             id: select_ci_env
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE"
             run: |
               echo $GITHUB_WORKSPACE
-              poetry run python -m gen3-integration-tests.gen3_ci.scripts.select_ci_environment "jenkins-perf"
+              poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci/scripts/select_ci_environment "jenkins-perf"
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
               fi
@@ -119,12 +117,10 @@ jobs:
             id: prep_ci_env
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE"
             run: |
               echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
-              poetry run python -m gen3-integration-tests.gen3_ci.scripts.prepare_ci_environment
+              poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci/scripts/prepare_ci_environment
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
               fi
@@ -187,9 +183,7 @@ jobs:
             id: archive_pod_logs
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE"
-            run: poetry run python -m gen3-integration-tests.gen3_ci.scripts.save_ci_env_pod_logs
+            run: poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci/scripts/save_ci_env_pod_logs
 
           - name: Generate markdown report
             id: generate_md_report
@@ -225,9 +219,7 @@ jobs:
             id: generate_slack_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE"
-            run: poetry run python -m gen3-integration-tests.gen3_ci.scripts.generate_slack_report
+            run: poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci/scripts/generate_slack_report
 
           - name: Publish report to Slack
             id: slack_notify
@@ -244,9 +236,7 @@ jobs:
             id: release_ci_env
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' || cancelled() }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE"
-            run: poetry run python -m gen3-integration-tests.gen3_ci.scripts.release_ci_environment
+            run: poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci/scripts/release_ci_environment
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
@@ -254,6 +244,4 @@ jobs:
 
           - name: Stop pending jenkins jobs for cancelled run
             if: ${{ env.SKIP_TESTS != 'true' && cancelled() }}
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE"
-            run: poetry run python -m gen3-integration-tests.gen3_ci.scripts.clean_up_jenkins
+            run: poetry run python -m $GITHUB_WORKSPACE/gen3-integration-tests/gen3_ci/scripts/clean_up_jenkins
