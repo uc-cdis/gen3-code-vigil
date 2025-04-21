@@ -1,5 +1,5 @@
 # Uses the shared workflow from this repo for ease of maintenance
-name: Integration Tests
+name: Load Tests
 
 on:
   pull_request
@@ -9,8 +9,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  integration_tests:
-    name: Integration tests
+  load_tests:
+    name: Load tests
     uses: ./.github/workflows/shared_load_tests.yaml
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
