@@ -162,8 +162,8 @@ jobs:
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
             sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
-            curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-            sudo apt-get install -y git-lfs
+            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            sudo apt-get update
             sudo apt install openjdk-11-jre -y
             python -m pip install --upgrade pip
             pip install poetry
