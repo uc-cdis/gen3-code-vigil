@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: master
+      CLOUD_AUTO_BRANCH:
+        required: false
+        type: string
+        default: master
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
