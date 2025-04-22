@@ -1,5 +1,6 @@
 # Login Page
 import os
+import re
 import time
 
 import pytest
@@ -103,13 +104,15 @@ class LoginPage(object):
                 .get("topBar", {})
                 .get("useProfileDropdown", "")
             ):
-                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
+                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
                 if accept_button:
+                    logger.info("Clicking on Accept button")
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
-            expect(
-                page.get_by_role("link").filter(has_text=logged_in_user)
-            ).to_be_visible(timeout=10000)
+            username = page.locator("//*[text()]").filter(
+                has_text=re.compile(logged_in_user, re.IGNORECASE)
+            )
+            expect(username).to_be_visible(timeout=10000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(

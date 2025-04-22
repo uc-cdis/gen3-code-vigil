@@ -14,7 +14,7 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.9"
 cdislogging = "<2"
-data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.1"}
+data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
 gen3 = "<5"
 pytest = "^7.4.0"
@@ -58,6 +58,7 @@ markers = [
   "manifestservice: tests for manifest service",
   "mds: tests for metadata-service",
   "portal: tests for data-portal",
+  "ras: tests for ras",
   "requestor: tests for requestor service",
   "sower: tests for sower service",
   "ssjdispatcher: tests for ssjdispatcher service",
@@ -66,6 +67,7 @@ markers = [
   # features
   "agg_mds: tests for aggregate metadata service",
   "client_credentials: tests for fence client credentials",
+  "etl: tests for etl",
   "data_upload: tests for data upload",
   "graph_submission: tests for submitting graph data",
   "graph_query: tests for querying graph data",

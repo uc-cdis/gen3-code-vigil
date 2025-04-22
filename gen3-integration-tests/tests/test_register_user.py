@@ -3,17 +3,16 @@ Register User
 """
 
 import os
-import pytest
 
+import pytest
+from cdislogging import get_logger
 from pages.login import LoginPage
 from pages.user_register import UserRegister
-from utils.gen3_admin_tasks import (
-    fence_enable_register_users_redirect,
-    fence_disable_register_users_redirect,
-)
-
 from playwright.sync_api import Page, expect
-from cdislogging import get_logger
+from utils.gen3_admin_tasks import (
+    fence_disable_register_users_redirect,
+    fence_enable_register_users_redirect,
+)
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -21,6 +20,14 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 # TODO: This suite needs to run at the last since fence changes are needed
 #       and will alter the login rediection to /user/register.
 #       Need to implement the code for it.
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
 @pytest.mark.portal
 @pytest.mark.fence
 @pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")

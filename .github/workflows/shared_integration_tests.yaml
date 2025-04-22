@@ -77,11 +77,16 @@ jobs:
           CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
+          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
-          # # Enable step debugging. Uncomment this to debug pipeline issues
-          # - name: Enable Step Debugging
-          #   run: echo "ACTIONS_STEP_DEBUG=true >> $GITHUB_ENV"
+          # Ensure the PR is run under the same org as an Internal PR
+          # and not by external forks/PRs
+          - name: Check if PR is from the same organization
+            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
+            run:  |
+              echo "Skip pull requests from repositories not within the same organization"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
@@ -91,6 +96,17 @@ jobs:
               if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
                   echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
+              fi
+
+          # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
+          - name: Handle nightly build reporting
+            working-directory: ${{ github.workspace }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
+              echo "$nightly_label"
+              if [[ -n $nightly_label ]]; then
+                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
               fi
 
           # Checkout current repo
@@ -104,7 +120,7 @@ jobs:
             working-directory: ${{ github.workspace }}
             run: |
               git fetch -q
-              FILE_TYPES=$(git show --name-only ${{ env.COMMIT_SHA }} | grep -o '\S\+\.\S\+'  | grep -v '@' | awk -F . '{print $NF}' | sort -u)
+              FILE_TYPES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -v '@' | awk -F . '{print $NF}' | sort -u)
               echo $FILE_TYPES
 
               # Check if the only file type is markdown
@@ -174,6 +190,22 @@ jobs:
               else
                 poetry run python -m gen3_ci.scripts.select_ci_environment
               fi
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
+              fi
+
+
+          - name: Get modified folders
+            # This is applicable for Manifest PRs only
+            id: get_modified_folders
+            env:
+              QUAY_REPO: ${{ inputs.QUAY_REPO }}
+            if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa') }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
+              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
           # TODO: Improve the logic to do differential updates to the env, not roll all services
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
@@ -185,8 +217,12 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
+              echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              fi
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels
@@ -206,6 +242,9 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
 
           - name: Run tests
             id: run_tests
@@ -214,6 +253,9 @@ jobs:
             run: |
               mkdir output
               GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -229,12 +271,19 @@ jobs:
             run: |
               npm install -g allure-commandline --save-dev
               allure generate allure-results -o allure-report --clean
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+              fi
 
           - name: Upload allure report to S3
             id: upload_allure_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+            run: |
+              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
+              fi
             env:
               AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
               AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
@@ -252,8 +301,12 @@ jobs:
             continue-on-error: true
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
+              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
+              fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
+                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" >> output/report.md
+                echo -e "\nLogin [here](https://qa.planx-pla.net/login)" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
                 if [ ! -d output ]; then
@@ -262,7 +315,7 @@ jobs:
                 if [ ! -f "output/report.md" ]; then
                   touch "output/report.md"
                 fi
-                echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+                echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
               fi
 
           - name: Render report to the PR
@@ -281,14 +334,14 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v1.25.0
+            # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            # continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v2.0.0
             with:
-              channel-id: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+              method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./gen3-integration-tests/slack_report.json"
-            env:
-              SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-templated: true
 
           - name: Release CI environment
             id: release_ci_env

@@ -1,19 +1,81 @@
-import pytest
-import os
-import requests
-import fastavro
 import json
-
+import os
 from datetime import datetime
-from playwright.sync_api import Page
-from pages.login import LoginPage
+
+import fastavro
+import pytest
+import requests
+import utils.gen3_admin_tasks as gat
+from gen3.auth import Gen3Auth
 from pages.exploration import ExplorationPage
+from pages.login import LoginPage
+from playwright.sync_api import Page
+from services.graph import GraphDataTools
 from utils import logger
 
 
+def check_export_to_pfb_button(data):
+    for button in data:
+        if button.get("type") == "export-to-pfb":
+            return True
+    return False
+
+
+def validate_json_for_export_to_pfb_button(data):
+    if isinstance(data, dict):
+        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
+            return True
+        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
+    if isinstance(data, list):
+        return any(validate_json_for_export_to_pfb_button(item) for item in data)
+    return False
+
+
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    reason="Export to PFB button not present in gitops.json",
+)
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "tube" not in pytest.deployed_services,
+    reason="tube service is not running on this environment",
+)
+@pytest.mark.tube
 @pytest.mark.pfb
+@pytest.mark.guppy
 @pytest.mark.portal
 class TestPFBExport(object):
+    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
+
+    @classmethod
+    def setup_class(cls):
+        gat.clean_up_indices(test_env_namespace=pytest.namespace)
+        logger.info("Submitting test records")
+        cls.sd_tools.submit_all_test_records()
+        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
+        if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
+            if os.getenv("REPO") == "cdis-manifest":
+                # Guppy config is changed to use index names from etlMapping.yaml from the manifest's folder
+                gat.mutate_manifest_for_guppy_test(
+                    test_env_namespace=pytest.namespace, indexname="manifest"
+                )
+
+    @classmethod
+    def teardown_class(cls):
+        gat.clean_up_indices(test_env_namespace=pytest.namespace)
+        cls.sd_tools.delete_all_records()
+        if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
+            if os.getenv("REPO") == "cdis-manifest":
+                gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
+
     def test_pfb_export(self, page: Page):
         """
         Scenario: Test PFB Export

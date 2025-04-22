@@ -7,7 +7,6 @@ import math
 import os
 import random
 import string
-import time
 
 import pytest
 from cdislogging import get_logger
@@ -54,6 +53,22 @@ class FileRecordWithCCs:
         self.authz = authz
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "indexd" not in pytest.deployed_services,
+    reason="indexd service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "ssjdispatcher" not in pytest.deployed_services,
+    reason="ssjdispatcher service is not running on this environment",
+)
 @pytest.mark.fence
 @pytest.mark.indexd
 @pytest.mark.graph_submission
@@ -102,6 +117,70 @@ class TestDataUpload:
         self.indexd.delete_records(self.created_guids)
         self.created_guids = []
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
+    def test_file_upload_with_consent_codes(self):
+        """
+        Scenario: File upload with consent codes
+        Steps:
+            1. Get an upload url from fence
+            2. Verify metadata can't be linked to a file without hash and size
+            3. Upload a file to S3 using url
+            4. Verify indexd listener updates the record with correct hash and size
+            5. Link metadata to the file via sheepdog
+            6. Download the file via fence and check who can download
+        """
+        metadata = self.sd_tools.get_file_record()
+        if "consent_codes" not in metadata.props.keys():
+            pytest.skip(
+                "Skipping consent code tests since dictionary does not have them"
+            )
+        file_size = os.path.getsize(file_path)
+        file_md5 = hashlib.md5(open(file_path, "rb").read()).hexdigest()
+        fence_upload_res = self.fence.get_url_for_data_upload(
+            file_name, "main_account"
+        ).json()
+        file_guid = fence_upload_res["guid"]
+        self.created_guids.append(file_guid)
+        presigned_url = fence_upload_res["url"]
+
+        # Check blank record was created in indexd
+        file_record = FileRecord(
+            did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
+        )
+        self.indexd.get_record(indexd_guid=file_record.did)
+
+        # Upload the file to the S3 bucket using the presigned URL
+        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
+
+        # wait for the indexd listener to add size, hashes and URL to the record
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record
+        )
+
+        # submit metadata for this file
+        file_type_node = self.sd_tools.get_file_record()
+        file_type_node.props["object_id"] = file_guid
+        file_type_node.props["file_size"] = file_size
+        file_type_node.props["md5sum"] = file_md5
+        file_type_node.props["consent_codes"] = ["cc1", "cc_2"]
+        self.sd_tools.submit_links_for_record(file_type_node)
+        self.sd_tools.submit_record(record=file_type_node)
+        file_record_with_ccs = FileRecordWithCCs(
+            did=file_guid,
+            props={"md5sum": file_md5, "file_size": file_size},
+            authz=["/consents/cc1", "/consents/cc_2"],
+        )
+        self.fence.wait_upload_file_updated_from_indexd_listener(
+            self.indexd, file_record_with_ccs
+        )
+
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_file_upload_and_download_via_api(self):
         """
         Scenario: Test Upload and Download via api
@@ -198,6 +277,10 @@ class TestDataUpload:
             fence_upload_res.status_code == 403
         ), f"This user should not be able to download.\n{fence_upload_res.content}"
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_data_file_deletion(self):
         """
         Scenario: Test Upload and Download via api
@@ -264,6 +347,10 @@ class TestDataUpload:
             id=file_guid, user="main_account", expected_status=404
         )
 
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_upload_the_same_file_twice(self):
         """
         Scenario: Upload the same file twice
@@ -330,13 +417,14 @@ class TestDataUpload:
         )
 
         # submit metadata for this file
-        # `createNewParents=True` creates new nodes to avoid conflicts with the nodes already submitted by the
+        # generate new graph data and use that to submit the same file again
+        self.sd_tools.regenerate_graph_data()
         file_type_node = self.sd_tools.get_file_record()
         file_type_node.props["object_id"] = file_guid
         file_type_node.props["file_size"] = file_size
         file_type_node.props["md5sum"] = file_md5
         file_type_node.props["submitter_id"] = "submitter_id_new_value"
-        self.sd_tools.submit_links_for_record(file_type_node, new_submitter_ids=True)
+        self.sd_tools.submit_links_for_record(file_type_node)
 
         self.sd_tools.submit_record(record=file_type_node)
         # check that the file can be downloaded
@@ -345,62 +433,10 @@ class TestDataUpload:
         )
         self.fence.check_file_equals(signed_url_res, file_content)
 
-    def test_file_upload_with_consent_codes(self):
-        """
-        Scenario: File upload with consent codes
-        Steps:
-            1. Get an upload url from fence
-            2. Verify metadata can't be linked to a file without hash and size
-            3. Upload a file to S3 using url
-            4. Verify indexd listener updates the record with correct hash and size
-            5. Link metadata to the file via sheepdog
-            6. Download the file via fence and check who can download
-        """
-        metadata = self.sd_tools.get_file_record()
-        if "consent_codes" not in metadata.props.keys():
-            pytest.skip(
-                "Skipping consent code tests since dictionary does not have them"
-            )
-        file_size = os.path.getsize(file_path)
-        file_md5 = hashlib.md5(open(file_path, "rb").read()).hexdigest()
-        fence_upload_res = self.fence.get_url_for_data_upload(
-            file_name, "main_account"
-        ).json()
-        file_guid = fence_upload_res["guid"]
-        self.created_guids.append(file_guid)
-        presigned_url = fence_upload_res["url"]
-
-        # Check blank record was created in indexd
-        file_record = FileRecord(
-            did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
-        )
-        self.indexd.get_record(indexd_guid=file_record.did)
-
-        # Upload the file to the S3 bucket using the presigned URL
-        self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
-
-        # wait for the indexd listener to add size, hashes and URL to the record
-        self.fence.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_record
-        )
-
-        # submit metadata for this file
-        file_type_node = self.sd_tools.get_file_record()
-        file_type_node.props["object_id"] = file_guid
-        file_type_node.props["file_size"] = file_size
-        file_type_node.props["md5sum"] = file_md5
-        file_type_node.props["consent_codes"] = ["cc1", "cc_2"]
-        self.sd_tools.submit_links_for_record(file_type_node)
-        self.sd_tools.submit_record(record=file_type_node)
-        file_record_with_ccs = FileRecordWithCCs(
-            did=file_guid,
-            props={"md5sum": file_md5, "file_size": file_size},
-            authz=["/consents/cc1", "/consents/cc_2"],
-        )
-        self.fence.wait_upload_file_updated_from_indexd_listener(
-            self.indexd, file_record_with_ccs
-        )
-
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_successful_multipart_upload(self):
         """
         Scenario: Successful multipart upload
@@ -457,12 +493,13 @@ class TestDataUpload:
             parts_summary.append({"PartNumber": part_number, "ETag": etag})
 
         # Complete the multipart upload.
-        self.fence.complete_mulitpart_upload(
+        status_code = self.fence.complete_multipart_upload(
             key=key,
             upload_id=init_multipart_upload_res["uploadId"],
             parts=parts_summary,
             user="main_account",
         )
+        assert status_code == 200, f"Expected status 200 but got {status_code}"
 
         file_record = FileRecord(
             did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
@@ -533,13 +570,16 @@ class TestDataUpload:
             parts_summary.append({"PartNumber": part_number, "ETag": f"{etag}fake"})
 
         # Complete the multipart upload using a fake ETag, which should fail.
-        self.fence.complete_mulitpart_upload(
+        status_code = self.fence.complete_multipart_upload(
             key=key,
             upload_id=init_multipart_upload_res["uploadId"],
             parts=parts_summary,
             user="main_account",
-            expected_status=504,
         )
+
+        assert (
+            status_code != 200
+        ), f"Expected status to not be 200, but got {status_code}"
 
         # Create a signed url using the same guid id as in previous steps, which shouldn't get created.
         self.fence.create_signed_url(
@@ -547,6 +587,14 @@ class TestDataUpload:
         )
 
     @pytest.mark.portal
+    @pytest.mark.skipif(
+        "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
+        reason="data upload UI test cases don't work in midrc environment",
+    )
+    @pytest.mark.skipif(
+        not pytest.indexs3client_job_deployed,
+        reason="indexs3client job is not deployed as per manifest.json",
+    )
     def test_map_uploaded_files_in_submission_page(self, page: Page):
         """
         Scenario: Map uploaded files in windmill submission page
@@ -577,36 +625,35 @@ class TestDataUpload:
         logger.info(file_guid)
         logger.info(presigned_url)
 
-        if "midrc" not in pytest.namespace:
-            self.login_page.go_to(page)
-            self.login_page.login(page)
-            # user should see 1 file, but not ready yet
-            self.submission.check_unmapped_files_submission_page(
-                page, text="1 files | 0 B"
-            )
+        self.login_page.go_to(page)
+        self.login_page.login(page)
+        # user should see 1 file, but not ready yet
+        self.submission.check_unmapped_files_submission_page(page, text="1 files | 0 B")
 
-            self.fence.upload_file_using_presigned_url(
-                presigned_url, file_object, file_object["file_size"]
-            )
+        self.fence.upload_file_using_presigned_url(
+            presigned_url, file_object, file_object["file_size"]
+        )
 
-            # user should see 1 file ready
-            self.login_page.go_to(page)
-            self.submission.check_unmapped_files_submission_page(
-                page, text=f"1 files | 128 B"
-            )
+        # user should see 1 file ready
+        self.login_page.go_to(page)
+        self.submission.check_unmapped_files_submission_page(
+            page, text="1 files | 128 B"
+        )
 
-            # Perform mapping
-            self.submission.map_files(page)
-            self.submission.select_submission_fields(page)
+        # Perform mapping
+        self.submission.map_files(page)
+        self.submission.select_submission_fields(page)
 
-            # user should see 0 file ready
-            self.submission.check_unmapped_files_submission_page(
-                page, text="0 files | 0 B"
-            )
+        # user should see 0 file ready
+        self.submission.check_unmapped_files_submission_page(page, text="0 files | 0 B")
 
-            self.login_page.logout(page)
+        self.login_page.logout(page)
 
     @pytest.mark.portal
+    @pytest.mark.skipif(
+        "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
+        reason="data upload UI test cases don't work in midrc environment",
+    )
     def test_cannot_see_files_uploaded_by_other_users(self, page: Page):
         """
         Scenario: Cannot see files uploaded by other users

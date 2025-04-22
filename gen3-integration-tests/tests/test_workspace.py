@@ -8,6 +8,18 @@ from pages.workspace import WorkspacePage
 from utils import logger
 
 
+@pytest.mark.skipif(
+    "ambassador" not in pytest.deployed_services,
+    reason="ambassador service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "wts" not in pytest.deployed_services,
+    reason="wts service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "hatchery" not in pytest.deployed_services,
+    reason="hatchery service is not running on this environment",
+)
 @pytest.mark.workspace
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page):

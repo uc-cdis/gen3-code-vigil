@@ -16,10 +16,7 @@ CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 def get_portal_config():
     """Fetch portal config from the GUI"""
-    if "heal" in pytest.tested_env:
-        res = requests.get(f"{pytest.root_url}/portal/data/config/gitops.json")
-    else:
-        res = requests.get(f"{pytest.root_url}/data/config/gitops.json")
+    res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
     if res.status_code == 200:
         return res.json()
     else:
@@ -459,11 +456,11 @@ def setup_fence_test_clients(
                 text=True,
                 timeout=10,
             )
-            if result.returncode == 0:
+            if create_result.returncode == 0:
                 client_info = create_result.stdout.strip().split("\n")[-1]
             else:
                 raise Exception(
-                    f"Unable to create client for {client_name}. Response: {create_result.stderr.strip()}"
+                    f"Unable to create client '{client_name}'. Response: {create_result.stderr.strip()}"
                 )
             with open(clients_file_path, "+a") as outfile:
                 outfile.write(f"{client_name}:{client_info}\n")
@@ -492,7 +489,7 @@ def setup_fence_test_clients(
                 client_info = rotate_result.stdout.strip().split("\n")[-1]
             else:
                 raise Exception(
-                    f"Unable to create client for {client}. Response: {rotate_result.stderr.strip()}"
+                    f"Unable to rotate client '{client}'. Response: {rotate_result.stderr.strip()}"
                 )
             with open(rotated_clients_file_path, "+a") as outfile:
                 outfile.write(f"{client}:{client_info}\n")
@@ -609,6 +606,7 @@ def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str =
             fence_pod_name = result.stdout.strip().replace("'", "")
         else:
             raise Exception("Unable to retrieve fence-deployment pod")
+
         cmd = [
             "kubectl",
             "exec",
@@ -659,9 +657,11 @@ def update_audit_service_logging(audit_logging: str, test_env_namespace: str = "
         pass
 
 
-def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
+def mutate_manifest_for_guppy_test(
+    test_env_namespace: str = "", indexname: str = "jenkins"
+):
     """
-    Runs jenkins job to point guppy to pre-defined Canine ETL'ed data
+    Runs jenkins job to point guppy to preferred indices
     """
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
@@ -669,11 +669,12 @@ def mutate_manifest_for_guppy_test(test_env_namespace: str = ""):
             os.getenv("JENKINS_URL"),
             os.getenv("JENKINS_USERNAME"),
             os.getenv("JENKINS_PASSWORD"),
-            "ci-only-mutate-manifest-for-guppy-test",
+            "ci-only-mutate-guppy-config",
         )
         params = {
             "NAMESPACE": test_env_namespace,
             "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+            "INDEXNAME": indexname,
         }
         build_num = job.build_job(params)
         if build_num:
@@ -854,6 +855,7 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
             fence_pod_name = result.stdout.splitlines()[-1].split()[0]
         else:
             raise Exception("Unable to retrieve fence-deployment pod")
+
         cmd = [
             "kubectl",
             "exec",
@@ -971,3 +973,120 @@ def fence_disable_register_users_redirect(test_env_namespace: str = ""):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         pass
+
+
+def get_list_of_services_deployed():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        return json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )["versions"].keys()
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = [
+            "kubectl",
+            "get",
+            "deployments",
+            "-o=jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("'", "")
+        else:
+            raise Exception("Unable to retrieve deployed services")
+
+
+def get_enabled_sower_jobs():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if "sower" not in manifest_data.keys():
+            return []
+        else:
+            return [item["name"] for item in manifest_data["sower"]]
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = ["kubectl", "get", "cm", "manifest-sower", "-o=jsonpath='{.data.json}'"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("'", "")
+        else:
+            return []
+
+
+def is_agg_mds_enabled():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if (
+            "metadata" in manifest_data.keys()
+            and "USE_AGG_MDS" in manifest_data["metadata"].keys()
+            and manifest_data["metadata"]["USE_AGG_MDS"]
+        ):
+            return True
+        else:
+            return False
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = [
+            "kubectl",
+            "get",
+            "cm",
+            "manifest-metadata",
+            "-o=jsonpath='{.data.json}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            metadata_output = json.loads(result.stdout.strip().replace("'", ""))
+            if (
+                "USE_AGG_MDS" in metadata_output.keys()
+                and metadata_output["USE_AGG_MDS"]
+            ):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+
+def check_indexs3client_job_deployed():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if (
+            "ssjdispatcher" in manifest_data.keys()
+            and "indexs3client"
+            in manifest_data.get("ssjdispatcher", {})
+            .get("job_images", {})
+            .get("indexing", "")
+        ):
+            return True
+        else:
+            return False
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = [
+            "kubectl",
+            "get",
+            "cm",
+            "manifest-ssjdispatcher",
+            "-o=jsonpath='{.data.json}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0 and "indexs3client" in result.stdout.strip():
+            return True
+        else:
+            return False

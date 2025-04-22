@@ -3,14 +3,13 @@ DRS Endpoint
 """
 
 import os
+
 import pytest
-
-from services.indexd import Indexd
-from services.drs import Drs
-from services.fence import Fence
-
 from cdislogging import get_logger
 from packaging.version import Version
+from services.drs import Drs
+from services.fence import Fence
+from services.indexd import Indexd
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -39,6 +38,10 @@ indexd_files = {
 }
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
 @pytest.mark.fence
 class TestDrsEndpoints:
     indexd = Indexd()
