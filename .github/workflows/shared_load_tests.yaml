@@ -107,27 +107,7 @@ jobs:
             env:
               PYTHONPATH: "$GITHUB_WORKSPACE/gen3-integration-tests"
             run: |
-              echo $GITHUB_WORKSPACE
-              poetry run python -m gen3_ci.scripts.select_ci_environment "jenkins-perf"
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
-              fi
-
-          # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
-          # Generate API keys for test users for the environment
-          - name: Prepare CI environment
-            id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE/gen3-integration-tests"
-            run: |
-              echo $UPDATED_FOLDERS
-              mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              fi
+                echo "NAMESPACE=jenkins-perf" >> $GITHUB_ENV
 
           # This is used for running specific test suites by labeling the PR with the test class
           # Multiple suites can be executed by adding multiple labels
