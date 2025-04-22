@@ -395,6 +395,8 @@ def setup_fence_test_clients(
             # Delete existing client if it exists
             delete_cmd = [
                 "kubectl",
+                "-n",
+                test_env_namespace,
                 "exec",
                 "-i",
                 fence_pod_name,
@@ -413,6 +415,8 @@ def setup_fence_test_clients(
 
             create_cmd = [
                 "kubectl",
+                "-n",
+                test_env_namespace,
                 "exec",
                 "-i",
                 fence_pod_name,
@@ -495,6 +499,8 @@ def setup_fence_test_clients(
         for client in rotate_client_list:
             rotate_client_command = [
                 "kubectl",
+                "-n",
+                test_env_namespace,
                 "exec",
                 "-i",
                 fence_pod_name,
