@@ -332,7 +332,7 @@ jobs:
 
         - name: Generate markdown report
           id: generate_md_report
-          if: ${{ env.SKIP_TESTS != 'true' && steps.download_allure_summary.outcome == 'success' }}
+          if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
           continue-on-error: true
           # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
           run: |
@@ -354,7 +354,7 @@ jobs:
 
         - name: Render report to the PR
           id: publish_md_report
-          if: ${{ env.SKIP_TESTS != 'true' && steps.download_allure_summary.outcome == 'success' }}
+          if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
           continue-on-error: true  # if this fails, we still need to run clean-up steps
           run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
           env:
