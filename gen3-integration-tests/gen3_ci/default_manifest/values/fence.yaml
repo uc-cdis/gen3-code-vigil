@@ -1,19 +1,8 @@
 fence:
-  # Lower cost
-  resources:
-    requests:
-      memory: "105Mi"
-      cpu: "15m"
   image:
     repository: quay.io/cdis/fence
     pullPolicy: IfNotPresent
-    tag: '2025.01'
-
-  # -- (map) Annotations to add to the pod
-   ## TODO ## Do we need this?
-  # podAnnotations:
-  #   prometheus.io/path: /metrics
-  #   prometheus.io/scrape: "true"
+    tag: 'master'
 
   usersync:
     usersync: true
@@ -31,11 +20,6 @@ fence:
         value: 'http://localstack.localstack.svc.cluster.local:4566'
       - name: AWS_DEFAULT_REGION
         value: 'us-east-1'
-
-  # # -- (map) Public configuration settings for Fence app
-  # FENCE_CONFIG_PUBLIC:
-  #   ENABLE_PROMETHEUS_METRICS: true
-  #   ENABLE_DB_MIGRATION: true
 
   FENCE_CONFIG:
     ENABLE_AUDIT_LOGS:
