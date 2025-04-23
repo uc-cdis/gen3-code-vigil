@@ -130,6 +130,7 @@ install_helm_chart() {
   #For custom helm branch
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
+    helm dependency update gen3
     if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -f gen3_ci/default_manifest/values/portal.yaml -f gen3_ci/default_manifest/values/guppy.yaml -f gen3_ci/default_manifest/values/fence.yaml -f gen3_ci/default_manifest/values/etl.yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
