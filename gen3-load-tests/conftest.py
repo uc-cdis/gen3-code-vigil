@@ -15,6 +15,7 @@ collect_ignore = ["test_setup.py"]
 def pytest_configure(config):
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
+    pytest.namespace = os.getenv("NAMESPACE")
     # Compute root_url
     pytest.root_url = f"https://{pytest.hostname}"
 
