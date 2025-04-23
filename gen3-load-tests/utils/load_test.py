@@ -15,6 +15,8 @@ def run_load_test(env_vars, service, load_test_scenario):
         text=True,
         env={**env_vars, **dict(os.environ)},
     )
+    logger.info(result.stdout)
+    logger.info(result.stderr)
     return result
 
 

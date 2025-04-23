@@ -7,7 +7,7 @@ from utils import SAMPLE_DESCRIPTORS_PATH, load_test
 from utils import test_setup as setup
 
 
-@pytest.mark.skip(reason="This is not working, need to check")
+# @pytest.mark.skip(reason="This is not working, need to check")
 @pytest.mark.metadata_create_and_query
 class TestMetadataCreateAndQuery:
     def setup_method(self):

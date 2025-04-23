@@ -4,7 +4,6 @@ from utils import SAMPLE_DESCRIPTORS_PATH, load_test
 from utils import test_setup as setup
 
 
-@pytest.mark.skip(reason="This is not working, need to check")
 @pytest.mark.ga4gh_drs_performance
 class TestGa4ghDrsPerformance:
     def setup_method(self):
@@ -24,19 +23,19 @@ class TestGa4ghDrsPerformance:
     def test_ga4gh_drs_performance(self):
         # Setup env_vars to pass into k6 load runner
         env_vars = {
-            "TARGET_ENV": "",
+            "TARGET_ENV": pytest.hostname,
             "AUTHZ_LIST": "/programs/DEV/projects/test1,/programs/DEV/projects/test2,/programs/DEV/projects/test3",
             "MINIMUM_RECORDS": "10000",
-            "RECORD_CHUNK_SIZE": "1024",
+            "RECORD_CHUNK_SIZE": "100",
             "RELEASE_VERSION": "1.0.0",
-            "GEN3_HOST": f"{pytest.hostname}",
+            "GEN3_HOST": pytest.hostname,
             "ACCESS_TOKEN": self.auth.get_access_token(),
-            "PASSPORTS_LIST": "",
+            "PASSPORTS_LIST": " ",
             "SIGNED_URL_PROTOCOL": "s3",
             "NUM_PARALLEL_REQUESTS": "5",
             "MTLS_DOMAIN": "ctds-test-env.planx-pla.net",
-            "MTLS_CERT": "",
-            "MTLS_KEY": "",
+            "MTLS_CERT": "/Users/krishnaa/gen3-code-vigil/gen3-load-tests/mtls.crt",
+            "MTLS_KEY": "/Users/krishnaa/gen3-code-vigil/gen3-load-tests/mtls.key",
         }
 
         # Run k6 load test

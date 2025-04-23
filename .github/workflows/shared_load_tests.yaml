@@ -96,6 +96,7 @@ jobs:
               pip install poetry
               poetry install
               poetry show
+              sudo apt-get install k6
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}
