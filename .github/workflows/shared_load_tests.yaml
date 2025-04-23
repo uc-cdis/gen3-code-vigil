@@ -49,6 +49,7 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           RUN_NUM: ${{ github.run_number }}
+          CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
 
         steps:
