@@ -98,6 +98,17 @@ jobs:
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
+          # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
+          - name: Handle nightly build reporting
+            working-directory: ${{ github.workspace }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
+              echo "$nightly_label"
+              if [[ -n $nightly_label ]]; then
+                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
+              fi
+
           # Checkout current repo
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -295,6 +306,7 @@ jobs:
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" >> output/report.md
+                echo -e "\nLogin [here](https://qa.planx-pla.net/login)" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
                 if [ ! -d output ]; then
