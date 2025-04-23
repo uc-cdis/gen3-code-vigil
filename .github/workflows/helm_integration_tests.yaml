@@ -339,7 +339,7 @@ jobs:
             if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
               echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
             fi
-            if [ "${{ steps.download_allure_summary.outcome }}" == "success" ]; then
+            if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
               echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
             fi
             if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
