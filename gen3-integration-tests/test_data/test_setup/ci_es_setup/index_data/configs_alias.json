@@ -1,0 +1,6 @@
+{
+    "actions" : [
+        { "remove" : { "index" : "ci_configs_1", "alias" : "ci_configs_alias" } },
+        { "add" : { "index" : "ci_configs_1", "alias" : "ci_configs_alias" } }
+    ]
+}

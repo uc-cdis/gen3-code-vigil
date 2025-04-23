@@ -6,7 +6,7 @@ fence:
 
   usersync:
     usersync: true
-    userYamlS3Path: s3://local-helm-testing/user.yaml
+    userYamlS3Path: s3://ci/user.yaml
     # we do not want usersync to interrupt test flow
     # so it is set to run on the 1st of January if it is a Monday
     schedule: '0 0 1 1 1'
