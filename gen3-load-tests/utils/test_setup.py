@@ -23,6 +23,16 @@ def get_configuration_files():
             f.write(contents)
 
 
+def get_api_key(user):
+    file_path = Path.home() / ".gen3" / f"{pytest.namespace}_{user}.json"
+    try:
+        api_key_json = json.loads(file_path.read_text())
+    except FileNotFoundError:
+        logger.error(f"API key file not found: '{file_path}'")
+        raise
+    return api_key_json
+
+
 def run_usersync():
     gen3_admin_tasks.run_gen3_job(
         "usersync",

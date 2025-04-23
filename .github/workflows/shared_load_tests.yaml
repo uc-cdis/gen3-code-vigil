@@ -109,8 +109,6 @@ jobs:
           - name: Select CI environment
             if: ${{ env.SKIP_TESTS != 'true' }}
             id: select_ci_env
-            env:
-              PYTHONPATH: "$GITHUB_WORKSPACE/gen3-integration-tests"
             run: |
                 echo "NAMESPACE=jenkins-perf" >> $GITHUB_ENV
 
@@ -232,7 +230,7 @@ jobs:
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./gen3-integration-tests/slack_report.json"
+              payload-file-path: "./gen3-load-tests/slack_report.json"
               payload-templated: true
 
           - name: Release CI environment
