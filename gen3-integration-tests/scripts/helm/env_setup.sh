@@ -149,9 +149,17 @@ install_helm_chart() {
 }
 
 ci_es_indices_setup() {
-  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
+  echo "Setting up ES port-forward..."
+  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n gen3-code-vigil-pr-161 &
+  port_forward_pid=$!
+  sleep 5  # Give port-forward some time to start
+
+  echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
-  bash ci_setup.sh
+  timeout 300 bash test_data/test_setup/ci_es_setup/ci_setup.sh
+
+  echo "Killing port-forward process..."
+  kill $port_forward_pid
 }
 
 wait_for_pods_ready() {

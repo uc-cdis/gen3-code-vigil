@@ -8,6 +8,8 @@ global:
   pdb: true
 
 postgresql:
+  primary:
+    persistence:
       enabled: true
 
 secrets:
@@ -280,7 +282,8 @@ sheepdog:
   authNamespace: ''
   image:
     repository: "quay.io/cdis/sheepdog"
-    tag: "bug_auth-audience"
+    tag: "master"
+  fenceUrl: https://gen3-code-vigil-pr161.ci.planx-pla.net/user
 
 peregrine:
   replicaCount: 2
