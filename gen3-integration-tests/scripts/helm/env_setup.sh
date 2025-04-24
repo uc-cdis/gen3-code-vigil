@@ -149,7 +149,7 @@ install_helm_chart() {
 }
 
 ci_es_indices_setup() {
-  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 &
+  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
   bash ci_setup.sh
 }
