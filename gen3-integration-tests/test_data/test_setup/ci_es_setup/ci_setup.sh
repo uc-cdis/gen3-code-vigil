@@ -1,6 +1,11 @@
 #!/bin/bash
 # Make sure to run the below command on a seperate window for the curl commands to work
 # kubectl port-forward service/gen3-elasticsearch-master 9200:9200
+namespace=$1
+
+kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
+port_forward_pid=$!
+sleep 10  # Give port-forward some time to start
 
 # Create ci_imaging_study_1 indices
 curl -iv -X PUT "localhost:9200/ci_imaging_study_1" -H 'Content-Type: application/json' -H 'Accept: application/json' "-d@test_data/test_setup/ci_es_setup/index_data/imaging_study_mapping.json"
@@ -20,3 +25,5 @@ curl -H 'Content-Type: application/x-ndjson' "localhost:9200/ci_file_1/subject/_
 # Create ci_config_1 indices
 curl -iv -X PUT "localhost:9200/ci_configs_1" -H 'Content-Type: application/json' -H 'Accept: application/json' "-d@test_data/test_setup/ci_es_setup/index_data/array_mapping.json"
 curl -X POST localhost:9200/_aliases -H 'Content-Type: application/json' -H 'Accept: application/json' "-d@test_data/test_setup/ci_es_setup/index_data/configs_alias.json"
+
+kill $port_forward_pid

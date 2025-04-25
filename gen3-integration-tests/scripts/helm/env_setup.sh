@@ -124,6 +124,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
 #     fi
 fi
 
+kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${{ env.NAMESPACE }}
 
 echo $HOSTNAME
 install_helm_chart() {
@@ -151,21 +152,16 @@ install_helm_chart() {
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
   kubectl delete pvc -l app=gen3-elasticsearch-master -n ${namespace}
-  kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master -n ${namespace}
-  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
-  port_forward_pid=$!
-  sleep 5  # Give port-forward some time to start
+  kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master --timeout=5m -n ${namespace}
 
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
   touch output.txt
-  bash test_data/test_setup/ci_es_setup/ci_setup.sh  &> output.txt
+  bash test_data/test_setup/ci_es_setup/ci_setup.sh ${namespace} &> output.txt
+  # cat output.txt
   kubectl delete pods -l app=guppy -n ${namespace}
-  echo "output!"
-  cat output.txt
 
   echo "Killing port-forward process..."
-  kill $port_forward_pid
 }
 
 wait_for_pods_ready() {
@@ -206,7 +202,7 @@ wait_for_pods_ready() {
   return 1
 }
 
-kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
+# kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
