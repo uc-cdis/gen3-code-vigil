@@ -161,6 +161,7 @@ jobs:
         - name: Install dependencies
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
+            sudo apt install wget
             sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
             sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
             python -m pip install --upgrade pip
