@@ -157,7 +157,10 @@ ci_es_indices_setup() {
 
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
-  timeout 300 bash test_data/test_setup/ci_es_setup/ci_setup.sh
+  touch output.txt
+  bash test_data/test_setup/ci_es_setup/ci_setup.sh  &> output.txt
+  echo "output!"
+  cat output.txt
 
   echo "Killing port-forward process..."
   kill $port_forward_pid
