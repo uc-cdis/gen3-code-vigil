@@ -150,7 +150,7 @@ install_helm_chart() {
 
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
-  kubectl delete pvc --all -n ${namespace}
+  kubectl delete pvc -l app=gen3-elasticsearch-master -n ${namespace}
   kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master -n ${namespace}
   kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
   port_forward_pid=$!
@@ -205,6 +205,8 @@ wait_for_pods_ready() {
   kubectl get pods -n "${NAMESPACE}"
   return 1
 }
+
+kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then

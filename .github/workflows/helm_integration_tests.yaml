@@ -385,6 +385,6 @@ jobs:
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
             # helm delete gen3 --namespace ${{ env.NAMESPACE }}
-            kubectl delete jobs -l "helm.sh/hook=test" -n ${{ env.NAMESPACE }}
+            kubectl delete pvc -l app.kubernetes.io/name=postgresql
             # sleep 20
             # kubectl delete ns ${{ env.NAMESPACE }}
