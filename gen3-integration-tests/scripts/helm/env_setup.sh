@@ -150,7 +150,8 @@ install_helm_chart() {
 
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
-  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n gen3-code-vigil-pr-161 &
+  kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master -n ${namespace}
+  kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
   port_forward_pid=$!
   sleep 5  # Give port-forward some time to start
 
