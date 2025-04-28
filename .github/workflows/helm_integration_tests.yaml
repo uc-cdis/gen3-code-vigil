@@ -154,20 +154,20 @@ jobs:
           with:
             version: latest
 
-        # # Install gen3-integration-tests dependencies
-        # # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
-        # - name: Install dependencies
-        #   if: ${{ env.SKIP_TESTS != 'true' }}
-        #   run: |
-        #     sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-        #     sudo apt update && sudo apt install wget -y
-        #     sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
-        #     python -m pip install --upgrade pip
-        #     pip install poetry
-        #     poetry install
-        #     poetry show
-        #     sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
-        #     sudo apt install openjdk-11-jre -y
+        # Install gen3-integration-tests dependencies
+        # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+        - name: Install dependencies
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            # sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            # sudo apt update && sudo apt install wget -y
+            # sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
+            python -m pip install --upgrade pip
+            pip install poetry
+            poetry install
+            poetry show
+            # sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
+            # sudo apt install openjdk-11-jre -y
 
 
         # # REMOVE WHEN GH HOSTED
