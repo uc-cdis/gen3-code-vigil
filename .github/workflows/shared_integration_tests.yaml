@@ -334,8 +334,8 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            # if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
-            # continue-on-error: true  # if this fails, we still need to run clean-up steps
+            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
             uses: slackapi/slack-github-action@v2.0.0
             with:
               method: chat.postMessage
