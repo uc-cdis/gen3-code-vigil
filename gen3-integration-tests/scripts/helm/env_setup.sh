@@ -11,6 +11,8 @@
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
+ci_default_manifest="$3"
+target_manifest_path="$3"
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing

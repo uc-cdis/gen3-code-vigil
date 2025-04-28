@@ -58,7 +58,9 @@ def setup_env_for_helm(arguments):
     file_path = HELM_SCRIPTS_PATH_OBJECT / "env_setup.sh"
     logger.info(f"File path: {file_path}")
     logger.info(f"Argument: {arguments}")
-    result = subprocess.run([file_path] + arguments, capture_output=True, text=True)
+    result = subprocess.run(
+        [file_path] + arguments, capture_output=True, text=True, timeout=1200
+    )
     if result.returncode == 0:
         logger.info("Script executed successfully. Output:")
         logger.info(result.stdout)
@@ -151,11 +153,15 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
+        ci_default_manifest = "gen3_ci/default_manifest/values"
+        target_manifest_path = "gen3-gitops/unfunded/gen3.datacommons.io/values"
         arguments = [
             namespace,
             "manifest-env-setup",
             helm_branch,
             namespace,
+            ci_default_manifest,
+            target_manifest_path,
             updated_folder,
         ]
         return setup_env_for_helm(arguments)
