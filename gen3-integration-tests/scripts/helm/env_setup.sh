@@ -30,8 +30,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Inputs:
     # cdis_manifest - name of the folder containing default ci env configuration
     # temp_cdis_manifest - name of the folder containing manifest env configuration
-    cdis_manifest="${4}/unfunded/gen3.datacommons.io/values"
-    temp_cdis_manifest="${5}/unfunded/diseasedatahub.org/values"
+    cdis_manifest="gen3_ci/default_manifest/values"
+    temp_cdis_manifest="gen3-gitops/unfunded/gen3.datacommons.io/values"
     echo "CI Default Env Configuration Folder Path: ${cdis_manifest}"
     echo "New Env Configuration Folder Path: ${temp_cdis_manifest}"
 
@@ -74,7 +74,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
-     "global.es7"
      "google.enabled"
      "ssjdispatcher.indexing"
      )
@@ -125,6 +124,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 fi
 
 kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${{ env.NAMESPACE }}
+# add script to check if stuck in terminating and then patch to remove finalizer
 
 echo $HOSTNAME
 install_helm_chart() {
