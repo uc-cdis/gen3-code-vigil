@@ -252,7 +252,7 @@ jobs:
           id: get_modified_folders
           env:
             QUAY_REPO: ${{ inputs.QUAY_REPO }}
-          if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa') }}
+          if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa') || github.event.repository.name == 'gen3-gitops') }}
           continue-on-error: true  # if this fails, we still need to run clean-up steps
           run: |
             PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
