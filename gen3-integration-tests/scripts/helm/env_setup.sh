@@ -28,97 +28,123 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
     echo "Setting Up Manifest PR Env..."
     # Inputs:
-    # cdis_manifest - name of the folder containing default ci env configuration
-    # temp_cdis_manifest - name of the folder containing manifest env configuration
-    cdis_manifest="gen3_ci/default_manifest/values"
-    temp_cdis_manifest="gen3-gitops/unfunded/gen3.datacommons.io/values"
-    echo "CI Default Env Configuration Folder Path: ${cdis_manifest}"
-    echo "New Env Configuration Folder Path: ${temp_cdis_manifest}"
+    # ci_default_manifest - name of the folder containing default ci env configuration
+    # target_manifest_path - name of the folder containing manifest env configuration
+    ci_default_manifest="${4}/values"
+    target_manifest_path="${5}/values"
+    echo "CI Default Env Configuration Folder Path: ${ci_default_manifest}"
+    echo "New Env Configuration Folder Path: ${target_manifest_path}"
 
-    ###############################################################################
-    # Make sure the blocks of values.yaml in cdis_manifest are in reflection of
-    # the blocks of values.yaml in temp_cdis_manifest.
-    ###############################################################################
+    ####################################################################################
+    # Check if manifest etl.yaml exists and perform operations on ci etl.yaml
+    ####################################################################################
+    if [ "$target_manifest_path/etl.yaml" ]; then
+        cp "$target_manifest_path/etl.yaml" "$ci_default_manifest/etl.yaml"
+    fi
+
+    ####################################################################################
+    # Update images for fence from $target_manifest_path/fence.yaml
+    ####################################################################################
+    image_tag_value=$(yq eval ".fence.image.tag" $target_manifest_path/fence.yaml 2>/dev/null)
+    if [ ! -z "$image_tag_value" ]; then
+        yq eval ".fence.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/fence.yaml
+    fi
+
+    ####################################################################################
+    # Update images for guppy from $target_manifest_path/guppy.yaml
+    ####################################################################################
+    image_tag_value=$(yq eval ".guppy.image.tag" $target_manifest_path/guppy.yaml 2>/dev/null)
+    if [ ! -z "$image_tag_value" ]; then
+        yq eval ".guppy.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/guppy.yaml
+    fi
+
+    ####################################################################################
+    # Check if manifest hatchery.yaml exists and perform operations on ci hatchery.yaml
+    ####################################################################################
+    if [ "$target_manifest_path/hatchery.yaml" ]; then
+        cp "$target_manifest_path/hatchery.yaml" "$ci_default_manifest/hatchery.yaml"
+    fi
+
+    ####################################################################################
+    # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
+    ####################################################################################
+    if [ "$target_manifest_path/portal.yaml" ]; then
+        cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
+        json_content=$(yq eval '.portal.gitops.json' "$yaml_file")
+        modified_json=$(echo "$json_content" | jq 'del(.requiredCerts)')
+        yq eval ".portal.gitops.json = $modified_json" "$ci_default_manifest/portal.yaml" > "$ci_default_manifest/updated_gitops.yaml"
+        mv "$ci_default_manifest/updated_gitops.yaml" "$ci_default_manifest/portal.yaml"
+    fi
+
+    ####################################################################################
+    # Make sure the blocks of values.yaml in ci default are in reflection of the blocks
+    # of values.yaml in target_manifest_path.
+    ####################################################################################
     # Get all the top-level keys from both files
-    keys_ci=$(yq eval 'keys' $cdis_manifest/values.yaml -o=json | jq -r '.[]')
-    keys_manifest=$(yq eval 'keys' $temp_cdis_manifest/values.yaml -o=json | jq -r '.[]')
+    keys_ci=$(yq eval 'keys' $ci_default_manifest/values.yaml -o=json | jq -r '.[]')
+    keys_manifest=$(yq eval 'keys' $target_manifest_path/values.yaml -o=json | jq -r '.[]')
 
-    # Remove blocks from $cdis_manifest/values.yaml that are not present in $temp_cdis_manifest/values.yaml
+    # Remove blocks from $ci_default_manifest/values.yaml that are not present in $target_manifest_path/values.yaml
     for key in $keys_ci; do
     if ! echo "$keys_manifest" | grep -q "^$key$"; then
-        yq eval "del(.$key)" -i $cdis_manifest/values.yaml
+        yq eval "del(.$key)" -i $ci_default_manifest/values.yaml
     fi
     done
 
-    # Add blocks from $temp_cdis_manifest/values.yaml that are not present in $cdis_manifest/values.yaml
+    # Add blocks from $target_manifest_path/values.yaml that are not present in $ci_default_manifest/values.yaml
     for key in $keys_manifest; do
     if ! echo "$keys_ci" | grep -q "^$key$"; then
-        yq eval ". |= . + {\"$key\": $(yq eval .$key $temp_cdis_manifest/values.yaml -o=json)}" -i $cdis_manifest/values.yaml
+        yq eval ". |= . + {\"$key\": $(yq eval .$key $target_manifest_path/values.yaml -o=json)}" -i $ci_default_manifest/values.yaml
     fi
     done
 
-    ###############################################################################
-    # Update images for each service from $temp_cdis_manifest/values.yaml
-    ###############################################################################
+    ####################################################################################
+    # Update images for each service from $target_manifest_path/values.yaml
+    ####################################################################################
     for key in $keys_manifest; do
-    image_tag_value=$(yq eval ".${key}.image.tag" $temp_cdis_manifest/values.yaml 2>/dev/null)
+    image_tag_value=$(yq eval ".${key}.image.tag" $target_manifest_path/values.yaml 2>/dev/null)
     if [ ! -z "$image_tag_value" ]; then
-        yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $cdis_manifest/values.yaml
+        yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/values.yaml
     fi
     done
 
-    ###############################################################################
+    ############################################################################################################################
     # Perform operations for global and other sections under values.yaml
-    ###############################################################################
+    ############################################################################################################################
     keys=("global.dictionaryUrl"
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
+     "global.es7"
      "google.enabled"
      "ssjdispatcher.indexing"
+     "metadata.useAggMds"
+     "metadata.aggMdsNamespace"
      )
     for key in "${keys[@]}"; do
-        ci_value=$(yq eval ".$key // \"key not found\"" $cdis_manifest/values.yaml)
-        manifest_value=$(yq eval ".$key // \"key not found\"" $temp_cdis_manifest/values.yaml)
+        ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest/values.yaml)
+        manifest_value=$(yq eval ".$key // \"key not found\"" $target_manifest_path/values.yaml)
         if [ "$manifest_value" = "key not found" ]; then
             echo "The key '$key' is not present in the Manifest YAML file."
         else
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
+            yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest/values.yaml"
         fi
     done
 
-    ###############################################################################
-    # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
-    ###############################################################################
-    if [ ! -f "$cdis_manifest/portal.yaml" ]; then
-        cp "$temp_cdis_manifest/portal.yaml" "$cdis_manifest/portal.yaml"
-    else
-        if [ -f "$temp_cdis_manifest/portal.yaml" ]; then
-            # Update the image tag
-            image_tag_value=$(yq eval ".portal.image.tag" $temp_cdis_manifest/portal.yaml 2>/dev/null)
-            yq eval ".portal.image.tag = \"$image_tag_value\"" -i $cdis_manifest/portal.yaml
-            # Update the gitops json
-            gitops_json_value=$(yq eval ".portal.gitops.json" $temp_cdis_manifest/portal.yaml 2>/dev/null)
-            yq eval ".portal.gitops.json = \"$gitops_json_value\"" -i $cdis_manifest/portal.yaml
+    # Update mds_url and common_url under metadata if present
+    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
+    if [ "$json_content" != "key not found" ]; then
+        current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
+        if [ "$current_value" != "key not found" ]; then
+            modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.mds_url = \"https://${namespace}.planx-pla.net/\"")
+            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
         fi
-    fi
-
-
-    ###############################################################################
-    # Check if manifest etl.yaml exists and perform operations on ci etl.yaml
-    ###############################################################################
-    if [ ! -f "$cdis_manifest/etl.yaml" ]; then
-        cp "$temp_cdis_manifest/etl.yaml" "$cdis_manifest/etl.yaml"
-    else
-        if [ -f "$temp_cdis_manifest/etl.yaml" ]; then
-            # Update spark section
-            yq eval "if (.etl.image | has(\"spark\")) then .etl.image.spark = load(\"$temp_cdis_manifest/etl.yaml\") | .etl.image.spark else . end" -i "$cdis_manifest/etl.yaml"
-            yq eval "if (.etl.image | has(\"spark\") | not) then del(.etl.image.spark) else . end" -i "$cdis_manifest/etl.yaml"
-
-            # Update tube section
-            yq eval "if (.etl.image | has(\"tube\")) then .etl.image.tube = load(\"$temp_cdis_manifest/etl.yaml\") | .etl.image.tube else . end" -i "$cdis_manifest/etl.yaml"
-            yq eval "if (.etl.image | has(\"tube\") | not) then del(.etl.image.tube) else . end" -i "$cdis_manifest/etl.yaml"
+        current_commons_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.commons_url // \"key not found\"")
+        if [ "$current_value" != "key not found" ]; then
+            modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.commons_url = \"${namespace}.planx-pla.net/\"")
+            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
         fi
     fi
 fi
