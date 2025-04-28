@@ -31,8 +31,6 @@ on:
         required: true
       QA_DASHBOARD_S3_PATH:
         required: true
-      QA_HELM_ARTIFACT_S3_PATH:
-        required: true
       CI_TEST_ORCID_USERID:
         required: true
       CI_TEST_ORCID_PASSWORD:
