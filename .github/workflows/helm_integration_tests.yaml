@@ -259,6 +259,12 @@ jobs:
             UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
             echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
+        - name: Get commit time
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+            echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
         # Will install the gen3 helm charts to specific PR namespace and set the tests to run
         - name: Prepare CI environment
           id: prep_ci_env
