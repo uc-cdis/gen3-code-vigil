@@ -93,7 +93,7 @@ jobs:
           - name: Skip integration tests for specific PR labels
             working-directory: ${{ github.workspace }}
             run: |
-              if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "decommission-environment")' | grep -q .; then
+              if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "release-notes" or . == "decommission-environment")' | grep -q .; then
                   echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
