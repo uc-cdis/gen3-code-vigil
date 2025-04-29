@@ -160,48 +160,15 @@ jobs:
         - name: Install dependencies
           if: ${{ env.SKIP_TESTS != 'true' }}
           run: |
-            # sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-            # sudo apt update && sudo apt install wget -y
-            # sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
+            sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+            sudo apt update && sudo apt install wget -y
+            sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
             python -m pip install --upgrade pip
             pip install poetry
             poetry install
             poetry show
-            # sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
-            # sudo apt install openjdk-11-jre -y
-
-
-        # # REMOVE WHEN GH HOSTED
-        # - name: Install GitHub CLI
-        #   if: ${{ env.SKIP_TESTS != 'true' }}
-        #   run: |
-        #     GH_VERSION="2.69.0"
-        #     ARCH="linux_amd64"
-        #     GH_FILENAME="gh_${GH_VERSION}_${ARCH}.tar.gz"
-        #     GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/${GH_FILENAME}"
-
-        #     # Create temp directory
-        #     mkdir -p /tmp/gh-cli && cd /tmp/gh-cli
-
-        #     # Download and extract
-        #     curl -sSL "$GH_URL" -o "$GH_FILENAME"
-        #     tar -xzf "$GH_FILENAME"
-
-        #     # Move binary to /usr/local/bin
-        #     sudo cp "gh_${GH_VERSION}_${ARCH}/bin/gh" /usr/local/bin/
-
-        #     # Optional: clean up
-        #     cd ~
-        #     rm -rf /tmp/gh-cli
-        #     gh --version
-
-        # # REMOVE WHEN GH HOSTED
-        # - name: Setup AWS CLI
-        #   if: ${{ env.SKIP_TESTS != 'true' }}
-        #   run: |
-        #     sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-        #     sudo apt-get update
-        #     sudo apt install awscli -y
+            sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
+            sudo apt install openjdk-11-jre -y
 
         # Configure credentials to access cluster.
         - name: Configure AWS credentials
