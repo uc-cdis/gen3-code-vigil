@@ -913,6 +913,8 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
             expired,
             "--username",
             username,
+            "-n",
+            test_env_namespace,
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
