@@ -151,7 +151,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 fi
 
-kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${{ env.NAMESPACE }}
+kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
 # add script to check if stuck in terminating and then patch to remove finalizer
 
 echo $HOSTNAME
