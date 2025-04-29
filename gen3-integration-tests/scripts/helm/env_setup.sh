@@ -37,6 +37,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "CI Default Env Configuration Folder Path: ${ci_default_manifest}"
     echo "New Env Configuration Folder Path: ${target_manifest_path}"
 
+    echo "debug"
+    pwd
+    ls
+
     ####################################################################################
     # Check if manifest etl.yaml exists and perform operations on ci etl.yaml
     ####################################################################################
@@ -151,9 +155,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 fi
 
-kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
-# add script to check if stuck in terminating and then patch to remove finalizer
-
 echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
@@ -230,7 +231,28 @@ wait_for_pods_ready() {
   return 1
 }
 
-# kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
+kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
+# add script to check if stuck in terminating and then patch to remove finalizer
+# kubectl patch pvc -l app.kubernetes.io/name=postgresql -n ${na#!/bin/bash
+
+# delete_postgresql_pvc() {
+#   local pvc
+#   pvc=$(kubectl get pvc -n "$NAMESPACE" -l app.kubernetes.io/name=postgresql -o jsonpath='{.items[0].metadata.name}')
+#   [ -z "$pvc" ] && echo "No postgresql PVC found." && return 0
+
+#   echo "Deleting PVC $pvc..."
+#   kubectl delete pvc "$pvc" -n "$NAMESPACE" --wait=false
+
+#   for i in {1..24}; do
+#     kubectl get pvc "$pvc" -n "$NAMESPACE" &>/dev/null || { echo "PVC $pvc deleted."; return 0; }
+#     echo "Waiting for PVC $pvc to delete..."
+#     sleep 5
+#   done
+
+#   echo "Force removing finalizers from $pvc..."
+#   kubectl patch pvc "$pvc" -n "$NAMESPACE" -p '{"metadata":{"finalizers":null}}' --type=merge
+# }
+
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
