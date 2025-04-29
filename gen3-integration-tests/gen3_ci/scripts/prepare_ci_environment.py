@@ -158,6 +158,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
         target_manifest_path = (
             f"{os.getenv("GH_WORKSPACE")}/unfunded/gen3.datacommons.io"
         )
+
         arguments = [
             namespace,
             "manifest-env-setup",
