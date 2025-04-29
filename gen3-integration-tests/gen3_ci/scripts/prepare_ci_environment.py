@@ -159,7 +159,6 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
             namespace,
             "manifest-env-setup",
             helm_branch,
-            namespace,
             ci_default_manifest,
             target_manifest_path,
             updated_folder,
