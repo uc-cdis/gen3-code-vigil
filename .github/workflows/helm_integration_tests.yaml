@@ -80,6 +80,7 @@ jobs:
         SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
         EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
         GEN3_INSTANCE_TYPE: "HELM_LOCAL"
+        GH_WORKSPACE: ${{ github.workspace }}
 
       steps:
         # Ensure the PR is run under the same org as an Internal PR
@@ -127,6 +128,7 @@ jobs:
           with:
             repository: uc-cdis/gen3-code-vigil
             ref: ${{ inputs.TEST_REPO_BRANCH }}
+            path: gen3-code-vigil/gen3-integration-tests
 
         # gen3-integration-tests run with python 3.9
         - name: Set up Python
