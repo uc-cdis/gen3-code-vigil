@@ -1,0 +1,5 @@
+N E X T F L O W  ~  version 24.10.4
+Launching `./main.nf` [evil_mcnulty] DSL2 - revision: d9cb3f2466
+ERROR ~ Cannot find latest version of nf-ga4gh plugin
+
+ -- Check '.nextflow.log' file for details

@@ -14,3 +14,4 @@ gen3-integration-tests/test_data/fence_client
 gen3-integration-tests/test_data/google_creds
 gen3-integration-tests/test_data/gen3_workflow/.nextflow/*
 gen3-integration-tests/test_data/gen3_workflow/.nextflow.*
+.vscode/settings.json
