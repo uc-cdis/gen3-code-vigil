@@ -29,19 +29,17 @@ class TestIndexdDrsEndpoint:
         )
         # If no record is present create one
         if len(index_records) == 0:
-            record_data = (
-                {
-                    "acl": ["phs000178"],
-                    "authz": ["/programs/phs000178"],
-                    "file_name": "load_test_file",
-                    "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
-                    "size": 129,
-                    "urls": [
-                        "s3://qa-dcp-databucket-gen3/testdata",
-                        "gs://qa-dcp-databucket-gen3/file.txt",
-                    ],
-                },
-            )
+            record_data = {
+                "acl": ["phs000178"],
+                "authz": ["/programs/phs000178"],
+                "file_name": "load_test_file",
+                "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
+                "size": 129,
+                "urls": [
+                    "s3://qa-dcp-databucket-gen3/testdata",
+                    "gs://qa-dcp-databucket-gen3/file.txt",
+                ],
+            }
             record = self.index.create_record(**record_data)
         else:
             for record in index_records:

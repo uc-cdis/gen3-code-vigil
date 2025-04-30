@@ -1,6 +1,7 @@
 import pytest
 from gen3.auth import Gen3Auth
-from utils import SAMPLE_DESCRIPTORS_PATH, load_test
+from gen3.index import Gen3Index
+from utils import SAMPLE_DESCRIPTORS_PATH, load_test, logger
 from utils import test_setup as setup
 
 
@@ -11,6 +12,10 @@ class TestGa4ghDrsPerformance:
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
+        index_auth = Gen3Auth(
+            refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
+        )
+        self.index = Gen3Index(index_auth)
 
         # Load the sample descriptor data
         self.sample_descriptor_file_path = (
@@ -20,17 +25,62 @@ class TestGa4ghDrsPerformance:
             self.sample_descriptor_file_path
         )
 
+        # Guid list used for deletion in teardown_method
+        self.guid_list = []
+
+    def teardown_method(self):
+        for did in self.guid_list:
+            logger.info(self.index.delete_record(guid=did))
+
     def test_ga4gh_drs_performance(self):
+        for i in range(400):
+            record_data_1 = {
+                "acl": ["jenkins"],
+                "authz": ["/programs/jnkns/projects/jenkins"],
+                "file_name": "load_test_file",
+                "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
+                "size": 129,
+                "urls": [
+                    "s3://cdis-presigned-url-test/testdata",
+                ],
+            }
+            record_data_2 = {
+                "acl": ["jenkins2"],
+                "authz": ["/programs/jnkns/projects/jenkins2"],
+                "file_name": "load_test_file",
+                "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
+                "size": 129,
+                "urls": [
+                    "s3://cdis-presigned-url-test/testdata",
+                ],
+            }
+            record_data_3 = {
+                "acl": ["test"],
+                "authz": ["/programs/QA/projects/test"],
+                "file_name": "load_test_file",
+                "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
+                "size": 129,
+                "urls": [
+                    "s3://cdis-presigned-url-test/testdata",
+                ],
+            }
+            record_indexd1 = self.index.create_record(**record_data_1)
+            self.guid_list.append(record_indexd1["did"])
+            record_indexd2 = self.index.create_record(**record_data_2)
+            self.guid_list.append(record_indexd2["did"])
+            record_indexd3 = self.index.create_record(**record_data_3)
+            self.guid_list.append(record_indexd3["did"])
+
         # Setup env_vars to pass into k6 load runner
         env_vars = {
             "TARGET_ENV": pytest.hostname,
-            "AUTHZ_LIST": "/programs/DEV/projects/test1,/programs/DEV/projects/test2,/programs/DEV/projects/test3",
-            "MINIMUM_RECORDS": "10000",
-            "RECORD_CHUNK_SIZE": "100",
+            "AUTHZ_LIST": "/programs/jnkns/projects/jenkins,/programs/jnkns/projects/jenkins2,/programs/QA/projects/test",
+            "MINIMUM_RECORDS": "1000",
+            "RECORD_CHUNK_SIZE": "1024",
             "RELEASE_VERSION": "1.0.0",
             "GEN3_HOST": pytest.hostname,
             "ACCESS_TOKEN": self.auth.get_access_token(),
-            "PASSPORTS_LIST": " ",
+            "PASSPORTS_LIST": "",
             "SIGNED_URL_PROTOCOL": "s3",
             "NUM_PARALLEL_REQUESTS": "5",
             "MTLS_DOMAIN": "ctds-test-env.planx-pla.net",

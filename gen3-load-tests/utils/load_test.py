@@ -20,7 +20,7 @@ def run_load_test(env_vars, service, load_test_scenario):
     return result
 
 
-def get_results(output, service, load_test_scenario):
+def get_results(result, service, load_test_scenario):
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
     output = json.loads(output_path.read_text())
     passed = str(output["metrics"]["checks"]["passes"])
@@ -31,6 +31,6 @@ def get_results(output, service, load_test_scenario):
     logger.info(f"Failed   : {failed}")
     logger.info(f"Pass Rate: {pass_rate}%")
     if pass_rate < pytest.pass_threshold:
-        logger.info(output.stdout)
-        logger.info(output.strerr)
+        logger.info(result.stdout)
+        logger.info(result.stderr)
         raise f"Pass rate is below threshold of {pytest.pass_threshold}%"
