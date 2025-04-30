@@ -10,6 +10,12 @@
       Default value - default
     String parameter CLOUD_AUTO_BRANCH
         e.g., master
+    String parameter SERVICE
+        Key from the manifest's versions block
+        e.g., metadata
+    String parameter VERSION
+        Version, specifically the quay image tag
+        e.g., 2023.09
 
     Artifact archived - log.txt
 */
@@ -96,6 +102,12 @@ spec:
         }
         stage('Initial setup') {
             steps {
+                script {
+                    sh '''#!/bin/bash +x
+                        set -e
+                        echo NAMESPACE: $NAMESPACE
+                    '''
+                }
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
@@ -105,6 +117,32 @@ spec:
                   submoduleCfg: [],
                   userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/cloud-automation.git']]
                 ])
+                // gitops-qa
+                checkout([
+                  $class: 'GitSCM',
+                  branches: [[name: 'refs/heads/master']],
+                  doGenerateSubmoduleConfigurations: false,
+                  extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cdis-manifest']],
+                  submoduleCfg: [],
+                  userRemoteConfigs: [[credentialsId: 'PlanXCyborgUserJenkins', url: 'https://github.com/uc-cdis/gitops-qa.git']]
+                ])
+            }
+        }
+        stage('Update manifest.json') {
+            steps {
+                dir("cdis-manifest/${NAMESPACE}.planx-pla.net") {
+                    script {
+                        sh '''#!/bin/bash +x
+                            set -e
+                            export GEN3_HOME=\$WORKSPACE/cloud-automation
+                            export KUBECTL_NAMESPACE=\${NAMESPACE}
+                            source $GEN3_HOME/gen3/gen3setup.sh
+                            deploymentImages=$(kubectl -n \${NAMESPACE} get cm manifest-all -o jsonpath='{.data.json}' | jq '.versions')
+                            echo "\${deploymentImages}" | jq --argjson newVersions "\$deploymentImages" '.versions = $newVersions' manifest.json > tmp_manifest.json && mv tmp_manifest.json manifest.json
+                            cat manifest.json
+                        '''
+                    }
+                }
             }
         }
         stage('Run Gen3 job') {

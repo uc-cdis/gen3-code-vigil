@@ -15,19 +15,18 @@ NOTE: To setup the index data for image study follow setup under
 
 
 @pytest.mark.skipif(
-    "orthanc"
-    not in json.loads(
-        (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-    )["versions"].keys(),
-    reason="DICOM service is not running on this environment",
+    "orthanc" not in pytest.deployed_services,
+    reason="Orthanc service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "ohif-viewer"
-    not in json.loads(
-        (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
-    )["versions"].keys(),
+    "ohif-viewer" not in pytest.deployed_services,
     reason="OHIF service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "guppy" not in pytest.deployed_services,
+    reason="guppy service is not running on this environment",
+)
+@pytest.mark.guppy
 @pytest.mark.dicom_viewer
 class TestDicomViewer(object):
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
@@ -45,6 +44,8 @@ class TestDicomViewer(object):
         study_res = cls.dicom.get_studies(study_instance=study_instance)
         cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
 
+    # TODO: Enable this test once orthanc changes are deployed on midrc prod
+    @pytest.mark.skip(reason="Temporarily Disabled")
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file

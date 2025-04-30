@@ -10,6 +10,10 @@ from utils import logger
 from utils.gen3_admin_tasks import create_access_token
 
 
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
 @pytest.mark.fence
 class TestUserToken:
     fence = Fence()

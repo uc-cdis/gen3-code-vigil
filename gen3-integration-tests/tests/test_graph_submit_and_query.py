@@ -14,6 +14,10 @@ from utils import logger
 from utils.gen3_admin_tasks import create_access_token
 
 
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
 @pytest.mark.graph_submission
 class TestGraphSubmitAndQuery:
     auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
@@ -28,6 +32,10 @@ class TestGraphSubmitAndQuery:
         self.sd_tools.delete_all_records()
 
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_submit_query_and_delete_records(self):
         """
         Scenario: Submit graph data and perform various queries.
@@ -58,7 +66,19 @@ class TestGraphSubmitAndQuery:
                 len(received_data) == 1
             ), "Submitted 1 record so expected query to return 1 record"
             for prop in primitive_props:
-                assert received_data[0][prop] == record.props[prop]
+                if isinstance(received_data[0][prop], list) and isinstance(
+                    record.props[prop], list
+                ):
+                    for counter in range(len(received_data[0][prop])):
+                        assert str(received_data[0][prop][counter]) == str(
+                            record.props[prop][counter]
+                        )
+                elif isinstance(received_data[0][prop], int) or isinstance(
+                    record.props[prop], int
+                ):
+                    assert int(received_data[0][prop]) == int(record.props[prop])
+                else:
+                    assert str(received_data[0][prop]) == str(record.props[prop])
 
         # We use core_metadata_collection because we know links will not be an issue when submitting a new
         # record. We could also use a node at the bottom of the tree so it's easier to delete records in the
@@ -129,6 +149,10 @@ class TestGraphSubmitAndQuery:
         ), f"Should have failed to create record. Response: {response}"
 
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_submit_record_without_parent(self):
         """
         Scenario: Submit record without parent
@@ -139,7 +163,9 @@ class TestGraphSubmitAndQuery:
         """
         # Verify parent record does not exist
         parent_record = self.sd_tools.test_records[self.sd_tools.submission_order[0]]
-        parent_response = self.sd_tools.query_record_fields(parent_record)
+        parent_response = self.sd_tools.query_record_fields(
+            parent_record, {"project_id": "jenkins"}
+        )
 
         # Validate no records are returned for the node
         assert (
@@ -158,6 +184,10 @@ class TestGraphSubmitAndQuery:
             self.sd_tools.submit_record(record=second_record)
 
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_filter_by_invalid_project_id(self):
         """
         Scenario: Filter by invalid project_id
@@ -178,6 +208,10 @@ class TestGraphSubmitAndQuery:
             raise f"Expected no records for {record.node_name}. Response : {response}"
 
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_with_path_to_first_to_last_node(self):
         """
         Scenario: Test with_path_to - first to last node
@@ -198,6 +232,10 @@ class TestGraphSubmitAndQuery:
         ), "{} not found in response {}".format(first_node.node_name, response)
 
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_with_path_to_last_to_first_node(self):
         """
         Scenario: Test with_path_to - last to first node
@@ -261,6 +299,18 @@ class TestGraphSubmitAndQuery:
     @pytest.mark.indexd
     @pytest.mark.portal
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services,
+        reason="portal service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_file_landing_page(self, page: LoginPage):
         """
         Scenario: Test file landing page
@@ -300,6 +350,14 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_sheepdog_core_metadata(self):
         """
         Scenario: Test sheepdog core metadata
@@ -334,6 +392,14 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_sheepdog_core_metadata_invalid_object_id(self):
         """
         Scenario: Test sheepdog core metadata invalid object_id
@@ -357,6 +423,14 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.graph_query
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "peregrine" not in pytest.deployed_services,
+        reason="peregrine service is not running on this environment",
+    )
     def test_sheepdog_core_metadata_no_permission(self):
         """
         Scenario: Test sheepdog core metadata no permission
