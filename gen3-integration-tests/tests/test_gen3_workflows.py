@@ -43,6 +43,44 @@ class TestGen3Workflow(object):
             cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
         )
 
+    def _nextflow_parse_completed_line(self, log_line):
+        """
+        Parses a line from the nextflow log that indicates a completed task.
+        Extracts: task name, work directory (and protocol), exit code, and status.
+
+        :param str log_line: A line from the Nextflow log file.
+        :return: Dictionary with extracted task information.
+        :rtype: dict
+        """
+
+        task_info = {
+            "process_name": "-",
+            "workDir": "-",
+            "workDirProtocol": "-",
+            "exit_code": "-",
+            "status": "-",
+        }
+        log_regex = (
+            r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
+            r"Task completed > TaskHandler\[.*?"
+            r"name: (?P<name>.+); status: (?P<status>-?\w+); "
+            r"exit: (?P<exit_code>-?\d+); "
+            r".*?workDir: (?P<workDirProtocol>.+):\/\/(?P<workDir>.+)]"
+        )
+        match = re.match(log_regex, log_line)
+
+        if match:
+            task_info["process_name"] = match.group("name")
+            task_info["workDir"] = match.group("workDir")
+            task_info["workDirProtocol"] = match.group("workDirProtocol")
+            task_info["exit_code"] = match.group("exit_code")
+            task_info["status"] = match.group("status") or "-"
+
+            if task_info["exit_code"] != "0":
+                task_info["status"] = "FAILED"
+
+        return task_info
+
     ######################## Test /storage/info endpoint ########################
 
     def test_get_storage_info_without_token(self):
@@ -163,19 +201,17 @@ class TestGen3Workflow(object):
             user=self.invalid_user,
             expected_status=200,
         )
-        assert (
-            "tasks" in response
-            and isinstance(response["tasks"], list)
-            and len(response["tasks"]) == 0
-        ), f"Unauthorized users should receive an empty task list.But found {response} instead"
+
+        tasks = response.get("tasks", None)
+        assert tasks == [], f"Expected an empty task list, but got: {tasks}"
 
     def test_unauthorized_user_cannot_create_tes_tasks(self):
         """
         Ensure that an unauthorized user cannot create TES tasks.
-        Expects: HTTP 401 Unauthorized response.
+        Expects: HTTP 403 Forbidden response.
         """
-        # TODO: Work on 401 for user = None, and 403 for user without `create` policy
-        response = self.gen3_workflow.create_tes_task(
+
+        self.gen3_workflow.create_tes_task(
             request_body={},
             user=self.invalid_user,
             expected_status=403,
@@ -183,43 +219,40 @@ class TestGen3Workflow(object):
 
     def test_happy_path_create_tes_tasks(self):
         """
-        Test Case: Verify that an authorized user can successfully create a TES task.
-        Expects: HTTP 200 with an 'id' field in the response.
+        Test Case: Happy Path for TES Task Creation
+        - Upload input file to S3
+        - Submit TES task
+        - Verify task creation, listing, retrieval, and completion
+        - Validate outputs and logs
         """
-        echo_message = "hello beautiful world!"
-        s3_testDir_path = f"{self.s3_storage_config.bucket_name}/tes-test-dir"
+        message = "hello beautiful world!"
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/tes-test-dir"
 
-        # Create files to post it to S3
-        files_and_contents = {
-            "input.txt": "hello beautiful world!",
-            "output.txt": "Random output",
-            "grep_output.txt": "Random grep_output output",
-        }
-        for filename, contents in files_and_contents.items():
-            self.gen3_workflow.put_bucket_object_with_boto3(
-                content=contents,
-                object_path=f"{s3_testDir_path}/{filename}",
-                s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
-                expected_status=200,
-            )
+        # Step 1: Upload input file to S3
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content=message,
+            object_path=f"{s3_path_prefix}/input.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
 
-        # Create a TES task
-        tes_task_request_body = {
+        # Step 2: Create a TES task
+        tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
             "inputs": [
-                {"url": f"s3://{s3_testDir_path}/input.txt", "path": "/data/input.txt"}
+                {"url": f"s3://{s3_path_prefix}/input.txt", "path": "/data/input.txt"}
             ],
             "outputs": [
                 {
                     "path": "/data/output.txt",
-                    "url": f"s3://{s3_testDir_path}/output.txt",
+                    "url": f"s3://{s3_path_prefix}/output.txt",
                     "type": "FILE",
                 },
                 {
                     "path": "/data/grep_output.txt",
-                    "url": f"s3://{s3_testDir_path}/grep_output.txt",
+                    "url": f"s3://{s3_path_prefix}/grep_output.txt",
                     "type": "FILE",
                 },
             ],
@@ -227,171 +260,236 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
-                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo Done!"
+                        "cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo Done!"
                     ],
                 }
             ],
-            "tags": {"user": "bar"},
+            "tags": {"user": self.valid_user},
         }
-        create_task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_request_body,
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
             user=self.valid_user,
             expected_status=200,
         )
 
-        assert (
-            "id" in create_task_response
-        ), f"Create tasks response should contain a valid 'id' field. But found {create_task_response} instead"
-        task_id = create_task_response["id"]
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
-        """
-        Test Case: Verify that an authorized user can list TES tasks.
-        Expects: HTTP 200 with a non-empty task list containing the newly created task ID.
-        """
-
-        list_tasks_response = self.gen3_workflow.list_tes_tasks(
+        # Step 3: Verify task is listed
+        list_tes_tasks_response = self.gen3_workflow.list_tes_tasks(
             user=self.valid_user,
             expected_status=200,
         )
-        assert (
-            "tasks" in list_tasks_response
-            and isinstance(list_tasks_response["tasks"], list)
-            and len(list_tasks_response["tasks"]) > 0
-        ), f"The List tasks response should contain a non-empty list of tasks. But found {list_tasks_response} instead"
 
-        task_list = list_tasks_response["tasks"]
-        assert task_id in (
-            task["id"] for task in task_list
+        tasks_list = list_tes_tasks_response.get("tasks", [])
+        assert tasks_list, f"Expected non-empty list but got: {tasks_list}"
+
+        assert any(
+            task["id"] == task_id for task in tasks_list
         ), "The created task ID should be present in the task list."
 
-        """
-        Test Case: Verify that an authorized user can retrieve a TES task by ID.
-        Expects: HTTP 200 and an id field.
-        """
-        get_tasks_response = self.gen3_workflow.get_tes_task(
-            task_id=task_id,
-            user=self.valid_user,
-            expected_status=200,
-        )
-        assert (
-            "state" in get_tasks_response
-        ), f"Task state must exist in response. But found {get_tasks_response} instead."
-
-        valid_states = ["QUEUED", "INITIALIZING", "RUNNING", "COMPLETE"]
-        assert (
-            get_tasks_response["state"] in valid_states
-        ), f"Task state must be one of {valid_states} in response. But found {get_tasks_response['state']} instead."
-
-        # Wait for the task to complete (This is a blocking call)
-        retrying = 0
+        # Step 4: Poll until the TES task completes or fails with a known status
         max_retries = 10
-        while get_tasks_response["state"] != "COMPLETE" and retrying < max_retries:
-            time.sleep(30)  # sleep for few seconds before checking the status again
-            retrying += 1
-            get_tasks_response = self.gen3_workflow.get_tes_task(
+        poll_interval = 15  # seconds
+        transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
+        final_success_state = "COMPLETE"
+        final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED"}
+
+        for attempt in range(1, max_retries + 1):
+            task_info = self.gen3_workflow.get_tes_task(
                 task_id=task_id,
                 user=self.valid_user,
                 expected_status=200,
             )
-            logger.debug(
-                f"Retry count: {retrying}, Task state: {get_tasks_response['state']}"
-            )
-            if get_tasks_response["state"] in ["FAILED", "EXECUTOR_ERROR", "CANCELED"]:
+            state = task_info.get("state")
+
+            if state == final_success_state:
+                break
+            elif state in final_failure_states:
                 assert (
                     False
-                ), "The TES task was expected to succeed, but it failed. Response: {get_tasks_response}"
+                ), f"TES task failed. Final state: {state}, Response: {task_info}"
+            elif state not in transient_states:
+                assert (
+                    False
+                ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
+
+            logger.debug(f"Attempt {attempt}: Task state is '{state}', retrying...")
+            time.sleep(poll_interval)
+        else:
+            assert (
+                False
+            ), f"TES task did not complete in time. Final state: {state}, Response: {task_info}"
+
+        # Step 5: Validate task logs
+        stdout = task_info["logs"][0]["logs"][0]["stdout"].strip()
+        assert (
+            stdout == "Done!"
+        ), f"Expected stdout to be `Done!`, but found {stdout} instead."
+
+        # Step 6: Validate task outputs
+        s3_contents = {
+            file_name: self.gen3_workflow.get_bucket_object_with_boto3(
+                object_path=f"{s3_path_prefix}/{file_name}",
+                s3_storage_config=self.s3_storage_config,
+                user=self.valid_user,
+                expected_status=200,
+            )
+            for file_name in ["output.txt", "grep_output.txt"]
+        }
 
         assert (
-            get_tasks_response["state"] == "COMPLETE"
-        ), f"The TES task did not complete within the expected time frame. Task state must be 'COMPLETE'. But found {get_tasks_response['state']} instead.  Response: {get_tasks_response}"
-        stdout_message_from_response = get_tasks_response["logs"][0]["logs"][0][
-            "stdout"
-        ].strip()
-        assert (
-            stdout_message_from_response == "Done!"
-        ), f"The TES task did not return the expected output. Expected: {echo_message}, but found {stdout_message_from_response} instead."
-
-        # Do a get request to both the S3 files and compare the output
-        output_response = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{s3_testDir_path}/output.txt",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
-        grep_output_response = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{s3_testDir_path}/grep_output.txt",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
+            message in s3_contents["output.txt"]
+        ), f"The output_response of the tes task did not return the expected output. Expected: {message} to be in output_response, but found {s3_contents['output.txt']} instead."
 
         assert (
-            echo_message in output_response
-        ), f"The output_response of the tes task did not return the expected output. Expected: {echo_message} to be in output_response, but found {output_response=} instead."
-
-        assert (
-            grep_output_response.strip() == echo_message
-        ), f"The grep_output_response of the tes task did not return the expected output. Expected: {echo_message}, but found {grep_output_response} instead."
+            s3_contents["grep_output.txt"].strip() == message
+        ), f"The grep_output_response of the tes task did not return the expected output. Expected: {message}, but found {s3_contents['grep_output.txt'].strip()} instead."
 
     def test_happy_path_cancel_tes_tasks(self):
         """
         Verify that an authorized user can cancel a TES task.
         Expects: HTTP 200 and task status changes to 'Cancelled'.
         """
-        response = self.gen3_workflow.create_tes_task(
-            request_body={
-                "name": "Hello world",
-                "description": "Demonstrates the most basic echo task.",
-                "executors": [
-                    {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
-                        "command": ["echo", "hello beautiful world!"],
-                    }
-                ],
-                "tags": {"user": "bar"},
-            },
+        payload = {
+            "name": "Hello world",
+            "description": "Demonstrates the most basic echo task.",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": ["echo", "hello beautiful world!"],
+                }
+            ],
+            "tags": {"user": "bar"},
+        }
+        # Step 1: Create a TES task
+        task_info = self.gen3_workflow.create_tes_task(
+            request_body=payload,
             user=self.valid_user,
             expected_status=200,
         )
-        assert (
-            "id" in response
-        ), f"Response should contain a valid 'id' field. But found {response} instead"
-        task_id = response["id"]
+        task_id = task_info.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_info}"
 
-        response = self.gen3_workflow.get_tes_task(
+        # Step 2: Retrieve the task to check its state
+        task_info = self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
-        assert (
-            "state" in response
-        ), f"Response must have `state` field in it. But found {response} instead"
 
-        # Cancel the task
+        assert (
+            "state" in task_info
+        ), f"Response must have `state` field in it. But found {task_info} instead"
+
+        # Step 3: Cancel the TES task
         self.gen3_workflow.cancel_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
 
-        # Get the task again to check its state
-        response = self.gen3_workflow.get_tes_task(
+        # Step 4: Verify the task is cancelled
+        task_info = self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
 
-        assert "state" in response and response["state"] in [
-            "CANCELING",
-            "CANCELED",
-        ], f"Task state should be 'CANCELING', 'CANCELED' after cancellation. But found {response} instead"
+        final_state = task_info.get("state", None)
+        valid_states = {"CANCELING", "CANCELED"}
+        assert (
+            final_state in valid_states
+        ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
 
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
-        Expects: HTTP 200 and a valid status.
         """
-        workflow_path = "gen3-integration-tests/test_data/gen3_workflow/"
-        self.gen3_workflow.run_nextflow_task(
-            workflow_path=workflow_path, storage_config=self.s3_storage_config
+        expected_task_outputs = {
+            "extract_metadata (1)": {
+                "filename": "dicom-metadata-img-1.dcm.csv",
+                "command": "python3 /utils/extract_metadata.py img-1.dcm",
+            },
+            "extract_metadata (2)": {
+                "filename": "dicom-metadata-img-2.dcm.csv",
+                "command": "python3 /utils/extract_metadata.py img-2.dcm",
+            },
+            "dicom_to_png (1)": {
+                "filename": "img-1.png",
+                "command": "python3 /utils/dicom_to_png.py img-1.dcm",
+            },
+            "dicom_to_png (2)": {
+                "filename": "img-2.png",
+                "command": "python3 /utils/dicom_to_png.py img-2.dcm",
+            },
+        }
+        workflow_dir = "gen3-integration-tests/test_data/gen3_workflow/"
+        workflow_log = self.gen3_workflow.run_nextflow_task(
+            workflow_dir=workflow_dir,
+            workflow_script="main.nf",
+            nextflow_config_file="nextflow.config",
         )
+
+        completed_tasks = [
+            self._nextflow_parse_completed_line(line)
+            for line in workflow_log.split("\n")
+            if "Task completed > TaskHandler" in line
+        ]
+
+        for task in completed_tasks:
+
+            task_name = task["process_name"]
+            assert (
+                task_name in expected_task_outputs
+            ), f"Unexpected task name: {task_name}. Expected one of {list(expected_task_outputs.keys())}"
+
+            expected = expected_task_outputs[task_name]
+
+            assert (
+                task["status"] == "COMPLETED"
+            ), f"Task {task_name} failed with status: {task['status']}"
+            assert (
+                task["exit_code"] == "0"
+            ), f"Task {task_name} failed with exit code: {task['exit_code']}"
+            assert (
+                task["workDirProtocol"] == "s3"
+            ), f"Expected workDir to be an 's3' location, but got {task['workDirProtocol']}"
+
+            s3_file_list = self.gen3_workflow.list_bucket_objects_with_boto3(
+                folder_path=task["workDir"],
+                s3_storage_config=self.s3_storage_config,
+                user=self.valid_user,
+            )
+
+            assert (
+                s3_file_list
+            ), f"Expected to find files in the S3 bucket for task {task_name}, but got an empty list"
+
+            filenames_in_s3 = {file["Key"].split("/")[-1] for file in s3_file_list}
+
+            assert (
+                expected["filename"] in filenames_in_s3
+            ), f"Expected to find {expected['filename']} in the S3 bucket for task {task_name}, but got {s3_file_list}"
+
+            command_file_keys = [
+                file["Key"]
+                for file in s3_file_list
+                if file["Key"].endswith(".command.sh")
+            ]
+            assert (
+                len(command_file_keys) == 1
+            ), f"Expected to find exactly one .command.sh file for task {task_name}, but got {len(command_file_keys)}. Files: {command_file_keys}"
+
+            command_file_key = command_file_keys[0]
+
+            # get contents of .command.sh file
+            command_script_contents = self.gen3_workflow.get_bucket_object_with_boto3(
+                object_path=f"{self.s3_storage_config.bucket_name}/{command_file_key}",
+                s3_storage_config=self.s3_storage_config,
+                user=self.valid_user,
+            )
+
+            assert (
+                expected["command"] in command_script_contents
+            ), f"Expected to find `{expected['command']}` in the .command.sh file for task {task_name}, but got {command_script_contents}"
