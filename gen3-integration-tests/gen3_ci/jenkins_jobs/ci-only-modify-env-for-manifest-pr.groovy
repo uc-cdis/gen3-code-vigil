@@ -64,8 +64,12 @@ spec:
     resources:
       requests:
         cpu: 500m
-        memory: 500Mi
+        memory: 1Gi
         ephemeral-storage: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+        ephemeral-storage: 2Gi
     env:
     - name: AWS_DEFAULT_REGION
       value: us-east-1
