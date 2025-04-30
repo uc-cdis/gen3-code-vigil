@@ -96,12 +96,10 @@ jobs:
               pip install poetry
               poetry install
               poetry show
+              sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
+              echo "deb https://dl.bintray.com/loadimpact/deb stable main" | sudo tee -a /etc/apt/sources.list
               sudo apt-get update
-              sudo apt-get install -y gnupg
-              curl -s https://dl.k6.io/key.gpg | sudo apt-key add -
-              echo "deb https://dl.k6.io/debian stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-              sudo apt-get update
-              sudo apt-get install -y k6
+              sudo apt-get install k6
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}
