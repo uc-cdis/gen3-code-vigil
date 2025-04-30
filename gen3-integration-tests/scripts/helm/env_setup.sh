@@ -14,6 +14,9 @@ helm_branch="$3"
 ci_default_manifest="$3"
 target_manifest_path="$3"
 
+# Add in hostname for revproxy configuration
+yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
+
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."

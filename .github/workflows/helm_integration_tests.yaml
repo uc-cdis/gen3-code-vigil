@@ -168,7 +168,6 @@ jobs:
             sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
             sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY}.tar.gz -O - |\
             tar xz && sudo mv ${BINARY} /usr/bin/yq
-            yq --version
             python -m pip install --upgrade pip
             pip install poetry
             poetry install

@@ -11,6 +11,10 @@ postgresql:
   primary:
     persistence:
       enabled: true
+  image:
+    registry: quay.io
+    repository: uc-cdis/postgresql
+    tag: 14.5.0-debian-11-r35
 
 secrets:
   awsAccessKeyId: test
@@ -373,7 +377,7 @@ revproxy:
       alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-FIPS-2023-04
     className: alb
     hosts:
-      - host: gen3-code-vigil-pr161.ci.planx-pla.net
+      - host: HOSTNAME
         paths:
           - path: /
             pathType: Prefix
