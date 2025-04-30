@@ -159,7 +159,7 @@ jobs:
         # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
         - name: Install dependencies
           if: ${{ env.SKIP_TESTS != 'true' }}
-          with:
+          env:
             VERSION: v4.2.0
             BINARY: yq_linux_amd64
           run: |
