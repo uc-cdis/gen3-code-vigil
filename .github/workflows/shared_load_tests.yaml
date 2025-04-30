@@ -97,7 +97,7 @@ jobs:
               poetry install
               poetry show
               sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-              sudo apt update && sudo apt install k6s -y
+              sudo apt update && sudo apt install k6 -y
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}
