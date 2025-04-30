@@ -252,10 +252,8 @@ delete_pvcs() {
   done
 }
 
-
-# 🚀 Run the helm install and then wait for pods if successful
+delete_pvcs
 if install_helm_chart; then
-  delete_pvcs
   ci_es_indices_setup
   wait_for_pods_ready
 else
