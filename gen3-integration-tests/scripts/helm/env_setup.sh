@@ -176,7 +176,7 @@ install_helm_chart() {
 
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
-  kubectl delete pvc -l app=gen3-elasticsearch-master -n ${namespace}
+  # kubectl delete pvc -l app=gen3-elasticsearch-master -n ${namespace}
   kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master --timeout=5m -n ${namespace}
 
   echo "Running ci_setup.sh with timeout..."
@@ -227,31 +227,32 @@ wait_for_pods_ready() {
   return 1
 }
 
-kubectl delete pvc -l app.kubernetes.io/name=postgresql -n ${namespace}
-# add script to check if stuck in terminating and then patch to remove finalizer
-# kubectl patch pvc -l app.kubernetes.io/name=postgresql -n ${na#!/bin/bash
+delete_pvcs() {
+  for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master"; do
+    pvc=$(kubectl get pvc -n "$NAMESPACE" -l "$label" -o jsonpath='{.items[0].metadata.name}')
+    [ -z "$pvc" ] && echo "No PVC found for label: $label" && continue
 
-# delete_postgresql_pvc() {
-#   local pvc
-#   pvc=$(kubectl get pvc -n "$NAMESPACE" -l app.kubernetes.io/name=postgresql -o jsonpath='{.items[0].metadata.name}')
-#   [ -z "$pvc" ] && echo "No postgresql PVC found." && return 0
+    echo "Deleting PVC $pvc with label: $label..."
+    kubectl delete pvc "$pvc" -n "$NAMESPACE" --wait=false
 
-#   echo "Deleting PVC $pvc..."
-#   kubectl delete pvc "$pvc" -n "$NAMESPACE" --wait=false
+    for i in {1..24}; do
+      kubectl get pvc "$pvc" -n "$NAMESPACE" &>/dev/null || { echo "PVC $pvc deleted."; break; }
+      echo "Waiting for PVC $pvc to delete..."
+      sleep 5
+    done
 
-#   for i in {1..24}; do
-#     kubectl get pvc "$pvc" -n "$NAMESPACE" &>/dev/null || { echo "PVC $pvc deleted."; return 0; }
-#     echo "Waiting for PVC $pvc to delete..."
-#     sleep 5
-#   done
-
-#   echo "Force removing finalizers from $pvc..."
-#   kubectl patch pvc "$pvc" -n "$NAMESPACE" -p '{"metadata":{"finalizers":null}}' --type=merge
-# }
+    # If still exists after retries, remove finalizers
+    if kubectl get pvc "$pvc" -n "$NAMESPACE" &>/dev/null; then
+      echo "Force removing finalizers from $pvc..."
+      kubectl patch pvc "$pvc" -n "$NAMESPACE" -p '{"metadata":{"finalizers":null}}' --type=merge
+    fi
+  done
+}
 
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
+  delete_pvcs
   ci_es_indices_setup
   wait_for_pods_ready
 else

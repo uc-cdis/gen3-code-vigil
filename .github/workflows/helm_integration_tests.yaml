@@ -159,10 +159,16 @@ jobs:
         # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
         - name: Install dependencies
           if: ${{ env.SKIP_TESTS != 'true' }}
+          with:
+            VERSION: v4.2.0
+            BINARY: yq_linux_amd64
           run: |
             sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
             sudo apt update && sudo apt install wget -y
             sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
+            sudo wget https://github.com/mikefarah/yq/releases/download/${VERSION}/${BINARY}.tar.gz -O - |\
+            tar xz && mv ${BINARY} /usr/bin/yq
+            yq --version
             python -m pip install --upgrade pip
             pip install poetry
             poetry install
