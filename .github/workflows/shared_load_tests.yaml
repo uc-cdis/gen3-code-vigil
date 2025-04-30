@@ -97,7 +97,7 @@ jobs:
               poetry install
               poetry show
               sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
-              echo "deb https://dl.bintray.com/loadimpact/deb stable main" | sudo tee -a /etc/apt/sources.list
+              echo "deb https://dl.k6.io/debian stable main" | sudo tee /etc/apt/sources.list.d/k6.list
               sudo apt-get update
               sudo apt-get install k6
 
