@@ -96,8 +96,12 @@ jobs:
               pip install poetry
               poetry install
               poetry show
-              sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
-              sudo apt update && sudo apt install k6 -y
+              sudo apt-get update
+              sudo apt-get install -y gnupg
+              curl -s https://dl.k6.io/key.gpg | sudo apt-key add -
+              echo "deb https://dl.k6.io/debian stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+              sudo apt-get update
+              sudo apt-get install -y k6
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}
