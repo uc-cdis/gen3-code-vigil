@@ -27,10 +27,12 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     ci_default_manifest="${4}/values"
     service_name="$5"
     image_name="$6"
-    if yq eval ".${service_name}" "$ci_default_manifest/values.yaml" &>/dev/null; then
+    guppy_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/values.yaml")
+    guppy_yaml_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/${service_name}.yaml")
+    if [ "$guppy_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest/values.yaml.\""
         yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/values.yaml"
-    elif yq eval ".${service_name}" "$ci_default_manifest/${service_name}.yaml" &>/dev/null; then
+    elif [ "$guppy_yaml_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest/${service_name}.yaml.\""
         yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/${service_name}.yaml"
     else
