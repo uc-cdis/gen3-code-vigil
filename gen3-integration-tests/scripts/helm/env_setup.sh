@@ -294,6 +294,6 @@ else
   exit 1
 fi
 
-kubectl delete job usersync-manual
+kubectl delete job usersync-manual -n ${namespace}
 kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
 kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
