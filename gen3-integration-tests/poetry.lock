@@ -1267,6 +1267,16 @@ files = [
 ]
 
 [[package]]
+name = "nextflowpy"
+version = "0.11.0"
+description = "A Python wrapper around Nextflow."
+optional = false
+python-versions = "!=2.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,!=3.8.*"
+files = [
+    {file = "nextflowpy-0.11.0-py3-none-any.whl", hash = "sha256:62b1c50024b5c76e3089faea65db11b19692d504033e48d4dfca1730b9f7c35b"},
+]
+
+[[package]]
 name = "nodeenv"
 version = "1.9.1"
 description = "Node.js virtual environment builder"
@@ -2803,4 +2813,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6101785d07c65cac522263531d5a72afabdc3a1d8e4d9c31fa03130b9f5f8608"
+content-hash = "42ba0a81d3443bf64d804280bd5d53134c336554d3ce15d5c8d009243382fd6c"
