@@ -110,7 +110,15 @@ def modify_env_for_service_pr(namespace, service, tag):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        arguments = [namespace, "service-env-setup", helm_branch, service, tag]
+        ci_default_manifest = "gen3_ci/default_manifest"
+        arguments = [
+            namespace,
+            "service-env-setup",
+            helm_branch,
+            ci_default_manifest,
+            service,
+            tag,
+        ]
         return setup_env_for_helm(arguments)
 
 

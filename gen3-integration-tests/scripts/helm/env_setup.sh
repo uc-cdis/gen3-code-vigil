@@ -21,9 +21,19 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     # Inputs:
     # service_name - name of service against which PR is run
     # image_name - name of the quay image for the service PR
-    service_name="$4"
-    image_name="$5"
-    yq eval ".${service_name}.image.tag = \"${image_name}\"" -i values.yaml
+    ci_default_manifest="${4}/values"
+    service_name="$5"
+    image_name="$6"
+    if yq eval ".${service_name} // empty" "$ci_default_manifest/values.yaml" &>/dev/null; then
+        echo "Key '$service_name' found in \"$ci_default_manifest/values.yaml.\""
+        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/values.yaml"
+    elif yq eval ".${service_name} // empty" "$ci_default_manifest/${service_name}.yaml" &>/dev/null; then
+        echo "Key '$service_name' found in \"$ci_default_manifest/${service_name}.yaml.\""
+        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/${service_name}.yaml"
+    else
+        echo "Key '$service_name' not found in \"$ci_default_manifest/values.yaml\" or \"$ci_default_manifest/${service_name}.yaml.\""
+        exit 1
+    fi
 elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
     echo "Setting Up Manifest PR Env..."
