@@ -493,3 +493,8 @@ class TestGen3Workflow(object):
             assert (
                 expected["command"] in command_script_contents
             ), f"Expected to find `{expected['command']}` in the .command.sh file for task {task_name}, but got {command_script_contents}"
+
+
+# TODO: Add more tests for the following:
+# 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
+# 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
