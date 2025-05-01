@@ -410,7 +410,7 @@ manifestservice:
     - name: AWS_SECRET_ACCESS_KEY
       value: test
     - name: AWS_ENDPOINT_URL
-      value: 'http://localstack.localstack.svc.cluster.local:4566'
+      value: 'http://localstack.ci.planx-pla.net'
     - name: AWS_DEFAULT_REGION
       value: 'us-east-1'
     - name: REQUESTS_CA_BUNDLE
