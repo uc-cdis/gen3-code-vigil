@@ -26,30 +26,29 @@ hatchery:
     tag: master
   hatchery:
     containers:
-    - target-port: 8888
-      cpu-limit: '0.5'
-      memory-limit: 1Gi
-      name: "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
-      image: "quay.io/cdis/heal-notebooks:bacpac__10670ad79b4488cfa9f1b3681ce52bc3f1139b5a"
-      env:
-        FRAME_ANCESTORS: https://{{ .Values.global.hostname }}
-      args:
-      - "--NotebookApp.base_url=/lw-workspace/proxy/"
-      - "--NotebookApp.password=''"
-      - "--NotebookApp.token=''"
-      - "--NotebookApp.quit_button=False"
-      command:
-      - start-notebook.sh
-      path-rewrite: "/lw-workspace/proxy/"
-      use-tls: 'false'
-      ready-probe: "/lw-workspace/proxy/"
-      lifecycle-post-start:
-      - "/bin/sh"
-      - "-c"
-      - export IAM=`whoami`; rm -rf /home/$IAM/pd/dockerHome; rm -rf /home/$IAM/pd/lost+found;
-        ln -s /data /home/$IAM/pd/; true
-      user-uid: 1000
-      fs-gid: 100
+      - target-port: 8888
+        cpu-limit: '0.5'
+        memory-limit: 1Gi
+        name: "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
+        image: "quay.io/cdis/heal-notebooks:bacpac__10670ad79b4488cfa9f1b3681ce52bc3f1139b5a"
+        env:
+          FRAME_ANCESTORS: https://{{ .Values.global.hostname }}
+        args:
+          - "--NotebookApp.base_url=/lw-workspace/proxy/"
+          - "--NotebookApp.password=''"
+          - "--NotebookApp.token=''"
+          - "--NotebookApp.quit_button=False"
+        command:
+          - start-notebook.sh
+        path-rewrite: "/lw-workspace/proxy/"
+        use-tls: 'false'
+        ready-probe: "/lw-workspace/proxy/"
+        lifecycle-post-start:
+          - "/bin/sh"
+          - "-c"
+          - export IAM=`whoami`; rm -rf /home/$IAM/pd/dockerHome; rm -rf /home/$IAM/pd/lost+found; ln -s /data /home/$IAM/pd/; true
+        user-uid: 1000
+        fs-gid: 100
 
 indexd:
   replicaCount: 2
@@ -322,10 +321,10 @@ audit:
   env:
     - name: ARBORIST_URL
       valueFrom:
-       configMapKeyRef:
-         name: manifest-global
-         key: arborist_url
-         optional: true
+        configMapKeyRef:
+          name: manifest-global
+          key: arborist_url
+          optional: true
     - name: AWS_ACCESS_KEY_ID
       value: test
     - name: AWS_SECRET_ACCESS_KEY
