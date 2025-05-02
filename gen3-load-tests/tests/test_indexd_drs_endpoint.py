@@ -1,6 +1,6 @@
 import pytest
 from gen3.auth import Gen3Auth
-from utils import SAMPLE_DESCRIPTORS_PATH, load_test
+from utils import load_test
 from utils import test_setup as setup
 
 
@@ -10,15 +10,6 @@ class TestIndexdDrsEndpoint:
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
-        )
-
-        # Load the sample descriptor data
-        self.sample_descriptor_file_path = (
-            SAMPLE_DESCRIPTORS_PATH
-            / "load-test-indexd-drs-endpoint-bottleneck-sample.json"
-        )
-        self.sample_descriptor_data = setup.get_sample_descriptor_data(
-            self.sample_descriptor_file_path
         )
 
     def test_create_indexd_records(self):
@@ -46,20 +37,20 @@ class TestIndexdDrsEndpoint:
                 guids_list.append(record["did"])
 
         env_vars = {
+            "SERVICE": "indexd",
+            "LOAD_TEST_SCENARIO": "drs-endpoint",
             "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
             "RELEASE_VERSION": "1.0.0",
             "GEN3_HOST": f"{pytest.hostname}",
             "ACCESS_TOKEN": self.auth.get_access_token(),
-            "VIRTUAL_USERS": f'{[entry for entry in self.sample_descriptor_data["virtual_users"]]}'.replace(
-                "'", '"'
-            ),
+            "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "5s", "target": 1}, {"duration": "1s", "target": 2}, {"duration": "5s", "target": 2}, {"duration": "1s", "target": 3}, {"duration": "5s", "target": 3}, {"duration": "1s", "target": 4}, {"duration": "5s", "target": 4}, {"duration": "1s", "target": 5}, {"duration": "5s", "target": 5}, {"duration": "1s", "target": 6}, {"duration": "5s", "target": 6}, {"duration": "1s", "target": 7}, {"duration": "5s", "target": 7}, {"duration": "1s", "target": 8}, {"duration": "5s", "target": 8}, {"duration": "1s", "target": 9}, {"duration": "5s", "target": 9}, {"duration": "1s", "target": 10}, {"duration": "5s", "target": 10}, {"duration": "1s", "target": 11}, {"duration": "5s", "target": 11}, {"duration": "1s", "target": 12}, {"duration": "5s", "target": 12}, {"duration": "1s", "target": 13}, {"duration": "5s", "target": 13}, {"duration": "1s", "target": 14}, {"duration": "5s", "target": 14}, {"duration": "1s", "target": 15}, {"duration": "5s", "target": 15}, {"duration": "1s", "target": 16}, {"duration": "5s", "target": 16}, {"duration": "1s", "target": 17}, {"duration": "5s", "target": 17}, {"duration": "1s", "target": 18}, {"duration": "5s", "target": 18}, {"duration": "1s", "target": 19}, {"duration": "5s", "target": 19}, {"duration": "1s", "target": 20}, {"duration": "5s", "target": 20}]',
             "SIGNED_URL_PROTOCOL": "s3",
         }
 
         # Run k6 load test
-        service = self.sample_descriptor_data["service"]
-        load_test_scenario = self.sample_descriptor_data["load_test_scenario"]
-        result = load_test.run_load_test(env_vars, service, load_test_scenario)
+        result = load_test.run_load_test(env_vars)
 
         # Process the results
-        load_test.get_results(result, service, load_test_scenario)
+        load_test.get_results(
+            result, env_vars["SERVICE"], env_vars["LOAD_TEST_SCENARIO"]
+        )

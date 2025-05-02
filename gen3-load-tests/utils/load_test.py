@@ -6,7 +6,9 @@ import pytest
 from utils import LOAD_TESTING_OUTPUT_PATH, LOAD_TESTING_SCRIPTS_PATH, logger
 
 
-def run_load_test(env_vars, service, load_test_scenario):
+def run_load_test(env_vars):
+    service = env_vars["SERVICE"]
+    load_test_scenario = env_vars["LOAD_TEST_SCENARIO"]
     js_script_path = LOAD_TESTING_SCRIPTS_PATH / f"{service}-{load_test_scenario}.js"
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
     result = subprocess.run(

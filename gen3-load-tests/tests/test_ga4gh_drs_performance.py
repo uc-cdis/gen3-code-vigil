@@ -1,10 +1,10 @@
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from utils import SAMPLE_DESCRIPTORS_PATH, load_test, logger
-from utils import test_setup as setup
+from utils import load_test
 
 
+@pytest.mark.skip(reason="Need to check on the mtls cert and key")
 @pytest.mark.ga4gh_drs_performance
 class TestGa4ghDrsPerformance:
     def setup_method(self):
@@ -17,20 +17,12 @@ class TestGa4ghDrsPerformance:
         )
         self.index = Gen3Index(index_auth)
 
-        # Load the sample descriptor data
-        self.sample_descriptor_file_path = (
-            SAMPLE_DESCRIPTORS_PATH / "load-test-ga4gh-drs-performance-sample.json"
-        )
-        self.sample_descriptor_data = setup.get_sample_descriptor_data(
-            self.sample_descriptor_file_path
-        )
-
         # Guid list used for deletion in teardown_method
         self.guid_list = []
 
     def teardown_method(self):
         for did in self.guid_list:
-            logger.info(self.index.delete_record(guid=did))
+            self.index.delete_record(guid=did)
 
     def test_ga4gh_drs_performance(self):
         for i in range(400):
@@ -73,6 +65,8 @@ class TestGa4ghDrsPerformance:
 
         # Setup env_vars to pass into k6 load runner
         env_vars = {
+            "SERVICE": "ga4gh",
+            "LOAD_TEST_SCENARIO": "drs-performance",
             "TARGET_ENV": pytest.hostname,
             "AUTHZ_LIST": "/programs/jnkns/projects/jenkins,/programs/jnkns/projects/jenkins2,/programs/QA/projects/test",
             "MINIMUM_RECORDS": "1000",
@@ -89,9 +83,9 @@ class TestGa4ghDrsPerformance:
         }
 
         # Run k6 load test
-        service = self.sample_descriptor_data["service"]
-        load_test_scenario = self.sample_descriptor_data["load_test_scenario"]
-        result = load_test.run_load_test(env_vars, service, load_test_scenario)
+        result = load_test.run_load_test(env_vars)
 
         # Process the results
-        load_test.get_results(result, service, load_test_scenario)
+        load_test.get_results(
+            result, env_vars["SERVICE"], env_vars["LOAD_TEST_SCENARIO"]
+        )
