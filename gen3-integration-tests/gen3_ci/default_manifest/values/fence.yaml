@@ -18,7 +18,7 @@ fence:
       - name: AWS_SECRET_ACCESS_KEY
         value: test
       - name: AWS_ENDPOINT_URL
-        value: 'http://localstack.localstack.svc.cluster.local:4566'
+        value: 'http://localstack.ci.planx-pla.net:4566'
       - name: AWS_DEFAULT_REGION
         value: 'us-east-1'
 
@@ -30,7 +30,7 @@ fence:
     PUSH_AUDIT_LOGS_CONFIG:
       type: aws_sqs
       aws_sqs_config:
-        sqs_url: http://localstack.ci.planx-pla.net/000000000000/audit-service-sqs
+        sqs_url: http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/audit-service-sqs
         region: us-east-1
         aws_cred: 'cdistest'
     AWS_CREDENTIALS:
@@ -41,11 +41,11 @@ fence:
       cdis-presigned-url-test:
         region: 'us-east-1'
         cred: 'cdistest'
-        endpoint_url: 'http://localstack.ci.planx-pla.net'
+        endpoint_url: 'http://localstack.ci.planx-pla.net:4566'
       gen3-helm-data-upload-bucket:
         region: 'us-east-1'
         cred: 'cdistest'
-        endpoint_url: 'http://localstack.ci.planx-pla.net'
+        endpoint_url: 'http://localstack.ci.planx-pla.net:4566'
     DATA_UPLOAD_BUCKET: 'gen3-helm-data-upload-bucket'
     LOGIN_OPTIONS:
     - name: 'Login from Google'
