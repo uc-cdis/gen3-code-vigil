@@ -30,10 +30,10 @@ class Guppy(object):
             file_indices_name = "ci_file_1"
         assert (
             subject_indices_name in data["indices"]
-        ), f"{subject_indices_name} not found in {data["indices"]}"
+        ), f"{subject_indices_name} not found in {data['indices']}"
         assert (
             file_indices_name in data["indices"]
-        ), f"{file_indices_name} not found in {data["indices"]}"
+        ), f"{file_indices_name} not found in {data['indices']}"
         return True
 
     def validate_guppy_query(
