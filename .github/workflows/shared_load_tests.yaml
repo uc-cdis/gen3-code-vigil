@@ -148,7 +148,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope TestFencePresignedURL
+              GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n auto -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
