@@ -173,7 +173,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
             helm_branch,
             ci_default_manifest,
             target_manifest_path,
-            updated_folder,
+            # updated_folder,
         ]
         return setup_env_for_helm(arguments)
 
