@@ -290,7 +290,7 @@ class TestGen3Workflow(object):
 
         # Step 4: Poll until the TES task completes or fails with a known status
         max_retries = 10
-        poll_interval = 15  # seconds
+        poll_interval = 30  # seconds
         transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
         final_success_state = "COMPLETE"
         final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED"}
@@ -424,7 +424,7 @@ class TestGen3Workflow(object):
                 "command": "python3 /utils/dicom_to_png.py img-2.dcm",
             },
         }
-        workflow_dir = "gen3-integration-tests/test_data/gen3_workflow/"
+        workflow_dir = "test_data/gen3_workflow/"
         workflow_log = self.gen3_workflow.run_nextflow_task(
             workflow_dir=workflow_dir,
             workflow_script="main.nf",

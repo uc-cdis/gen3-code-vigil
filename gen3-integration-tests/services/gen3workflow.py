@@ -366,7 +366,7 @@ class Gen3Workflow:
         workflow_dir_path = Path(workflow_dir).resolve()
 
         try:
-            os.chdir(workflow_dir)
+            os.chdir(workflow_dir_path)
             # Run the Nextflow workflow
             execution = nextflow.run(workflow_script, configs=[nextflow_config_file])
 
