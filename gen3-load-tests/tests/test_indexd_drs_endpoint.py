@@ -33,7 +33,6 @@ class TestIndexdDrsEndpoint:
                 "size": 129,
                 "urls": [
                     "s3://cdis-presigned-url-test/testdata",
-                    "gs://cdis-presigned-url-test/testdata",
                 ],
             }
             record = self.index.create_record(**record_data)

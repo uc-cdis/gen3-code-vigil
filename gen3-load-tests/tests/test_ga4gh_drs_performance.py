@@ -4,7 +4,7 @@ import os
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from utils import load_test
+from utils import GEN_LOAD_TESTING_PATH, load_test
 
 
 # @pytest.mark.skip(reason="Need to check on the mtls cert and key")
@@ -98,8 +98,8 @@ class TestGa4ghDrsPerformance:
             "SIGNED_URL_PROTOCOL": "s3",
             "NUM_PARALLEL_REQUESTS": "5",
             "MTLS_DOMAIN": "ctds-test-env.planx-pla.net",
-            "MTLS_CERT": "./mtls.crt",
-            "MTLS_KEY": "./mtls.key",
+            "MTLS_CERT": GEN_LOAD_TESTING_PATH / "mtls.crt",
+            "MTLS_KEY": GEN_LOAD_TESTING_PATH / "mtls.key",
         }
 
         # Run k6 load test

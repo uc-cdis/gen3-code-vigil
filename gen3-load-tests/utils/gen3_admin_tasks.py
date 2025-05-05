@@ -7,7 +7,7 @@ import uuid
 import pytest
 import requests
 from dotenv import load_dotenv
-from utils import TEST_DATA_PATH_OBJECT, logger
+from utils import logger
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
