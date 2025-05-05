@@ -18,8 +18,13 @@ class TestFencePresignedURL:
         )
         self.index = Gen3Index(self.index_auth)
 
+        self.guids_list = []
+
+    def teardown_method(self):
+        for did in self.guid_list:
+            self.index.delete_record(guid=did)
+
     def test_fence_presigned_url(self):
-        guids_list = []
         # Retrieve all indexd records
         index_records = setup.get_indexd_records(
             self.index_auth, indexd_record_acl="phs000178"
@@ -38,10 +43,10 @@ class TestFencePresignedURL:
                 ],
             }
             record = self.index.create_record(**record_data)
-            guids_list.append(record["did"])
+            self.guids_list.append(record["did"])
         else:
             for record in index_records:
-                guids_list.append(record["did"])
+                self.guids_list.append(record["did"])
 
         # Setup env_vars to pass into load runner
         env_vars = {

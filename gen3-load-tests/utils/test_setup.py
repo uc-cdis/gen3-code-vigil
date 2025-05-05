@@ -1,7 +1,5 @@
 import csv
 import json
-import os
-import re
 from pathlib import Path
 
 import pytest
@@ -75,11 +73,9 @@ def perform_pre_load_testing_setup():
     create_program(auth, "DEV")
     create_program(auth, "phs000178")
     create_program(auth, "jnkns")
-    create_program(auth, "QA")
     create_project(auth, "DEV", "test")
     create_project(auth, "jnkns", "jenkins")
     create_project(auth, "jnkns", "jenkins2")
-    create_project(auth, "QA", "test")
 
 
 def create_program(auth, program_name):
