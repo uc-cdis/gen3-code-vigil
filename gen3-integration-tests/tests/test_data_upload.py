@@ -69,6 +69,10 @@ class FileRecordWithCCs:
     "ssjdispatcher" not in pytest.deployed_services,
     reason="ssjdispatcher service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "metadata" not in pytest.deployed_services,
+    reason="Metadata service is not running on this environment",
+)
 @pytest.mark.fence
 @pytest.mark.indexd
 @pytest.mark.graph_submission
