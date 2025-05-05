@@ -1,5 +1,6 @@
 import pytest
 from gen3.auth import Gen3Auth
+from gen3.index import Gen3Index
 from utils import load_test
 from utils import test_setup as setup
 
@@ -11,6 +12,10 @@ class TestIndexdDrsEndpoint:
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
+        index_auth = Gen3Auth(
+            refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
+        )
+        self.index = Gen3Index(index_auth)
 
     def test_create_indexd_records(self):
         guids_list = []
@@ -27,8 +32,8 @@ class TestIndexdDrsEndpoint:
                 "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
                 "size": 129,
                 "urls": [
-                    "s3://qa-dcp-databucket-gen3/testdata",
-                    "gs://qa-dcp-databucket-gen3/file.txt",
+                    "s3://cdis-presigned-url-test/testdata",
+                    "gs://cdis-presigned-url-test/testdata",
                 ],
             }
             record = self.index.create_record(**record_data)

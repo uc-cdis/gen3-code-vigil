@@ -1,7 +1,8 @@
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from utils import load_test
+from gen3.submission import Gen3Submission
+from utils import load_test, logger
 from utils import test_setup as setup
 
 
@@ -12,16 +13,16 @@ class TestFencePresignedURL:
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-        index_auth = Gen3Auth(
+        self.index_auth = Gen3Auth(
             refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
         )
-        self.index = Gen3Index(index_auth)
+        self.index = Gen3Index(self.index_auth)
 
     def test_fence_presigned_url(self):
         guids_list = []
         # Retrieve all indexd records
         index_records = setup.get_indexd_records(
-            self.auth, indexd_record_acl="phs000178"
+            self.index_auth, indexd_record_acl="phs000178"
         )
         # If no record is present create one
         if len(index_records) == 0:
@@ -32,11 +33,12 @@ class TestFencePresignedURL:
                 "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
                 "size": 129,
                 "urls": [
-                    "s3://qa-dcp-databucket-gen3/testdata",
-                    "gs://qa-dcp-databucket-gen3/file.txt",
+                    "s3://cdis-presigned-url-test/testdata",
+                    "gs://cdis-presigned-url-test/testdata",
                 ],
             }
             record = self.index.create_record(**record_data)
+            guids_list.append(record["did"])
         else:
             for record in index_records:
                 guids_list.append(record["did"])

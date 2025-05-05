@@ -33,6 +33,8 @@ def pytest_configure(config):
 
     LOAD_TESTING_OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
+    setup.perform_pre_load_testing_setup()
+
 
 # def pytest_unconfigure(config):
 #     if os.path.exists(K6_LOAD_TESTING_OUTPUT_PATH):

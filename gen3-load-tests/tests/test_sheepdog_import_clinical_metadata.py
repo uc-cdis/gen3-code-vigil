@@ -1,5 +1,6 @@
 import pytest
 from gen3.auth import Gen3Auth
+from gen3.submission import Gen3Submission
 from utils import load_test
 
 
@@ -10,6 +11,16 @@ class TestSheepdogImportClinicalMetadata:
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
+
+        self.submission = Gen3Submission(auth_provider=self.auth)
+        data = {
+            "type": "study",
+            "submitter_id": "study_9ad93324ff",
+            "study_registration": "",
+            "study_id": "study_9ad93324ff",
+            "projects": {"code": "test"},
+        }
+        self.submission.submit_record("DEV", "test", data)
 
     def test_sheepdog_import_clinical_metadata(self):
         env_vars = {
