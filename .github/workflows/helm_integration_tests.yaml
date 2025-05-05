@@ -136,6 +136,7 @@ jobs:
             VERSION: v4.2.0
             BINARY: yq_linux_amd64
           run: |
+            echo "$(ls -ltr $GH_WORKSPACE)"
             pwd
             echo "Printing contents of current folder"
             echo "$(ls -ltr)"
