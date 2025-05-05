@@ -128,6 +128,7 @@ jobs:
           with:
             repository: uc-cdis/gen3-code-vigil
             ref: ${{ inputs.TEST_REPO_BRANCH }}
+            clean: false
 
         # Remove this as this is just a debugging step
         - name: Print the current folder structure
@@ -136,11 +137,11 @@ jobs:
             VERSION: v4.2.0
             BINARY: yq_linux_amd64
           run: |
+            echo "Printing /home/runner/work/gen3-gitops/"
             echo "$(ls -ltr /home/runner/work/gen3-gitops/)"
-            echo "Printing GH_WORKSPACE contents"
+            echo "Printing /home/runner/work/gen3-gitops/gen3-gitops"
             echo "$(ls -ltr $GH_WORKSPACE)"
-            pwd
-            echo "Printing contents of current folder"
+            echo "Printing /home/runner/work/gen3-gitops/gen3-gitops/gen3-integration-tests"
             echo "$(ls -ltr)"
 
         # gen3-integration-tests run with python 3.9
