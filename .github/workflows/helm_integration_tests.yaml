@@ -136,6 +136,8 @@ jobs:
             VERSION: v4.2.0
             BINARY: yq_linux_amd64
           run: |
+            echo "$(ls -ltr /home/runner/work/gen3-gitops/)"
+            echo "Printing GH_WORKSPACE contents"
             echo "$(ls -ltr $GH_WORKSPACE)"
             pwd
             echo "Printing contents of current folder"
