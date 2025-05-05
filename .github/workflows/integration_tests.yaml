@@ -16,9 +16,6 @@ jobs:
   integration_tests:
     name: Integration tests
     uses: ./.github/workflows/shared_integration_tests.yaml
-    with:
-      TEST_REPO_BRANCH: chore/update-aws-creds
-      CLOUD_AUTO_BRANCH: chore/debug-kube-setup-aws-es-proxy
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
       CI_AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
