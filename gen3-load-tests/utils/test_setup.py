@@ -66,18 +66,6 @@ def get_indexd_records(auth, indexd_record_acl=None):
     return result.json()["records"]
 
 
-def perform_pre_load_testing_setup():
-    auth = Gen3Auth(
-        refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
-    )
-    create_program(auth, "DEV")
-    create_program(auth, "phs000178")
-    create_program(auth, "jnkns")
-    create_project(auth, "DEV", "test")
-    create_project(auth, "jnkns", "jenkins")
-    create_project(auth, "jnkns", "jenkins2")
-
-
 def create_program(auth, program_name):
     submission = Gen3Submission(auth_provider=auth)
     if f"/v0/submission/{program_name}" not in submission.get_programs()["links"]:

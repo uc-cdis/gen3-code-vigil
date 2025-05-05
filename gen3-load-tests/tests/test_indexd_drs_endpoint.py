@@ -17,6 +17,8 @@ class TestIndexdDrsEndpoint:
         )
         self.index = Gen3Index(index_auth)
 
+        setup.create_program(self.auth, "phs000178")
+
     def test_create_indexd_records(self):
         guids_list = []
         # Retrieve all indexd records

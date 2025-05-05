@@ -1,10 +1,13 @@
+import base64
+import os
+
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from utils import load_test
 
 
-@pytest.mark.skip(reason="Need to check on the mtls cert and key")
+# @pytest.mark.skip(reason="Need to check on the mtls cert and key")
 @pytest.mark.ga4gh_drs_performance
 class TestGa4ghDrsPerformance:
     def setup_method(self):
@@ -20,9 +23,26 @@ class TestGa4ghDrsPerformance:
         # Guid list used for deletion in teardown_method
         self.guid_list = []
 
+        # Get CRT and KEY from secrets
+        crt_base64 = os.environ.get("CRT_BASE64")
+        decoded_cert = base64.b64decode(crt_base64)
+        with open("mtls.crt", "wb") as cert_file:
+            cert_file.write(decoded_cert)
+
+        key_base64 = os.environ.get("KEY_BASE64")
+        decoded_key = base64.b64decode(key_base64)
+        with open("mtls.key", "wb") as key_file:
+            key_file.write(decoded_key)
+
     def teardown_method(self):
         for did in self.guid_list:
             self.index.delete_record(guid=did)
+
+        if os.path.exists("./mtls.crt"):
+            os.remove("./mtls.crt")
+
+        if os.path.exists("./mtls.key"):
+            os.remove("./mtls.key")
 
     def test_ga4gh_drs_performance(self):
         for i in range(400):
@@ -78,8 +98,8 @@ class TestGa4ghDrsPerformance:
             "SIGNED_URL_PROTOCOL": "s3",
             "NUM_PARALLEL_REQUESTS": "5",
             "MTLS_DOMAIN": "ctds-test-env.planx-pla.net",
-            "MTLS_CERT": "/Users/krishnaa/gen3-code-vigil/gen3-load-tests/mtls.crt",
-            "MTLS_KEY": "/Users/krishnaa/gen3-code-vigil/gen3-load-tests/mtls.key",
+            "MTLS_CERT": "./mtls.crt",
+            "MTLS_KEY": "./mtls.key",
         }
 
         # Run k6 load test

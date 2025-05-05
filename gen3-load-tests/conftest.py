@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import pytest
 
@@ -32,10 +31,3 @@ def pytest_configure(config):
         pytest.api_keys[user] = setup.get_api_key(user)
 
     LOAD_TESTING_OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-
-    setup.perform_pre_load_testing_setup()
-
-
-# def pytest_unconfigure(config):
-#     if os.path.exists(K6_LOAD_TESTING_OUTPUT_PATH):
-#         shutil.rmtree(K6_LOAD_TESTING_OUTPUT_PATH)

@@ -18,10 +18,12 @@ class TestFencePresignedURL:
         )
         self.index = Gen3Index(self.index_auth)
 
+        setup.create_program(self.auth, "phs000178")
+
         self.guids_list = []
 
     def teardown_method(self):
-        for did in self.guid_list:
+        for did in self.guids_list:
             self.index.delete_record(guid=did)
 
     def test_fence_presigned_url(self):
