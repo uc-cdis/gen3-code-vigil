@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import pytest
 
@@ -13,8 +14,8 @@ collect_ignore = ["test_setup.py"]
 
 def pytest_configure(config):
     # Compute hostname and namespace
-    pytest.hostname = os.getenv("HOSTNAME")
     pytest.namespace = os.getenv("NAMESPACE")
+    pytest.hostname = f"{pytest.namespace}.planx-pla.net"
     # Compute root_url
     pytest.root_url = f"https://{pytest.hostname}"
 
@@ -31,3 +32,5 @@ def pytest_configure(config):
         pytest.api_keys[user] = setup.get_api_key(user)
 
     LOAD_TESTING_OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+
+    setup.perform_pre_load_testing_setup()

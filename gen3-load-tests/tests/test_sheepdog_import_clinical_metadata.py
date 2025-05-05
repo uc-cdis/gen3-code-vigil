@@ -2,7 +2,6 @@ import pytest
 from gen3.auth import Gen3Auth
 from gen3.submission import Gen3Submission
 from utils import load_test
-from utils import test_setup as setup
 
 
 @pytest.mark.sheepdog_import_clinical_metadata
@@ -12,9 +11,6 @@ class TestSheepdogImportClinicalMetadata:
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-
-        setup.create_program(self.auth, "DEV")
-        setup.create_project(self.auth, "DEV", "test")
 
         self.submission = Gen3Submission(auth_provider=self.auth)
         data = {
