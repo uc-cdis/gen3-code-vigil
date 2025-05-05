@@ -128,7 +128,7 @@ jobs:
           with:
             repository: uc-cdis/gen3-code-vigil
             ref: ${{ inputs.TEST_REPO_BRANCH }}
-            path: ${{ inputs.GH_WORKSPACE }}/gen3-code-vigil
+            path: gen3-code-vigil
 
         # Remove this as this is just a debugging step
         - name: Print the current folder structure
