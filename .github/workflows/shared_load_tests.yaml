@@ -24,6 +24,10 @@ on:
         required: true
       CI_SLACK_CHANNEL_ID:
         required: true
+      MTLS_CRT:
+        required: true
+      MTLS_KEY:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -51,6 +55,8 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+          MTLS_CRT: ${{ secrets.MTLS_CRT }}
+          MTLS_KEY: ${{ secrets.MTLS_KEY }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
