@@ -129,6 +129,16 @@ jobs:
             repository: uc-cdis/gen3-code-vigil
             ref: ${{ inputs.TEST_REPO_BRANCH }}
 
+        # Remove this as this is just a debugging step
+        - name: Print the current folder structure
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          env:
+            VERSION: v4.2.0
+            BINARY: yq_linux_amd64
+          run: |
+            echo "Printing contents of current folder"
+            echo "$(ls -ltr)"
+
         # gen3-integration-tests run with python 3.9
         - name: Set up Python
           if: ${{ env.SKIP_TESTS != 'true' }}
