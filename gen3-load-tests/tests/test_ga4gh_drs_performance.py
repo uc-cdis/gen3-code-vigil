@@ -24,13 +24,13 @@ class TestGa4ghDrsPerformance:
         self.guid_list = []
 
         # Get CRT and KEY from secrets
-        crt_base64 = os.environ.get("CRT_BASE64")
-        decoded_cert = base64.b64decode(crt_base64)
+        mtls_crt = os.environ.get("MTLS_CRT")
+        decoded_cert = base64.b64decode(mtls_crt)
         with open("mtls.crt", "wb") as cert_file:
             cert_file.write(decoded_cert)
 
-        key_base64 = os.environ.get("KEY_BASE64")
-        decoded_key = base64.b64decode(key_base64)
+        mtls_key = os.environ.get("MTLS_KEY")
+        decoded_key = base64.b64decode(mtls_key)
         with open("mtls.key", "wb") as key_file:
             key_file.write(decoded_key)
 
