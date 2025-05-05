@@ -304,7 +304,7 @@ spec:
                               printf '[default]\nregion = %s\n' "${AWS_DEFAULT_REGION}" >> ~/.aws/config
                             fi                            
                             source $GEN3_HOME/gen3/gen3setup.sh
-                            yes | gen3 reset
+                            yes | gen3 roll all
                         '''
                     }
                 }
