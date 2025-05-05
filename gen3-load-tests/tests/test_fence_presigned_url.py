@@ -54,7 +54,7 @@ class TestFencePresignedURL:
             "LOAD_TEST_SCENARIO": "presigned-url",
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
-            "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
+            "GUIDS_LIST": ",".join(self.guids_list).replace("'", ""),
             "RELEASE_VERSION": "1.0.0",
             "VIRTUAL_USERS": '[{"duration": "5s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
         }
