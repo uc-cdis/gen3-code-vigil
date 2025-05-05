@@ -24,6 +24,7 @@ from utils.test_execution import assert_with_retry
 class TestAggregateMDS:
     def test_create_edit_delete_study(self):
         """
+        #### Just testing ####
         Scenario : Create, edit and delete study from aggregate metadata
         Steps:
             1. Create a metadata record, run metadata-aggregate-sync job and verify creation.
