@@ -26,7 +26,7 @@ class UserRegister(object):
             '//*[contains(@class, " g3-dropdown__item ")][1]'
         )
 
-    def register_user(self, page):
+    def register_user(self, page, user_email):
         # Wait for the Register button to show up after login
         register_button = page.locator(self.REGISTER_BUTTON)
         expect(register_button).to_be_visible(timeout=10000)
@@ -42,7 +42,7 @@ class UserRegister(object):
         page.locator(self.LAST_NAME_INPUT).fill("Test")
         page.locator(self.ORGANIZATION_INPUT).fill("Uchicago")
         if page.locator(self.EMAIL_INPUT).is_visible():
-            page.locator(self.EMAIL_INPUT).fill(pytest.users["main_account"])
+            page.locator(self.EMAIL_INPUT).fill(user_email)
         register_button.click()
 
         # Wait for username to showup

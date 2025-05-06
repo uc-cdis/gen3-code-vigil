@@ -4,6 +4,7 @@ import re
 import time
 
 import pytest
+from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
@@ -31,6 +32,7 @@ class LoginPage(object):
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
         self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
+        self.REGISTER_USER_BUTTON = "//button[@type='submit']"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
         self.LOGIN_BUTTONS = [
@@ -95,6 +97,9 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
+        user_register = UserRegister()
+        if page.locator(self.REGISTER_USER_BUTTON).is_visible(timeout=10000):
+            user_register.register_user(page, user_email=logged_in_user)
         screenshot(page, "AfterLogin")
         if validate_username_locator:
             res = get_portal_config()
