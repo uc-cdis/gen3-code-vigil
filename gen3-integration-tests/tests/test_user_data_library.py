@@ -38,13 +38,10 @@ class TestUserDataLibrary(object):
             },
         }
 
-        cls.list_id = ""
-
     def teardown_method(self):
         # Delete the list after each test
-        if len(self.list_id) != 0:
-            gen3_udl = UserDataLibrary()
-            gen3_udl.delete_list(user="main_account", list_id=self.list_id)
+        gen3_udl = UserDataLibrary()
+        gen3_udl.delete_all_lists(user="main_account")
 
     def test_user_crud_data_library_lists(self):
         """
@@ -63,15 +60,18 @@ class TestUserDataLibrary(object):
             user="main_account", data=self.ci_create_data
         )
         for key in data_library_list["lists"].keys():
-            self.list_id = key
+            list_id = key
 
         # Retrieve the list
-        gen3_udl.read_list(user="main_account", list_id=self.list_id)
+        gen3_udl.read_list(user="main_account", list_id=list_id)
 
         # Update the data library list
         gen3_udl.update_list(
-            user="main_account", data=self.ci_update_data, list_id=self.list_id
+            user="main_account", data=self.ci_update_data, list_id=list_id
         )
+
+        # Delete the data library list
+        gen3_udl.delete_list(user="main_account", list_id=list_id)
 
     def test_create_multiple_data_library_lists_same_data(self):
         """
@@ -90,13 +90,16 @@ class TestUserDataLibrary(object):
             user="main_account", data=self.ci_create_data
         )
         for key in data_library_list["lists"].keys():
-            self.list_id = key
+            list_id = key
 
         # Retrieve the list
-        gen3_udl.read_list(user="main_account", list_id=self.list_id)
+        gen3_udl.read_list(user="main_account", list_id=list_id)
 
         # Try creating lists with the same data
         for iter in range(5):
             gen3_udl.create_list(
                 user="main_account", data=self.ci_create_data, expected_status=409
             )
+
+        # Delete the data library list
+        gen3_udl.delete_list(user="main_account", list_id=list_id)
