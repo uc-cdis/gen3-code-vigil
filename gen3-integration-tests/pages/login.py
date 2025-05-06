@@ -32,7 +32,7 @@ class LoginPage(object):
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
         self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
-        self.REGISTER_USER_BUTTON = "//button[@type='submit']"
+        self.REGISTER_USER_BUTTON = "//button[contains(text(),'Register')]"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
         self.LOGIN_BUTTONS = [
