@@ -6,7 +6,7 @@ from gen3.auth import Gen3Auth
 from utils import load_test
 
 
-@pytest.mark.skip(reason="This is not working, need to check")
+# @pytest.mark.skip(reason="This is not working, need to check")
 @pytest.mark.metadata_create_and_query
 class TestMetadataCreateAndQuery:
     def setup_method(self):

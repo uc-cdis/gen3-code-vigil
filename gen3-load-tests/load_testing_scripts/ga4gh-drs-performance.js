@@ -76,7 +76,7 @@ const {
 
   if (`${MTLS_DOMAIN}` !== 'test') {
     console.log('Enabling Mutual TLS with the follow configuration:\n'
-      + `MTLS_DOMAIN: ${MTLS_DOMAIN}\nMTLS_CERT: ${MTLS_CERT}\nMTLS_KEY: ${MTLS_KEY}`); // eslint-disable-line
+      + `MTLS_DOMAIN: ${MTLS_DOMAIN}`); // eslint-disable-line
     rawOptions.tlsAuth = [
       {
         domains: [`${MTLS_DOMAIN}`],
