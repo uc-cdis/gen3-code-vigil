@@ -138,3 +138,9 @@ def check_agg_mds_is_enabled():
 
 def check_indexs3client_job_deployed():
     return gen3_admin_tasks.check_indexs3client_job_deployed()
+
+
+def enable_register_user():
+    gen3_admin_tasks.fence_enable_register_users_redirect(
+        test_env_namespace=pytest.namespace
+    )
