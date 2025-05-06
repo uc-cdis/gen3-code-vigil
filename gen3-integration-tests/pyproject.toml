@@ -53,6 +53,7 @@ markers = [
   "fence: test for fence service",
   "frontend_framework: tests for frontend-framework",
   "gen3_client: tests for gen3-client / cdis-data-client",
+  "gen3_user_data_library: test for gen3-user-data-library",
   "guppy: tests for guppy-service",
   "indexd: tests for indexd service",
   "manifestservice: tests for manifest service",

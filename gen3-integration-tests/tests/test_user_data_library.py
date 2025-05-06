@@ -7,6 +7,7 @@ from utils import logger
     "gen3-user-data-library" not in pytest.deployed_services,
     reason="gen3-user-data-library service is not running on this environment",
 )
+@pytest.mark.gen3_user_data_library
 class TestUserDataLibrary(object):
     def setup_class(cls):
         cls.ci_create_data = {
