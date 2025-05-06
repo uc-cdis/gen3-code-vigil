@@ -132,7 +132,7 @@ jobs:
             run: |
               echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
-              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
               fi
