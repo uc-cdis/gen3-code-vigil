@@ -78,6 +78,8 @@ jobs:
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+          SFTP_QA_HOSTNAME: "sftp-qa.planx-pla.net"
+
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -174,6 +176,14 @@ jobs:
             run: |
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
+          # Workaround for Paramiko RejectPolicy: pre-load the SFTP host key to avoid connection failure during dbGaP user sync
+          # Without this, Paramiko will reject the host since known_hosts is empty in CI
+          - name: Add SFTP host key to known_hosts
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              mkdir -p ~/.ssh
+              ssh-keyscan -p 22 $SFTP_QA_HOSTNAME >> ~/.ssh/known_hosts
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
