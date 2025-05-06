@@ -11,6 +11,7 @@ def run_load_test(env_vars):
     load_test_scenario = env_vars["LOAD_TEST_SCENARIO"]
     js_script_path = LOAD_TESTING_SCRIPTS_PATH / f"{service}-{load_test_scenario}.js"
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
+    logger.info(f"Running load test for {service}-{load_test_scenario}")
     result = subprocess.run(
         ["k6", "run", js_script_path, f"--summary-export={output_path}"],
         capture_output=True,
@@ -23,6 +24,7 @@ def run_load_test(env_vars):
 
 
 def get_results(result, service, load_test_scenario):
+    logger.info(f"Validating logs for {service}-{load_test_scenario}")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
     output = json.loads(output_path.read_text())
     passed = str(output["metrics"]["checks"]["passes"])
