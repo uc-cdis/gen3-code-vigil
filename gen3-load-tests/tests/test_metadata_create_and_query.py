@@ -16,20 +16,18 @@ class TestMetadataCreateAndQuery:
         )
 
     def test_metadata_create_and_query(self):
-        if "username" in self.sample_descriptor_data["basic_auth"]:
-            username = self.sample_descriptor_data["basic_auth"]["username"]
-            password = self.sample_descriptor_data["basic_auth"]["password"]
-            auth_string = f"{username}:{password}"
-            basic_auth = base64.b64encode(auth_string.encode()).decode()
-        else:
-            basic_auth = ""
         # Setup env_vars to pass into k6 load runner
         env_vars = {
             "SERVICE": "metadata-service",
             "LOAD_TEST_SCENARIO": "create-and-query",
             "ACCESS_TOKEN": self.auth.get_access_token(),
-            "BASIC_AUTH": basic_auth,
-            "MDS_TEST_DATA": str(self.sample_descriptor_data["mds_test_data"]),
+            "BASIC_AUTH": "",
+            "MDS_TEST_DATA": {
+                "filter1": "a=1",
+                "filter2": "nestedData.b=2",
+                "fictitiousRecord1": {"a": 1},
+                "fictitiousRecord2": {"nestedData": {"b": 2}},
+            },
             "RELEASE_VERSION": "1.0.0",
             "GEN3_HOST": f"{pytest.hostname}",
             "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "300s", "target": 100}, {"duration": "30s", "target": 1}]',
