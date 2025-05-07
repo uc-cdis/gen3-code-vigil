@@ -165,7 +165,7 @@ jobs:
         - name: Install dependencies
           if: ${{ env.SKIP_TESTS != 'true' }}
           env:
-            VERSION: v4.2.0
+            VERSION: v4.45.2
             BINARY: yq_linux_amd64
           run: |
             sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
