@@ -49,6 +49,8 @@ on:
         required: true
       EKS_CLUSTER_NAME:
         required: true
+      WORKING_DIR:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -61,7 +63,7 @@ jobs:
       defaults:
         run:
           # the test directory in gen3-code-vigil
-          working-directory: gen3-code-vigil/gen3-integration-tests
+          working-directory: ${{ inputs.WORKING_DIR }}
 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
