@@ -84,7 +84,7 @@ metadata:
 sower:
   replicaCount: 2
   pelican:
-    bucket: 'sower-bucket'
+    bucket: 'sower-jobs-bucket'
   image:
     repository: quay.io/cdis/sower
     tag: 'master'
@@ -94,7 +94,7 @@ sower:
     create: true
     # -- (map) Annotations to add to the service account.
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/sower-jobs-role
+      eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/sower-jobs-role
     # -- (string) The name of the service account to use.
     # If not set and create is true, a name is generated using the fullname template
     name: "sower-service-account"
@@ -143,14 +143,6 @@ sower:
               secretKeyRef:
                 name: indexd-service-creds
                 key: sheepdog
-          - name: AWS_ENDPOINT_URL
-            value: "http://localstack.ci.planx-pla.net:4566"
-          - name: AWS_DEFAULT_REGION
-            value: us-east-1
-          - name: AWS_ACCESS_KEY_ID
-            value: test
-          - name: AWS_SECRET_ACCESS_KEY
-            value: test
         volumeMounts:
           - name: pelican-creds-volume
             readOnly: true
@@ -209,14 +201,6 @@ sower:
               secretKeyRef:
                 name: indexd-service-creds
                 key: sheepdog
-          - name: AWS_ENDPOINT_URL
-            value: "http://localstack.ci.planx-pla.net:4566"
-          - name: AWS_DEFAULT_REGION
-            value: us-east-1
-          - name: AWS_ACCESS_KEY_ID
-            value: test
-          - name: AWS_SECRET_ACCESS_KEY
-            value: test
         volumeMounts:
           - name: pelican-creds-volume
             readOnly: true
@@ -239,20 +223,12 @@ sower:
         pull_policy: Always
         env:
           - name: BUCKET
-            value: sower-bucket
+            value: sower-jobs-bucket
           - name: GEN3_HOSTNAME
             valueFrom:
               configMapKeyRef:
                 name: manifest-global
                 key: hostname
-          - name: AWS_ENDPOINT_URL
-            value: "http://localstack.ci.planx-pla.net:4566"
-          - name: AWS_DEFAULT_REGION
-            value: us-east-1
-          - name: AWS_ACCESS_KEY_ID
-            value: test
-          - name: AWS_SECRET_ACCESS_KEY
-            value: test
         cpu-limit: "1"
         memory-limit: 1Gi
       restart_policy: Never
@@ -265,14 +241,15 @@ ssjdispatcher:
   enabled: true
   indexing: quay.io/cdis/indexs3client:master
   ssjcreds:
-    sqsUrl: http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/gen3-helm-data-upload-bucket
+    sqsUrl: https://sqs.us-east-1.amazonaws.com/707767160287/gen3-helm-data-upload-bucket
+    # This will be dynamically replaced by env_setup.sh script.
     jobPattern: s3://test-12345678901234-upload/*
     jobUser: sheepdog_gen3
     metadataserviceUsername: metadata_gen3
   serviceAccount:
     create: true
     annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::000000000000:role/ssjdispatcher-role
+      eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/ssjdispatcher-role
     name: "ssjdispatcher-service-account"
 
 sheepdog:
@@ -299,15 +276,6 @@ peregrine:
     repository: "quay.io/cdis/peregrine"
     tag: "feat_jq-audience"
     pullPolicy: Always
-  env:
-    - name: AWS_ACCESS_KEY_ID
-      value: test
-    - name: AWS_SECRET_ACCESS_KEY
-      value: test
-    - name: AWS_ENDPOINT_URL
-      value: 'http://localstack.ci.planx-pla.net:4566'
-    - name: AWS_DEFAULT_REGION
-      value: 'us-east-1'
 
 requestor:
   replicaCount: 2
@@ -325,14 +293,6 @@ audit:
           name: manifest-global
           key: arborist_url
           optional: true
-    - name: AWS_ACCESS_KEY_ID
-      value: test
-    - name: AWS_SECRET_ACCESS_KEY
-      value: test
-    - name: AWS_ENDPOINT_URL
-      value: 'http://localstack.ci.planx-pla.net:4566'
-    - name: AWS_DEFAULT_REGION
-      value: 'us-east-1'
   image:
     repository: quay.io/cdis/audit-service
     tag: '2025.01'
@@ -341,7 +301,8 @@ audit:
     debug: true
     sqs:
       region: us-east-1
-      url:  http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/audit-service-sqs
+      url:  https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
+      # This will be dynamically replaced by env_setup.sh script.
   enabled: true
 
 ambassador:
@@ -377,6 +338,7 @@ revproxy:
     className: alb
     hosts:
       - host: HOSTNAME
+      # This will be dynamically replaced by env_setup.sh script.
         paths:
           - path: /
             pathType: Prefix
@@ -398,20 +360,7 @@ manifestservice:
   image:
     repository: quay.io/cdis/manifestservice
     tag: "krishnaa05-patch-1"
-  manifestserviceG3auto:
-    bucketName: gen3-helm-manifest-bucket
-    prefix: 'test'
-    awsaccesskey: test
-    awssecretkey: test #pragma: allowlist secret
   env:
-    - name: AWS_ACCESS_KEY_ID
-      value: test
-    - name: AWS_SECRET_ACCESS_KEY
-      value: test
-    - name: AWS_ENDPOINT_URL
-      value: 'http://localstack.ci.planx-pla.net:4566'
-    - name: AWS_DEFAULT_REGION
-      value: 'us-east-1'
     - name: REQUESTS_CA_BUNDLE
       value: /etc/ssl/certs/ca-certificates.crt
     - name: MANIFEST_SERVICE_CONFIG_PATH

@@ -12,6 +12,21 @@ namespace="$1"
 setup_type="$2"
 helm_branch="$3"
 
+# Create sqs queues and save the URL to a var
+AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
+AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
+UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+export TEST_SQS_URLS="$AUDIT_QUEUE_URL,$UPLOAD_QUEUE_URL"
+
+echo "running yq version"
+yq --version
+
+
+# Update values.yaml to use sqs queues.
+yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
+
 # Add in hostname for revproxy configuration
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
 
@@ -261,6 +276,7 @@ wait_for_pods_ready() {
   return 1
 }
 
+#possibly add to contest.py and add a var to "cleanup=false"
 delete_pvcs() {
   for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master"; do
     pvc=$(kubectl get pvc -n "$NAMESPACE" -l "$label" -o jsonpath='{.items[0].metadata.name}')
@@ -282,7 +298,6 @@ delete_pvcs() {
     fi
   done
 }
-
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then

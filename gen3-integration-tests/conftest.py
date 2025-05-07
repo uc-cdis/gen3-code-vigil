@@ -162,3 +162,18 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+    if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        test_queue_urls = os.environ.get("TEST_SQS_URLS", "").split(",")
+        test_queue_urls = [url for url in test_queue_urls if url]
+        if test_queue_urls:
+            delete_sqs_queues(test_queue_urls)
+
+
+def delete_sqs_queues(queue_urls):
+    sqs = boto3.client("sqs")
+    for url in queue_urls:
+        try:
+            print(f"Deleting SQS queue: {url}")
+            sqs.delete_queue(QueueUrl=url)
+        except Exception as e:
+            print(f"Failed to delete queue {url}: {e}")
