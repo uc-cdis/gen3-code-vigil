@@ -24,6 +24,10 @@ on:
         required: false
         type: string
         default: default
+      WORKING_DIR:
+        required: true
+        type: string
+        default: default
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -48,8 +52,6 @@ on:
       CI_SLACK_CHANNEL_ID:
         required: true
       EKS_CLUSTER_NAME:
-        required: true
-      WORKING_DIR:
         required: true
 
 concurrency:
