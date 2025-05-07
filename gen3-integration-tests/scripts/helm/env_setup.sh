@@ -166,9 +166,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.frontendRoot"
      "google.enabled"
      "ssjdispatcher.indexing"
-     "metadata.useAggMds"
-     "metadata.aggMdsNamespace"
-     "metadata.aggMdsDefaultDataDictField"
+     # "metadata.useAggMds"
+     # "metadata.aggMdsNamespace"
+     # "metadata.aggMdsDefaultDataDictField"
      "sower.sowerConfig"
      )
     echo "###################################################################################"
