@@ -13,7 +13,6 @@ class UserDataLibrary(object):
         """helper function to create list in data library"""
         logger.info("Creating Data Library List")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        url = self.BASE_ENDPOINT + self.LIBRARY_LISTS_ENDPOINT
         url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}"
         headers = {
             "Content-Type": "application/json",
@@ -95,7 +94,7 @@ class UserDataLibrary(object):
         """helper function to delete all lists in data library"""
         logger.info("Deleting All Data Library Lists")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        url = self.BASE_ENDPOINT + self.LIBRARY_LISTS_ENDPOINT
+        url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}"
         headers = {
             "Authorization": f"bearer {auth.get_access_token()}",
         }
