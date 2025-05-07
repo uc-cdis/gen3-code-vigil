@@ -37,10 +37,10 @@ class UserDataLibrary(object):
         logger.info("Reading Data Library List")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         if list_id:
-            url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}/{list_id}"
+            url = f"{self.LISTS_ENDPOINT}/{list_id}"
         else:
             # All lists
-            url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}"
+            url = f"{self.LISTS_ENDPOINT}"
         logger.info(url)
         response = auth.curl(path=url)
         assert (
