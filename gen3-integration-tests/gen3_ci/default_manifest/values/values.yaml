@@ -74,8 +74,8 @@ metadata:
     {
       "gen3_commons": {
         "HEAL": {
-          "mds_url": "http://revproxy-service.default.svc.cluster.local",
-          "commons_url": "http://revproxy-service.default.svc.cluster.local"
+          "mds_url": "http://revproxy-service",
+          "commons_url": "http://revproxy-service"
         }
       },
       "adapter_commons": {}
