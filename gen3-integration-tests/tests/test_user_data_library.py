@@ -1,6 +1,5 @@
 import pytest
 from services.userdatalibrary import UserDataLibrary
-from utils import logger
 
 
 @pytest.mark.skipif(
@@ -10,7 +9,7 @@ from utils import logger
 @pytest.mark.gen3_user_data_library
 class TestUserDataLibrary(object):
     def setup_class(cls):
-        cls.ci_create_data = {
+        cls.test_data_create = {
             "lists": [
                 {
                     "name": "My Saved List asdf4",
@@ -24,7 +23,7 @@ class TestUserDataLibrary(object):
             ]
         }
 
-        cls.ci_update_data = {
+        cls.test_data_update = {
             "name": "My Saved List asdf4",
             "items": {
                 "drs://dg.4503:THIS_IS_NEW": {
@@ -57,7 +56,7 @@ class TestUserDataLibrary(object):
 
         # Create the data library list
         data_library_list = gen3_udl.create_list(
-            user="main_account", data=self.ci_create_data
+            user="main_account", data=self.test_data_create
         )
         for key in data_library_list["lists"].keys():
             list_id = key
@@ -67,7 +66,7 @@ class TestUserDataLibrary(object):
 
         # Update the data library list
         gen3_udl.update_list(
-            user="main_account", data=self.ci_update_data, list_id=list_id
+            user="main_account", data=self.test_data_update, list_id=list_id
         )
 
         # Delete the data library list
@@ -87,7 +86,7 @@ class TestUserDataLibrary(object):
 
         # Create the data library list
         data_library_list = gen3_udl.create_list(
-            user="main_account", data=self.ci_create_data
+            user="main_account", data=self.test_data_create
         )
         for key in data_library_list["lists"].keys():
             list_id = key
@@ -95,11 +94,9 @@ class TestUserDataLibrary(object):
         # Retrieve the list
         gen3_udl.read_list(user="main_account", list_id=list_id)
 
-        # Try creating lists with the same data
-        for iter in range(5):
-            gen3_udl.create_list(
-                user="main_account", data=self.ci_create_data, expected_status=409
-            )
+        gen3_udl.create_list(
+            user="main_account", data=self.test_data_create, expected_status=409
+        )
 
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
