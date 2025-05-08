@@ -32,7 +32,7 @@ yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen
 CI_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_access_key_id"]' - | base64 -d )
 CI_SECRET_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_secret_access_key_id"]' - | base64 -d )
 yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_access_key_id = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
-yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key_id = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awsaccesskey = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awssecretkey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 
