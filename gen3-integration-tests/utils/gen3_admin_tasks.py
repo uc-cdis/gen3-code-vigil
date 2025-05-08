@@ -235,6 +235,7 @@ def fence_delete_expired_clients():
             timeout=10,
         )
         if not delete_explired_client_result.returncode == 0:
+            logger.info(delete_explired_client_result.stderr)
             raise Exception("Unable to delete expired clients.")
         return delete_explired_client_result.stdout.strip()
 
@@ -900,6 +901,8 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
         cmd = [
             "kubectl",
             "exec",
+            "-n",
+            test_env_namespace,
             "-i",
             fence_pod_name,
             "--",
@@ -913,8 +916,6 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
             expired,
             "--username",
             username,
-            "-n",
-            test_env_namespace,
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -922,6 +923,7 @@ def create_access_token(service, expired, username, test_env_namespace: str = ""
         if result.returncode == 0:
             return result.stdout.strip()
         else:
+            logger.info(result.stderr)
             raise Exception("Unable to get expired access_token")
 
 

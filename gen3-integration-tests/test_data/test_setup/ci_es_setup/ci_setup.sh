@@ -7,6 +7,13 @@ kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace}
 port_forward_pid=$!
 sleep 10  # Give port-forward some time to start
 
+# Delete any old indices to avoid loading the data again
+curl -s -o /dev/null -X DELETE "localhost:9200/ci_imaging_study_1" -H 'Content-Type: application/json'
+curl -s -o /dev/null -X DELETE "localhost:9200/ci_subject_1" -H 'Content-Type: application/json'
+curl -s -o /dev/null -X DELETE "localhost:9200/ci_file_1" -H 'Content-Type: application/json'
+curl -s -o /dev/null -X DELETE "localhost:9200/ci_configs_1" -H 'Content-Type: application/json'
+
+
 # Create ci_imaging_study_1 indices
 curl -iv -X PUT "localhost:9200/ci_imaging_study_1" -H 'Content-Type: application/json' -H 'Accept: application/json' "-d@test_data/test_setup/ci_es_setup/index_data/imaging_study_mapping.json"
 curl -X POST localhost:9200/_aliases -H 'Content-Type: application/json' -H 'Accept: application/json' "-d@test_data/test_setup/ci_es_setup/index_data/imaging_study_alias.json"
