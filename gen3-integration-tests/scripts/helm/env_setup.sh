@@ -35,6 +35,8 @@ yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_access_key_id = \"$CI_
 yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awsaccesskey = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awssecretkey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".secrets.awsAccessKeyId = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".secrets.awsSecretAccessKey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
