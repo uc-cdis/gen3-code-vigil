@@ -19,13 +19,21 @@ UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
 export TEST_SQS_URLS="$AUDIT_QUEUE_URL,$UPLOAD_QUEUE_URL"
 
-echo "running yq version"
-yq --version
-
-
 # Update values.yaml to use sqs queues.
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
+
+# Take the fence-config from External Secrets and dynamically modify it.
+BASE_URL=https://$HOSTNAME/user
+kubectl get secret fence-config-es -n ${namespace} -o yaml | yq eval '.data.["fence-config.yaml"]' - | base64 -d > fence-config-temp.yaml
+yq eval ".BASE_URL = \"$BASE_URL\"" -i fence-config-temp.yaml
+yq eval ".PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i fence-config-temp.yaml
+kubectl get secret fence-config-es -n ${namespace} -o json \
+| jq --arg new_config "$(base64 -w 0 fence-config-temp.yaml)" \
+     '.data["fence-config.yaml"] = $new_config
+     | .metadata.name = "fence-config"
+     | del(.metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.managedFields)' \
+| kubectl apply -n ${namespace} -f -
 
 # Add in hostname for revproxy configuration
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
