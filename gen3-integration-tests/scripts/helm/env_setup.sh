@@ -19,24 +19,22 @@ UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
 export TEST_SQS_URLS="$AUDIT_QUEUE_URL,$UPLOAD_QUEUE_URL"
 
-# Update values.yaml to use sqs queues.
+# Update values.yaml to use sqs queues
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".fence.FENCE_CONFIG.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/fence.yaml
 
-# Take the fence-config from External Secrets and dynamically modify it.
-BASE_URL=https://$HOSTNAME/user
-kubectl get secret fence-config-es -n ${namespace} -o yaml | yq eval '.data.["fence-config.yaml"]' - | base64 -d > fence-config-temp.yaml
-yq eval ".BASE_URL = \"$BASE_URL\"" -i fence-config-temp.yaml
-yq eval ".PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i fence-config-temp.yaml
-kubectl get secret fence-config-es -n ${namespace} -o json \
-| jq --arg new_config "$(base64 -w 0 fence-config-temp.yaml)" \
-     '.data["fence-config.yaml"] = $new_config
-     | .metadata.name = "fence-config"
-     | del(.metadata.resourceVersion, .metadata.uid, .metadata.creationTimestamp, .metadata.managedFields)' \
-| kubectl apply -n ${namespace} -f -
-
-# Add in hostname for revproxy configuration
+# Add in hostname for revproxy configuration and manifestservice
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
+
+# Add iam keys to fence-config and manifestserviceg3auto
+AWS_ACCESS_KEY_ID=$(cat ~/.aws/credentials | grep 'aws_access_key_id' | awk -F ' = ' '{print $2}')
+AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/credentials | grep 'aws_secret_access_key_id' | awk -F ' = ' '{print $2}')
+yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_access_key_id = \"$AWS_ACCESS_KEY_ID\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key_id = \"$AWS_SECRET_ACCESS_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".manifestservice.manifestserviceG3auto.awsaccesskey = \"$AWS_ACCESS_KEY_ID\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".manifestservice.manifestserviceG3auto.awssecretkey = \"$AWS_SECRET_ACCESS_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing

@@ -4,7 +4,6 @@ fence:
     repository: quay.io/cdis/fence
     pullPolicy: IfNotPresent
     tag: 'master'
-
   usersync:
     usersync: true
     userYamlS3Path: s3://cdis-gen3-users/ci/user.yaml
@@ -12,3 +11,45 @@ fence:
     # so it is set to run on the 1st of January if it is a Monday
     schedule: '0 0 1 1 1'
     syncFromDbgap: false
+  FENCE_CONFIG:
+    ENABLE_AUDIT_LOGS:
+      presigned_url: false
+      login: true
+    LOGIN_REDIRECT_WHITELIST: [".", "/login"]
+    PUSH_AUDIT_LOGS_CONFIG:
+      type: aws_sqs
+      aws_sqs_config:
+        sqs_url: https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
+        # This will be dynamically replaced by env_setup.sh script.
+        region: us-east-1
+        aws_cred: 'cdistest'
+    AWS_CREDENTIALS:
+      cdistest:
+        aws_access_key_id: test
+        # This will be dynamically replaced by env_setup.sh script.
+        aws_secret_access_key: test
+        # This will be dynamically replaced by env_setup.sh script.
+    S3_BUCKETS:
+      cdis-presigned-url-test:
+        region: 'us-east-1'
+        cred: 'cdistest'
+      gen3-helm-data-upload-bucket:
+        region: 'us-east-1'
+        cred: 'cdistest'
+    DATA_UPLOAD_BUCKET: 'gen3-helm-data-upload-bucket'
+    LOGIN_OPTIONS:
+      - name: 'Login from Google'
+        desc: 'description'
+        idp: google
+        #secondary: True
+      - name: 'RAS Login'
+        idp: ras
+    MOCK_GOOGLE_AUTH: true
+    HTTP_PROXY:
+      host: 'cloud-proxy.internal.io'
+      port: 3128
+    ENABLED_IDENTITY_PROVIDERS:
+      default: google
+      providers:
+        google:
+          name: Login from Google
