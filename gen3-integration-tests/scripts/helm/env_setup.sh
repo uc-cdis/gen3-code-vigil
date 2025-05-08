@@ -29,8 +29,8 @@ yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_man
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
 
 # Add iam keys to fence-config and manifestserviceg3auto
-AWS_ACCESS_KEY_ID=$(cat ~/.aws/credentials | grep 'aws_access_key_id' | awk -F ' = ' '{print $2}')
-AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/credentials | grep 'aws_secret_access_key_id' | awk -F ' = ' '{print $2}')
+AWS_ACCESS_KEY_ID=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_access_key_id"]' - | base64 -d )
+AWS_SECRET_ACCESS_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_secret_access_key_id"]' - | base64 -d )
 yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_access_key_id = \"$AWS_ACCESS_KEY_ID\"" -i gen3_ci/default_manifest/values/fence.yaml
 yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key_id = \"$AWS_SECRET_ACCESS_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awsaccesskey = \"$AWS_ACCESS_KEY_ID\"" -i gen3_ci/default_manifest/values/values.yaml
