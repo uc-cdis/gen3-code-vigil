@@ -79,6 +79,7 @@ jobs:
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           SFTP_QA_HOSTNAME: "sftp-qa.planx-pla.net"
+          SFTP_QA_HOSTNAME_2: "s-5745d53f10e1421eb.server.transfer.us-east-1.amazonaws.com"
 
 
         steps:
@@ -184,6 +185,7 @@ jobs:
             run: |
               mkdir -p ~/.ssh
               ssh-keyscan -p 22 $SFTP_QA_HOSTNAME >> ~/.ssh/known_hosts
+              ssh-keyscan -p 22 $SFTP_QA_HOSTNAME_2 >> ~/.ssh/known_hosts
 
           # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
