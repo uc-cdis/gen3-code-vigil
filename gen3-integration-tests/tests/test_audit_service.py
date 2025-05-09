@@ -27,13 +27,17 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 class TestAuditService:
     @classmethod
     def setup_class(cls):
-        assert update_audit_service_logging("true", test_env_namespace=pytest.namespace)
+        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+            assert update_audit_service_logging(
+                "true", test_env_namespace=pytest.namespace
+            )
 
     @classmethod
     def teardown_class(cls):
-        assert update_audit_service_logging(
-            "false", test_env_namespace=pytest.namespace
-        )
+        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+            assert update_audit_service_logging(
+                "false", test_env_namespace=pytest.namespace
+            )
 
     def test_audit_unauthorized_log_query(self):
         """

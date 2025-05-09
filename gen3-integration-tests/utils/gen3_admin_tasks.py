@@ -682,31 +682,27 @@ def update_audit_service_logging(audit_logging: str, test_env_namespace: str = "
     Runs jenkins job to enable/disable audit logging
     """
     # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-audit-service-logging",
-        )
-        params = {
-            "AUDIT_LOGGING": audit_logging,
-            "NAMESPACE": test_env_namespace,
-            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
-        }
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                return True
-            else:
-                job.terminate_build(build_num)
-                raise Exception("Build timed out. Consider increasing max_duration")
+    job = JenkinsJob(
+        os.getenv("JENKINS_URL"),
+        os.getenv("JENKINS_USERNAME"),
+        os.getenv("JENKINS_PASSWORD"),
+        "ci-only-audit-service-logging",
+    )
+    params = {
+        "AUDIT_LOGGING": audit_logging,
+        "NAMESPACE": test_env_namespace,
+        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+    }
+    build_num = job.build_job(params)
+    if build_num:
+        status = job.wait_for_build_completion(build_num)
+        if status == "Completed":
+            return True
         else:
-            raise Exception("Build number not found")
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+            job.terminate_build(build_num)
+            raise Exception("Build timed out. Consider increasing max_duration")
+    else:
+        raise Exception("Build number not found")
 
 
 def mutate_manifest_for_guppy_test(
