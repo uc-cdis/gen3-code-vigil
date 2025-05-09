@@ -244,7 +244,6 @@ def fence_delete_expired_clients():
             delete_explired_clients_cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            shell=True,
             text=True,
             timeout=10,
         )

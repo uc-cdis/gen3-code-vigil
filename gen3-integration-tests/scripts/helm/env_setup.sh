@@ -194,20 +194,20 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     done
 
-    # Update mds_url and common_url under metadata if present
-    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
-    if [ "$json_content" != "key not found" ]; then
-        current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
-        if [ "$current_value" != "key not found" ]; then
-            modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.mds_url = \"https://${namespace}.planx-pla.net/\"")
-            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
-        fi
-        current_commons_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.commons_url // \"key not found\"")
-        if [ "$current_value" != "key not found" ]; then
-            modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.commons_url = \"${namespace}.planx-pla.net/\"")
-            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
-        fi
-    fi
+    # # Update mds_url and common_url under metadata if present
+    # json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
+    # if [ "$json_content" != "key not found" ]; then
+    #     current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
+    #     if [ "$current_value" != "key not found" ]; then
+    #         modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.mds_url = \"https://${namespace}.planx-pla.net/\"")
+    #         yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
+    #     fi
+    #     current_commons_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.commons_url // \"key not found\"")
+    #     if [ "$current_value" != "key not found" ]; then
+    #         modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.commons_url = \"${namespace}.planx-pla.net/\"")
+    #         yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
+    #     fi
+    # fi
 fi
 
 echo $HOSTNAME
