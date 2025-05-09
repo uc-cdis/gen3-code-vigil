@@ -108,14 +108,18 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
     ####################################################################################
-    # if [ -e "$target_manifest_path/portal.yaml" ]; then
-    #     cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
-    #     json_content=$(yq '.portal.gitops.json' "$ci_default_manifest/portal.yaml" | jq -r )
-    #     modified_json=$(echo "$json_content" | jq 'del(.requiredCerts)')
-    #     echo "$modified_json" | yq eval -o=json '.' > temporary_json.yaml
-    #     yq eval-all '.portal.gitops.json = load("temporary_json.yaml")' "$ci_default_manifest/portal.yaml" -i
-    #     rm temporary_json.yaml
-    # fi
+    if [ -e "$target_manifest_path/portal.yaml" ]; then
+        cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
+        json_content=$(yq '.portal.gitops.json' "$ci_default_manifest/portal.yaml" | jq -r )
+        modified_json=$(echo "$json_content" | jq 'del(.requiredCerts)')
+        echo "$modified_json" | yq eval -o=json '.' > temporary_json.yaml
+        yq eval-all '.portal.gitops.json = load("temporary_json.yaml")' "$ci_default_manifest/portal.yaml" -i
+        rm temporary_json.yaml
+        image_tag_value=$(yq eval ".portal.image.tag" $target_manifest_path/portal.yaml 2>/dev/null)
+        if [ ! -z "$image_tag_value" ]; then
+            yq eval ".portal.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/portal.yaml
+        fi
+    fi
 
     ####################################################################################
     # Make sure the blocks of values.yaml in ci default are in reflection of the blocks
