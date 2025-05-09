@@ -290,9 +290,9 @@ class TestAuditService:
         audit = Audit()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
-            f"start={timestamp}",
-            f"username={expected_results["username"]}",
-            f"guid={expected_results["guid"]}",
+            "start={}".format(timestamp),
+            "username={}".format(expected_results["username"]),
+            "guid={}".format(expected_results["guid"]),
         ]
         # Create Signed URL record
         fence.create_signed_url(did, main_auth, expected_code)
