@@ -220,12 +220,26 @@ def fence_delete_expired_clients():
         return job_logs["logs.txt"]
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        # Delete expired clients
-        delete_explired_clients_cmd = (
-            "kubectl exec -n "
-            + pytest.namespace
-            + " -i $(kubectl get pods -l app=fence -o jsonpath='{.items[0].metadata.name}') -- fence-create client-delete-expired"
+        cmd = ["kubectl", "-n", pytest.namespace, "get", "pods", "-l", "app=fence"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+        else:
+            raise Exception("Unable to retrieve fence-deployment pod")
+
+        delete_explired_clients_cmd = [
+            "kubectl",
+            "exec",
+            "-n",
+            pytest.namespace,
+            "-i",
+            fence_pod_name,
+            "--",
+            "fence-create",
+            "client-delete-expired",
+        ]
         delete_explired_client_result = subprocess.run(
             delete_explired_clients_cmd,
             stdout=subprocess.PIPE,
