@@ -1,6 +1,5 @@
 import pytest
 from services.userdatalibrary import UserDataLibrary
-from utils.misc import retry
 
 
 @pytest.mark.skipif(
@@ -43,8 +42,6 @@ class TestUserDataLibrary(object):
         gen3_udl = UserDataLibrary()
         gen3_udl.delete_list(user="main_account")
 
-    # TODO: Remove retry after PPS-2020 is fixed
-    @retry(times=3, delay=10, exceptions=(AssertionError))
     def test_user_crud_data_library_lists(self):
         """
         Scenario: User can CRUD data library lists
@@ -75,8 +72,6 @@ class TestUserDataLibrary(object):
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
 
-    # TODO: Remove retry after PPS-2020 is fixed
-    @retry(times=3, delay=10, exceptions=(AssertionError))
     def test_create_multiple_data_library_lists_same_data(self):
         """
         Scenario: Create multiple data library lists using same data and verify only list was created
