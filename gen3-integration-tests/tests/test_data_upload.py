@@ -78,16 +78,18 @@ class FileRecordWithCCs:
 @pytest.mark.graph_submission
 @pytest.mark.data_upload
 class TestDataUpload:
-    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="DEV", project_code="test")
-    fence = Fence()
-    indexd = Indexd()
-    login_page = LoginPage()
-    submission = SubmissionPage()
-    created_guids = []
-
     @classmethod
     def setup_class(cls):
+        cls.auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        cls.sd_tools = GraphDataTools(
+            auth=cls.auth, program_name="DEV", project_code="test"
+        )
+        cls.fence = Fence()
+        cls.indexd = Indexd()
+        cls.login_page = LoginPage()
+        cls.submission = SubmissionPage()
+        cls.created_guids = []
+
         # Create the graph record for core_metadata_collection
         cls.sd_tools.delete_all_records()
         node_name = "core_metadata_collection"

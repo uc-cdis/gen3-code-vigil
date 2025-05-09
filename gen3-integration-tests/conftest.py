@@ -102,10 +102,6 @@ def pytest_configure(config):
     pytest.namespace = os.getenv("NAMESPACE")
     pytest.tested_env = os.getenv("TESTED_ENV")
     assert pytest.hostname or pytest.namespace, "Hostname and namespace undefined"
-    if pytest.namespace and not pytest.hostname:
-        pytest.hostname = f"{pytest.namespace}.planx-pla.net"
-    if pytest.hostname and not pytest.namespace:
-        pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
     if not pytest.tested_env:
         pytest.tested_env = pytest.namespace
@@ -166,3 +162,18 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+    if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        test_queue_urls = os.environ.get("TEST_SQS_URLS", "").split(",")
+        test_queue_urls = [url for url in test_queue_urls if url]
+        if test_queue_urls:
+            delete_sqs_queues(test_queue_urls)
+
+
+def delete_sqs_queues(queue_urls):
+    sqs = boto3.client("sqs")
+    for url in queue_urls:
+        try:
+            print(f"Deleting SQS queue: {url}")
+            sqs.delete_queue(QueueUrl=url)
+        except Exception as e:
+            print(f"Failed to delete queue {url}: {e}")
