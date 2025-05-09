@@ -89,19 +89,3 @@ class UserDataLibrary(object):
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status} status but got {response.status_code}"
-
-    def delete_all_lists(self, user, expected_status=204):
-        """helper function to delete all lists in data library"""
-        logger.info("Deleting All Data Library Lists")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}"
-        headers = {
-            "Authorization": f"bearer {auth.get_access_token()}",
-        }
-        response = requests.delete(
-            url,
-            headers=headers,
-        )
-        assert (
-            response.status_code == expected_status
-        ), f"Expected {expected_status} status but got {response.status_code}"
