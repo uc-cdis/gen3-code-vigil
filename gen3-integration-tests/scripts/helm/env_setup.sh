@@ -313,6 +313,10 @@ if install_helm_chart; then
   # commenting out for now for testing.
   ci_es_indices_setup
   wait_for_pods_ready
+  if [[ $? -ne 0 ]]; then
+    echo "❌ wait_for_pods_ready failed"
+    exit 1
+  fi
 else
   echo "❌ Helm chart installation failed"
   exit 1
