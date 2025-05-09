@@ -13,7 +13,7 @@ fence:
     syncFromDbgap: false
   FENCE_CONFIG:
     ENABLE_AUDIT_LOGS:
-      presigned_url: false
+      presigned_url: true
       login: true
     LOGIN_REDIRECT_WHITELIST: [".", "/login"]
     PUSH_AUDIT_LOGS_CONFIG:
