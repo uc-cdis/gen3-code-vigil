@@ -797,6 +797,18 @@ def check_indices_after_etl(test_env_namespace: str):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        kubectl_port_forward_process = subprocess.Popen(
+            [
+                "kubectl",
+                "port-forward",
+                "service/gen3-elasticsearch-master",
+                "9200:9200",
+                "-n",
+                test_env_namespace,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
         get_alias_cmd = (
             "kubectl -n "
             + test_env_namespace
@@ -858,6 +870,8 @@ def check_indices_after_etl(test_env_namespace: str):
             version = indices_name.split("_")[-1]
             if version == "1":
                 logger.info(f"Index version has increased for {alias_name}")
+        os.kill(kubectl_port_forward_process.pid, 9)  # Send SIGKILL to the process
+        kubectl_port_forward_process.wait()
 
 
 def create_access_token(service, expired, username, test_env_namespace: str = ""):
