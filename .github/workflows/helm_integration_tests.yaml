@@ -343,15 +343,13 @@ jobs:
             if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
               echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)\n" >> output/report.md
             fi
-            if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-              if [ ! -d output ]; then
-                mkdir output
-              fi
-              if [ ! -f "output/report.md" ]; then
-                touch "output/report.md"
-              fi
-              echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
+            if [ ! -d output ]; then
+              mkdir output
             fi
+            if [ ! -f "output/report.md" ]; then
+              touch "output/report.md"
+            fi
+            echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
 
         - name: Render report to the PR
           id: publish_md_report
@@ -363,7 +361,7 @@ jobs:
 
         - name: Generate Slack report
           id: generate_slack_report
-          if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+          if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
           continue-on-error: true # if this fails, we still need to run clean-up steps
           run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
