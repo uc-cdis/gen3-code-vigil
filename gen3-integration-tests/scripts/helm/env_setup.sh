@@ -70,6 +70,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     if [ "$sheepdog_fence_url" != "key not found" ]; then
         echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest/values.yaml.\""
         yq eval ".sheepdog.fenceUrl = \"https://${HOSTNAME}/user\"" -i "$ci_default_manifest/values.yaml"
+    fi
 elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
     echo "Setting Up Manifest PR Env..."
@@ -209,6 +210,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$sheepdog_fence_url" != "key not found" ]; then
         echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest/values.yaml.\""
         yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest/values.yaml"
+    fi
 
     # # Update mds_url and common_url under metadata if present
     # json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
