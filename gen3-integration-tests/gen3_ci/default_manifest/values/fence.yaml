@@ -18,7 +18,7 @@ fence:
     # we do not want usersync to interrupt test flow
     # so it is set to run on the 1st of January if it is a Monday
     schedule: '0 0 1 1 1'
-    syncFromDbgap: true
+    syncFromDbgap: false
   FENCE_CONFIG_PUBLIC:
     BASE_URL: https://HOSTNAME/user
     # This will be dynamically replaced by env_setup.sh script.
