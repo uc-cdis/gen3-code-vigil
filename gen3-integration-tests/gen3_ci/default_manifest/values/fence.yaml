@@ -1,5 +1,13 @@
 fence:
+  # -- (map) External Secrets settings.
+  # externalSecrets:
+  #   fenceJwtKeys: elise-fence-jwt
+  #   fenceGoogleAppCredsSecret:
+  #   fenceGoogleStorageCredsSecret:
+  #   fenceConfig: ci-fence-config-priv
   replicaCount: 2
+  remove: true
+  #delete this- it is temporary to test fence config
   image:
     repository: quay.io/cdis/fence
     pullPolicy: IfNotPresent
@@ -10,10 +18,12 @@ fence:
     # we do not want usersync to interrupt test flow
     # so it is set to run on the 1st of January if it is a Monday
     schedule: '0 0 1 1 1'
-    syncFromDbgap: false
-  FENCE_CONFIG:
+    syncFromDbgap: true
+  FENCE_CONFIG_PUBLIC:
+    BASE_URL: https://HOSTNAME/user
+    # This will be dynamically replaced by env_setup.sh script.
     ENABLE_AUDIT_LOGS:
-      presigned_url: true
+      presigned_url: false
       login: true
     LOGIN_REDIRECT_WHITELIST: [".", "/login"]
     PUSH_AUDIT_LOGS_CONFIG:
@@ -23,12 +33,6 @@ fence:
         # This will be dynamically replaced by env_setup.sh script.
         region: us-east-1
         aws_cred: 'cdistest'
-    AWS_CREDENTIALS:
-      cdistest:
-        aws_access_key_id: test
-        # This will be dynamically replaced by env_setup.sh script.
-        aws_secret_access_key: test
-        # This will be dynamically replaced by env_setup.sh script.
     S3_BUCKETS:
       cdis-presigned-url-test:
         region: 'us-east-1'

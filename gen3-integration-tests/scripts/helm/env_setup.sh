@@ -22,7 +22,7 @@ export TEST_SQS_URLS="$AUDIT_QUEUE_URL,$UPLOAD_QUEUE_URL"
 # Update values.yaml to use sqs queues
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
-yq eval ".fence.FENCE_CONFIG.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/fence.yaml
 
 # Add in hostname for revproxy configuration and manifestservice
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
@@ -31,8 +31,9 @@ yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen
 # Add iam keys to fence-config and manifestserviceg3auto
 CI_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_access_key_id"]' - | base64 -d )
 CI_SECRET_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_secret_access_key_id"]' - | base64 -d )
-yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_access_key_id = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
-yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
+# yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_access_key_id = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
+# yq eval ".fence.FENCE_CONFIG.AWS_CREDENTIALS.cdistest.aws_secret_access_key = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i gen3_ci/default_manifest/values/fence.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awsaccesskey = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".manifestservice.manifestserviceG3auto.awssecretkey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".secrets.awsAccessKeyId = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml

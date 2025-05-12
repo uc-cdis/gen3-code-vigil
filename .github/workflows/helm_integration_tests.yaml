@@ -85,6 +85,8 @@ jobs:
         EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
         GEN3_INSTANCE_TYPE: "HELM_LOCAL"
         GH_WORKSPACE: ${{ github.workspace }}
+        SFTP_QA_HOSTNAME: "sftp-qa.planx-pla.net"
+        SFTP_QA_HOSTNAME_2: "s-5745d53f10e1421eb.server.transfer.us-east-1.amazonaws.com"
 
       steps:
         # Ensure the PR is run under the same org as an Internal PR
@@ -260,6 +262,15 @@ jobs:
           run: |
             commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
             echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
+        # Workaround for Paramiko RejectPolicy: pre-load the SFTP host key to avoid connection failure during dbGaP user sync
+        # Without this, Paramiko will reject the host since known_hosts is empty in CI
+        - name: Add SFTP host key to known_hosts
+          if: ${{ env.SKIP_TESTS != 'true' }}
+          run: |
+            mkdir -p ~/.ssh
+            ssh-keyscan -p 22 $SFTP_QA_HOSTNAME >> ~/.ssh/known_hosts
+            ssh-keyscan -p 22 $SFTP_QA_HOSTNAME_2 >> ~/.ssh/known_hosts
 
         # Will install the gen3 helm charts to specific PR namespace and set the tests to run
         - name: Prepare CI environment

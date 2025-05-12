@@ -6,6 +6,10 @@ global:
   aws:
     awsAccessKeyId: test
     awsSecretAccessKey: test
+  # externalSecrets:
+  #   deploy: true
+  #   dbCreate: true
+  #   secretStoreRef: aws-secretsmanager
 
 secrets:
   awsAccessKeyId: test
@@ -61,6 +65,9 @@ indexd:
   image:
     repository: "quay.io/cdis/indexd"
     tag: "master"
+  # externalSecrets:
+  #   serviceCreds: indexd-service-creds
+
 
 metadata:
   replicaCount: 2
