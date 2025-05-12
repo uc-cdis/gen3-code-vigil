@@ -52,18 +52,24 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     ci_default_manifest="${4}/values"
     service_name="$5"
     image_name="$6"
-    guppy_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/values.yaml")
-    guppy_yaml_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/${service_name}.yaml")
-    if [ "$guppy_values_block" != "key not found" ]; then
+    service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/values.yaml")
+    service_yaml_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/${service_name}.yaml")
+    if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest/values.yaml.\""
         yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/values.yaml"
-    elif [ "$guppy_yaml_block" != "key not found" ]; then
+    elif [ "$service_yaml_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest/${service_name}.yaml.\""
         yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/${service_name}.yaml"
     else
         echo "Key '$service_name' not found in \"$ci_default_manifest/values.yaml\" or \"$ci_default_manifest/${service_name}.yaml.\""
         exit 1
     fi
+
+    # Check if sheepdog's fenceUrl key is present and update it
+    sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest/values.yaml")
+    if [ "$sheepdog_fence_url" != "key not found" ]; then
+        echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest/values.yaml.\""
+        yq eval ".sheepdog.fenceUrl = \"https://${HOSTNAME}/user\"" -i "$ci_default_manifest/values.yaml"
 elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
     echo "Setting Up Manifest PR Env..."
@@ -197,6 +203,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest/values.yaml"
         fi
     done
+
+    # Check if sheepdog's fenceUrl key is present and update it
+    sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest/values.yaml")
+    if [ "$sheepdog_fence_url" != "key not found" ]; then
+        echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest/values.yaml.\""
+        yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest/values.yaml"
 
     # # Update mds_url and common_url under metadata if present
     # json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
