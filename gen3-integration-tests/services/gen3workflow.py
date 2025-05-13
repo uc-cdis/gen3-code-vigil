@@ -10,6 +10,7 @@ import pytest
 import requests
 from botocore.config import Config
 from gen3.auth import Gen3Auth
+from utils import logger
 
 
 @dataclass(frozen=True)
@@ -98,7 +99,6 @@ class Gen3Workflow:
         user: str = "main_account",
         expected_status=200,
         content: str = None,
-        filename: str = None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE."""
         access_token = self._get_access_token(user)
@@ -116,6 +116,7 @@ class Gen3Workflow:
                 response = client.delete_object(Bucket=bucket, Key=key)
             else:
                 raise ValueError(f"Unsupported S3 action: {action}")
+            logger.debug(f"S3 {action.upper()} response:  {response}")
         except botocore.exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code == "NoSuchKey":
@@ -126,14 +127,18 @@ class Gen3Workflow:
             elif error_code == "403":
                 assert (
                     expected_status == 403
-                ), f"Received an error from s3_client when expected_status is {expected_status} instead of 403. Error: {e}"
+                ), f"Received an error from s3_client when expected_status is {expected_status} instead of 403. Error: {e.response}"
                 return None
-            raise  # Reraise for other errors
+            else:
+                logger.error(
+                    f"Received an error from s3_client when expected_status is {expected_status}. Error: {e.response}"
+                )
+                raise  # Reraise for other errors
 
+        response_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         assert (
-            response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            == expected_status
-        ), f"Expected {expected_status}, got {response['ResponseMetadata']['HTTPStatusCode']} when making an s3 request to perform {action} action on {bucket=} and {key=} "
+            response_status == expected_status
+        ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Error: {response}"
         return response
 
     #############################
@@ -218,10 +223,9 @@ class Gen3Workflow:
         expected_status=200,
     ):
         """Retrieves an S3 object."""
-        response = self._perform_s3_action(
+        return self._perform_s3_action(
             "get", object_path, s3_storage_config, user, expected_status
         )
-        return response["Body"].read().decode("utf-8") if response else None
 
     def list_bucket_objects_with_boto3(
         self,

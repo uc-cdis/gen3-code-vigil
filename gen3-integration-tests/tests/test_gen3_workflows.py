@@ -328,15 +328,22 @@ class TestGen3Workflow(object):
         ), f"Expected stdout to be `Done!`, but found {stdout} instead."
 
         # Step 6: Validate task outputs
-        s3_contents = {
-            file_name: self.gen3_workflow.get_bucket_object_with_boto3(
+
+        s3_contents = {}
+        for file_name in ["output.txt", "grep_output.txt"]:
+            response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{file_name}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
                 expected_status=200,
             )
-            for file_name in ["output.txt", "grep_output.txt"]
-        }
+
+            try:
+                s3_contents[file_name] = response["Body"].read().decode("utf-8")
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to read or decode content of {file_name} from S3. Error: {e}"
+                )
 
         assert (
             message in s3_contents["output.txt"]
@@ -464,31 +471,50 @@ class TestGen3Workflow(object):
 
             assert (
                 s3_file_list
-            ), f"Expected to find files in the S3 bucket for task {task_name}, but got an empty list"
+            ), f"Expected to find files in the S3 bucket for task '{task_name}', but got an empty list"
 
             filenames_in_s3 = {file["Key"].split("/")[-1] for file in s3_file_list}
 
             assert (
                 expected["filename"] in filenames_in_s3
-            ), f"Expected to find {expected['filename']} in the S3 bucket for task {task_name}, but got {s3_file_list}"
+            ), f"Expected to find '{expected['filename']}' in the S3 bucket for task '{task_name}', but found files {s3_file_list}"
 
+            # Verify the expected file is non-empty
+            response = self.gen3_workflow.get_bucket_object_with_boto3(
+                object_path=f"{self.s3_storage_config.bucket_name}/{expected['filename']}",
+                s3_storage_config=self.s3_storage_config,
+                user=self.valid_user,
+            )
+
+            assert (
+                response["ContentLength"] > 0
+            ), f"Expected to have some data in {expected['filename']}. But found empty file instead. Response :{response}"
+
+            # Verify the contents of the command file match the expected commands.
             command_file_keys = [
                 file["Key"]
                 for file in s3_file_list
-                if file["Key"].endswith(".command.sh")
+                if file["Key"].endswith("/.command.sh")
             ]
             assert (
                 len(command_file_keys) == 1
-            ), f"Expected to find exactly one .command.sh file for task {task_name}, but got {len(command_file_keys)}. Files: {command_file_keys}"
+            ), f"Expected to find exactly one .command.sh file for task '{task_name}', but got {len(command_file_keys)}. Files: {command_file_keys}"
 
             command_file_key = command_file_keys[0]
 
             # get contents of .command.sh file
-            command_script_contents = self.gen3_workflow.get_bucket_object_with_boto3(
+            response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{self.s3_storage_config.bucket_name}/{command_file_key}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
+
+            try:
+                command_script_contents = response["Body"].read().decode("utf-8")
+            except Exception as e:
+                raise ValueError(
+                    f"Failed to read or decode content of {command_file_key} from S3. Error: {e}"
+                )
 
             assert (
                 expected["command"] in command_script_contents
