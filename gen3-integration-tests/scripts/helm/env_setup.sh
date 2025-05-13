@@ -116,17 +116,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
     ####################################################################################
-    # if [ -e "$target_manifest_path/portal.yaml" ]; then
-    #     cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
-    #     json_content=$(yq '.portal.gitops.json' "$ci_default_manifest/portal.yaml" | jq -r )
-    #     modified_json=$(echo "$json_content" | jq 'del(.requiredCerts)')
-    #     echo "$modified_json" | yq eval -o=json '.' > temporary_json.yaml
-    #     yq eval-all '.portal.gitops.json = load("temporary_json.yaml")' "$ci_default_manifest/portal.yaml" -i
-    #     rm temporary_json.yaml
-    # fi
-    image_tag_value=$(yq eval ".portal.image.tag" $target_manifest_path/portal.yaml 2>/dev/null)
-    if [ ! -z "$image_tag_value" ]; then
-        yq eval ".portal.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/portal.yaml
+    if [ -e "$target_manifest_path/portal.yaml" ]; then
+        cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
+        json_content=$(yq '.portal.gitops.json' < "$ci_default_manifest/portal.yaml" | jq '.')
+        modified_json=$(echo "$json_content" | jq 'del(.requiredCerts)')
+        yq eval ".portal.gitops.json = $modified_json" -i "$ci_default_manifest/portal.yaml"
     fi
 
     ####################################################################################
@@ -213,20 +207,23 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest/values.yaml"
     fi
 
-    # # Update mds_url and common_url under metadata if present
-    # json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
-    # if [ "$json_content" != "key not found" ]; then
-    #     current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
-    #     if [ "$current_value" != "key not found" ]; then
-    #         modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.mds_url = \"https://${namespace}.planx-pla.net/\"")
-    #         yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
-    #     fi
-    #     current_commons_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.commons_url // \"key not found\"")
-    #     if [ "$current_value" != "key not found" ]; then
-    #         modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.commons_url = \"${namespace}.planx-pla.net/\"")
-    #         yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
-    #     fi
-    # fi
+    # Update mds_url and common_url under metadata if present
+    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
+    if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
+        # Extract and update mds_url
+        current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
+        if [ "$current_mds_url" != "key not found" ]; then
+            modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.mds_url = \"https://${namespace}.planx-pla.net/\"")
+            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
+        fi
+
+        # Extract and update commons_url
+        current_commons_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.commons_url // \"key not found\"")
+        if [ "$current_commons_url" != "key not found" ]; then
+            modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.commons_url = \"${namespace}.planx-pla.net/\"")
+            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
+        fi
+    fi
 fi
 
 echo $HOSTNAME
