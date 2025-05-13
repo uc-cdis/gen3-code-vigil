@@ -118,9 +118,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     if [ -e "$target_manifest_path/portal.yaml" ]; then
         cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
-        json_content=$(yq '.portal.gitops.json' < "$ci_default_manifest/portal.yaml" | jq '.')
-        modified_json=$(echo "$json_content" | jq 'del(.requiredCerts)')
-        yq eval ".portal.gitops.json = $modified_json" -i "$ci_default_manifest/portal.yaml"
+        sed -i '/requiredCerts/d' "$ci_default_manifest/portal.yaml"
     fi
 
     ####################################################################################
