@@ -270,7 +270,8 @@ sheepdog:
   image:
     repository: "quay.io/cdis/sheepdog"
     tag: "master"
-  fenceUrl: https://gen3-code-vigil-pr161.ci.planx-pla.net/user
+  fenceUrl: https://hostname.ci.planx-pla.net/user
+  # This will be dynamically replaced by env_setup.sh script.
 
 peregrine:
   replicaCount: 2
@@ -302,7 +303,7 @@ audit:
           optional: true
   image:
     repository: quay.io/cdis/audit-service
-    tag: '2025.01'
+    tag: 'master'
   server:
     pull_from_queue: true
     debug: true

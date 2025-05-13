@@ -360,7 +360,6 @@ jobs:
             if [ ! -f "output/report.md" ]; then
               touch "output/report.md"
             fi
-            echo -e "Please find the ci env pod logs [here]($POD_LOGS_URL)\n" >> output/report.md
 
         - name: Render report to the PR
           id: publish_md_report
