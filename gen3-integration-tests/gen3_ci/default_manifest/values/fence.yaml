@@ -6,19 +6,18 @@ fence:
   #   fenceGoogleStorageCredsSecret:
   #   fenceConfig: ci-fence-config-priv
   replicaCount: 2
-  remove: true
   #delete this- it is temporary to test fence config
   image:
     repository: quay.io/cdis/fence
     pullPolicy: IfNotPresent
-    tag: 'master'
+    tag: '2025.03'
   usersync:
     usersync: true
     userYamlS3Path: s3://cdis-gen3-users/ci/user.yaml
     # we do not want usersync to interrupt test flow
     # so it is set to run on the 1st of January if it is a Monday
     schedule: '0 0 1 1 1'
-    syncFromDbgap: false
+    syncFromDbgap: true
   FENCE_CONFIG_PUBLIC:
     BASE_URL: https://HOSTNAME/user
     # This will be dynamically replaced by env_setup.sh script.
