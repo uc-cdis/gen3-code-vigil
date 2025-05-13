@@ -1,6 +1,8 @@
 portal:
   # replicaCount: 2
   resources:
+    limits:
+      memory: 6Gi
     requests:
       cpu: 4
       memory: 6Gi
