@@ -131,7 +131,7 @@ jobs:
 
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo $UPDATED_FOLDERS
