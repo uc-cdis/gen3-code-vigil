@@ -809,8 +809,6 @@ def check_indices_after_etl(test_env_namespace: str):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        logger.info(kubectl_port_forward_process.stderr.strip())
-        logger.info(kubectl_port_forward_process.stdout.strip())
         time.sleep(10)
         get_alias_cmd = (
             "kubectl -n "
