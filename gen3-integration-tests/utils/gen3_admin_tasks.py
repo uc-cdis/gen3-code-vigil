@@ -805,6 +805,7 @@ def check_indices_after_etl(test_env_namespace: str):
                 "9200:9200",
                 "-n",
                 test_env_namespace,
+                "&",
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
