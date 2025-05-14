@@ -219,7 +219,8 @@ def modify_env_for_test_repo_pr(namespace):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        arguments = [namespace, "test-env-setup", helm_branch]
+        ci_default_manifest = "gen3_ci/default_manifest"
+        arguments = [namespace, "test-env-setup", helm_branch, ci_default_manifest]
         return setup_env_for_helm(arguments)
 
 

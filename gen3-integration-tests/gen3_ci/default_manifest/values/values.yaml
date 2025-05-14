@@ -10,6 +10,9 @@ global:
   #   deploy: true
   #   dbCreate: true
   #   secretStoreRef: aws-secretsmanager
+  manifestGlobalExtraValues:
+    fence_url: https://hostname.ci.planx-pla.net/user
+    # This will be dynamically replaced by env_setup.sh script.
 
 secrets:
   awsAccessKeyId: test
@@ -282,7 +285,7 @@ peregrine:
   enabled: true
   image:
     repository: "quay.io/cdis/peregrine"
-    tag: "feat_jq-audience"
+    tag: "master"
     pullPolicy: Always
 
 requestor:
