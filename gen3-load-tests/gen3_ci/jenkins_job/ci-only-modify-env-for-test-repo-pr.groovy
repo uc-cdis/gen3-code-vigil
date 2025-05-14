@@ -3,8 +3,6 @@
         e.g., qa-anvil
     String parameter JENKINS_NAMESPACE
       Default value - default
-    String parameter CLOUD_AUTO_BRANCH
-      e.g., master
 */
 pipeline {
     agent {
@@ -98,7 +96,7 @@ spec:
                 // cloud-automation
                 checkout([
                   $class: 'GitSCM',
-                  branches: [[name: "refs/heads/${params.CLOUD_AUTO_BRANCH}"]],
+                  branches: [[name: "refs/heads/master"]],
                   doGenerateSubmoduleConfigurations: false,
                   extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'cloud-automation']],
                   submoduleCfg: [],

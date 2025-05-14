@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
@@ -54,7 +56,7 @@ class TestFencePresignedURL:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "GUIDS_LIST": ",".join(self.guids_list).replace("'", ""),
-            "RELEASE_VERSION": "1.0.0",
+            "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "VIRTUAL_USERS": '[{"duration": "5s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
         }
 

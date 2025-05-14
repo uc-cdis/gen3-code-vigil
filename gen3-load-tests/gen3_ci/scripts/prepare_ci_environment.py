@@ -7,7 +7,6 @@ from utils import logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
-CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 def modify_env_for_test_repo_pr(namespace):
@@ -24,7 +23,6 @@ def modify_env_for_test_repo_pr(namespace):
     )
     params = {
         "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:
@@ -59,7 +57,6 @@ def generate_api_keys_for_test_users(namespace):
     )
     params = {
         "NAMESPACE": namespace,
-        "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
     }
     build_num = job.build_job(params)
     if build_num:

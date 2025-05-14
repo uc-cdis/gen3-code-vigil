@@ -1,4 +1,4 @@
-import base64
+import os
 import uuid
 
 import pytest
@@ -23,7 +23,7 @@ class TestMetadataCreateAndQuery:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "BASIC_AUTH": "",
             "MDS_TEST_DATA": '{"filter1": "a=1", "filter2": "nestedData.b=2", "fictitiousRecord1": {"a": 1}, "fictitiousRecord2": {"nestedData": {"b": 2}},}',
-            "RELEASE_VERSION": "1.0.0",
+            "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
             "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "300s", "target": 100}, {"duration": "30s", "target": 1}]',
             "GUID1": str(uuid.uuid4()),

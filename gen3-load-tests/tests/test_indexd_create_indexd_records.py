@@ -1,10 +1,12 @@
+import os
+
 import pytest
 from gen3.auth import Gen3Auth
 from utils import load_test
 
 
 @pytest.mark.indexd_create_indexd_records
-class TestIndexdCreateIndexdRecords:
+class TestIndexdCreateRecords:
     def setup_method(self):
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
@@ -16,7 +18,7 @@ class TestIndexdCreateIndexdRecords:
             "SERVICE": "indexd",
             "LOAD_TEST_SCENARIO": "create-indexd-records",
             "ACCESS_TOKEN": self.auth.get_access_token(),
-            "RELEASE_VERSION": "1.0.0",
+            "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
             "API_KEY": pytest.api_keys["indexing_account"]["api_key"],
             "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "5s", "target": 5}, {"duration": "300s", "target": 10}, {"duration": "600s", "target": 20}]',

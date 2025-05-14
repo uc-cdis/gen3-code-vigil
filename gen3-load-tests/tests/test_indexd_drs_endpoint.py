@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
@@ -44,7 +46,7 @@ class TestIndexdDrsEndpoint:
             "SERVICE": "indexd",
             "LOAD_TEST_SCENARIO": "drs-endpoint",
             "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
-            "RELEASE_VERSION": "1.0.0",
+            "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "5s", "target": 1}, {"duration": "1s", "target": 2}, {"duration": "5s", "target": 2}, {"duration": "1s", "target": 3}, {"duration": "5s", "target": 3}, {"duration": "1s", "target": 4}, {"duration": "5s", "target": 4}, {"duration": "1s", "target": 5}, {"duration": "5s", "target": 5}, {"duration": "1s", "target": 6}, {"duration": "5s", "target": 6}, {"duration": "1s", "target": 7}, {"duration": "5s", "target": 7}, {"duration": "1s", "target": 8}, {"duration": "5s", "target": 8}, {"duration": "1s", "target": 9}, {"duration": "5s", "target": 9}, {"duration": "1s", "target": 10}, {"duration": "5s", "target": 10}, {"duration": "1s", "target": 11}, {"duration": "5s", "target": 11}, {"duration": "1s", "target": 12}, {"duration": "5s", "target": 12}, {"duration": "1s", "target": 13}, {"duration": "5s", "target": 13}, {"duration": "1s", "target": 14}, {"duration": "5s", "target": 14}, {"duration": "1s", "target": 15}, {"duration": "5s", "target": 15}, {"duration": "1s", "target": 16}, {"duration": "5s", "target": 16}, {"duration": "1s", "target": 17}, {"duration": "5s", "target": 17}, {"duration": "1s", "target": 18}, {"duration": "5s", "target": 18}, {"duration": "1s", "target": 19}, {"duration": "5s", "target": 19}, {"duration": "1s", "target": 20}, {"duration": "5s", "target": 20}]',

@@ -1,8 +1,3 @@
 USER_ID,EMAIL
 main_account,main@example.org
 indexing_account,indexing@example.org
-dummy_one,dummy-one@example.org
-smarty_two,smarty-two@example.org
-user0_account,user0@example.org
-user1_account,user1@example.org
-user2_account,user2@example.org

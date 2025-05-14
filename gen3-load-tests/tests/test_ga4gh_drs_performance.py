@@ -91,7 +91,7 @@ class TestGa4ghDrsPerformance:
             "AUTHZ_LIST": "/programs/jnkns/projects/jenkins,/programs/jnkns/projects/jenkins2,/programs/QA/projects/test",
             "MINIMUM_RECORDS": "1000",
             "RECORD_CHUNK_SIZE": "1024",
-            "RELEASE_VERSION": "1.0.0",
+            "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": pytest.hostname,
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "PASSPORTS_LIST": "",
