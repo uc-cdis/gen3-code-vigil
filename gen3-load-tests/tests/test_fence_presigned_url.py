@@ -1,8 +1,7 @@
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
-from gen3.submission import Gen3Submission
-from utils import load_test, logger
+from utils import load_test
 from utils import test_setup as setup
 
 
