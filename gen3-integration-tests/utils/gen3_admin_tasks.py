@@ -813,7 +813,7 @@ def check_indices_after_etl(test_env_namespace: str):
         get_alias_cmd = (
             "kubectl -n "
             + test_env_namespace
-            + "get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
+            + "get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
         )
         get_alias_result = subprocess.run(
             get_alias_cmd,
@@ -826,6 +826,7 @@ def check_indices_after_etl(test_env_namespace: str):
             raise Exception(
                 f"Unable to get alias. Error: {get_alias_result.stderr.strip()}"
             )
+        logger.info(f"List of aliases: {get_alias_result.stdout.strip()}")
         for alias_name in get_alias_result.stdout.strip().split(" "):
             get_alias_status_cmd = [
                 "curl",
@@ -833,6 +834,7 @@ def check_indices_after_etl(test_env_namespace: str):
                 "-s",
                 f"localhost:9200/_alias/{alias_name}",
             ]
+            logger.info(get_alias_status_cmd)
             get_alias_status_result = subprocess.run(
                 get_alias_status_cmd,
                 stdout=subprocess.PIPE,
