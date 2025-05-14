@@ -175,7 +175,7 @@ def run_gen3_job(
             job_name = "etl-cronjob"
         cmd = ["kubectl", "delete", "job", job_name]
         result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=40
         )
         if not result.returncode == 0:
             logger.info(
