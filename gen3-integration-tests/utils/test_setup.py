@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 import pytest
-from gen3.auth import Gen3Auth
+from pages.login import LoginPage
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks, logger
 
 
@@ -124,23 +124,16 @@ def get_users():
     return users
 
 
-def get_list_of_services_deployed():
-    return gen3_admin_tasks.get_list_of_services_deployed()
-
-
-def get_enabled_sower_jobs():
-    return gen3_admin_tasks.get_enabled_sower_jobs()
-
-
-def check_agg_mds_is_enabled():
-    return gen3_admin_tasks.is_agg_mds_enabled()
-
-
-def check_indexs3client_job_deployed():
-    return gen3_admin_tasks.check_indexs3client_job_deployed()
-
-
 def enable_register_user():
     gen3_admin_tasks.fence_enable_register_users_redirect(
         test_env_namespace=pytest.namespace
     )
+
+
+def register_test_users():
+    users_to_register = dict(get_users().items()[:2])
+    for user_to_register in users_to_register:
+        login_page = LoginPage()
+        login_page.login(
+            user=user_to_register["USER_ID"], handle_user_registration=True
+        )

@@ -60,6 +60,7 @@ class LoginPage(object):
         user="main_account",
         idp="Google",
         validate_username_locator=True,
+        handle_user_registration=False,
     ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
@@ -74,8 +75,6 @@ class LoginPage(object):
                 }
             ]
         )
-        # printing cookies if needed for debugging purposes
-        cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         self.handle_popup(page)
         if idp == "ORCID":
@@ -97,9 +96,10 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
-        user_register = UserRegister()
-        if page.locator(self.REGISTER_USER_BUTTON).is_visible(timeout=10000):
-            user_register.register_user(page, user_email=logged_in_user)
+        if handle_user_registration:
+            user_register = UserRegister()
+            if page.locator(self.REGISTER_USER_BUTTON).is_visible(timeout=10000):
+                user_register.register_user(page, user_email=logged_in_user)
         screenshot(page, "AfterLogin")
         if validate_username_locator:
             res = get_portal_config()
