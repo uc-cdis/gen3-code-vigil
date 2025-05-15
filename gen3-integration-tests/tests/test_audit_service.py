@@ -17,22 +17,27 @@ from utils import logger
 from utils.gen3_admin_tasks import update_audit_service_logging
 
 
+# audit deployment name is "audit-service" in adminvm and "audit-deployment" in gen3 helm
 @pytest.mark.skipif(
-    "audit-service" not in pytest.deployed_services,
-    reason="audit-service service is not running on this environment",
+    "audit" not in pytest.deployed_services,
+    reason="audit service is not running on this environment",
 )
 @pytest.mark.audit
 @pytest.mark.ras
 class TestAuditService:
     @classmethod
     def setup_class(cls):
-        assert update_audit_service_logging("true", test_env_namespace=pytest.namespace)
+        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+            assert update_audit_service_logging(
+                "true", test_env_namespace=pytest.namespace
+            )
 
     @classmethod
     def teardown_class(cls):
-        assert update_audit_service_logging(
-            "false", test_env_namespace=pytest.namespace
-        )
+        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+            assert update_audit_service_logging(
+                "false", test_env_namespace=pytest.namespace
+            )
 
     def test_audit_unauthorized_log_query(self):
         """
@@ -287,6 +292,7 @@ class TestAuditService:
         params = [
             "start={}".format(timestamp),
             "username={}".format(expected_results["username"]),
+            "guid={}".format(expected_results["guid"]),
         ]
         # Create Signed URL record
         fence.create_signed_url(did, main_auth, expected_code)
@@ -294,6 +300,11 @@ class TestAuditService:
             "presigned_url", dummy_auth, params, expected_results
         )
 
+    @pytest.mark.skipif(
+        "nightly-build" not in pytest.hostname
+        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        reason="Test is being run on Helm and would run only on nightly-build",
+    )
     def test_audit_ras_login_events(self, page: Page):
         """
         Scenario: Perform login using RAS and validate audit entry
