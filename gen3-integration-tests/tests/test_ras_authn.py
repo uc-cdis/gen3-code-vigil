@@ -29,6 +29,11 @@ from utils import gen3_admin_tasks as gat
     == "VA Data Commons",
     reason="Skipping RAS Auth N tests for VA env",
 )
+@pytest.mark.skipif(
+    "nightly-build" not in pytest.hostname
+    and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+    reason="Test is being run on Helm and would run only on nightly-build",
+)
 @pytest.mark.portal
 @pytest.mark.fence
 @pytest.mark.ras

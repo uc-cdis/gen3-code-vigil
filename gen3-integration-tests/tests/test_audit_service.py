@@ -294,6 +294,11 @@ class TestAuditService:
             "presigned_url", dummy_auth, params, expected_results
         )
 
+    @pytest.mark.skipif(
+        "nightly-build" not in pytest.hostname
+        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        reason="Test is being run on Helm and would run only on nightly-build",
+    )
     def test_audit_ras_login_events(self, page: Page):
         """
         Scenario: Perform login using RAS and validate audit entry
