@@ -182,8 +182,11 @@ def run_gen3_job(
         # job_pod = f"{job_name}-{uuid.uuid4()}"
         if job_name == "etl":
             job_name = "etl-cronjob"
+
         cmd = ["kubectl", "-n", test_env_namespace, "delete", "job", job_name]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=40
+        )
         if not result.returncode == 0:
             logger.info(
                 f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
