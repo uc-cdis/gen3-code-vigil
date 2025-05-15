@@ -163,9 +163,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
         ci_default_manifest = "gen3_ci/default_manifest"
-        target_manifest_path = (
-            f"{os.getenv('GH_WORKSPACE')}/unfunded/gen3.datacommons.io"
-        )
+        target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/unfunded/{updated_folder}"
 
         arguments = [
             namespace,

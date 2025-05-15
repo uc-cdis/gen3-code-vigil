@@ -210,23 +210,6 @@ jobs:
             kubectl create namespace $NAMESPACE || true
             kubectl patch namespace $NAMESPACE -p '{"metadata":{"labels":{"external-secrets":"enabled"}}}'
 
-        # Remove this as this is just a debugging step
-        - name: Print the current folder structure
-          if: ${{ env.SKIP_TESTS != 'true' }}
-          env:
-            VERSION: v4.2.0
-            BINARY: yq_linux_amd64
-          run: |
-            echo "Printing /home/runner/work/gen3-gitops/"
-            echo "$(ls -ltr /home/runner/work/gen3-gitops/)"
-            echo "Printing /home/runner/work/gen3-gitops/gen3-gitops"
-            echo "$(ls -ltr $GH_WORKSPACE)"
-            echo "Printing /home/runner/work/gen3-gitops/gen3-gitops/gen3-integration-tests"
-            echo "$(ls -ltr)"
-            echo "Printing yq version"
-            yq --version
-            which yq
-
         # Setup helm
         - name: Set Up Helm
           if: ${{ env.SKIP_TESTS != 'true' }}
@@ -254,7 +237,11 @@ jobs:
           continue-on-error: true  # if this fails, we still need to run clean-up steps
           run: |
             PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
-            UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
+            if [ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]; then
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*/.*' | sed 's|^.*/$[^/]*$/.*$|\1|' | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
+            else
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
+            fi
             echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
         - name: Get commit time
