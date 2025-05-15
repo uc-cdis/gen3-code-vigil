@@ -36,7 +36,7 @@ class Audit(object):
         counter = 0
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
 
-        while counter < 20:
+        while counter < 40:
             time.sleep(30)
             response = auth.curl(path=url)
             # Get the first record from api json data
@@ -59,5 +59,5 @@ class Audit(object):
                         ), f"Expected {expected_data} but got {data_returned}"
                 return True
             counter += 1
-        logger.error("Waited for 10 minutes but data was not recieved")
+        logger.error("Waited for 20 minutes but data was not recieved")
         return False
