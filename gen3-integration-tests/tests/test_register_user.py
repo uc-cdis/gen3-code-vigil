@@ -83,7 +83,7 @@ class TestRegisterUser:
         self.login_page.login(page, validate_username_locator=False)
 
         # Register User
-        self.user_register.register_user(page)
+        self.user_register.register_user(page, user_email=pytest.users["main_account"])
 
         # Goto explorer page
         self.user_register.goto_explorer_page(page)
