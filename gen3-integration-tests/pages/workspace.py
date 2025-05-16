@@ -45,7 +45,7 @@ class WorkspacePage(object):
 
     def assert_page_loaded(self, page: Page):
         """Checks if workspace page loaded successfully"""
-        page.wait_for_selector(self.READY_CUE, state="visible", timeout=60000)
+        page.wait_for_selector(self.READY_CUE, state="visible", timeout=120000)
         screenshot(page, "WorkspacePageLoaded")
 
     def launch_workspace(self, page: Page, name: str = ""):
@@ -68,7 +68,7 @@ class WorkspacePage(object):
         # workspace can take a while to launch
         page.frame_locator(self.WORKSPACE_IFRAME).locator(
             "//div[@aria-label='Top Menu']"
-        ).wait_for(timeout=600000)
+        ).wait_for(timeout=1200000)
 
     def open_python_notebook(self, page: Page):
         """Open Python notebook in the workspace"""
@@ -84,7 +84,7 @@ class WorkspacePage(object):
         command_prompt = page.frame_locator(self.WORKSPACE_IFRAME).locator(
             self.NB_CELL_INPUT
         )
-        command_prompt.wait_for(state="visible", timeout=60000)
+        command_prompt.wait_for(state="visible", timeout=120000)
         screenshot(page, "PythonNotebook")
 
     def run_command_in_notebook(self, page: Page, command: str = "!gen3 --help"):
@@ -106,4 +106,4 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
-        page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=600000)
+        page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=1200000)
