@@ -104,7 +104,9 @@ class Gen3Workflow:
         access_token = self._get_access_token(user)
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
-
+        logger.debug(
+            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and {content=}"
+        )
         try:
             if action == "list":
                 response = client.list_objects_v2(Bucket=bucket, Prefix=key)
