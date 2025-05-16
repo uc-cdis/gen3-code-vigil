@@ -4,19 +4,25 @@ global:
   dictionaryUrl: https://s3.amazonaws.com/dictionary-artifacts/anvil/master/schema.json
   pdb: true
   aws:
-    awsAccessKeyId: test
-    awsSecretAccessKey: test
-  # externalSecrets:
-  #   deploy: true
-  #   dbCreate: true
-  #   secretStoreRef: aws-secretsmanager
+    externalSecrets:
+      # -- (bool) Whether to use External Secrets for aws config.
+      enabled: true
+      # -- (String) Name of Secrets Manager secret.
+      externalSecretAwsCreds: ci-aws-config
+    secretStoreServiceAccount:
+      # -- (bool) Set true if deploying to AWS and want to use service account and IAM role instead of aws keys. Must provide role-arn.
+      enabled: true
+      # -- (string) Name of the service account to create
+      name: secret-store-sa
+      # -- (string) AWS Role ARN for Secret Store to use
+      roleArn: arn:aws:iam::707767160287:role/devplanetv2-external-secrets-sa
+  externalSecrets:
+    deploy: true
+    dbCreate: true
+    # clusterSecretStoreRef: aws-secretsmanager
   manifestGlobalExtraValues:
     fence_url: https://hostname.ci.planx-pla.net/user
     # This will be dynamically replaced by env_setup.sh script.
-
-secrets:
-  awsAccessKeyId: test
-  awsSecretAccessKey: test
 
 postgresql:
   primary:
@@ -68,8 +74,8 @@ indexd:
   image:
     repository: "quay.io/cdis/indexd"
     tag: "master"
-  # externalSecrets:
-  #   serviceCreds: indexd-service-creds
+  externalSecrets:
+    serviceCreds: indexd-service-creds
 
 
 metadata:
@@ -78,6 +84,8 @@ metadata:
     repository: quay.io/cdis/metadata-service
     tag: 'master'
   enabled: true
+  externalSecrets:
+    createK8sMetadataSecret: true
   useAggMds: "True"
   aggMdsNamespace: default
   aggMdsConfig: |
@@ -93,8 +101,8 @@ metadata:
 
 sower:
   replicaCount: 2
-  pelican:
-    bucket: 'sower-jobs-bucket'
+  # pelican:
+  #   bucket: 'sower-jobs-bucket'
   image:
     repository: quay.io/cdis/sower
     tag: 'master'
@@ -108,6 +116,10 @@ sower:
     # -- (string) The name of the service account to use.
     # If not set and create is true, a name is generated using the fullname template
     name: "sower-service-account"
+  externalSecrets:
+    createK8sPelicanServiceSecret: false
+    pelicanserviceG3auto: ci-pelicanservice-g3auto
+    createK8sSowerJobsSecret: true
   sowerConfig:
     - name: pelican-export
       action: export
@@ -304,6 +316,8 @@ audit:
           name: manifest-global
           key: arborist_url
           optional: true
+  externalSecrets:
+    createK8sAuditSecret: true
   image:
     repository: quay.io/cdis/audit-service
     tag: 'master'
@@ -383,10 +397,13 @@ manifestservice:
     # This will be dynamically replaced by env_setup.sh script.
     bucketName: gen3-helm-manifest-bucket
     prefix: 'test'
-    awsaccesskey: test
-    # This will be dynamically replaced by env_setup.sh script.
-    awssecretkey: test
-    # This will be dynamically replaced by env_setup.sh script.
+    # awsaccesskey: test
+    # # This will be dynamically replaced by env_setup.sh script.
+    # awssecretkey: test
+    # # This will be dynamically replaced by env_setup.sh script.
+  externalSecrets:
+    # -- (string) Will create the Helm "manifestservice-g3auto" secret even if Secrets Manager is enabled. This is helpful if you are wanting to use External Secrets for some, but not all secrets.
+    createK8sManifestServiceSecret: true
 
 
 dicom-viewer:

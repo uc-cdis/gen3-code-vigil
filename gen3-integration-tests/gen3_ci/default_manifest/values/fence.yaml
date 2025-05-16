@@ -1,10 +1,12 @@
 fence:
   # -- (map) External Secrets settings.
-  # externalSecrets:
-  #   fenceJwtKeys: elise-fence-jwt
-  #   fenceGoogleAppCredsSecret:
-  #   fenceGoogleStorageCredsSecret:
-  #   fenceConfig: ci-fence-config-priv
+  externalSecrets:
+    createK8sJwtKeysSecret: false
+    fenceJwtKeys: ci-fence-jwt
+    # fenceGoogleAppCredsSecret:
+    # fenceGoogleStorageCredsSecret:
+    fenceConfig: ci-fence-config-priv
+    fenceSshKeys: ci-fence-ssh-keys
   replicaCount: 2
   #delete this- it is temporary to test fence config
   image:
