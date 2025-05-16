@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wamerican \
     git \
     jq \
+    awscli \
+    openjdk-11-jre \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Nodejs 20 and allure
@@ -47,7 +49,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     git \
-    openjdk-11-jre \
     && rm -rf /var/lib/apt/lists/*
 
 COPY poetry.lock pyproject.toml /${appname}/

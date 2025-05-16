@@ -1,6 +1,0 @@
-{
-    "actions" : [
-        { "remove" : { "index" : "jenkins_imaging_study_1", "alias" : "jenkins_imaging_study" } },
-        { "add" : { "index" : "jenkins_imaging_study_1", "alias" : "jenkins_imaging_study" } }
-    ]
-}
