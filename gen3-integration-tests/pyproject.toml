@@ -17,6 +17,7 @@ cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
 gen3 = "<5"
+nextflow = "^24.10.3"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
 pytest-env = "^1.0.0"
@@ -31,6 +32,8 @@ fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
 allure-pytest = "^2.13.5"
+nextflowpy = "^0.11.0"
+boto3 = "^1.38.17"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"

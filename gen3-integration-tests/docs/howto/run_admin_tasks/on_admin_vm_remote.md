@@ -1,4 +1,4 @@
-We use jenkins to run commands from cloud-automation on the admin VM. The jenkins scripts are [here](gen3_ci/jenkins_jobs/)
+We use jenkins to run commands from cloud-automation on the admin VM. The jenkins scripts are [here](/gen3-integration-tests/gen3_ci/jenkins_jobs/)
 
 Update the .env file under `gen3-code-vigil/gen3-integration-tests` with the values:
 ```
