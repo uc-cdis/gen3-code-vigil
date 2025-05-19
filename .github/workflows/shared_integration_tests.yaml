@@ -94,6 +94,7 @@ jobs:
           # Dependabot PRs cannot run tests as they cannot access all secrets
           - name: Re-trigger dependabot PRs
             if: contains(env.BRANCH, 'dependabot')
+            working-directory: ${{ github.workspace }}
             run: |
               gh pr comment $PR_NUM --body "@dependabot rebase"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
