@@ -141,7 +141,7 @@ jobs:
           - name: Re-trigger dependabot PRs
             if: startsWith(env.BRANCH, 'dependabot/') && steps.check_comment.outputs.match_found == 'false'
             env:
-              GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
+              GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
             run: |
               gh pr comment $PR_NUM --body "@dependabot rebase"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
