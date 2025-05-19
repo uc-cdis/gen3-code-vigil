@@ -109,7 +109,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
     ####################################################################################
     if [ -e "$target_manifest_path/portal.yaml" ]; then
-        cp "$target_manifest_path/portal.yaml" "$ci_default_manifest/portal.yaml"
+        image_tag_value=$(yq eval ".portal.image.tag" $target_manifest_path/portal.yaml 2>/dev/null)
+        if [ ! -z "$image_tag_value" ]; then
+            yq eval ".portal.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/portal.yaml
+        fi
+        gitops_json_value=$(yq eval ".portal.gitops.json" $target_manifest_path/portal.yaml 2>/dev/null)
+        if [ ! -z "$gitops_json_value" ]; then
+            yq eval ".portal.gitops.json = \"$gitops_json_value\"" -i $ci_default_manifest/portal.yaml
+        fi
         sed -i '/requiredCerts/d' "$ci_default_manifest/portal.yaml"
     fi
 
