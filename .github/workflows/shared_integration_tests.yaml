@@ -118,38 +118,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
 
-          # Dependabot PRs cannot run tests as they cannot access all secrets
-          # We trigger a rebase and run tests  afterwards
-          - name: Check if this PR was already re-triggered to start CI
-            id: check_comment
-            env:
-              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              PR_NUMBER: ${{ github.event.pull_request.number }}
-            run: |
-              COMMENTS=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments)
-              echo "$COMMENTS" | jq '.' > comments.json
-
-              FOUND=$(jq --arg USER "PlanXCyborg" --arg TEXT "@dependabot rebase" '
-                .[] | select(.user.login == $USER and (.body | test($TEXT))) | .id' comments.json)
-
-              if [ -z "$FOUND" ]; then
-                echo "match_found=false" >> $GITHUB_OUTPUT
-              else
-                echo "match_found=true" >> $GITHUB_OUTPUT
-              fi
-
-          - name: Perform dependabot rebase
-            id: dependabot_rebase
-            if: startsWith(env.BRANCH, 'dependabot/') && steps.check_comment.outputs.match_found == 'false'
-            env:
-              PAT: ${{ secrets.PLANXCYBORG_PAT }}
-            run: |
-              curl -s -H "Authorization: token $PAT" \
-                -H "Accept: application/vnd.github.v3+json" \
-                -d '{"body":"@dependabot rebase"}' \
-                "https://api.github.com/repos/$REPO_FN/issues/$PR_NUM/comments"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             if: ${{ env.SKIP_TESTS != 'true' }}
