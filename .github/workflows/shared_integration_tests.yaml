@@ -91,14 +91,6 @@ jobs:
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
-          # Dependabot PRs cannot run tests as they cannot access all secrets
-          - name: Re-trigger dependabot PRs
-            if: startsWith(env.BRANCH, 'dependabot/')
-            working-directory: ${{ github.workspace }}
-            run: |
-              gh pr comment $PR_NUM --body "@dependabot rebase"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
@@ -126,10 +118,16 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
 
+          # Dependabot PRs cannot run tests as they cannot access all secrets
+          - name: Re-trigger dependabot PRs
+            if: startsWith(env.BRANCH, 'dependabot/')
+            run: |
+              gh pr comment $PR_NUM --body "@dependabot rebase"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             if: ${{ env.SKIP_TESTS != 'true' }}
-            working-directory: ${{ github.workspace }}
             run: |
               git fetch -q
               FILE_TYPES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -v '@' | awk -F . '{print $NF}' | sort -u)
