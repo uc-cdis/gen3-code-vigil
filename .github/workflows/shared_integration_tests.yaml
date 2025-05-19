@@ -146,7 +146,7 @@ jobs:
             run: |
               curl -s -H "Authorization: token $PAT" \
                 -H "Accept: application/vnd.github.v3+json" \
-                -d '{"body":"@dependabot rebase' \
+                -d '{"body":"@dependabot rebase"}' \
                 "https://api.github.com/repos/$REPO_FN/issues/$PR_NUM/comments"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
