@@ -123,7 +123,7 @@ jobs:
           - name: Check if this PR was already re-triggered to start CI
             id: check_comment
             env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               PR_NUMBER: ${{ github.event.pull_request.number }}
             run: |
               COMMENTS=$(gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments)
@@ -141,8 +141,9 @@ jobs:
           - name: Re-trigger dependabot PRs
             if: startsWith(env.BRANCH, 'dependabot/') && steps.check_comment.outputs.match_found == 'false'
             env:
-              GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
+              GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
             run: |
+              gh auth status
               gh pr comment $PR_NUM --body "@dependabot rebase"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
