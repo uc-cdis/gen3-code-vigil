@@ -139,6 +139,7 @@ jobs:
               fi
 
           - name: Re-trigger dependabot PRs
+            id: dependabot_rebase
             if: startsWith(env.BRANCH, 'dependabot/') && steps.check_comment.outputs.match_found == 'false'
             env:
               PAT: ${{ secrets.PLANXCYBORG_PAT }}
