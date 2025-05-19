@@ -141,12 +141,12 @@ jobs:
           - name: Re-trigger dependabot PRs
             if: startsWith(env.BRANCH, 'dependabot/') && steps.check_comment.outputs.match_found == 'false'
             env:
-              GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
+              PAT: ${{ secrets.PLANXCYBORG_PAT }}
             run: |
-              unset GITHUB_TOKEN
-              gh auth login --with-token < <(echo "$GH_TOKEN")
-              gh auth status
-              gh pr comment $PR_NUM --body "@dependabot rebase"
+              curl -s -H "Authorization: token $PAT" \
+                -H "Accept: application/vnd.github.v3+json" \
+                -d '{"body":"@dependabot rebase' \
+                "https://api.github.com/repos/$REPO_FN/issues/$PR_NUM/comments"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Skip tests when there are only markdown files
