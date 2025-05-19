@@ -144,6 +144,7 @@ jobs:
               GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
             run: |
               unset GITHUB_TOKEN
+              gh auth login --with-token < <(echo "$GH_TOKEN")
               gh auth status
               gh pr comment $PR_NUM --body "@dependabot rebase"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
