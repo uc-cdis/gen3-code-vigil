@@ -129,6 +129,12 @@ jobs:
               sudo apt-get update
               sudo apt-get install k6
 
+          - name: CPU & RAM Info
+            run: |
+              echo "CPU cores: $(nproc)"
+              echo "Memory:"
+              free -h
+
           - name: Prepare CI environment
             id: prep_ci_env
             if: ${{ env.SKIP_TESTS != 'true' }}
