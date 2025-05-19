@@ -91,9 +91,18 @@ jobs:
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
+          # Dependabot PRs cannot run tests as they cannot access all secrets
+          - name: Re-trigger dependabot PRs
+            if: startsWith(env.BRANCH, 'dependabot/')
+            working-directory: ${{ github.workspace }}
+            run: |
+              gh pr comment $PR_NUM --body "@dependabot rebase"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
+            if: ${{ env.SKIP_TESTS != 'true' }}
             working-directory: ${{ github.workspace }}
             run: |
               if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "release-notes" or . == "decommission-environment")' | grep -q .; then
