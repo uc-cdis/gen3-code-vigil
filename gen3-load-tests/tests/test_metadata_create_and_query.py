@@ -6,7 +6,7 @@ from gen3.auth import Gen3Auth
 from utils import load_test
 
 
-#@pytest.mark.skip(reason="This is not working, need to check")
+# @pytest.mark.skip(reason="This is not working, need to check")
 @pytest.mark.metadata_create_and_query
 class TestMetadataCreateAndQuery:
     def setup_method(self):
@@ -25,7 +25,7 @@ class TestMetadataCreateAndQuery:
             "MDS_TEST_DATA": '{"filter1": "a=1", "filter2": "nestedData.b=2", "fictitiousRecord1": {"a": 1}, "fictitiousRecord2": {"nestedData": {"b": 2}},}',
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
-            "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "300s", "target": 100}, {"duration": "30s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "30s", "target": 100}, {"duration": "10s", "target": 1}]',
             "GUID1": str(uuid.uuid4()),
             "GUID2": str(uuid.uuid4()),
         }

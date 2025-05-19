@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
     setup:
-      runs-on: ubuntu-16core-64gb
+      runs-on: ubuntu-latest
       outputs:
         TEST_ENV: ${{ steps.setvars.outputs.TEST_ENV }}
         TEST_SUITE: ${{ steps.setvars.outputs.TEST_SUITE }}
