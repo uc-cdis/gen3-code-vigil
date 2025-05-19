@@ -138,7 +138,7 @@ jobs:
                 echo "match_found=true" >> $GITHUB_OUTPUT
               fi
 
-          - name: Re-trigger dependabot PRs
+          - name: Perform dependabot rebase
             id: dependabot_rebase
             if: startsWith(env.BRANCH, 'dependabot/') && steps.check_comment.outputs.match_found == 'false'
             env:
