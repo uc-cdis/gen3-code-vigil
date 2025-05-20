@@ -56,7 +56,9 @@ function parseVirtualUsers(virtualUsersStr) {
 
 export default function () {
   // console.log(`MDS_TEST_DATA_JSON: ${MDS_TEST_DATA}`);
-  const MDS_TEST_DATA_JSON = JSON.parse(MDS_TEST_DATA.slice(1, -1));
+  // const MDS_TEST_DATA_JSON = JSON.parse(MDS_TEST_DATA.slice(1, -1));
+  //const sanitizedTestData = MDS_TEST_DATA.slice(1, -1).replace(/,\s*$/, '');
+  const MDS_TEST_DATA_JSON = JSON.parse(MDS_TEST_DATA);
   const MDS_BASIC_AUTH = BASIC_AUTH.slice(1, -1);
 
   // console.log(`MDS_BASIC_AUTH.lenght: ${MDS_BASIC_AUTH.length}`);

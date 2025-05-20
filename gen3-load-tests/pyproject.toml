@@ -51,6 +51,7 @@ markers = [
   "indexd_drs_endpoint: run load test for indexd drs_endpoint",
   "ga4gh_drs_performance: run load test for ga4gh drs_performance",
   "metadata_create_and_query: run load test for metadata create_and_query",
+  "metadata_filter_large_database: run load test for metadata filter large database",
   "sheepdog_import_clinical_metadata: run load test for sheepdog mport_clinical_metadata",
 ]
 pythonpath = "."

@@ -6,9 +6,9 @@ from gen3.auth import Gen3Auth
 from utils import load_test
 
 
-# @pytest.mark.skip(reason="This is not working, need to check")
-@pytest.mark.metadata_create_and_query
-class TestMetadataCreateAndQuery:
+@pytest.mark.skip(reason="Need to implement logic for json creation")
+# @pytest.mark.metadata_filter_large_database
+class TestMetadataFilterLargeDatabase:
     def setup_method(self):
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
@@ -19,15 +19,14 @@ class TestMetadataCreateAndQuery:
         # Setup env_vars to pass into k6 load runner
         env_vars = {
             "SERVICE": "metadata-service",
-            "LOAD_TEST_SCENARIO": "create-and-query",
+            "LOAD_TEST_SCENARIO": "filter-large-database",
             "ACCESS_TOKEN": self.auth.get_access_token(),
-            "BASIC_AUTH": "",
-            "MDS_TEST_DATA": '{"filter1": "a=1", "filter2": "nestedData.b=2", "fictitiousRecord1": {"a": 1}, "fictitiousRecord2": {"nestedData": {"b": 2}}}',
+            "NUM_OF_JSONS": "5",
+            "API_KEY": pytest.api_keys["main_account"]["api_key"],
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
-            "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "30s", "target": 100}, {"duration": "10s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "5s", "target": 1}]',  # , {"duration": "60s", "target": 10}, {"duration": "30s", "target": 100}]',
             "GUID1": str(uuid.uuid4()),
-            "GUID2": str(uuid.uuid4()),
         }
 
         # Run k6 load test

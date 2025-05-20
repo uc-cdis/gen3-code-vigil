@@ -19,8 +19,13 @@ class TestIndexdDrsEndpoint:
         )
         self.index = Gen3Index(index_auth)
 
+        self.guids_list = []
+
+    def teardown_method(self):
+        for did in self.guids_list:
+            self.index.delete_record(guid=did)
+
     def test_create_indexd_records(self):
-        guids_list = []
         # Retrieve all indexd records
         index_records = setup.get_indexd_records(
             self.auth, indexd_record_acl="phs000178"
@@ -38,14 +43,15 @@ class TestIndexdDrsEndpoint:
                 ],
             }
             record = self.index.create_record(**record_data)
+            self.guids_list.append(record["did"])
         else:
             for record in index_records:
-                guids_list.append(record["did"])
+                self.guids_list.append(record["did"])
 
         env_vars = {
             "SERVICE": "indexd",
             "LOAD_TEST_SCENARIO": "drs-endpoint",
-            "GUIDS_LIST": ",".join(guids_list).replace("'", ""),
+            "GUIDS_LIST": ",".join(self.guids_list).replace("'", ""),
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
             "ACCESS_TOKEN": self.auth.get_access_token(),
