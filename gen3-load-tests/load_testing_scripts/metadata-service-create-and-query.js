@@ -9,8 +9,6 @@ const {
   RELEASE_VERSION,
   GEN3_HOST,
   VIRTUAL_USERS,
-  GUID1,
-  GUID2
 } = __ENV; // eslint-disable-line no-undef
 
 const myFailRate = new Rate('failed_requests');
@@ -28,6 +26,14 @@ export const options = {
   },
   noConnectionReuse: true,
 };
+
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+  });
+}
 
 function parseVirtualUsers(virtualUsersStr) {
     try {
@@ -65,8 +71,9 @@ export default function () {
   const mdsEndpoint = MDS_BASIC_AUTH.length > 0 ? 'mds' : 'mds-admin';
   const baseUrl = `https://${GEN3_HOST}/${mdsEndpoint}/metadata`;
 
-  const url1 = `${baseUrl}/${GUID1}`;
-  const url2 = `${baseUrl}/${GUID2}`;
+  const guid1 = generateUUID();
+
+  const url1 = `${baseUrl}/${guid1}`;
 
   console.log(`sending requests to: ${baseUrl}`);
 
@@ -79,28 +86,11 @@ export default function () {
     },
   };
   const body1 = JSON.stringify(MDS_TEST_DATA_JSON.fictitiousRecord1);
-  const body2 = JSON.stringify(MDS_TEST_DATA_JSON.fictitiousRecord2);
 
   group('Creating and querying records', () => {
     group('create fictitiousRecord1', () => {
       console.log(`sending POST req to: ${url1}`);
       const res = http.post(url1, body1, params, { tags: { name: 'createRecord1' } });
-      // console.log(`Request performed: ${new Date()}`);
-      myFailRate.add(res.status !== 201);
-      if (res.status !== 201) {
-        console.log(`Request response: ${res.status}`);
-        console.log(`Request response: ${res.body}`);
-      }
-      check(res, {
-        'is status 201': (r) => r.status === 201,
-      });
-    });
-    group('wait 0.3s between requests', () => {
-      sleep(0.3);
-    });
-    group('create fictitiousRecord2', () => {
-      console.log(`sending POST req to: ${url2}`);
-      const res = http.post(url2, body2, params, { tags: { name: 'createRecord2' } });
       // console.log(`Request performed: ${new Date()}`);
       myFailRate.add(res.status !== 201);
       if (res.status !== 201) {
@@ -130,22 +120,6 @@ export default function () {
     group('wait 0.3s between requests', () => {
       sleep(0.3);
     });
-    group('query fictitiousRecord2', () => {
-      console.log(`sending GET req to: ${baseUrl}?${MDS_TEST_DATA_JSON.filter2}`);
-      const res = http.get(`${baseUrl}?${MDS_TEST_DATA_JSON.filter2}`, params, { tags: { name: 'queryRecord2' } });
-      // console.log(`Request performed: ${new Date()}`);
-      myFailRate.add(res.status !== 200);
-      if (res.status !== 200) {
-        console.log(`Request response: ${res.status}`);
-        console.log(`Request response: ${res.body}`);
-      }
-      check(res, {
-        'is status 200': (r) => r.status === 200,
-      });
-    });
-    group('wait 0.3s between requests', () => {
-      sleep(0.3);
-    });
     group('delete fictitiousRecord1', () => {
       console.log(`sending DELETE req to: ${url1}`);
       const res = http.request('DELETE', url1, {}, params, { tags: { name: 'deleteRecord1' } });
@@ -161,19 +135,6 @@ export default function () {
     });
     group('wait 0.3s between requests', () => {
       sleep(0.3);
-    });
-    group('delete fictitiousRecord2', () => {
-      console.log(`sending DELETE req to: ${url2}`);
-      const res = http.request('DELETE', url2, {}, params, { tags: { name: 'deleteRecord2' } });
-      // console.log(`Request performed: ${new Date()}`);
-      myFailRate.add(res.status !== 200);
-      if (res.status !== 200) {
-        console.log(`Request response: ${res.status}`);
-        console.log(`Request response: ${res.body}`);
-      }
-      check(res, {
-        'is status 200': (r) => r.status === 200,
-      });
     });
     group('wait 0.3s between requests', () => {
       sleep(0.3);

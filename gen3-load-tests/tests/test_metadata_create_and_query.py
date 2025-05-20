@@ -25,9 +25,7 @@ class TestMetadataCreateAndQuery:
             "MDS_TEST_DATA": '{"filter1": "a=1", "filter2": "nestedData.b=2", "fictitiousRecord1": {"a": 1}, "fictitiousRecord2": {"nestedData": {"b": 2}}}',
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
-            "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "30s", "target": 100}, {"duration": "10s", "target": 1}]',
-            "GUID1": str(uuid.uuid4()),
-            "GUID2": str(uuid.uuid4()),
+            "VIRTUAL_USERS": '[{"duration": "1s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "300s", "target": 100}, {"duration": "10s", "target": 1}]',
         }
 
         # Run k6 load test
