@@ -16,6 +16,7 @@ global:
       name: secret-store-sa
       # -- (string) AWS Role ARN for Secret Store to use
       roleArn: arn:aws:iam::707767160287:role/devplanetv2-external-secrets-sa
+    sower_role: sower-jobs-role
   externalSecrets:
     deploy: true
     dbCreate: true
@@ -99,6 +100,9 @@ metadata:
       "adapter_commons": {}
     }
 
+elasticsearch:
+  maxUnavailable: 0
+
 sower:
   replicaCount: 2
   # pelican:
@@ -110,9 +114,6 @@ sower:
   serviceAccount:
     # -- (bool) Specifies whether a service account should be created.
     create: true
-    # -- (map) Annotations to add to the service account.
-    annotations:
-      eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/sower-jobs-role
     # -- (string) The name of the service account to use.
     # If not set and create is true, a name is generated using the fullname template
     name: "sower-service-account"
@@ -399,10 +400,6 @@ manifestservice:
     # This will be dynamically replaced by env_setup.sh script.
     bucketName: gen3-helm-manifest-bucket
     prefix: 'test'
-    # awsaccesskey: test
-    # # This will be dynamically replaced by env_setup.sh script.
-    # awssecretkey: test
-    # # This will be dynamically replaced by env_setup.sh script.
   externalSecrets:
     # -- (string) Will create the Helm "manifestservice-g3auto" secret even if Secrets Manager is enabled. This is helpful if you are wanting to use External Secrets for some, but not all secrets.
     createK8sManifestServiceSecret: true
