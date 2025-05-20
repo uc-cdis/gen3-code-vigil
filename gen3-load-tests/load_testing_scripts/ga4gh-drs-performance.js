@@ -52,8 +52,8 @@ const {
     SIGNED_URL_PROTOCOL,
     NUM_PARALLEL_REQUESTS,
     MTLS_DOMAIN,
-    MTLS_CERT,
-    MTLS_KEY,
+    MTLS_CERT_FILE,
+    MTLS_KEY_FILE,
   } = __ENV; // eslint-disable-line no-undef
 
   const myFailRate = new Rate('failed_requests');
@@ -80,8 +80,8 @@ const {
     rawOptions.tlsAuth = [
       {
         domains: [`${MTLS_DOMAIN}`],
-        cert: open(MTLS_CERT), // eslint-disable-line no-restricted-globals
-        key: open(MTLS_KEY), // eslint-disable-line no-restricted-globals
+        cert: open(MTLS_CERT_FILE), // eslint-disable-line no-restricted-globals
+        key: open(MTLS_KEY_FILE), // eslint-disable-line no-restricted-globals
       },
     ];
   }

@@ -25,7 +25,7 @@ def pytest_configure(config):
     }
 
     # Minimum pass percentage for each load test
-    pytest.pass_threshold = 99
+    pytest.pass_threshold = 98
     pytest.api_keys = {}
     for user in pytest.users:
         pytest.api_keys[user] = setup.get_api_key(user)

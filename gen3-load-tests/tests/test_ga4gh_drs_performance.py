@@ -98,8 +98,8 @@ class TestGa4ghDrsPerformance:
             "SIGNED_URL_PROTOCOL": "s3",
             "NUM_PARALLEL_REQUESTS": "5",
             "MTLS_DOMAIN": "ctds-test-env.planx-pla.net",
-            "MTLS_CERT": (GEN_LOAD_TESTING_PATH / "mtls.crt"),
-            "MTLS_KEY": (GEN_LOAD_TESTING_PATH / "mtls.key"),
+            "MTLS_CERT_FILE": (GEN_LOAD_TESTING_PATH / "mtls.crt"),
+            "MTLS_KEY_FILE": (GEN_LOAD_TESTING_PATH / "mtls.key"),
         }
 
         # Run k6 load test
