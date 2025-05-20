@@ -29,15 +29,7 @@ yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_man
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
 
 # Add iam keys to fence-config and manifestserviceg3auto
-# CI_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_access_key_id"]' - | base64 -d )
-# CI_SECRET_KEY=$(kubectl get secret ci-access-keys -n ${namespace} -o yaml | yq eval '.data.["aws_secret_access_key_id"]' - | base64 -d )
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i gen3_ci/default_manifest/values/fence.yaml
-# yq eval ".manifestservice.manifestserviceG3auto.awsaccesskey = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
-# yq eval ".manifestservice.manifestserviceG3auto.awssecretkey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
-# yq eval ".secrets.awsAccessKeyId = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
-# yq eval ".secrets.awsSecretAccessKey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
-# yq eval ".global.aws.awsAccessKeyId = \"$CI_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
-# yq eval ".global.aws.awsSecretAccessKey = \"$CI_SECRET_KEY\"" -i gen3_ci/default_manifest/values/values.yaml
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
