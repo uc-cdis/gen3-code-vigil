@@ -180,15 +180,6 @@ jobs:
             sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
             sudo apt install openjdk-11-jre -y
 
-        # # Configure credentials to access cluster.
-        # - name: Configure AWS credentials
-        #   if: ${{ env.SKIP_TESTS != 'true' }}
-        #   uses: aws-actions/configure-aws-credentials@v1
-        #   with:
-        #     aws-access-key-id: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-        #     aws-secret-access-key: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-        #     aws-region: "us-east-1"
-
         # Configure credentials to access cluster.
         - name: Configure AWS Credentials
           if: ${{ env.SKIP_TESTS != 'true' }}
