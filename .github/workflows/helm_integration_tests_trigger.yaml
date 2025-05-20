@@ -11,6 +11,8 @@ concurrency:
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   helm_integration_tests:
