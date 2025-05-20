@@ -100,6 +100,9 @@ metadata:
       "adapter_commons": {}
     }
 
+elasticsearch:
+  maxUnavailable: 0
+
 sower:
   replicaCount: 2
   # pelican:
