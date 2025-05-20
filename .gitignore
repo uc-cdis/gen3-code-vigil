@@ -19,3 +19,4 @@ gen3-integration-tests/test_data/gen3_workflow/stdout.txt
 gen3-integration-tests/test_data/gen3_workflow/stderr.txt
 
 .vscode/*
+gen3-integration-tests/node_modules/*
