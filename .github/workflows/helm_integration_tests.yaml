@@ -194,7 +194,7 @@ jobs:
           if: ${{ env.SKIP_TESTS != 'true' }}
           uses: aws-actions/configure-aws-credentials@v3
           with:
-              role-to-assume: arn:aws:iam::433568766270:role/github-action-role
+              role-to-assume: arn:aws:iam::707767160287:role/github-action-role
               role-session-name: GitHub_to_AWS_via_FederatedOIDC
               aws-region: "us-east-1"
 
