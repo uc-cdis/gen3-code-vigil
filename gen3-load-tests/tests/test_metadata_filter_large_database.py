@@ -26,7 +26,7 @@ class TestMetadataFilterLargeDatabase:
             "API_KEY": pytest.api_keys["main_account"]["api_key"],
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
             "GEN3_HOST": f"{pytest.hostname}",
-            "VIRTUAL_USERS": '[{"duration": "5s", "target": 1}, {"duration": "60s", "target": 10}, {"duration": "30s", "target": 100}]',
+            "VIRTUAL_USERS": '[{"duration": "5s", "target": 1}, {"duration": "60s", "target": 10}, {"duration": "300s", "target": 100}]',
         }
 
         setup.generate_metadata_templates(int(env_vars["NUM_OF_JSONS"]))
