@@ -592,6 +592,10 @@ class TestDataUpload:
 
     @pytest.mark.portal
     @pytest.mark.skipif(
+        pytest.skip_portal_tests,
+        reason="Skipping based on portal version",
+    )
+    @pytest.mark.skipif(
         "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
     )
@@ -654,6 +658,10 @@ class TestDataUpload:
         self.login_page.logout(page)
 
     @pytest.mark.portal
+    @pytest.mark.skipif(
+        pytest.skip_portal_tests,
+        reason="Skipping based on portal version",
+    )
     @pytest.mark.skipif(
         "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",

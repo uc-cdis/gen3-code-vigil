@@ -17,6 +17,10 @@ from utils import logger
     "portal" not in pytest.deployed_services,
     reason="portal service is not running on this environment",
 )
+@pytest.mark.skipif(
+    pytest.skip_portal_tests,
+    reason="Skipping based on portal version",
+)
 @pytest.mark.requestor
 @pytest.mark.portal
 class TestRequestor:
