@@ -34,6 +34,10 @@ from utils import gen3_admin_tasks as gat
     and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
     reason="Test is being run on Helm and would run only on nightly-build",
 )
+@pytest.mark.skipif(
+    pytest.skip_portal_tests,
+    reason="Skipping based on portal version",
+)
 @pytest.mark.portal
 @pytest.mark.fence
 @pytest.mark.ras

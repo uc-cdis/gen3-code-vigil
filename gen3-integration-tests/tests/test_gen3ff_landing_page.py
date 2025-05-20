@@ -17,6 +17,10 @@ from utils import logger
     reason="frontend-framework service is not running on this environment",
 )
 @pytest.mark.portal
+@pytest.mark.skipif(
+    pytest.skip_portal_tests,
+    reason="Skipping based on portal version",
+)
 @pytest.mark.frontend_framework
 class TestGen3FFLandingPage(object):
     def test_home_page_redirection(self, page):

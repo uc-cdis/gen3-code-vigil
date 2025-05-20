@@ -18,6 +18,10 @@ from utils.test_execution import screenshot
 )
 @pytest.mark.wip
 @pytest.mark.portal
+@pytest.mark.skipif(
+    pytest.skip_portal_tests,
+    reason="Skipping based on portal version",
+)
 class TestDataGuids(object):
     variables = {}
     # dataguids_url = "https://dataguids.org"

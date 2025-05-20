@@ -17,6 +17,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "portal" not in pytest.deployed_services,
     reason="portal service is not running on this environment",
 )
+@pytest.mark.skipif(
+    pytest.skip_portal_tests,
+    reason="Skipping based on portal version",
+)
 @pytest.mark.portal
 class TestLoginPage:
     login_page = LoginPage()
