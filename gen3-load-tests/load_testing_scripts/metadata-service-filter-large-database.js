@@ -11,7 +11,6 @@ const {
   RELEASE_VERSION,
   GEN3_HOST,
   VIRTUAL_USERS,
-  GUID1,
 } = __ENV; // eslint-disable-line no-undef
 
 const myFailRate = new Rate('failed_requests');
@@ -20,7 +19,7 @@ const numOfJsons = NUM_OF_JSONS;
 // load all JSONs into memory
 const jsons = [];
 for (let i = 1; i <= numOfJsons; i += 1) {
-  const j = open(`../tmp/${i}.json`); // eslint-disable-line no-restricted-globals
+  const j = open(`../test_data/generated_metadata_service_template/${i}.json`); // eslint-disable-line no-restricted-globals
   jsons.push(j);
 }
 
@@ -63,6 +62,14 @@ function parseVirtualUsers(virtualUsersStr) {
   }
 }
 
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+  });
+}
+
 export default function () {
   const apiKey = API_KEY.slice(1, -1);
   const accessToken = ACCESS_TOKEN;
@@ -73,7 +80,8 @@ export default function () {
   const baseUrl = `https://${GEN3_HOST}/mds-admin/metadata`;
 
   // obtain random guid
-  const url = `${baseUrl}/${GUID1}`;
+  const guid1 = generateUUID();
+  const url = `${baseUrl}/${guid1}`;
 
   const params = {
     headers: {

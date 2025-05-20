@@ -1,10 +1,11 @@
 import os
+import shutil
 
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
-from utils import LOAD_TESTING_OUTPUT_PATH
+from utils import LOAD_TESTING_OUTPUT_PATH, TEST_DATA_PATH_OBJECT
 from utils import test_setup as setup
 
 load_dotenv()
@@ -33,3 +34,10 @@ def pytest_configure(config):
     LOAD_TESTING_OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
 
     setup.perform_pre_load_testing_setup()
+
+
+def pytest_unconfigure(config):
+    if not hasattr(config, "workerinput"):
+        directory_path = TEST_DATA_PATH_OBJECT / "generated_metadata_service_template"
+        if os.path.exists(directory_path):
+            shutil.rmtree(directory_path)

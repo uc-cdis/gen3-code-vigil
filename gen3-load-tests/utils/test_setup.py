@@ -1,11 +1,13 @@
 import csv
 import json
+import random
 from pathlib import Path
 
 import pytest
 import requests
 from gen3.auth import Gen3Auth
 from gen3.submission import Gen3Submission
+from jinja2 import Environment, FileSystemLoader
 from utils import TEST_DATA_PATH_OBJECT, logger
 
 
@@ -73,3 +75,44 @@ def create_project(auth, program_name, project_name):
             "dbgap_accession_number": project_name,
         }
         submission.create_project(program_name, project_record)
+
+
+def generate_random_values():
+    return {
+        "submitted_sample_id": str(random.randint(10000, 50000)),
+        "biosample_id": str(random.randint(0, 50000)).zfill(6),
+        "dbgap_sample_id": str(random.randint(10000, 50000)),
+        "sra_sample_id": str(random.randint(10000, 50000)),
+        "submitted_subject_id": str(random.randint(0, 99999)).zfill(5),
+        "study_subject_id": str(random.randint(0, 999999)).zfill(6),
+        "study_version": str(random.randint(0, 99999)),
+        "dbgap_subject_id": str(random.randint(0, 9999999)).zfill(7),
+        "consent_code": str(random.randint(1, 4)).zfill(1),
+        "gender": random.choice(["male", "female"]),
+        "guid_type": random.choice(["indexed_file_object", "metadata_object"]),
+    }
+
+
+def generate_metadata_templates(num_of_jsons):
+    template_path = (
+        TEST_DATA_PATH_OBJECT / "metadata_service_template" / "template.json"
+    )
+    generated_templates_path = (
+        TEST_DATA_PATH_OBJECT / "generated_metadata_service_template"
+    )
+    generated_templates_path.mkdir(parents=True, exist_ok=True)
+
+    env = Environment(loader=FileSystemLoader(template_path.parent))
+
+    # Load the template file
+    template = env.get_template(template_path.name)
+
+    for i in range(num_of_jsons):
+        random_values = generate_random_values()
+        rendered_json = template.render(**random_values)
+        record = json.loads(rendered_json)
+
+        # Save directly using i as part of filename
+        filename = f"{generated_templates_path}/{i+1}.json"
+        with open(filename, "w") as file:
+            json.dump(record, file, indent=4)
