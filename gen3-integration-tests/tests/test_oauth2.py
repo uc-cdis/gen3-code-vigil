@@ -25,10 +25,9 @@ from utils import logger
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
 class TestOauth2:
-    fence = Fence()
-
     @classmethod
     def setup_class(cls):
+        cls.fence = Fence()
         # Generate Client id and secrets
         cls.basic_test_client_id = pytest.clients["basic-test-client"]["client_id"]
         cls.basic_test_client_secret = pytest.clients["basic-test-client"][

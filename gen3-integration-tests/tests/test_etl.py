@@ -18,11 +18,12 @@ from utils import logger
 @pytest.mark.tube
 @pytest.mark.etl
 class TestETL:
-    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins2")
-
     @classmethod
     def setup_class(cls):
+        cls.auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        cls.sd_tools = GraphDataTools(
+            auth=cls.auth, program_name="jnkns", project_code="jenkins2"
+        )
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
         logger.info("Submitting test records")
         cls.sd_tools.submit_all_test_records()
