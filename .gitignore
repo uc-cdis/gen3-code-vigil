@@ -12,3 +12,6 @@ gen3-integration-tests/test_data/configuration
 gen3-integration-tests/test_data/graph_data
 gen3-integration-tests/test_data/fence_client
 gen3-integration-tests/test_data/google_creds
+gen3-load-tests/output
+gen3-load-tests/load_testing_output
+gen3-load-tests/test_data/generated_metadata_service_template
