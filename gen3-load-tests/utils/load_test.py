@@ -4,6 +4,7 @@ import subprocess
 
 import pytest
 from utils import LOAD_TESTING_OUTPUT_PATH, LOAD_TESTING_SCRIPTS_PATH, logger
+from utils.test_execution import attach_json_file
 
 
 def run_load_test(env_vars):
@@ -30,6 +31,7 @@ def get_results(result, service, load_test_scenario):
     passed = str(output["metrics"]["checks"]["passes"])
     failed = str(output["metrics"]["checks"]["fails"])
     pass_rate = round(float(output["metrics"]["checks"]["value"]) * 100, 2)
+    attach_json_file(f"{service}-{load_test_scenario}.json")
     logger.info(f"Load Test Metrics for {service}-{load_test_scenario}:")
     logger.info(f"Passed   : {passed}")
     logger.info(f"Failed   : {failed}")
