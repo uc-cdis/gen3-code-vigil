@@ -22,14 +22,14 @@ export TEST_SQS_URLS="$AUDIT_QUEUE_URL,$UPLOAD_QUEUE_URL"
 # Update values.yaml to use sqs queues
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
 
 # Add in hostname for revproxy configuration and manifestservice
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
 
 # Add iam keys to fence-config and manifestserviceg3auto
-yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i gen3_ci/default_manifest/values/fence.yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i gen3_ci/default_manifest/values/values.yaml
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
@@ -67,92 +67,92 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "CI Default Env Configuration Folder Path: ${ci_default_manifest}"
     echo "New Env Configuration Folder Path: ${target_manifest_path}"
 
+    # Check if multiple yaml files are present and convert them into values.yaml
+    new_manifest_values_file_path=$ci_default_manifest/manifest_values.yaml
+    for file in "$target_manifest_path"/*.yaml; do
+      if [[ -f "$file" ]]; then
+        cat "$file" >> "$new_manifest_values_file_path"
+        echo >> "$new_manifest_values_file_path"
+      fi
+    done
+
+
+    # TODO : CHANGE ALL THE REPOSITORY FROM AWS TO QUAY
     ####################################################################################
-    # Check if manifest etl.yaml exists and perform operations on ci etl.yaml
+    # Update ETL Block
     ####################################################################################
-    if [ -e "$target_manifest_path/etl.yaml" ]; then
-        cp "$target_manifest_path/etl.yaml" "$ci_default_manifest/etl.yaml"
+    etl_block=$(yq eval ".etl // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$etl_block" != "key not found" ]; then
+        echo "Updating ETL Block"
+        yq eval ". |= . + {\"etl\": $(yq eval .etl $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
+        yq eval ".etl.esEndpoint = \"gen3-elasticsearch-master\"" -i $ci_default_manifest/values.yaml
     fi
 
     ####################################################################################
-    # Update images for fence from $target_manifest_path/fence.yaml
+    # Update HATCHERY  Block
     ####################################################################################
-    image_tag_value=$(yq eval ".fence.image.tag" $target_manifest_path/fence.yaml 2>/dev/null)
-    if [ ! -z "$image_tag_value" ]; then
-        yq eval ".fence.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/fence.yaml
+    hatchery_block=$(yq eval ".hatchery // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$hatchery_block" != "key not found" ]; then
+        echo "Updating HATCHERY Block"
+        yq eval ". |= . + {\"hatchery\": $(yq eval .hatchery $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
     fi
 
     ####################################################################################
-    # Update images for guppy from $target_manifest_path/guppy.yaml
+    # Update PORTAL Block
     ####################################################################################
-    image_tag_value=$(yq eval ".guppy.image.tag" $target_manifest_path/guppy.yaml 2>/dev/null)
-    if [ ! -z "$image_tag_value" ]; then
-        yq eval ".guppy.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/guppy.yaml
-    fi
-
-    ####################################################################################
-    # Check if manifest hatchery.yaml exists and perform operations on ci hatchery.yaml
-    ####################################################################################
-    if [ -e "$target_manifest_path/hatchery.yaml" ]; then
-        cp "$target_manifest_path/hatchery.yaml" "$ci_default_manifest/hatchery.yaml"
-    fi
-
-    ####################################################################################
-    # Check if manifest portal.yaml exists and perform operations on ci portal.yaml
-    ####################################################################################
-    if [ -e "$target_manifest_path/portal.yaml" ]; then
-        image_tag_value=$(yq eval ".portal.image.tag" $target_manifest_path/portal.yaml 2>/dev/null)
-        if [ ! -z "$image_tag_value" ]; then
-            yq eval ".portal.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/portal.yaml
-        fi
-        gitops_json_value=$(yq eval ".portal.gitops.json" $target_manifest_path/portal.yaml 2>/dev/null)
-        if [ ! -z "$gitops_json_value" ]; then
-            yq eval ".portal.gitops.json = \"$gitops_json_value\"" -i $ci_default_manifest/portal.yaml
-        fi
-        sed -i '/requiredCerts/d' "$ci_default_manifest/portal.yaml"
+    portal_block=$(yq eval ".portal // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$portal_block" != "key not found" ]; then
+        echo "Updating PORTAL Block"
+        #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml") | .portal.resources' $new_manifest_values_file_path
+        yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
+        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
+        yq -i 'del(.portal.replicaCount)' $ci_default_manifest/values.yaml
+        # TODO : requiredCerts could be multiple lines, change the below line to handle it out
+        sed -i '/requiredCerts/d' "$ci_default_manifest/values.yaml"
     fi
 
     ####################################################################################
     # Make sure the blocks of values.yaml in ci default are in reflection of the blocks
-    # of values.yaml in target_manifest_path.
+    # of values.yaml in new_manifest_values_file_path.
     ####################################################################################
     # Get all the top-level keys from both files
     keys_ci=$(yq eval 'keys' $ci_default_manifest/values.yaml -o=json | jq -r '.[]')
-    keys_manifest=$(yq eval 'keys' $target_manifest_path/values.yaml -o=json | jq -r '.[]')
+    keys_manifest=$(yq eval 'keys' $new_manifest_values_file_path -o=json | jq -r '.[]')
 
-    # Remove blocks from $ci_default_manifest/values.yaml that are not present in $target_manifest_path/values.yaml
+    # Remove blocks from $ci_default_manifest/values.yaml that are not present in new_manifest_values_file_path
     echo "###################################################################################"
     for key in $keys_ci; do
     if ! echo "$keys_manifest" | grep -q "^$key$"; then
-        if [[ "$key" != "postgresql" && "$key" != "secrets" ]]; then
+        if [[ "$key" != "postgresql" && "$key" != "global" && "$key" != "external-secrets" ]]; then
             echo "Removing ${key} section in default ci manifest as its not present in target manifest"
             yq eval "del(.$key)" -i $ci_default_manifest/values.yaml
         fi
     fi
     done
 
-    # Add blocks from $target_manifest_path/values.yaml that are not present in $ci_default_manifest/values.yaml
+    # Add blocks from new_manifest_values_file_path that are not present in $ci_default_manifest/values.yaml
     echo "###################################################################################"
     for key in $keys_manifest; do
     if ! echo "$keys_ci" | grep -q "^$key$"; then
         echo "Adding ${key} section in default ci manifest as its present in target manifest"
-        yq eval ". |= . + {\"$key\": $(yq eval .$key $target_manifest_path/values.yaml -o=json)}" -i $ci_default_manifest/values.yaml
+        yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
     fi
     done
 
     ####################################################################################
-    # Update images for each service from $target_manifest_path/values.yaml
+    # Update images for each service from $new_manifest_values_file_path
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
     if [ "$key" != "global" ]; then
-      service_enabled_value=$(yq eval ".${key}.enabled" "$target_manifest_path/values.yaml")
+      service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
-          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in target manifest"
+          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest/values.yaml"
       else
-        image_tag_value=$(yq eval ".${key}.image.tag" $target_manifest_path/values.yaml 2>/dev/null)
+        image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
+        echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/values.yaml
         fi
@@ -169,17 +169,17 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
-     "google.enabled"
+     #"google.enabled"
      "ssjdispatcher.indexing"
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
-     "sower.sowerConfig"
+     #"sower.sowerConfig"
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
         ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest/values.yaml)
-        manifest_value=$(yq eval ".$key // \"key not found\"" $target_manifest_path/values.yaml)
+        manifest_value=$(yq eval ".$key // \"key not found\"" $new_manifest_values_file_path)
         if [ "$manifest_value" = "key not found" ]; then
             echo "The key '$key' is not present in target manifest."
         else
@@ -206,6 +206,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
         fi
     fi
+
+    # TODO : Update the SA names for sower jobs in SowerConfig section
 fi
 
 # Check if sheepdog's fenceUrl key is present and update it
@@ -228,7 +230,7 @@ install_helm_chart() {
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
     helm dependency update gen3-helm/helm/gen3
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -f gen3_ci/default_manifest/values/portal.yaml -f gen3_ci/default_manifest/values/guppy.yaml -f gen3_ci/default_manifest/values/fence.yaml -f gen3_ci/default_manifest/values/etl.yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
@@ -236,7 +238,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -f gen3_ci/default_manifest/values/portal.yaml -f gen3_ci/default_manifest/values/guppy.yaml -f gen3_ci/default_manifest/values/fence.yaml -f gen3_ci/default_manifest/values/etl.yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
