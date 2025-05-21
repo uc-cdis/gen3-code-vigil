@@ -78,9 +78,6 @@ jobs:
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
-          SFTP_QA_HOSTNAME: "sftp-qa.planx-pla.net"
-          SFTP_QA_HOSTNAME_2: "s-5745d53f10e1421eb.server.transfer.us-east-1.amazonaws.com"
-
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -89,14 +86,6 @@ jobs:
             if: github.repository_owner != github.event.pull_request.head.repo.owner.login
             run:  |
               echo "Skip pull requests from repositories not within the same organization"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
-          # Dependabot PRs cannot run tests as they cannot access all secrets
-          - name: Re-trigger dependabot PRs
-            if: startsWith(env.BRANCH, 'dependabot/')
-            working-directory: ${{ github.workspace }}
-            run: |
-              gh pr comment $PR_NUM --body "@dependabot rebase"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Skip integration tests when the following PR labels are present:
@@ -187,16 +176,6 @@ jobs:
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
-          # Workaround for Paramiko RejectPolicy: pre-load the SFTP host key to avoid connection failure during dbGaP user sync
-          # Without this, Paramiko will reject the host since known_hosts is empty in CI
-          - name: Add SFTP host key to known_hosts
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              mkdir -p ~/.ssh
-              ssh-keyscan -p 22 $SFTP_QA_HOSTNAME >> ~/.ssh/known_hosts
-              ssh-keyscan -p 22 $SFTP_QA_HOSTNAME_2 >> ~/.ssh/known_hosts
-
-          # TODO: Rely on a database in AWS to make this faster
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
           - name: Select CI environment
@@ -215,7 +194,6 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
               fi
 
-
           - name: Get modified folders
             # This is applicable for Manifest PRs only
             id: get_modified_folders
@@ -228,7 +206,6 @@ jobs:
               UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
               echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
-          # TODO: Improve the logic to do differential updates to the env, not roll all services
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
