@@ -16,7 +16,9 @@ from utils.gen3_admin_tasks import create_access_token
 )
 @pytest.mark.fence
 class TestUserToken:
-    fence = Fence()
+    @classmethod
+    def setup_class(cls):
+        cls.fence = Fence()
 
     def test_create_api_key_success(self, page: Page):
         """

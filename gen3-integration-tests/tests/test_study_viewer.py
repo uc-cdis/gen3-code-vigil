@@ -19,9 +19,8 @@ from utils.test_execution import screenshot
     reason="studyViewerConfig in not in portal config",
 )
 class TestStudyViewer(object):
-    variables = {}
-
     def setup_class(cls):
+        cls.variables = {}
         cls.variables["request_ids"] = []
         cls.variables["username"] = pytest.users["user0_account"]
         cls.variables["policy"] = "programs.jnkns.projects.jenkins_accessor"

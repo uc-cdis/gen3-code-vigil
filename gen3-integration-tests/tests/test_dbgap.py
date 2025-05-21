@@ -111,14 +111,13 @@ new_dbgap_records = {
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
 class TestDbgap:
-    indexd = Indexd()
-    fence = Fence()
-    variables = {}
-    variables["created_indexd_dids"] = []
-    variables["created_dbgap_dids"] = []
-
     @classmethod
     def setup_class(cls):
+        cls.indexd = Indexd()
+        cls.fence = Fence()
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
+        cls.variables["created_dbgap_dids"] = []
         # Removing test indexd records if they exist
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
         cls.indexd.delete_records(cls.variables["created_dbgap_dids"])

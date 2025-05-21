@@ -44,14 +44,13 @@ indexd_files = {
 )
 @pytest.mark.fence
 class TestDrsEndpoints:
-    indexd = Indexd()
-    drs = Drs()
-    fence = Fence()
-    variables = {}
-    variables["created_indexd_dids"] = []
-
     @classmethod
     def setup_class(cls):
+        cls.indexd = Indexd()
+        cls.drs = Drs()
+        cls.fence = Fence()
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
         # Adding indexd files
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
