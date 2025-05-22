@@ -1,0 +1,232 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Load Tests
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/load_tests.yaml
+      - gen3-load-tests/*
+  workflow_dispatch:
+    inputs:
+      TEST_ENV:
+        description: 'Test environment'
+        required: false
+        default: jenkins-perf
+      TEST_SUITE:
+        description: 'Load test to execute, use all to run all tests'
+        required: false
+        type: choice
+        options:
+          - TestFencePresignedURL
+          - TestGa4ghDrsPerformance
+          - TestIndexdCreateRecords
+          - TestIndexdDrsEndpoint
+          - TestMetadataCreateAndQuery
+          - TestSheepdogImportClinicalMetadata
+          - ALL
+        default: ALL
+      RELEASE_VERSION:
+        description: 'Release version'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+    setup:
+      runs-on: ubuntu-latest
+      outputs:
+        TEST_ENV: ${{ steps.setvars.outputs.TEST_ENV }}
+        TEST_SUITE: ${{ steps.setvars.outputs.TEST_SUITE }}
+        RELEASE_VERSION: ${{ steps.setvars.outputs.RELEASE_VERSION }}
+      steps:
+        - name: Determine TEST_ENV, TEST_SUITE and RELEASE_VERSION
+          id: setvars
+          run: |
+            # Determine values based on trigger
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              TEST_ENV="${{ github.event.inputs.TEST_ENV }}"
+              TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
+              RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
+            else
+              TEST_ENV="jenkins-perf"
+              TEST_SUITE="ALL"
+              RELEASE_VERSION="master"
+            fi
+
+            echo "TEST_ENV=$TEST_ENV" >> $GITHUB_OUTPUT
+            echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
+            echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
+    load_tests:
+        runs-on: ubuntu-latest
+        needs: setup
+
+        defaults:
+          run:
+            # the test directory in gen3-code-vigil
+            working-directory: gen3-load-tests
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JENKINS_URL: "https://jenkins.planx-pla.net"
+          JENKINS_USERNAME: "PlanXCyborg"
+          JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
+          REPO: ${{ github.event.repository.name }}
+          REPO_FN: ${{ github.event.repository.full_name }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          RUN_NUM: ${{ github.run_number }}
+          SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+          MTLS_CRT: ${{ secrets.MTLS_CRT }}
+          MTLS_KEY: ${{ secrets.MTLS_KEY }}
+          TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
+          NAMESPACE: ${{ needs.setup.outputs.TEST_ENV }}
+          RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
+
+
+        steps:
+          # Ensure the PR is run under the same org as an Internal PR
+          # and not by external forks/PRs
+          - name: Check if PR is from the same organization
+            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
+            run:  |
+              echo "Skip pull requests from repositories not within the same organization"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+
+          # Checkout current repo
+          - name: Checkout current repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/checkout@v4
+
+          # gen3-load-tests run with python 3.9
+          - name: Set up Python
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/setup-python@v5
+            with:
+              python-version: '3.9'
+
+          # allure report generation needs node
+          - name: Set up node
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/setup-node@v4
+            with:
+              node-version: 20
+
+          # Install gen3-load-tests dependencies
+          # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+          - name: Install dependencies
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              sudo apt-get install -y --reinstall wamerican
+              python -m pip install --upgrade pip
+              pip install poetry
+              poetry install
+              poetry show
+              sudo gpg -k
+              sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+              echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+              sudo apt-get update
+              sudo apt-get install k6
+
+          - name: CPU & RAM Info
+            run: |
+              echo "CPU cores: $(nproc)"
+              echo "Memory:"
+              free -h
+
+          - name: Prepare CI environment
+            id: prep_ci_env
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              echo $UPDATED_FOLDERS
+              mkdir $HOME/.gen3
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              fi
+
+          - name: Run tests
+            id: run_tests
+            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            env:
+              TEST_SUITE: ${{ env.TEST_SUITE }}
+            run: |
+              mkdir output
+              if [[ "${TEST_SUITE}" == "ALL" ]]; then
+                echo "Running full test suite..."
+                GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+              else
+                echo "Running only: $TEST_SUITE"
+                GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+              fi
+
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
+
+          - name: Generate allure report
+            id: generate_allure_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              npm install -g allure-commandline --save-dev
+              allure generate allure-results -o allure-report --clean
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+              fi
+
+          - name: Upload allure report to S3
+            id: upload_allure_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
+              fi
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+              AWS_DEFAULT_REGION: 'us-east-1'
+
+
+          - name: Generate markdown report
+            id: generate_md_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true
+            # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
+            run: |
+              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
+              fi
+              if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
+                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html)" >> output/report.md
+              fi
+              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
+                if [ ! -d output ]; then
+                  mkdir output
+                fi
+                if [ ! -f "output/report.md" ]; then
+                  touch "output/report.md"
+                fi
+                echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
+              fi
+
+          - name: Render report to the PR
+            id: publish_md_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
+            env:
+              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          - name: Mark workflow as failed for unsuccessful test runs
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
+
+          - name: Stop pending jenkins jobs for cancelled run
+            if: ${{ env.SKIP_TESTS != 'true' && cancelled() }}
+            run: poetry run python -m gen3_ci.scripts.clean_up_jenkins

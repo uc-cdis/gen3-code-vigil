@@ -64,7 +64,7 @@ class TestPFBExport(object):
         cls.sd_tools.submit_all_test_records()
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("REPO") == "cdis-manifest":
+            if os.getenv("REPO") == "cdis-manifest" or os.getenv("REPO") == "gitops-qa":
                 # Guppy config is changed to use index names from etlMapping.yaml from the manifest's folder
                 gat.mutate_manifest_for_guppy_test(
                     test_env_namespace=pytest.namespace, indexname="manifest"
@@ -75,7 +75,7 @@ class TestPFBExport(object):
         gat.clean_up_indices(test_env_namespace=pytest.namespace)
         cls.sd_tools.delete_all_records()
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("REPO") == "cdis-manifest":
+            if os.getenv("REPO") == "cdis-manifest" or os.getenv("REPO") == "gitops-qa":
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
 
     def test_pfb_export(self, page: Page):
