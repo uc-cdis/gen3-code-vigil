@@ -20,11 +20,12 @@ from utils.gen3_admin_tasks import create_access_token
 )
 @pytest.mark.graph_submission
 class TestGraphSubmitAndQuery:
-    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    sd_tools = GraphDataTools(auth=auth, program_name="jnkns", project_code="jenkins")
-
     @classmethod
     def setup_class(cls):
+        cls.auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
+        cls.sd_tools = GraphDataTools(
+            auth=cls.auth, program_name="jnkns", project_code="jenkins"
+        )
         cls.sd_tools.delete_all_records()
 
     def teardown_method(self, method):

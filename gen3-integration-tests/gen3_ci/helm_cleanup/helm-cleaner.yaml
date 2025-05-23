@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: helm-cleaner
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/helm-cleaner-role
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: helm-cleaner-role
+rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - persistentvolumeclaims
+      - secrets
+    verbs:
+      - get
+      - list
+      - describe
+      - delete
+
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+      - list
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: helm-cleaner-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: helm-cleaner-role
+subjects:
+  - kind: ServiceAccount
+    name: helm-cleaner
+    namespace: default
