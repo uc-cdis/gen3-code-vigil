@@ -29,6 +29,7 @@ postgresql:
   primary:
     persistence:
       enabled: true
+      size: 1Gi
   image:
     registry: quay.io
     repository: cdis/postgresql
@@ -102,6 +103,10 @@ metadata:
 
 elasticsearch:
   maxUnavailable: 0
+  volumeClaimTemplate:
+  resources:
+    requests:
+      storage: 1Gi
 
 sower:
   replicaCount: 2

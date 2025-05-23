@@ -195,7 +195,6 @@ jobs:
           run: |
             aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
 
-        # NOTE: Add in repo name
         # Create PR namespace and PR hostname env var
         - name: Create namespace and env vars
           if: ${{ env.SKIP_TESTS != 'true' }}
@@ -206,7 +205,6 @@ jobs:
             echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
             echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
             kubectl create namespace $NAMESPACE || true
-            kubectl patch namespace $NAMESPACE -p '{"metadata":{"labels":{"external-secrets":"enabled"}}}'
 
         # Setup helm
         - name: Set Up Helm
