@@ -18,11 +18,17 @@ rules:
       - namespaces
       - persistentvolumeclaims
       - secrets
+      - pods
+      - services
+      - configmaps
+      - serviceaccounts
     verbs:
       - get
       - list
       - describe
       - delete
+      - update
+      - watch
 
   - apiGroups: ["apps"]
     resources:
@@ -31,6 +37,59 @@ rules:
     verbs:
       - get
       - list
+      - update
+      - delete
+
+  - apiGroups: ["batch"]
+    resources:
+      - jobs
+      - cronjobs
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+      - ingresses
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
+  - apiGroups: ["external-secrets.io"]
+    resources:
+      - secretstores
+      - externalsecrets
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - roles
+      - rolebindings
+      - clusterrolebindings
+      - clusterroles
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - get
+      - list
+      - update
+      - delete
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

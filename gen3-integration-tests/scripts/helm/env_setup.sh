@@ -12,6 +12,17 @@ namespace="$1"
 setup_type="$2"
 helm_branch="$3"
 
+ci_default_manifest="${4}/values"
+master_values_yaml=$ci_default_manifest/master_values.yaml
+
+for file in "$ci_default_manifest"/*.yaml; do
+  if [[ -f "$file" ]]; then
+    cat "$file" >> "$"
+    echo >> "$master_values_yaml"
+  fi
+done
+mv $master_values_yaml $ci_default_manifest/values.yaml
+
 # Create sqs queues and save the URL to a var
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
 AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)

@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: helm-cleaner
-            image: alpine/k8s:1.30.13
+            image: quay.io/cdis/helm_cleanup:master
             command:
               - /bin/sh
               - -c
