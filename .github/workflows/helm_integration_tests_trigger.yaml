@@ -19,7 +19,7 @@ jobs:
     name: Helm Integration tests
     uses: ./.github/workflows/helm_integration_tests.yaml
     with:
-      HELM_BRANCH: feat/ci-fixes
+      # HELM_BRANCH: feat/ci-fixes
       WORKING_DIR: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
