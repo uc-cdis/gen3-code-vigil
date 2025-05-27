@@ -138,14 +138,13 @@ new_abc_records = {
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
 class TestCentralizedAuth:
-    indexd = Indexd()
-    fence = Fence()
-    page = Page
-    variables = {}
-    variables["created_indexd_dids"] = []
-
     @classmethod
     def setup_class(cls):
+        cls.indexd = Indexd()
+        cls.fence = Fence()
+        cls.page = Page
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
         # Assign the did to new_gen3_records and new_abc_records
         new_gen3_records["foo_bar_file"]["did"] = str(uuid4())
         new_gen3_records["delete_me"]["did"] = str(uuid4())

@@ -29,15 +29,13 @@ NOTE: To setup the index data for image study follow setup under
 @pytest.mark.guppy
 @pytest.mark.dicom_viewer
 class TestDicomViewer(object):
-    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
-    dicom = Dicom()
-    dicom_page = DicomPage()
-    login_page = LoginPage()
-    file_id = ""
-    study_id = ""
-
     @classmethod
     def setup_class(cls):
+        cls.dicom = Dicom()
+        cls.dicom_page = DicomPage()
+        cls.login_page = LoginPage()
+        cls.file_id = ""
+        cls.study_id = ""
         file_res = cls.dicom.submit_dicom_file()
         cls.file_id = file_res["ID"]
         study_instance = file_res["ParentStudy"]
