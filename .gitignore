@@ -7,6 +7,7 @@ __pycache__
 allure-report/
 allure-results/
 output/
+test-results
 gen3-integration-tests/test_data/lock
 gen3-integration-tests/test_data/configuration
 gen3-integration-tests/test_data/graph_data

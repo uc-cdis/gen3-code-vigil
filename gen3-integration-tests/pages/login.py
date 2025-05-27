@@ -4,6 +4,7 @@ import re
 import time
 
 import pytest
+from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
@@ -58,6 +59,7 @@ class LoginPage(object):
         user="main_account",
         idp="Google",
         validate_username_locator=True,
+        handle_register_user=True,
     ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
@@ -73,7 +75,7 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        cookies = page.context.cookies()
+        # cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         self.handle_popup(page)
         if idp == "ORCID":
@@ -95,6 +97,13 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
+        if handle_register_user:
+            user_register = UserRegister()
+            try:
+                logger.info("Registering user")
+                user_register.register_user(page, pytest.users[user])
+            except Exception:
+                logger.info("Register user page was not presented")
         screenshot(page, "AfterLogin")
         if validate_username_locator:
             res = get_portal_config()

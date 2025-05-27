@@ -1,6 +1,5 @@
 import pytest
 from playwright.sync_api import Page, expect
-from utils import logger
 from utils.test_execution import screenshot
 
 
@@ -26,7 +25,7 @@ class UserRegister(object):
             '//*[contains(@class, " g3-dropdown__item ")][1]'
         )
 
-    def register_user(self, page):
+    def register_user(self, page: Page, user_email: str):
         # Wait for the Register button to show up after login
         register_button = page.locator(self.REGISTER_BUTTON)
         expect(register_button).to_be_visible(timeout=10000)
@@ -38,11 +37,13 @@ class UserRegister(object):
         ), f"Expected /user/register in url but got {current_url}"
 
         # Fill out the form and click on Register button
-        page.locator(self.FIRST_NAME_INPUT).fill("Cdis")
-        page.locator(self.LAST_NAME_INPUT).fill("Test")
-        page.locator(self.ORGANIZATION_INPUT).fill("Uchicago")
+        first_name = user_email.split("@")[0].split(".")[0]
+        last_name = user_email.split("@")[0].split(".")[1]
+        page.locator(self.FIRST_NAME_INPUT).fill(first_name)
+        page.locator(self.LAST_NAME_INPUT).fill(last_name)
+        page.locator(self.ORGANIZATION_INPUT).fill("UChicago")
         if page.locator(self.EMAIL_INPUT).is_visible():
-            page.locator(self.EMAIL_INPUT).fill(pytest.users["main_account"])
+            page.locator(self.EMAIL_INPUT).fill(user_email)
         register_button.click()
 
         # Wait for username to showup

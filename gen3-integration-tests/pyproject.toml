@@ -40,7 +40,10 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "--log-cli-level=ERROR"
+addopts = [
+  "--log-cli-level=ERROR",
+  "--video", "retain-on-failure",
+]
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",

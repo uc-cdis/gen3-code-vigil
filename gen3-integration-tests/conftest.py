@@ -1,7 +1,9 @@
 import json
 import os
+import pathlib
 import shutil
 
+import allure
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
@@ -87,7 +89,7 @@ def pytest_collection_finish(session):
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
         # Run Usersync job
-        setup.run_usersync()
+        # setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -166,3 +168,27 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Store test result for each test phase (setup, call, teardown)."""
+    outcome = yield
+    result = outcome.get_result()
+    setattr(item, f"rep_{result.when}", result)
+
+
+@pytest.fixture(autouse=True)
+def attach_video_on_failure(request):
+    yield  # Let the test run
+    if hasattr(request.node, "rep_call") and request.node.rep_call.failed:
+        output_dir = request.node.funcargs.get("output_path")
+        if output_dir:
+            artifacts_dir = pathlib.Path(output_dir)
+            for file in artifacts_dir.iterdir():
+                if file.suffix == ".webm":
+                    allure.attach.file(
+                        file,
+                        name=file.name,
+                        attachment_type=allure.attachment_type.WEBM,
+                    )
