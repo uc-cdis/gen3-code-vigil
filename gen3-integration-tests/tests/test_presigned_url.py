@@ -61,13 +61,12 @@ indexd_files = {
 @pytest.mark.indexd
 @pytest.mark.fence
 class TestPresignedURL:
-    indexd = Indexd()
-    fence = Fence()
-    variables = {}
-    variables["created_indexd_dids"] = []
-
     @classmethod
     def setup_class(cls):
+        cls.indexd = Indexd()
+        cls.fence = Fence()
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
         logger.info("Creating Indexd Records")
         # Adding indexd files used to test signed urls
         for key, val in indexd_files.items():

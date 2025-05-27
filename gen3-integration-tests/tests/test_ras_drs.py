@@ -54,18 +54,22 @@ indexd_files = {
 @pytest.mark.ras
 @pytest.mark.skip(reason="RAS Passport creation is broken")
 class TestRasDrs:
-    indexd = Indexd()
-    fence = Fence()
-    ras = RAS()
-    variables = {}
-    variables["created_indexd_dids"] = []
-
-    env_vars = ["CI_TEST_RAS_USERID", "CI_TEST_RAS_PASSWORD", "CLIENT_ID", "SECRET_ID"]
-    scope = "openid profile email ga4gh_passport_v1"
-    ga4gh_url = f"{pytest.hostname}/ga4gh/drs/v1/objects"
-
     @classmethod
     def setup_class(cls):
+        cls.indexd = Indexd()
+        cls.fence = Fence()
+        cls.ras = RAS()
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
+
+        cls.env_vars = [
+            "CI_TEST_RAS_USERID",
+            "CI_TEST_RAS_PASSWORD",
+            "CLIENT_ID",
+            "SECRET_ID",
+        ]
+        cls.scope = "openid profile email ga4gh_passport_v1"
+        cls.ga4gh_url = f"{pytest.namespace}.planx-pla.net/ga4gh/drs/v1/objects"
         # Upload new Indexd records
         # Adding indexd files
         for key, val in indexd_files.items():
