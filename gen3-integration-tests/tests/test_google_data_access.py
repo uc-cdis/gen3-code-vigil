@@ -17,31 +17,31 @@ from utils import logger
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
 class TestGoogleDataAccess:
-    fence = Fence()
-    login_page = LoginPage()
-    indexd = Indexd()
-    page = Page
-    variables = {}
-    variables["indexd_record_dids"] = []
-    indexd_files = {
-        "qa_file": {
-            "file_name": "file.txt",
-            "hashes": {"md5": "9573c8ad851c0a150d78ff4755b97920"},
-            "size": 18,
-            "acl": ["QA"],
-            "urls": ["gs://dcf-integration-qa/file.txt"],
-        },
-        "test_file": {
-            "file_name": "file.txt",
-            "hashes": {"md5": "17bc0fb10a1c8df6940cdf7127042dd7"},
-            "size": 20,
-            "acl": ["test"],
-            "urls": ["gs://dcf-integration-test/file.txt"],
-        },
-    }
-
     @classmethod
     def setup_class(cls):
+        cls.fence = Fence()
+        cls.login_page = LoginPage()
+        cls.indexd = Indexd()
+        cls.page = Page
+        cls.variables = {}
+        cls.variables["indexd_record_dids"] = []
+        cls.indexd_files = {
+            "qa_file": {
+                "file_name": "file.txt",
+                "hashes": {"md5": "9573c8ad851c0a150d78ff4755b97920"},
+                "size": 18,
+                "acl": ["QA"],
+                "urls": ["gs://dcf-integration-qa/file.txt"],
+            },
+            "test_file": {
+                "file_name": "file.txt",
+                "hashes": {"md5": "17bc0fb10a1c8df6940cdf7127042dd7"},
+                "size": 20,
+                "acl": ["test"],
+                "urls": ["gs://dcf-integration-test/file.txt"],
+            },
+        }
+
         # Creating indexd records for the test
         for key, val in cls.indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})

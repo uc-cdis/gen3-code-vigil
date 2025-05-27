@@ -39,19 +39,17 @@ from utils import gen3_admin_tasks as gat
 @pytest.mark.ras
 @pytest.mark.requires_fence_client
 class TestRasAuthN:
-    fence = Fence()
-    ras = RAS()
-    login_page = LoginPage()
-
-    env_vars = [
-        "CI_TEST_RAS_USERID",
-        "CI_TEST_RAS_PASSWORD",
-        "CI_TEST_RAS_2_USERID",
-        "CI_TEST_RAS_2_PASSWORD",
-    ]
-
     @classmethod
     def setup_class(cls):
+        cls.fence = Fence()
+        cls.ras = RAS()
+        cls.login_page = LoginPage()
+        cls.env_vars = [
+            "CI_TEST_RAS_USERID",
+            "CI_TEST_RAS_PASSWORD",
+            "CI_TEST_RAS_2_USERID",
+            "CI_TEST_RAS_2_PASSWORD",
+        ]
         # Validate creds required for test are defined as env variable
         cls.ras.validate_creds(test_creds=cls.env_vars)
 
