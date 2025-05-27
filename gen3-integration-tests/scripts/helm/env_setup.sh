@@ -76,7 +76,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     done
 
 
-    # TODO : CHANGE ALL THE REPOSITORY FROM AWS TO QUAY
+    ####################################################################################
+    # Update all AWS images to QUAY
+    ####################################################################################
+    yq eval '. | (.[] |= sub(".*\.dkr\.ecr\.us-east-1\.amazonaws\.com/gen3", "quay.io/cdis"))' $new_manifest_values_file_path
+
     ####################################################################################
     # Update ETL Block
     ####################################################################################
@@ -106,7 +110,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest/values.yaml
-        # TODO : requiredCerts could be multiple lines, change the below line to handle it out
         sed -i '/requiredCerts/d' "$ci_default_manifest/values.yaml"
     fi
 
@@ -207,6 +210,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 
     # TODO : Update the SA names for sower jobs in SowerConfig section
+    current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest/values.yaml")
+    if [ "$current_sower_service_account" != "key not found" ]; then
+        echo "Key sower.serviceAccount.name found in \"$ci_default_manifest/values.yaml.\""
+        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest/values.yaml"
+    fi
 fi
 
 # Check if sheepdog's fenceUrl key is present and update it
