@@ -10,7 +10,7 @@ class UserRegister(object):
         self.EXPLORER_ENDPOINT = f"{pytest.root_url_portal}/explorer"
         self.REGISTER_ENDPOINT = f"{pytest.root_url_portal}/user/register/"
         # Locators
-        self.REGISTER_BUTTON = "//button[@type='submit']"
+        self.REGISTER_BUTTON = "//button[contains(text(),'Register')]"
         self.FIRST_NAME_INPUT = "//input[@id='firstname']"
         self.LAST_NAME_INPUT = "//input[@id='lastname']"
         self.ORGANIZATION_INPUT = "//input[@id='organization']"
@@ -38,9 +38,9 @@ class UserRegister(object):
         ), f"Expected /user/register in url but got {current_url}"
 
         # Fill out the form and click on Register button
-        page.locator(self.FIRST_NAME_INPUT).fill("Cdis")
-        page.locator(self.LAST_NAME_INPUT).fill("Test")
-        page.locator(self.ORGANIZATION_INPUT).fill("Uchicago")
+        page.locator(self.FIRST_NAME_INPUT).fill(user_email.split(".")[0])
+        page.locator(self.LAST_NAME_INPUT).fill(user_email.split(".")[1])
+        page.locator(self.ORGANIZATION_INPUT).fill("UChicago")
         if page.locator(self.EMAIL_INPUT).is_visible():
             page.locator(self.EMAIL_INPUT).fill(user_email)
         register_button.click()

@@ -130,10 +130,8 @@ def enable_register_user():
     )
 
 
-def register_test_users():
-    users_to_register = dict(get_users().items()[:2])
+def register_test_users(page):
+    users_to_register = list(get_users().keys())[:2]
     for user_to_register in users_to_register:
         login_page = LoginPage()
-        login_page.login(
-            user=user_to_register["USER_ID"], handle_user_registration=True
-        )
+        login_page.login(page, user=user_to_register, handle_user_registration=True)
