@@ -102,7 +102,7 @@ metadata:
     }
 
 elasticsearch:
-  maxUnavailable: false
+  maxUnavailable: null
   volumeClaimTemplate:
   resources:
     requests:
