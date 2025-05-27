@@ -101,7 +101,9 @@ metadata:
       "adapter_commons": {}
     }
 
+maxUnavailable: false
 elasticsearch:
+  maxUnavailable: false
   volumeClaimTemplate:
   resources:
     requests:
