@@ -253,14 +253,14 @@ install_helm_chart() {
     else
       return 1
     fi
-  else
-    helm repo add gen3 https://helm.gen3.org
-    helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -n "${NAMESPACE}"; then
-      echo "Helm chart installed!"
-    else
-      return 1
-    fi
+  # else
+    # helm repo add gen3 https://helm.gen3.org
+    # helm repo update
+    # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -n "${NAMESPACE}"; then
+    #   echo "Helm chart installed!"
+    # else
+    #   return 1
+    # fi
   fi
   return 0
 }
