@@ -227,17 +227,17 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 fi
 
 # Check if sheepdog's fenceUrl key is present and update it
-sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest/values.yaml")
+sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$sheepdog_fence_url" != "key not found" ]; then
-    echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest/values.yaml.\""
-    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest/values.yaml"
+    echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it
-manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest/values.yaml")
+manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
-    echo "Key global.manifestGlobalExtraValues.fence_url found in \"$ci_default_manifest/values.yaml.\""
-    yq eval ".global.manifestGlobalExtraValues.fence_url = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest/values.yaml"
+    echo "Key global.manifestGlobalExtraValues.fence_url found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".global.manifestGlobalExtraValues.fence_url = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 echo $HOSTNAME
