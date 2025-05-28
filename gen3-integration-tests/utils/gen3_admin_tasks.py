@@ -1179,3 +1179,159 @@ def check_indexs3client_job_deployed():
             return True
         else:
             return False
+
+
+def delete_helm_environment():
+    cmd = [
+        "helm",
+        "delete",
+        pytest.namespace,
+        "-n",
+        pytest.namespace,
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        return result.stdout.strip()
+    else:
+        logger.info(result.stderr)
+        raise Exception(f"Unable to delete environment {pytest.namespace}")
+
+
+def delete_helm_pvcs():
+    for label in ["app.kubernetes.io/name=postgresql", "app=gen3-elasticsearch-master"]:
+        cmd = [
+            "kubectl",
+            "get",
+            "pvc",
+            "-n",
+            pytest.namespace,
+            "-l",
+            label,
+            "-o",
+            "name",
+            "|",
+            "head",
+            "-n",
+            "1",
+            "|",
+            "cut",
+            "-d'/'",
+            "-f2",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            if result.stdout.strip() != "":
+                pvc = result.stdout.strip()
+                cmd = [
+                    "kubectl",
+                    "delete",
+                    "pvc",
+                    pvc,
+                    "-n",
+                    pytest.namespace,
+                    "--wait=false",
+                ]
+                result = subprocess.run(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
+                if result.returncode != 0:
+                    raise Exception(f"Unable to delete pvc for {label}")
+                pvc_status = get_pvc_status(pvc)
+                if not pvc_status:
+                    force_remove_pvc(pvc)
+        else:
+            logger.info(result.stderr)
+            raise Exception(f"Unable to delete pvc for {label}")
+
+
+def get_pvc_status(pvc):
+    for i in range(15):
+        cmd = [
+            "kubectl",
+            "get",
+            "pvc",
+            pvc,
+            "-n",
+            pytest.namespace,
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.stdout.strip() == "":
+            return True
+        time.sleep(5)
+    return False
+
+
+def force_remove_pvc(pvc):
+    cmd = [
+        "kubectl",
+        "patch",
+        "pvc",
+        pvc,
+        "-n",
+        pytest.namespace,
+        "-p",
+        '\'{"metadata":{"finalizers":null}}\'',
+        "--type=merge",
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        return result.stdout.strip()
+    else:
+        logger.info(result.stderr)
+        raise Exception(f"Unable to force remove pvc {pvc} from {pytest.namespace}")
+
+
+def delete_helm_namespace():
+    cmd = ["kubectl", "delete", "ns", pytest.namespace]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        return result.stdout.strip()
+    else:
+        logger.info(result.stderr)
+        raise Exception(f"Unable to delete namespace {pytest.namespace}")
+
+
+def delete_helm_jupyter_pod_namespace():
+    cmd = ["kubectl", "delete", "ns", f"jupyter-pods-{pytest.namespace}"]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        logger.info(f"Deleted namespace jupyter-pods-{pytest.namespace} successfully")
+    else:
+        logger.info(result.stderr)
+
+
+def delete_sqs_queues():
+    audit_queue_url = f"https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-{pytest.namespace}"
+    upload_queue_url = f"https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-{pytest.namespace}"
+    for queue in [audit_queue_url, upload_queue_url]:
+        cmd = ["aws", "sqs", "get-queue-attributes", "--queue-url", queue]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0 and result.stdout.strip() != "":
+            queue_deletion_cmd = ["aws", "sqs", "delete-queue", "--queue-url", queue]
+            queue_deletion_result = subprocess.run(
+                queue_deletion_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if queue_deletion_result.returncode == 0:
+                logger.info(f"Deleted sqs queue {queue}")
+            else:
+                logger.info(f"Unable to delete sqs queue {queue}")
+                logger.info(queue_deletion_result.stderr)
+        else:
+            logger.info(f"Queue not found. Skipping sqs deletion of {queue}")

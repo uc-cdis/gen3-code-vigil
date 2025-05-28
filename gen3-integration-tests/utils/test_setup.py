@@ -124,17 +124,10 @@ def get_users():
     return users
 
 
-def get_list_of_services_deployed():
-    return gen3_admin_tasks.get_list_of_services_deployed()
-
-
-def get_enabled_sower_jobs():
-    return gen3_admin_tasks.get_enabled_sower_jobs()
-
-
-def check_agg_mds_is_enabled():
-    return gen3_admin_tasks.is_agg_mds_enabled()
-
-
-def check_indexs3client_job_deployed():
-    return gen3_admin_tasks.check_indexs3client_job_deployed()
+def teardown_helm_environment():
+    # Delete the helm environment
+    gen3_admin_tasks.delete_helm_environment()
+    gen3_admin_tasks.delete_helm_pvcs()
+    gen3_admin_tasks.delete_helm_namespace()
+    gen3_admin_tasks.delete_helm_jupyter_pod_namespace()
+    gen3_admin_tasks.delete_sqs_queues()

@@ -18,6 +18,7 @@ requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
 
 collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
+test_outcomes = {"passed": 0, "failed": 0, "error": 0, "skipped": 0}
 
 
 class XDistCustomPlugin:
@@ -152,6 +153,20 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
+# Collect the status of tests to determine teardown steps after PR run
+@pytest.hookimpl
+def pytest_runtest_logreport(report):
+    if report.when == "call":
+        if report.outcome == "passed":
+            test_outcomes["passed"] += 1
+        elif report.outcome == "failed":
+            test_outcomes["failed"] += 1
+        elif report.outcome == "error":
+            test_outcomes["error"] += 1
+    elif report.outcome == "skipped":
+        test_outcomes["skipped"] += 1
+
+
 def pytest_unconfigure(config):
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
@@ -162,3 +177,6 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+    if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
+        if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+            setup.teardown_helm_environment()
