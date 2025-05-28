@@ -70,13 +70,13 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Inputs:
     # ci_default_manifest - name of the folder containing default ci env configuration
     # target_manifest_path - name of the folder containing manifest env configuration
-    ci_default_manifest="${4}/values"
-    target_manifest_path="${5}/values"
-    echo "CI Default Env Configuration Folder Path: ${ci_default_manifest}"
+
+    target_manifest_path="${5}"
+    echo "CI Default Env Configuration Folder Path: ${ci_default_manifest_dir}"
     echo "New Env Configuration Folder Path: ${target_manifest_path}"
 
     # Check if multiple yaml files are present and convert them into values.yaml
-    new_manifest_values_file_path=$ci_default_manifest/manifest_values.yaml
+    new_manifest_values_file_path=$ci_default_manifest_dir/manifest_values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
         echo >> "$new_manifest_values_file_path"
@@ -96,8 +96,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     etl_block=$(yq eval ".etl // \"key not found\"" $new_manifest_values_file_path)
     if [ "$etl_block" != "key not found" ]; then
         echo "Updating ETL Block"
-        yq eval ". |= . + {\"etl\": $(yq eval .etl $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
-        yq eval ".etl.esEndpoint = \"gen3-elasticsearch-master\"" -i $ci_default_manifest/values.yaml
+        yq eval ". |= . + {\"etl\": $(yq eval .etl $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval ".etl.esEndpoint = \"gen3-elasticsearch-master\"" -i $ci_default_manifest_values_yaml
     fi
 
     ####################################################################################
@@ -106,7 +106,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     hatchery_block=$(yq eval ".hatchery // \"key not found\"" $new_manifest_values_file_path)
     if [ "$hatchery_block" != "key not found" ]; then
         echo "Updating HATCHERY Block"
-        yq eval ". |= . + {\"hatchery\": $(yq eval .hatchery $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
+        yq eval ". |= . + {\"hatchery\": $(yq eval .hatchery $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
     fi
 
     ####################################################################################
@@ -117,9 +117,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Updating PORTAL Block"
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml") | .portal.resources' $new_manifest_values_file_path
         yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
-        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
-        yq -i 'del(.portal.replicaCount)' $ci_default_manifest/values.yaml
-        sed -i '/requiredCerts/d' "$ci_default_manifest/values.yaml"
+        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
+        sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -127,26 +127,26 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # of values.yaml in new_manifest_values_file_path.
     ####################################################################################
     # Get all the top-level keys from both files
-    keys_ci=$(yq eval 'keys' $ci_default_manifest/values.yaml -o=json | jq -r '.[]')
+    keys_ci=$(yq eval 'keys' $ci_default_manifest_values_yaml -o=json | jq -r '.[]')
     keys_manifest=$(yq eval 'keys' $new_manifest_values_file_path -o=json | jq -r '.[]')
 
-    # Remove blocks from $ci_default_manifest/values.yaml that are not present in new_manifest_values_file_path
+    # Remove blocks from $ci_default_manifest_values_yaml that are not present in new_manifest_values_file_path
     echo "###################################################################################"
     for key in $keys_ci; do
     if ! echo "$keys_manifest" | grep -q "^$key$"; then
         if [[ "$key" != "postgresql" && "$key" != "global" && "$key" != "external-secrets" ]]; then
             echo "Removing ${key} section in default ci manifest as its not present in target manifest"
-            yq eval "del(.$key)" -i $ci_default_manifest/values.yaml
+            yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
         fi
     fi
     done
 
-    # Add blocks from new_manifest_values_file_path that are not present in $ci_default_manifest/values.yaml
+    # Add blocks from new_manifest_values_file_path that are not present in $ci_default_manifest_values_yaml
     echo "###################################################################################"
     for key in $keys_manifest; do
     if ! echo "$keys_ci" | grep -q "^$key$"; then
         echo "Adding ${key} section in default ci manifest as its present in target manifest"
-        yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest/values.yaml
+        yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
     fi
     done
 
@@ -160,12 +160,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
-          yq eval ".${key}.enabled = false" -i "$ci_default_manifest/values.yaml"
+          yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       else
         image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
-            yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest/values.yaml
+            yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
         fi
       fi
     else
@@ -189,40 +189,40 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
-        ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest/values.yaml)
+        ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
         manifest_value=$(yq eval ".$key // \"key not found\"" $new_manifest_values_file_path)
         if [ "$manifest_value" = "key not found" ]; then
             echo "The key '$key' is not present in target manifest."
         else
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
-            yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest/values.yaml"
+            yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
         fi
     done
 
     # Update mds_url and common_url under metadata if present
-    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest/values.yaml")
+    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml)
     if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
         # Extract and update mds_url
         current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
         if [ "$current_mds_url" != "key not found" ]; then
             modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.mds_url = \"https://${namespace}.planx-pla.net/\"")
-            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
+            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest_values_yaml"
         fi
 
         # Extract and update commons_url
         current_commons_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.commons_url // \"key not found\"")
         if [ "$current_commons_url" != "key not found" ]; then
             modified_json=$(echo "$json_content" | jq ".adapter_commons.gen3.commons_url = \"${namespace}.planx-pla.net/\"")
-            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest/values.yaml"
+            yq eval --inplace ".metadata.aggMdsConfig = ${modified_json}" "$ci_default_manifest_values_yaml"
         fi
     fi
 
     # TODO : Update the SA names for sower jobs in SowerConfig section
-    current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest/values.yaml")
+    current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$current_sower_service_account" != "key not found" ]; then
-        echo "Key sower.serviceAccount.name found in \"$ci_default_manifest/values.yaml.\""
-        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest/values.yaml"
+        echo "Key sower.serviceAccount.name found in \"$ci_default_manifest_values_yaml.\""
+        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
 fi
 

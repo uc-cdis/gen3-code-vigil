@@ -77,7 +77,7 @@ indexd:
     repository: "quay.io/cdis/indexd"
     tag: "master"
   externalSecrets:
-    serviceCreds: indexd-service-creds
+    createK8sServiceCredsSecret: true
 
 
 metadata:
@@ -85,6 +85,10 @@ metadata:
   image:
     repository: quay.io/cdis/metadata-service
     tag: 'master'
+  resources:
+    # -- (map) The amount of resources that the container requests
+    requests:
+      memory: 25Mi
   enabled: true
   externalSecrets:
     createK8sMetadataSecret: true
@@ -281,7 +285,7 @@ ssjdispatcher:
       eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/ssjdispatcher-role
     name: "ssjdispatcher-service-account"
   externalSecrets:
-    createK8sSsjSecret: true
+    createK8sSsjdispatcherSecret: true
 
 sheepdog:
   replicaCount: 2
