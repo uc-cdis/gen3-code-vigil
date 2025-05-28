@@ -11,17 +11,21 @@
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
+ci_default_manifest_dir="$4"
+ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
+master_values_yaml="master_values.yaml"
 
-ci_default_manifest="${4}/values"
-master_values_yaml=$ci_default_manifest/master_values.yaml
+touch $master_values_yaml
 
-for file in "$ci_default_manifest"/*.yaml; do
+for file in "$ci_default_manifest_dir"/*.yaml; do
   if [[ -f "$file" ]]; then
-    cat "$file" >> "$"
-    echo >> "$master_values_yaml"
+    echo "" >> "$master_values_yaml"
+    cat "$file" >> "$master_values_yaml"
   fi
 done
-mv $master_values_yaml $ci_default_manifest/values.yaml
+
+# Move the combined file to values.yaml
+mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
 # Create sqs queues and save the URL to a var
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
@@ -30,40 +34,34 @@ UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
 
 # Update values.yaml to use sqs queues
-yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
-yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 
 # Add in hostname for revproxy configuration and manifestservice
-yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
-yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
 
 # Add iam keys to fence-config and manifestserviceg3auto
-yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i gen3_ci/default_manifest/values/values.yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."
-    ci_default_manifest="${4}/values"
 elif [ "$setup_type" == "service-env-setup" ]; then
     # If PR is under a service repository, then update the image for the given service
     echo "Setting Up Service PR Env..."
     # Inputs:
     # service_name - name of service against which PR is run
     # image_name - name of the quay image for the service PR
-    ci_default_manifest="${4}/values"
     service_name="$5"
     image_name="$6"
-    service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/values.yaml")
-    service_yaml_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest/${service_name}.yaml")
+    service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$service_values_block" != "key not found" ]; then
-        echo "Key '$service_name' found in \"$ci_default_manifest/values.yaml.\""
-        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/values.yaml"
+        echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
+        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
     elif [ "$service_yaml_block" != "key not found" ]; then
-        echo "Key '$service_name' found in \"$ci_default_manifest/${service_name}.yaml.\""
-        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest/${service_name}.yaml"
-    else
-        echo "Key '$service_name' not found in \"$ci_default_manifest/values.yaml\" or \"$ci_default_manifest/${service_name}.yaml.\""
+        echo "Key '$service_name' not found.\""
         exit 1
     fi
 elif [ "$setup_type" == "manifest-env-setup" ]; then
@@ -81,8 +79,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     new_manifest_values_file_path=$ci_default_manifest/manifest_values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
-        cat "$file" >> "$new_manifest_values_file_path"
         echo >> "$new_manifest_values_file_path"
+        cat "$file" >> "$new_manifest_values_file_path"
       fi
     done
 
@@ -248,19 +246,19 @@ install_helm_chart() {
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
     helm dependency update gen3-helm/helm/gen3
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml --set maxUnavailable=false --set elasticsearch.maxUnavailable=false -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
     fi
-  # else
-    # helm repo add gen3 https://helm.gen3.org
-    # helm repo update
-    # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f gen3_ci/default_manifest/values/values.yaml -n "${NAMESPACE}"; then
-    #   echo "Helm chart installed!"
-    # else
-    #   return 1
-    # fi
+  else
+    helm repo add gen3 https://helm.gen3.org
+    helm repo update
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${NAMESPACE}"; then
+      echo "Helm chart installed!"
+    else
+      return 1
+    fi
   fi
   return 0
 }
@@ -318,33 +316,8 @@ wait_for_pods_ready() {
   return 1
 }
 
-#possibly add to contest.py and add a var to "cleanup=false"
-delete_pvcs() {
-  for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master"; do
-    pvc=$(kubectl get pvc -n "$NAMESPACE" -l "$label" -o jsonpath='{.items[0].metadata.name}')
-    [ -z "$pvc" ] && echo "No PVC found for label: $label" && continue
-
-    echo "Deleting PVC $pvc with label: $label..."
-    kubectl delete pvc "$pvc" -n "$NAMESPACE" --wait=false
-
-    for i in {1..24}; do
-      kubectl get pvc "$pvc" -n "$NAMESPACE" &>/dev/null || { echo "PVC $pvc deleted."; break; }
-      echo "Waiting for PVC $pvc to delete..."
-      sleep 5
-    done
-
-    # If still exists after retries, remove finalizers
-    if kubectl get pvc "$pvc" -n "$NAMESPACE" &>/dev/null; then
-      echo "Force removing finalizers from $pvc..."
-      kubectl patch pvc "$pvc" -n "$NAMESPACE" -p '{"metadata":{"finalizers":null}}' --type=merge
-    fi
-  done
-}
-
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
-  # delete_pvcs
-  # commenting out for now for testing.
   ci_es_indices_setup
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
