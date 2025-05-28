@@ -28,10 +28,9 @@ from utils.test_execution import screenshot
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
 class TestStudyRegistration(object):
-    variables = {}
-
     @classmethod
     def setup_class(cls):
+        cls.variables = {}
         cls.variables["request_ids"] = []
         cls.variables["cedar_UUID"] = "c5891154-750a-4ed7-83b7-7cac3ddddae6"
         cls.variables["policy_id"] = (

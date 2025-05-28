@@ -20,10 +20,9 @@ from utils import logger
 @pytest.mark.requestor
 @pytest.mark.portal
 class TestRequestor:
-    variables = {}
-
     @classmethod
     def setup_class(cls):
+        cls.variables = {}
         cls.variables["request_ids"] = []
 
     @classmethod
