@@ -1220,8 +1220,15 @@ def delete_helm_pvcs():
             "-d'/'",
             "-f2",
         ]
+        cmd = (
+            "kubectl get pvc -n "
+            + pytest.namespace
+            + " -l "
+            + label
+            + " -o name | head -n 1 | cut -d'/' -f2"
+        )
         result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            cmd, stdout=subprocess.PIPE, shell=True, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0:
             if result.stdout.strip() != "":
