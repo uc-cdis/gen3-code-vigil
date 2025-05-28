@@ -128,10 +128,3 @@ def enable_register_user():
     gen3_admin_tasks.fence_enable_register_users_redirect(
         test_env_namespace=pytest.namespace
     )
-
-
-def register_test_users(page):
-    users_to_register = list(get_users().keys())[:2]
-    for user_to_register in users_to_register:
-        login_page = LoginPage()
-        login_page.login(page, user=user_to_register, handle_user_registration=True)

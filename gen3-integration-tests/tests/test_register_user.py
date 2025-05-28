@@ -6,20 +6,14 @@ import os
 
 import pytest
 from cdislogging import get_logger
+from pages.exploration import ExplorationPage
 from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
-from utils.gen3_admin_tasks import (
-    fence_disable_register_users_redirect,
-    fence_enable_register_users_redirect,
-)
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-# TODO: This suite needs to run at the last since fence changes are needed
-#       and will alter the login rediection to /user/register.
-#       Need to implement the code for it.
 @pytest.mark.skipif(
     "portal" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
@@ -28,23 +22,20 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "midrc" not in os.getenv("UPDATED_FOLDERS", ""),
+    reason="RegisterUser works only for MIDRC",
+)
 @pytest.mark.portal
 @pytest.mark.fence
-@pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")
 class TestRegisterUser:
     @classmethod
     def setup_class(cls):
         cls.login_page = LoginPage()
         cls.user_register = UserRegister()
-        # Enable Register User Redirect Login
-        fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
+        cls.exploration = ExplorationPage()
+        cls.user_email_id = "register-user@example.org"
 
-    @classmethod
-    def teardown_class(cls):
-        # Enable Register User Redirect Login
-        fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
-
-    @pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")
     def test_redirect_to_login_page_from_the_download_button(self, page: Page):
         """
         Scenario: Redirect to login page from the download button
@@ -55,10 +46,10 @@ class TestRegisterUser:
         """
         # Goto explorer page
         self.login_page.go_to(page)
-        self.user_register.goto_explorer_page(page)
+        self.exploration.goto_explorer_page(page)
 
         # Click on download button
-        self.user_register.click_on_download(page)
+        self.exploration.click_on_login_to_download(page)
 
         # Verify page got redirected to /login page
         expect(page.locator(self.login_page.LOGIN_BUTTON_LIST)).to_be_visible(
@@ -67,7 +58,6 @@ class TestRegisterUser:
         current_url = page.url
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
-    @pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")
     def test_redirect_to_register_page_after_login(self, page: Page):
         """
         Scenario: Redirect to register page after login and Download from /explorer page
@@ -81,11 +71,8 @@ class TestRegisterUser:
         self.login_page.go_to(page)
         self.login_page.login(page, validate_username_locator=False)
 
-        # Register User
-        self.user_register.register_user(page, user_email=pytest.users["main_account"])
-
         # Goto explorer page
-        self.user_register.goto_explorer_page(page)
+        self.exploration.goto_explorer_page(page)
 
         # Click on download button
-        self.user_register.click_on_download(page)
+        self.exploration.click_on_download(page)
