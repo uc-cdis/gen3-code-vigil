@@ -141,13 +141,13 @@ def pytest_configure(config):
         pytest.root_url_portal = pytest.root_url
 
     # List of services deployed
-    pytest.deployed_services = setup.get_list_of_services_deployed()
+    pytest.deployed_services = gat.get_list_of_services_deployed()
     # List of sower jobs enabled
-    pytest.enabled_sower_jobs = setup.get_enabled_sower_jobs()
+    pytest.enabled_sower_jobs = gat.get_enabled_sower_jobs()
     # Is Flag enabled for USE_AGG_MDS
-    pytest.use_agg_mdg_flag = setup.check_agg_mds_is_enabled()
+    pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
-    pytest.indexs3client_job_deployed = setup.check_indexs3client_job_deployed()
+    pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
