@@ -109,9 +109,9 @@ maxUnavailable: ""
 elasticsearch:
   maxUnavailable: ""
   volumeClaimTemplate:
-  resources:
-    requests:
-      storage: 1Gi
+    resources:
+      requests:
+        storage: 1Gi
 
 sower:
   replicaCount: 2
@@ -393,6 +393,7 @@ wts:
     repository: "quay.io/cdis/workspace-token-service"
     tag: "master"
   createWtsOidcClientSecret: true
+  createK8sWtsSecret: true
 
 manifestservice:
   replicaCount: 2
