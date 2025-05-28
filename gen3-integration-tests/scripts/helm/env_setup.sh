@@ -245,8 +245,11 @@ install_helm_chart() {
   #For custom helm branch
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
+    echo "dependency update"
     helm dependency update gen3-helm/helm/gen3
+    echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
+    echo "installing helm chart"
     if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
