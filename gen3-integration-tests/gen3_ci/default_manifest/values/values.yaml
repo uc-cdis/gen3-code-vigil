@@ -392,8 +392,9 @@ wts:
   image:
     repository: "quay.io/cdis/workspace-token-service"
     tag: "master"
-  createWtsOidcClientSecret: true
-  createK8sWtsSecret: true
+  externalSecrets:
+    createWtsOidcClientSecret: true
+    createK8sWtsSecret: true
 
 manifestservice:
   replicaCount: 2
