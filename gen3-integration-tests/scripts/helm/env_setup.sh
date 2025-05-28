@@ -201,7 +201,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     done
 
     # Update mds_url and common_url under metadata if present
-    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml)
+    json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
         # Extract and update mds_url
         current_mds_url=$(echo "$json_content" | jq -r ".adapter_commons.gen3.mds_url // \"key not found\"")
