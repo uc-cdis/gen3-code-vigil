@@ -45,14 +45,15 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page, url=None):
+    def go_to(self, page: Page, url=None, capture_screenshot=True):
         """Goes to the login page"""
         if url:
             page.goto(url)
         else:
             page.goto(self.BASE_URL)
             page.wait_for_selector(self.READY_CUE, state="visible")
-        screenshot(page, "LoginPage")
+        if capture_screenshot:
+            screenshot(page, "LoginPage")
 
     def login(
         self,
@@ -60,6 +61,7 @@ class LoginPage(object):
         user="main_account",
         idp="Google",
         validate_username_locator=True,
+        capture_screenshot=True,
     ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
@@ -95,9 +97,11 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
-        screenshot(page, "AfterLogin")
+        if capture_screenshot:
+            screenshot(page, "AfterLogin")
         current_url = page.url
         if "/user/register" in current_url:
+            logger.info(f"Registering User {pytest.users[user]}")
             user_register = UserRegister()
             user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:
@@ -117,7 +121,8 @@ class LoginPage(object):
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
             expect(username).to_be_visible(timeout=10000)
-        screenshot(page, "AfterLogin")
+        if capture_screenshot:
+            screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
             (
@@ -185,7 +190,7 @@ class LoginPage(object):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
-    def logout(self, page: Page):
+    def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config()
         # Check if useProfileDropdown is set to True and perform logout accordingly
@@ -196,7 +201,8 @@ class LoginPage(object):
         else:
             page.get_by_role("link", name="Logout").click()
         nav_bar_login_button = page.get_by_role("link", name="Login")
-        screenshot(page, "AfterLogout")
+        if capture_screenshot:
+            screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login
