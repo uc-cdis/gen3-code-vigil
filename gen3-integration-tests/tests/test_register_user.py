@@ -28,6 +28,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
+@pytest.mark.skipif(
+    pytest.skip_portal_tests,
+    reason="Skipping based on portal version",
+)
 @pytest.mark.portal
 @pytest.mark.fence
 @pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")
