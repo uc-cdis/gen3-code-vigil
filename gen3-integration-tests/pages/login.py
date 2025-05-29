@@ -99,6 +99,7 @@ class LoginPage(object):
                 logged_in_user = pytest.users[user]
         if capture_screenshot:
             screenshot(page, "AfterLogin")
+        page.wait_for_load_state("load")
         current_url = page.url
         if "/user/register" in current_url:
             logger.info(f"Registering User {pytest.users[user]}")
