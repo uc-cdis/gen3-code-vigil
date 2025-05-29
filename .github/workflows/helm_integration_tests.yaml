@@ -54,9 +54,9 @@ on:
       EKS_CLUSTER_NAME:
         required: true
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
 
 jobs:
   integration_tests:
@@ -160,6 +160,21 @@ jobs:
           with:
             version: latest
 
+        # # Setup GCP
+        # - name: 'Authenticate with GCP'
+        #   uses: 'google-github-actions/auth@v2'
+        #   with:
+        #     workload_identity_provider: 'projects/397853036191/locations/global/workloadIdentityPools/github-helm-ci-identity-pool/providers/github-provider'
+        #     service_account: 'gh-actions-sa@dcf-integration.iam.gserviceaccount.com'
+
+        # - name: 'Set up Cloud SDK'
+        #   uses: 'google-github-actions/setup-gcloud@v2'
+        #   with:
+        #     version: '>= 363.0.0'
+
+        # - name: 'Use gcloud CLI'
+        #   run: 'gcloud info'
+
         # Install gen3-integration-tests dependencies
         # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
         - name: Install dependencies
@@ -258,8 +273,6 @@ jobs:
               echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               chmod 755 scripts/helm/env_setup.sh
-              echo "running date command"
-              date
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
