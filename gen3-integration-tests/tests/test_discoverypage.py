@@ -53,10 +53,9 @@ def page_setup(page):
     reason="Skipping based on portal version",
 )
 class TestDiscoveryPage(object):
-    variables = {}
-
     @classmethod
     def setup_class(cls):
+        cls.variables = {}
         logger.info("Setup - create uuids for did and study_id")
         cls.variables["did"] = str(uuid4())
         cls.variables["study_id"] = uuid4().hex

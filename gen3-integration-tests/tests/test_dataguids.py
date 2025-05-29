@@ -23,16 +23,15 @@ from utils.test_execution import screenshot
     reason="Skipping based on portal version",
 )
 class TestDataGuids(object):
-    variables = {}
-    # dataguids_url = "https://dataguids.org"
-    dataguids_url = f"{pytest.root_url_portal}"
-    non_existent_guids = [
-        "dg.ABCD/0000b4b4-2af4-42e2-9bfa-6fd11e5fb97a",
-        "0000b456-3r56-1dr3-0rt4-6fd11e5fb97a",
-    ]
-
     @classmethod
     def setup_class(cls):
+        cls.variables = {}
+        # dataguids_url = "https://dataguids.org"
+        cls.dataguids_url = f"{pytest.root_url_portal}"
+        cls.non_existent_guids = [
+            "dg.ABCD/0000b4b4-2af4-42e2-9bfa-6fd11e5fb97a",
+            "0000b456-3r56-1dr3-0rt4-6fd11e5fb97a",
+        ]
         cls.variables["guids"] = []
         logger.info("Getting all the hosts from manifest.json ...")
         try:

@@ -36,11 +36,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 @pytest.mark.fence
 @pytest.mark.skip("MIRDC Test case needs Register user redirect enabled on fence")
 class TestRegisterUser:
-    login_page = LoginPage()
-    user_register = UserRegister()
-
     @classmethod
     def setup_class(cls):
+        cls.login_page = LoginPage()
+        cls.user_register = UserRegister()
         # Enable Register User Redirect Login
         fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
 

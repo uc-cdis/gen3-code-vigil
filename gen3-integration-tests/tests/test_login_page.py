@@ -23,11 +23,13 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 )
 @pytest.mark.portal
 class TestLoginPage:
-    login_page = LoginPage()
-    WORKSPACE_URL = f"{pytest.root_url_portal}/workspace"
-    QUERY_PARAM_URL = (
-        f"{pytest.root_url_portal}/DEV-test/search?node_type=summary_clinical"
-    )
+    @classmethod
+    def setup_class(cls):
+        cls.login_page = LoginPage()
+        cls.WORKSPACE_URL = f"{pytest.root_url_portal}/workspace"
+        cls.QUERY_PARAM_URL = (
+            f"{pytest.root_url_portal}/DEV-test/search?node_type=summary_clinical"
+        )
 
     def test_login_redirects_to_requested_page(self, page: Page):
         """
