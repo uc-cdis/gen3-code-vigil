@@ -812,7 +812,7 @@ def check_indices_after_etl(test_env_namespace: str):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        time.sleep(10)
+        time.sleep(30)
         get_alias_cmd = (
             "kubectl -n "
             + test_env_namespace
