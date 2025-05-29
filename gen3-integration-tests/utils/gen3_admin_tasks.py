@@ -1121,10 +1121,18 @@ def is_agg_mds_enabled():
             return False
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        if os.getenv("USE_AGG_MDS") == "True":
-            return True
-        else:
-            return False
+        cmd = (
+            "kubectl describe deployment metadata-deployment -n "
+            + pytest.namespace
+            + " | grep USE_AGG_MDS"
+        )
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            if "True" in result.stdout.strip():
+                return True
+        return False
 
 
 def check_indexs3client_job_deployed():
@@ -1220,25 +1228,6 @@ def delete_helm_environment():
 
 def delete_helm_pvcs():
     for label in ["app.kubernetes.io/name=postgresql", "app=gen3-elasticsearch-master"]:
-        cmd = [
-            "kubectl",
-            "get",
-            "pvc",
-            "-n",
-            pytest.namespace,
-            "-l",
-            label,
-            "-o",
-            "name",
-            "|",
-            "head",
-            "-n",
-            "1",
-            "|",
-            "cut",
-            "-d'/'",
-            "-f2",
-        ]
         cmd = (
             "kubectl get pvc -n "
             + pytest.namespace
