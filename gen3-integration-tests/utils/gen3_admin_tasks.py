@@ -1121,27 +1121,8 @@ def is_agg_mds_enabled():
             return False
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = [
-            "kubectl",
-            "-n",
-            pytest.namespace,
-            "get",
-            "cm",
-            "manifest-metadata",
-            "-o=jsonpath='{.data.json}'",
-        ]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            metadata_output = json.loads(result.stdout.strip().replace("'", ""))
-            if (
-                "USE_AGG_MDS" in metadata_output.keys()
-                and metadata_output["USE_AGG_MDS"]
-            ):
-                return True
-            else:
-                return False
+        if os.getenv("USE_AGG_MDS") == "True":
+            return True
         else:
             return False
 
