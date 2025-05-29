@@ -1053,9 +1053,10 @@ def fence_disable_register_users_redirect(test_env_namespace: str = ""):
 def get_list_of_services_deployed():
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        return json.loads(
+        services = json.loads(
             (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
         )["versions"].keys()
+        return "\n".join(services)
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = [

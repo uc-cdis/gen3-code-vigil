@@ -19,7 +19,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 
 # audit deployment name is "audit-service" in adminvm and "audit-deployment" in gen3 helm
 @pytest.mark.skipif(
-    not any("audit" in key for key in pytest.deployed_services),
+    "audit" not in pytest.deployed_services,
     reason="audit service is not running on this environment",
 )
 @pytest.mark.audit
