@@ -527,7 +527,12 @@ fence:
 
     # Configuration for various storage systems for the backend
     # NOTE: Remove the {} and supply backends if needed. Example in comments below
-    # STORAGE_CREDENTIALS: {}
+    STORAGE_CREDENTIALS: {}
+    # STORAGE_CREDENTIALS:
+    #   'google':
+    #     backend: google
+    #     # this should be the project id where the Google Groups for data access are managed
+    #     google_project_id: dcf-integration
     # Google Cloud Storage backend
     #
     #  'google':
