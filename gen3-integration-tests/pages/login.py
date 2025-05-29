@@ -45,6 +45,7 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
+    # TODO: see how to remove this parameter capture_screenshot
     def go_to(self, page: Page, url=None, capture_screenshot=True):
         """Goes to the login page"""
         if url:
