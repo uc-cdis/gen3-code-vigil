@@ -8,6 +8,10 @@ on:
       - .github/workflows/shared_integration_tests.yaml
       - gen3-integration-tests/**
 
+concurrency:
+  group: trigger-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   integration_tests:
     name: Integration tests
