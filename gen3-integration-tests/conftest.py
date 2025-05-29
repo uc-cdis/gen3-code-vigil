@@ -148,6 +148,7 @@ def pytest_configure(config):
     pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
+    pytest.google_enabled = gat.is_google_enabled()
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
@@ -177,6 +178,6 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
-        if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-            setup.teardown_helm_environment()
+    # if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
+    #     if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+    #         setup.teardown_helm_environment()

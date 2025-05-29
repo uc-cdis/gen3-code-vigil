@@ -1181,6 +1181,43 @@ def check_indexs3client_job_deployed():
             return False
 
 
+def is_google_enabled():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        manifest_data = json.loads(
+            (TEST_DATA_PATH_OBJECT / "configuration" / "manifest.json").read_text()
+        )
+        if manifest_data.get("google", {}).get("enabled", "") == "yes":
+            return True
+        else:
+            return False
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "get",
+            "cm",
+            "manifest-metadata",
+            "-o=jsonpath='{.data.json}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            metadata_output = json.loads(result.stdout.strip().replace("'", ""))
+            if (
+                "google_enabled" in metadata_output.keys()
+                and metadata_output["google_enabled"]
+            ):
+                return True
+            else:
+                return False
+        else:
+            return False
+
+
 def delete_helm_environment():
     cmd = [
         "helm",
