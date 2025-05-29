@@ -24,6 +24,7 @@ global:
   manifestGlobalExtraValues:
     fence_url: https://hostname.ci.planx-pla.net/user
     # This will be dynamically replaced by env_setup.sh script.
+    google_enabled: true
 
 postgresql:
   primary:

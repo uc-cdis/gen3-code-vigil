@@ -27,23 +27,6 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
-# Create sqs queues and save the URL to a var
-AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
-AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
-UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
-UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
-
-# Update values.yaml to use sqs queues
-yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
-yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
-
-# Add in hostname for revproxy configuration and manifestservice
-yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
-yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
-
-# Add iam keys to fence-config and manifestserviceg3auto
-yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
@@ -226,6 +209,29 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 fi
 
+# Create sqs queues and save the URL to a var
+AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
+AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
+UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+
+# Update values.yaml to use sqs queues
+yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+
+# Add in hostname for revproxy, fence, and manifestservice configuration
+yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
+
+# Generate Google Prefix by using commit sha so it is unqiue for each env.
+commit_sha="${COMMIT_SHA}"
+GOOGLE_PREFIX="${commit_sha: -8}"
+echo "Last 8 characters of COMMIT_SHA: $GOOGLE_PREFIX"
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
+
 # Check if sheepdog's fenceUrl key is present and update it
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$sheepdog_fence_url" != "key not found" ]; then
@@ -233,7 +239,7 @@ if [ "$sheepdog_fence_url" != "key not found" ]; then
     yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
-# Check if global manifestGlobalExtraValues fenceUrl key is present and update it
+# Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
 manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
     echo "Key global.manifestGlobalExtraValues.fence_url found in \"$ci_default_manifest_values_yaml\""

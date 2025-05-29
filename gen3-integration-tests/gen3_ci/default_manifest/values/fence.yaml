@@ -3,13 +3,12 @@ fence:
   externalSecrets:
     createK8sJwtKeysSecret: false
     fenceJwtKeys: ci-fence-jwt
-    # fenceGoogleAppCredsSecret:
-    # fenceGoogleStorageCredsSecret:
+    fenceGoogleAppCredsSecret: ci-fence-google-app-creds-secret
+    fenceGoogleStorageCredsSecret: ci-fence-google-storage-creds-secret
     createK8sGoogleAppSecrets: true
     fenceConfig: ci-fence-config-priv
     fenceSshKeys: ci-fence-ssh-keys
   replicaCount: 2
-  #delete this- it is temporary to test fence config
   image:
     repository: quay.io/cdis/fence
     pullPolicy: IfNotPresent
@@ -22,7 +21,26 @@ fence:
     schedule: '0 0 1 1 1'
     syncFromDbgap: true
   FENCE_CONFIG_PUBLIC:
+    # Prefix to namespace Google Groups on a single Cloud Identity (see cirrus
+    # setup for more info on Cloud Identity)
+    #
+    # NOTE: Make this short! Less than 8 characters if possible. Google has
+    #       length restrictions on group names.
+    GOOGLE_GROUP_PREFIX:
+    # This will be dynamically replaced by env_setup.sh script.
+
+    # Prefix to namespace Google Service Accounts in a single Google Cloud Platform Project.
+    # This is primarily to support multiple instances of fence references the same Google
+    # project. If that is not something you need to support, then you can leave this blank.
+    #
+    # NOTE: Make this short! Less than 8 characters if possible. Google has
+    #       length restrictions on service account names.
+    GOOGLE_SERVICE_ACCOUNT_PREFIX:
+    # This will be dynamically replaced by env_setup.sh script.
+
     BASE_URL: https://HOSTNAME/user
+    # This will be dynamically replaced by env_setup.sh script.
+
     # -- (string) Name of the Fence app
     APP_NAME: "Gen3 Data Commons"
 
@@ -606,36 +624,6 @@ fence:
         # This will be dynamically replaced by env_setup.sh script.
         region: us-east-1
         aws_cred: 'cdistest'
-
-    # //////////////////////////////////////////////////////////////////////////////////////
-    # CLOUD API LIBRARY (CIRRUS) AND GOOGLE CONFIGURATION
-    #   - Support Google Data Access Methods
-    # //////////////////////////////////////////////////////////////////////////////////////
-    # Setting this up allows fence to create buckets, manage Google groups, etc.
-    # See directions here for setting up cirrus: https://github.com/uc-cdis/cirrus
-    CIRRUS_CFG:
-      GOOGLE_API_KEY: ""
-      GOOGLE_PROJECT_ID: ""
-      GOOGLE_APPLICATION_CREDENTIALS: ""
-      GOOGLE_STORAGE_CREDS: ""
-      GOOGLE_ADMIN_EMAIL: ""
-      GOOGLE_IDENTITY_DOMAIN: ""
-      GOOGLE_CLOUD_IDENTITY_ADMIN_EMAIL: ""
-
-    # Prefix to namespace Google Groups on a single Cloud Identity (see cirrus
-    # setup for more info on Cloud Identity)
-    #
-    # NOTE: Make this short! Less than 8 characters if possible. Google has
-    #       length restrictions on group names.
-    GOOGLE_GROUP_PREFIX: ""
-
-    # Prefix to namespace Google Service Accounts in a single Google Cloud Platform Project.
-    # This is primarily to support multiple instances of fence references the same Google
-    # project. If that is not something you need to support, then you can leave this blank.
-    #
-    # NOTE: Make this short! Less than 8 characters if possible. Google has
-    #       length restrictions on service account names.
-    GOOGLE_SERVICE_ACCOUNT_PREFIX: ""
 
     # A Google Project identitifier representing the default project to bill to for
     # accessing Google Requester Pays buckets (for signed urls and/or temporary service account
