@@ -430,13 +430,6 @@ jobs:
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           - name: Cleanup
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
             run: |
-              if [ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
-              else
-                # helm delete gen3 --namespace ${{ env.NAMESPACE }}
-                kubectl delete pvc -l app.kubernetes.io/name=postgresql
-                # sleep 20
-                # kubectl delete ns ${{ env.NAMESPACE }}
-              fi
