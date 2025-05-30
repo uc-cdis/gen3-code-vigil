@@ -1,7 +1,6 @@
 import json
 
 import pytest
-from gen3.auth import Gen3Auth
 from pages.dicom import DicomPage
 from pages.login import LoginPage
 from playwright.sync_api import Page

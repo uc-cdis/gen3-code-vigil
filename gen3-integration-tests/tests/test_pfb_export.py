@@ -44,7 +44,8 @@ def validate_json_for_export_to_pfb_button(data):
     reason="sheepdog service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "tube" not in pytest.deployed_services,
+    "tube" not in pytest.deployed_services
+    and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
     reason="tube service is not running on this environment",
 )
 @pytest.mark.tube

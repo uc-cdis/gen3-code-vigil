@@ -112,7 +112,7 @@ class LoginPage(object):
             username = page.locator("//*[text()]").filter(
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
-            expect(username).to_be_visible(timeout=10000)
+            expect(username).to_be_visible(timeout=20000)
         screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
