@@ -101,12 +101,6 @@ jobs:
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
-          - name: Get commit time
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
-
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
@@ -144,6 +138,13 @@ jobs:
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
+
+          - name: Get commit time
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
