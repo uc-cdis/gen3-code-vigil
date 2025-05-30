@@ -8,14 +8,18 @@ on:
       - .github/workflows/shared_integration_tests.yaml
       - gen3-integration-tests/**
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   integration_tests:
     name: Integration tests
     uses: ./.github/workflows/shared_integration_tests.yaml
+    with:
+      HELM_BRANCH: feat/ci-fixes
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
       CI_AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
