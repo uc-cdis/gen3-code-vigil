@@ -5,6 +5,7 @@ import pytest
 import requests
 from gen3.auth import Gen3Auth
 from pages.login import LoginPage
+from pages.user_register import UserRegister
 from playwright.sync_api import Page
 from utils import logger
 from utils.misc import retry
@@ -163,10 +164,17 @@ class Fence(object):
         scopes,
         consent="ok",
         expect_code=True,
+        client_email_id="basictestclient@example.org",
     ):
         """Gets the consent code"""
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
         page.goto(url)
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {client_email_id}")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=client_email_id)
         if expect_code:
             if consent == "cancel":
                 page.locator(self.CONSENT_CANCEL_BUTTON).click()
@@ -208,11 +216,24 @@ class Fence(object):
                 assert key in response.json(), f"{key} is missing in {response['data']}"
 
     def get_tokens_implicit_flow(
-        self, page, client_id, response_type, scopes, consent="yes", expect_token=True
+        self,
+        page,
+        client_id,
+        response_type,
+        scopes,
+        consent="yes",
+        expect_token=True,
+        client_email_id="implicittestclient@example.org",
     ):
         """Gets the token from the UI"""
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri=https://{pytest.hostname}&scope={scopes}&nonce=n-0S6_WzA2Mj"
         page.goto(url)
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {client_email_id}")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=client_email_id)
         if expect_token:
             if page.locator(self.CONSENT_AUTHORIZE_BUTTON).is_visible():
                 if consent == "cancel":

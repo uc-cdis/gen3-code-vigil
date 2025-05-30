@@ -1,6 +1,6 @@
 # Exploration Page
 import pytest
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from utils import logger
 from utils.test_execution import screenshot
 
@@ -25,6 +25,14 @@ class ExplorationPage(object):
             "//a[contains(text(), 'Click here to download your PFB')]"
         )
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
+        self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
+        self.LOGIN_TO_DOWNLOAD_BUTTON = (
+            "//button[normalize-space()='Login to download table']"
+        )
+        self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
+            '//*[contains(@class, " g3-dropdown__item ")][1]'
+        )
+        self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
 
     def go_to_and_check_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
@@ -82,3 +90,36 @@ class ExplorationPage(object):
         screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link
+
+    def goto_explorer_page(self, page):
+        # Goto explorer page
+        page.goto(self.EXPLORATION_URL)
+        screenshot(page, "ExplorerPage")
+
+        # Verify /explorer page is loaded
+        expect(page.locator(self.USERNAME_LOCATOR)).to_be_visible(timeout=10000)
+        current_url = page.url
+        assert (
+            "/explorer" in current_url
+        ), f"Expected /explorer in url but got {current_url}"
+
+    def click_on_login_to_download(self, page):
+        # Click on the Download Button
+        download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+        assert download_button.is_enabled()
+        download_button.click()
+        screenshot(page, "AfterClickingLoginToDownload")
+
+    def click_on_download(self, page):
+        # Click on the Download Button
+        download_button = page.locator(self.DOWNLOAD_BUTTON)
+        assert download_button.is_enabled()
+        download_button.click()
+        screenshot(page, "AfterClickingDownload")
+
+        # Click on the file type to download
+        login_to_download_list_first_item = page.locator(
+            self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
+        )
+        login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
+        login_to_download_list_first_item.click()

@@ -1,11 +1,12 @@
 import os
-import requests
 import time
-import pytest
 
+import pytest
+import requests
 from pages.login import LoginPage
-from utils import logger
+from pages.user_register import UserRegister
 from playwright.sync_api import Page
+from utils import logger
 
 
 class RAS(object):
@@ -50,6 +51,12 @@ class RAS(object):
         page.goto(url)
         login.ras_login(page, username=username, password=password, portal_test=False)
         time.sleep(10)
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {username}@perf.nih.gov")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=f"{username}@perf.nih.gov")
         current_url = page.url
         assert "code=" in current_url, f"{current_url} is missing code= substring"
         code = current_url.split("code=")[-1]
