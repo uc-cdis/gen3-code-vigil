@@ -269,7 +269,8 @@ jobs:
               HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              kubectl create namespace $NAMESPACE || true
+              # TODO: uncomment later
+              # kubectl create namespace $NAMESPACE || true
 
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
@@ -307,7 +308,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' || env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo $UPDATED_FOLDERS
