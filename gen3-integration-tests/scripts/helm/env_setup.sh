@@ -225,12 +225,12 @@ yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifes
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
 
-# Generate Google Prefix by using commit sha so it is unqiue for each env.
-commit_sha="${COMMIT_SHA}"
-GOOGLE_PREFIX="${commit_sha: -6}"
-echo "Last 6 characters of COMMIT_SHA: $GOOGLE_PREFIX"
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
+# # Generate Google Prefix by using commit sha so it is unqiue for each env.
+# commit_sha="${COMMIT_SHA}"
+# GOOGLE_PREFIX="${commit_sha: -6}"
+# echo "Last 6 characters of COMMIT_SHA: $GOOGLE_PREFIX"
+# yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
+# yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")

@@ -533,12 +533,6 @@ fence:
     #     backend: google
     #     # this should be the project id where the Google Groups for data access are managed
     #     google_project_id: dcf-integration
-    # Google Cloud Storage backend
-    #
-    #  'google':
-    #    backend: 'google'
-    #    # this should be the project id where the Google Groups for data access are managed
-    #    google_project_id: 'some-project-id-12378923'
 
     # Cleversafe data storage backend
     #
