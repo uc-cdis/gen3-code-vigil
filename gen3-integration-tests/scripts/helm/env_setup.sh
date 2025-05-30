@@ -209,28 +209,30 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 fi
 
-# Create sqs queues and save the URL to a var
+# Create sqs queues and save the URL to a var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
 AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
 UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
 
-# Update values.yaml to use sqs queues
+# Update values.yaml to use sqs queues.
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 
-# Add in hostname for revproxy, fence, and manifestservice configuration
+# Add in hostname for revproxy, hatchery, fence, and manifestservice configuration.
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
+sed -i '' "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
-# # Generate Google Prefix by using commit sha so it is unqiue for each env.
-# commit_sha="${COMMIT_SHA}"
-# GOOGLE_PREFIX="${commit_sha: -3}"
-# echo "Last 3 characters of COMMIT_SHA: $GOOGLE_PREFIX"
-# yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
-# yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
+
+# Generate Google Prefix by using commit sha so it is unqiue for each env.
+commit_sha="${COMMIT_SHA}"
+GOOGLE_PREFIX="${commit_sha: -2}"
+echo "Last 2 characters of COMMIT_SHA: $GOOGLE_PREFIX"
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
