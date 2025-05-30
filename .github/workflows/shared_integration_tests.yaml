@@ -125,8 +125,8 @@ jobs:
 
           # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
           - name: Handle nightly build reporting
-            working-directory: ${{ github.workspace && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            working-directory: ${{ github.workspace }}
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
             run: |
               nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
               echo "$nightly_label"
