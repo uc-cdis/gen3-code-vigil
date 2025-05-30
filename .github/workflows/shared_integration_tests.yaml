@@ -209,6 +209,22 @@ jobs:
             with:
               version: latest
 
+          # # Setup GCP
+          # - name: 'Authenticate with GCP'
+          #   uses: 'google-github-actions/auth@v2'
+          #   with:
+          #     workload_identity_provider: 'projects/397853036191/locations/global/workloadIdentityPools/github-helm-ci-identity-pool/providers/github-provider'
+          #     service_account: 'gh-actions-sa@dcf-integration.iam.gserviceaccount.com'
+
+          # - name: 'Set up Cloud SDK'
+          #   uses: 'google-github-actions/setup-gcloud@v2'
+          #   with:
+          #     version: '>= 363.0.0'
+
+          # - name: 'Use gcloud CLI'
+          #   run: 'gcloud info'
+
+
           # Install gen3-integration-tests dependencies
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
           - name: Install dependencies
@@ -231,7 +247,7 @@ jobs:
 
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             uses: aws-actions/configure-aws-credentials@v3
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
@@ -349,10 +365,6 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
-            env:
-              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
-              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
-              AWS_DEFAULT_REGION: 'us-east-1'
 
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
@@ -372,7 +384,7 @@ jobs:
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html) _(login [here]https://qa.planx-pla.net first)_" >> output/report.md
               fi
-              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
+              if [ "${{steps.archive_pod_logs.outcome}}" == "success" && $GEN3_INSTANCE_TYPE == "ADMINVM_REMOTE" ]; then
                 if [ ! -d output ]; then
                   mkdir output
                 fi
