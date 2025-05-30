@@ -227,8 +227,8 @@ yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i 
 
 # # Generate Google Prefix by using commit sha so it is unqiue for each env.
 # commit_sha="${COMMIT_SHA}"
-# GOOGLE_PREFIX="${commit_sha: -6}"
-# echo "Last 6 characters of COMMIT_SHA: $GOOGLE_PREFIX"
+# GOOGLE_PREFIX="${commit_sha: -3}"
+# echo "Last 3 characters of COMMIT_SHA: $GOOGLE_PREFIX"
 # yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
 # yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
 
