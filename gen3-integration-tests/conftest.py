@@ -144,8 +144,8 @@ def pytest_configure(config):
     pytest.deployed_services = gat.get_list_of_services_deployed()
     # List of sower jobs enabled
     pytest.enabled_sower_jobs = gat.get_enabled_sower_jobs()
-    # Is Flag enabled for USE_AGG_MDS
-    pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
+    # # Is Flag enabled for USE_AGG_MDS
+    # pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
     pytest.google_enabled = gat.is_google_enabled()
