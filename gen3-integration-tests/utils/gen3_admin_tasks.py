@@ -985,7 +985,76 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+        else:
+            raise Exception("Unable to retrieve fence-deployment pod")
+        bukcet_info = {"dcf-integration-qa": "QA", "dcf-integration-test": "test"}
+        for bucket_name in bukcet_info.keys():
+            create_bucket_cmd = [
+                "kubectl",
+                "-n",
+                test_env_namespace,
+                "exec",
+                "-i",
+                fence_pod_name,
+                "--",
+                "fence-create",
+                "google-bucket-create",
+                "--unique-name",
+                bucket_name,
+                "--google-project-id",
+                "dcf-integration",
+                "--project-auth-id",
+                bukcet_info[bucket_name],
+                "--public",
+                "False",
+            ]
+            create_bucket_result = subprocess.run(
+                create_bucket_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if result.returncode == 0:
+                return create_bucket_result.stdout.strip().replace("'", "")
+            else:
+                raise Exception(f"Unable to create google bucket for {bucket_name}")
+        phs_info = {
+            "phs000179": "dcf-integration-qa",
+            "phs000178": "dcf-integration-test",
+            "phs001194": "dcf-integration-test",
+            "phs000571": "dcf-integration-test",
+        }
+        for phs in phs_info.keys():
+            link_phs_cmd = [
+                "kubectl",
+                "-n",
+                test_env_namespace,
+                "exec",
+                "-i",
+                fence_pod_name,
+                "--",
+                "fence-create",
+                "link-bucket-to-project",
+                "--project_auth_id",
+                phs,
+                "--bucket_id",
+                phs_info[phs],
+                "--bucket_provider",
+                "google",
+            ]
+            link_phs_result = subprocess.run(
+                link_phs_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            )
+            if result.returncode == 0:
+                return link_phs_result.stdout.strip().replace("'", "")
+            else:
+                raise Exception(f"Unable to create google bucket for {bucket_name}")
 
 
 def fence_enable_register_users_redirect(test_env_namespace: str = ""):
@@ -1016,7 +1085,21 @@ def fence_enable_register_users_redirect(test_env_namespace: str = ""):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "get",
+            "deployments",
+            "-o=jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().replace("'", "")
+        else:
+            raise Exception("Unable to retrieve deployed services")
 
 
 def fence_disable_register_users_redirect(test_env_namespace: str = ""):
