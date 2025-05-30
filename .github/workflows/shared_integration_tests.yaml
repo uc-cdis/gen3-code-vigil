@@ -28,6 +28,10 @@ on:
         required: false
         type: string
         default: default
+      GEN3_INSTANCE_TYPE:
+        required: false
+        type: string
+        default: ADMINVM_REMOTE
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -53,10 +57,12 @@ on:
         required: true
       CI_SLACK_CHANNEL_ID:
         required: true
+      EKS_CLUSTER_NAME:
+        required: true
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
     integration_tests:
@@ -87,7 +93,7 @@ jobs:
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          GEN3_INSTANCE_TYPE: "HELM_LOCAL"
+          GEN3_INSTANCE_TYPE: ${{ inputs.GEN3_INSTANCE_TYPE }}
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
