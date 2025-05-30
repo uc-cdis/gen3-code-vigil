@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 from pages.login import LoginPage
-from playwright.sync_api import sync_playwright
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks, logger
 
 
@@ -123,15 +122,3 @@ def get_users():
     with open(user_list_path) as f:
         users = {row["USER_ID"]: row["EMAIL"] for row in csv.DictReader(f)}
     return users
-
-
-def register_users():
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        page = browser.new_page()
-        users_to_register = get_users().keys()
-        for user_to_register in users_to_register:
-            login_page = LoginPage()
-            login_page.go_to(page, capture_screenshot=False)
-            login_page.login(page, user=user_to_register, capture_screenshot=False)
-            login_page.logout(page, capture_screenshot=False)

@@ -90,8 +90,6 @@ def pytest_collection_finish(session):
         setup.run_usersync()
         # Enable register user
         gat.fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
-        # Register Users needed for integration tests
-        setup.register_users()
 
 
 @pytest.fixture(scope="session", autouse=True)
