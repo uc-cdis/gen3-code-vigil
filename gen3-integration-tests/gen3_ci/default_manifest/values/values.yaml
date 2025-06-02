@@ -1,6 +1,6 @@
 global:
-  hostname:
   # This will be dynamically replaced by env_setup.sh script.
+  hostname:
   dictionaryUrl: https://s3.amazonaws.com/dictionary-artifacts/anvil/master/schema.json
   pdb: true
   aws:
@@ -21,8 +21,8 @@ global:
     deploy: true
     dbCreate: true
   manifestGlobalExtraValues:
-    fence_url: https://hostname/user
     # This will be dynamically replaced by env_setup.sh script.
+    fence_url: https://hostname/user
     google_enabled: true
 
 postgresql:
@@ -47,8 +47,8 @@ hatchery:
         name: "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
         image: "quay.io/cdis/heal-notebooks:bacpac__10670ad79b4488cfa9f1b3681ce52bc3f1139b5a"
         env:
-          FRAME_ANCESTORS: https://<hostname>
           # This will be dynamically replaced by env_setup.sh script.
+          FRAME_ANCESTORS: https://<hostname>
         args:
           - "--NotebookApp.base_url=/lw-workspace/proxy/"
           - "--NotebookApp.password=''"
@@ -275,8 +275,8 @@ ssjdispatcher:
   enabled: true
   indexing: quay.io/cdis/indexs3client:master
   ssjcreds:
-    sqsUrl: https://sqs.us-east-1.amazonaws.com/707767160287/gen3-helm-data-upload-bucket
     # This will be dynamically replaced by env_setup.sh script.
+    sqsUrl: https://sqs.us-east-1.amazonaws.com/707767160287/gen3-helm-data-upload-bucket
     jobPattern: s3://test-12345678901234-upload/*
     jobUser: sheepdog_gen3
     metadataserviceUsername: metadata_gen3
@@ -287,6 +287,8 @@ ssjdispatcher:
     name: "ssjdispatcher-service-account"
   externalSecrets:
     createK8sSsjdispatcherSecret: true
+  # This will be dynamically replaced by env_setup.sh script.
+  gen3Namespace: default
 
 sheepdog:
   replicaCount: 2
@@ -299,8 +301,8 @@ sheepdog:
   image:
     repository: "quay.io/cdis/sheepdog"
     tag: "master"
-  fenceUrl: https://hostname/user
   # This will be dynamically replaced by env_setup.sh script.
+  fenceUrl: https://hostname/user
 
 peregrine:
   replicaCount: 2
@@ -340,8 +342,8 @@ audit:
     debug: true
     sqs:
       region: us-east-1
-      url:  https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
       # This will be dynamically replaced by env_setup.sh script.
+      url:  https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
   enabled: true
 
 ambassador:
@@ -376,8 +378,8 @@ revproxy:
       alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-FIPS-2023-04
     className: alb
     hosts:
-      - host: HOSTNAME
       # This will be dynamically replaced by env_setup.sh script.
+      - host: HOSTNAME
         paths:
           - path: /
             pathType: Prefix
@@ -410,8 +412,8 @@ manifestservice:
     - name: GEN3_DEBUG
       value: "False"
   manifestserviceG3auto:
-    hostname:
     # This will be dynamically replaced by env_setup.sh script.
+    hostname:
     bucketName: gen3-helm-manifest-bucket
     prefix: 'test'
   externalSecrets:

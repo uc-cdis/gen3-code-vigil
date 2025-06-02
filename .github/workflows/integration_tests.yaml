@@ -19,7 +19,6 @@ jobs:
     name: Integration tests
     uses: ./.github/workflows/shared_integration_tests.yaml
     with:
-      HELM_BRANCH: feat/ci-fixes
       GEN3_INSTANCE_TYPE: HELM_LOCAL
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}

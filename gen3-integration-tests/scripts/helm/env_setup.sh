@@ -220,12 +220,12 @@ yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_v
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 
-# Add in hostname for revproxy, hatchery, fence, and manifestservice configuration.
+# Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $ci_default_manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
-
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 commit_sha="${COMMIT_SHA}"

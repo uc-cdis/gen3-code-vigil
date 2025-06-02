@@ -26,8 +26,8 @@ fence:
     #
     # NOTE: Make this short! Less than 8 characters if possible. Google has
     #       length restrictions on group names.
-    GOOGLE_GROUP_PREFIX:
     # This will be dynamically replaced by env_setup.sh script.
+    GOOGLE_GROUP_PREFIX:
 
     # Prefix to namespace Google Service Accounts in a single Google Cloud Platform Project.
     # This is primarily to support multiple instances of fence references the same Google
@@ -35,11 +35,11 @@ fence:
     #
     # NOTE: Make this short! Less than 8 characters if possible. Google has
     #       length restrictions on service account names.
+    # This will be dynamically replaced by env_setup.sh script.
     GOOGLE_SERVICE_ACCOUNT_PREFIX:
-    # This will be dynamically replaced by env_setup.sh script.
 
-    BASE_URL: https://HOSTNAME/user
     # This will be dynamically replaced by env_setup.sh script.
+    BASE_URL: https://HOSTNAME/user
 
     # -- (string) Name of the Fence app
     APP_NAME: "Gen3 Data Commons"
@@ -402,8 +402,8 @@ fence:
     ARBORIST: http://arborist-service
 
     # url where the audit-service is running
-    AUDIT_SERVICE: "http://audit-service"
     # This will be dynamically replaced by env_setup.sh script.
+    AUDIT_SERVICE: "http://audit-service"
     ENABLE_AUDIT_LOGS:
       presigned_url: false
       login: true
@@ -415,8 +415,8 @@ fence:
     PUSH_AUDIT_LOGS_CONFIG:
       type: aws_sqs
       aws_sqs_config:
-        sqs_url: https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
         # This will be dynamically replaced by env_setup.sh script.
+        sqs_url: https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
         region: us-east-1
         aws_cred: 'cdistest'
 
