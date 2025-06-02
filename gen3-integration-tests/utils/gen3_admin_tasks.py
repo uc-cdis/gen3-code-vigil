@@ -189,7 +189,9 @@ def run_gen3_job(
             raise Exception(
                 f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
             )
-        check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
+        check_job_pod(
+            job_name=job_name, label_name="helmjob", test_env_namespace=pytest.namespace
+        )
 
 
 def fence_delete_expired_clients():
