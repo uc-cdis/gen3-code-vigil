@@ -423,7 +423,7 @@ jobs:
 
           - name: Release CI environment
             id: release_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' && steps.select_ci_env.outcome == 'success' || cancelled() }}
+            if: ${{ (env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' && steps.select_ci_env.outcome == 'success') || (cancelled() && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE') }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.release_ci_environment
 
