@@ -287,7 +287,7 @@ def check_job_pod(
         ]
         i = 0
         job_started = False
-        for i in range(6):
+        for i in range(15):
             result = subprocess.run(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
