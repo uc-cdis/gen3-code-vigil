@@ -5,7 +5,7 @@ fence:
     fenceJwtKeys: ci-fence-jwt
     fenceGoogleAppCredsSecret: ci-fence-google-app-creds-secret
     fenceGoogleStorageCredsSecret: ci-fence-google-storage-creds-secret
-    createK8sGoogleAppSecrets: true
+    createK8sGoogleAppSecrets: false
     fenceConfig: ci-fence-config-priv
     fenceSshKeys: ci-fence-ssh-keys
   replicaCount: 2
