@@ -118,7 +118,6 @@ jobs:
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             if: ${{ env.SKIP_TESTS != 'true' }}
-            working-directory: ${{ github.workspace }}
             run: |
               git fetch -q
               FILE_TYPES=$(git diff --name-only origin/${{ github.base_ref }} HEAD | grep -v '@' | awk -F . '{print $NF}' | sort -u)
