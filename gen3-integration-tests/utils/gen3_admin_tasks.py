@@ -1228,7 +1228,7 @@ def check_indexs3client_job_deployed():
             "get",
             "cm",
             "manifest-ssjdispatcher",
-            "-o=jsonpath='{.data.json}'",
+            "-o=jsonpath='{.data.job_images}'",
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True

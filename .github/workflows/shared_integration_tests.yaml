@@ -118,28 +118,6 @@ jobs:
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
-          # This is used for running specific test suites by labeling the PR with the test class
-          # Multiple suites can be executed by adding multiple labels
-          - name: Get test labels
-            id: get_test_labels
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
-              echo $test_label
-              echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
-
-          # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
-          - name: Handle nightly build reporting
-            working-directory: ${{ github.workspace }}
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
-            run: |
-              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
-              echo "$nightly_label"
-              if [[ -n $nightly_label ]]; then
-                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
-              fi
-
           # Checkout current repo
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -317,6 +295,28 @@ jobs:
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              fi
+
+          # This is used for running specific test suites by labeling the PR with the test class
+          # Multiple suites can be executed by adding multiple labels
+          - name: Get test labels
+            id: get_test_labels
+            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("Test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              echo $test_label
+              echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
+
+          # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
+          - name: Handle nightly build reporting
+            working-directory: ${{ github.workspace }}
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
+            run: |
+              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
+              echo "$nightly_label"
+              if [[ -n $nightly_label ]]; then
+                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
               fi
           - name: Run tests pertaining to specific service
             id: run_service_tests
