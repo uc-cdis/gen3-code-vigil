@@ -51,6 +51,19 @@ class TestGen3Workflow(object):
         :param str log_line: A line from the Nextflow log file.
         :return: Dictionary with extracted task information.
         :rtype: dict
+
+        #TODO: Replace this with a real Nextflow log line example
+        Example log line:
+        "Oct-02 12:34:56.789 [main] Task completed > TaskHandler[random_string name: extract_metadata (1); status: COMPLETED;  exit: 0;  workDir: s3://bucket-name/work-dir]"
+
+        Example return value:
+        {
+            "process_name": "extract_metadata (1)",
+            "workDir": "bucket-name/work-dir",
+            "workDirProtocol": "s3",
+            "exit_code": "0",
+            "status": "COMPLETED"
+        }
         """
 
         task_info = {
@@ -155,9 +168,9 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-
+        response_contents = response_s3_object["Body"].read().decode("utf-8")
         assert (
-            input_content in response_s3_object
+            input_content in response_contents
         ), "Stored and retrieved content should match"
 
     def test_happy_path_delete_s3_file(self):
@@ -205,9 +218,9 @@ class TestGen3Workflow(object):
         tasks = response.get("tasks", None)
         assert tasks == [], f"Expected an empty task list, but got: {tasks}"
 
-    def test_unauthorized_user_cannot_create_tes_tasks(self):
+    def test_unauthorized_user_cannot_create_tes_task(self):
         """
-        Ensure that an unauthorized user cannot create TES tasks.
+        Ensure that an unauthorized user cannot create TES task.
         Expects: HTTP 403 Forbidden response.
         """
 
@@ -217,7 +230,7 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
-    def test_happy_path_create_tes_tasks(self):
+    def test_happy_path_create_tes_task(self):
         """
         Test Case: Happy Path for TES Task Creation
         - Upload input file to S3
@@ -226,7 +239,7 @@ class TestGen3Workflow(object):
         - Validate outputs and logs
         """
         message = "hello beautiful world!"
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/tes-test-dir"
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/s3_folder_name"
 
         # Step 1: Upload input file to S3
         self.gen3_workflow.put_bucket_object_with_boto3(
@@ -236,7 +249,7 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=200,
         )
-
+        echo_message = "Done!"
         # Step 2: Create a TES task
         tes_task_payload = {
             "name": "Hello world with Word Count",
@@ -260,7 +273,7 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
-                        "cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo Done!"
+                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
                 }
             ],
@@ -304,27 +317,40 @@ class TestGen3Workflow(object):
             state = task_info.get("state")
 
             if state == final_success_state:
+                logger.info("TES task completed successfully")
                 break
-            elif state in final_failure_states:
-                assert (
-                    False
-                ), f"TES task failed. Final state: {state}, Response: {task_info}"
-            elif state not in transient_states:
-                assert (
-                    False
-                ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
 
-            logger.debug(f"Attempt {attempt}: Task state is '{state}', retrying...")
+            assert (
+                state not in final_failure_states
+            ), f"TES task failed. Final state: {state}, Response: {task_info}"
+            assert (
+                state in transient_states
+            ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
+
+            logger.debug(
+                f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying..."
+            )
             time.sleep(poll_interval)
         else:
-            assert (
-                False
-            ), f"TES task did not complete in time. Final state: {state}, Response: {task_info}"
+            raise Exception(
+                f"TES task did not complete in time. Final state: {state}, Response: {task_info}"
+            )
 
         # Step 5: Validate task logs
-        stdout = task_info["logs"][0]["logs"][0]["stdout"].strip()
+        task_logs = task_info.get("logs", [])
+
         assert (
-            stdout == "Done!"
+            len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
+        ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
+
+        assert (
+            "stdout" in task_logs[0]["logs"][0]
+        ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
+
+        # Check if the stdout contains the expected echo message
+        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        assert (
+            stdout == echo_message
         ), f"Expected stdout to be `Done!`, but found {stdout} instead."
 
         # Step 6: Validate task outputs
@@ -347,13 +373,13 @@ class TestGen3Workflow(object):
 
         assert (
             message in s3_contents["output.txt"]
-        ), f"The output_response of the tes task did not return the expected output. Expected: {message} to be in output_response, but found {s3_contents['output.txt']} instead."
+        ), f"The output_response of the TES task did not return the expected output. Expected: '{message}' to be in output_response, but found '{s3_contents['output.txt']}' instead."
 
         assert (
             s3_contents["grep_output.txt"].strip() == message
-        ), f"The grep_output_response of the tes task did not return the expected output. Expected: {message}, but found {s3_contents['grep_output.txt'].strip()} instead."
+        ), f"The grep_output_response of the TES task did not return the expected output. Expected: '{message}', but found '{s3_contents['grep_output.txt'].strip()}' instead."
 
-    def test_happy_path_cancel_tes_tasks(self):
+    def test_happy_path_cancel_tes_task(self):
         """
         Verify that an authorized user can cancel a TES task.
         Expects: HTTP 200 and task status changes to 'Cancelled'.
@@ -436,13 +462,14 @@ class TestGen3Workflow(object):
             workflow_dir=workflow_dir,
             workflow_script="main.nf",
             nextflow_config_file="nextflow.config",
+            s3_working_directory=self.s3_storage_config.working_directory,
         )
-
-        completed_tasks = [
-            self._nextflow_parse_completed_line(line)
-            for line in workflow_log.split("\n")
-            if "Task completed > TaskHandler" in line
-        ]
+        logger.info(f"Workflow log:")
+        completed_tasks = []
+        for line in workflow_log.splitlines():
+            logger.info(line)
+            if "Task completed > TaskHandler" in line:
+                completed_tasks.append(self._nextflow_parse_completed_line(line))
 
         for task in completed_tasks:
 

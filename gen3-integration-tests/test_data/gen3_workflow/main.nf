@@ -1,5 +1,4 @@
-dicom_data = "$baseDir/midrc_batch_demo_input/*.dcm"
-project_dir = projectDir
+dicom_data = "$baseDir/input_data/*.dcm"
 
 process dicom_to_png {
     input:
@@ -11,7 +10,6 @@ process dicom_to_png {
 
     script:
     """
-    echo "Resolved workDir: $PWD" > actual_work_dir.txt
     python3 /utils/dicom_to_png.py $dicom_files
     """
 }

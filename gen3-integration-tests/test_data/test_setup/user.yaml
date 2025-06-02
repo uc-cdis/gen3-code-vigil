@@ -324,7 +324,7 @@ authz:
       role_ids:
       - workflow_storage_deleter
       resource_paths:
-      - '/services/workflow/user-bucket'
+      - '/services/workflow/gen3-workflow/user-bucket'
 
 
   resources:
@@ -448,6 +448,8 @@ authz:
               subresources:
                 - name: 'admin'
             - name: 'gen3-workflow'
+              subresources:
+                - name: 'user-bucket'
             - name: 'user-bucket'
         - name: 'dicom-viewer'
           subresources:

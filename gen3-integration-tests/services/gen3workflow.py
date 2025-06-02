@@ -100,13 +100,14 @@ class Gen3Workflow:
         expected_status=200,
         content: str = None,
     ):
-        """Generic function for performing S3 actions like GET, PUT, DELETE."""
+        """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
         access_token = self._get_access_token(user)
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
         logger.debug(
             f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and {content=}"
         )
+        response = None
         try:
             if action == "list":
                 response = client.list_objects_v2(Bucket=bucket, Prefix=key)
@@ -118,29 +119,24 @@ class Gen3Workflow:
                 response = client.delete_object(Bucket=bucket, Key=key)
             else:
                 raise ValueError(f"Unsupported S3 action: {action}")
+
+            response_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
             logger.debug(f"S3 {action.upper()} response:  {response}")
+
         except botocore.exceptions.ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code == "NoSuchKey":
-                assert (
-                    expected_status == 404
-                ), f"Received NoSuchKey error from s3_client when expected_status is {expected_status} instead of 404"
-                return None
+                response_status = 404
             elif error_code == "403":
-                assert (
-                    expected_status == 403
-                ), f"Received an error from s3_client when expected_status is {expected_status} instead of 403. Error: {e.response}"
-                return None
+                response_status = 403
             else:
                 logger.error(
                     f"Received an error from s3_client when expected_status is {expected_status}. Error: {e.response}"
                 )
                 raise  # Reraise for other errors
-
-        response_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
         assert (
             response_status == expected_status
-        ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Error: {response}"
+        ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Response: {response}"
         return response
 
     #############################
@@ -152,11 +148,10 @@ class Gen3Workflow:
         storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/info"
         headers = (
             {
-                "Content-Type": "application/json",
                 "Authorization": f"bearer {self._get_access_token(user)}",
             }
             if user
-            else {"Content-Type": "application/json"}
+            else {}
         )
 
         response = requests.get(url=storage_url, headers=headers)
@@ -184,7 +179,6 @@ class Gen3Workflow:
         delete_bucket_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
         headers = (
             {
-                "Content-Type": "application/json",
                 "Authorization": f"bearer {self._get_access_token(user)}",
             }
             if user
@@ -332,7 +326,7 @@ class Gen3Workflow:
         self, task_id: str, user: str = "main_account", expected_status=200
     ):
         """
-        Takes in a request body and returns a task object with status 'CANCELING' or 'CANCELED'
+        Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
         """
         access_token = self._get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks/{task_id}:cancel"
@@ -351,6 +345,7 @@ class Gen3Workflow:
         workflow_dir: str,
         workflow_script: str,
         nextflow_config_file: str,
+        s3_working_directory: str,
         user: str = "main_account",
     ):
         """
@@ -359,7 +354,8 @@ class Gen3Workflow:
         Parameters:
             workflow_dir (str): Path to the directory containing the workflow.
             workflow_script (str): Filename of the main Nextflow script (e.g., main.nf).
-            config_file (str): Path to the nextflow.config file.
+            nextflow_config_file (str): Path to the nextflow.config file.
+            s3_working_directory (str): S3 URI for the working directory (e.g., s3://bucket/workdir).
             user (str): User context to run the workflow under.
 
         Returns:
@@ -367,6 +363,8 @@ class Gen3Workflow:
         """
         access_token = self._get_access_token(user)
         os.environ["GEN3_TOKEN"] = access_token
+        os.environ["HOSTNAME"] = pytest.hostname
+        os.environ["WorkDir"] = s3_working_directory
 
         original_cwd = Path.cwd()
         workflow_dir_path = Path(workflow_dir).resolve()

@@ -17,6 +17,7 @@ gen3-integration-tests/test_data/gen3_workflow/.nextflow.*
 gen3-integration-tests/test_data/gen3_workflow/rc.txt
 gen3-integration-tests/test_data/gen3_workflow/stdout.txt
 gen3-integration-tests/test_data/gen3_workflow/stderr.txt
+gen3-integration-tests/test_data/gen3_workflow/work/*
 
 .vscode/*
 gen3-integration-tests/node_modules/*
@@ -24,4 +25,3 @@ gen3-integration-tests/node_modules/*
 gen3-load-tests/output
 gen3-load-tests/load_testing_output
 gen3-load-tests/test_data/generated_metadata_service_template
-
