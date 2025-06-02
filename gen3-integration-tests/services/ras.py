@@ -31,9 +31,12 @@ class RAS(object):
         scope: str,
         username: str,
         password: str,
+        email: str,
         page: Page,
     ):
-        auth_code = self.get_auth_code(scope, username, password, client_id, page=page)
+        auth_code = self.get_auth_code(
+            scope, username, password, client_id, page=page, email=email
+        )
         payload = f"grant_type=authorization_code&code={auth_code}&client_id={client_id}&client_secret={client_secret}&scope=openid user&redirect_uri={pytest.root_url}"
         get_ras_token = requests.post(
             url=self.RAS_TOKEN_ENDPOINT,
@@ -44,7 +47,13 @@ class RAS(object):
         return token_data
 
     def get_auth_code(
-        self, scope: str, username: str, password: str, client_id: str, page: Page
+        self,
+        scope: str,
+        username: str,
+        password: str,
+        client_id: str,
+        email: str,
+        page: Page,
     ):
         login = LoginPage()
         url = f"{self.RAS_AUTH_ENDPOINT}?response_type=code&client_id={client_id}&redirect_uri={pytest.root_url}&scope={scope}&idp=ras"
@@ -56,7 +65,7 @@ class RAS(object):
         if "/user/register" in current_url:
             logger.info(f"Registering User {username}@perf.nih.gov")
             user_register = UserRegister()
-            user_register.register_user(page, user_email=f"{username}@perf.nih.gov")
+            user_register.register_user(page, user_email=email)
         current_url = page.url
         assert "code=" in current_url, f"{current_url} is missing code= substring"
         code = current_url.split("code=")[-1]

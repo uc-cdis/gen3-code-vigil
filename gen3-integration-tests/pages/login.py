@@ -84,7 +84,7 @@ class LoginPage(object):
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
             self.ras_login(page)
-            logged_in_user = os.environ["CI_TEST_RAS_USERID"]
+            logged_in_user = os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         else:
             logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
@@ -149,6 +149,13 @@ class LoginPage(object):
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
         )
+        # Additional Check for ORCID Login Page
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info("Registering User for ORCID")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email="orcid@example.org")
         # Handle the Cookie Settings Pop-Up
         if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
             page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
@@ -162,7 +169,7 @@ class LoginPage(object):
         password="",
         portal_test=True,
     ):
-        username = username or os.environ["CI_TEST_RAS_USERID"]
+        username = username or os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page

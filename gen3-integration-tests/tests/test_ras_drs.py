@@ -63,7 +63,7 @@ class TestRasDrs:
         cls.variables["created_indexd_dids"] = []
 
         cls.env_vars = [
-            "CI_TEST_RAS_USERID",
+            "CI_TEST_RAS_EMAIL",
             "CI_TEST_RAS_PASSWORD",
             "CLIENT_ID",
             "SECRET_ID",
@@ -101,8 +101,9 @@ class TestRasDrs:
             client_id=creds_dict["CLIENT_ID"],
             secret_id=creds_dict["SECRET_ID"],
             scope=self.scope,
-            username=creds_dict["CI_TEST_RAS_USERID"],
+            username=creds_dict["CI_TEST_RAS_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD"],
+            email=creds_dict["CI_TEST_RAS_EMAIL"],
             page=page,
         )
 
@@ -140,8 +141,9 @@ class TestRasDrs:
             client_id=creds_dict["CLIENT_ID"],
             secret_id=creds_dict["SECRET_ID"],
             scope=self.scope,
-            username=creds_dict["CI_TEST_RAS_USERID_2"],
+            username=creds_dict["CI_TEST_RAS_2_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD_2"],
+            email=creds_dict["CI_TEST_RAS_2_EMAIL"],
         )
 
         access_token = tokens["access_token"]
@@ -176,8 +178,9 @@ class TestRasDrs:
             client_id=creds_dict["CLIENT_ID"],
             secret_id=creds_dict["SECRET_ID"],
             scope=self.scope,
-            username=creds_dict["CI_TEST_RAS_USERID"],
+            username=creds_dict["CI_TEST_RAS_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD"],
+            email=creds_dict["CI_TEST_RAS_EMAIL"],
         )
 
         access_token = tokens["access_token"]
