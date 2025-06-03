@@ -159,7 +159,7 @@ def pytest_configure(config):
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
     # Skip portal tests based on portal version
-    pytest.skip_portal_tests = gat.skip_portal_tests()
+    skip_portal_tests = gat.skip_portal_tests()
 
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
