@@ -51,10 +51,6 @@ def validate_json_for_export_to_pfb_button(data):
 @pytest.mark.pfb
 @pytest.mark.guppy
 @pytest.mark.portal
-@pytest.mark.skipif(
-    pytest.skip_portal_tests,
-    reason="Skipping based on portal version",
-)
 class TestPFBExport(object):
     @classmethod
     def setup_class(cls):

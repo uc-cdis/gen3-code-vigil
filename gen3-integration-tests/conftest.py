@@ -68,6 +68,7 @@ def pytest_collection_finish(session):
     if session.config.option.collectonly:
         return
     # Iterate through the collected test items
+    skip_portal_tests = session.config.skip_portal_tests
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
             # Access the markers for each test item
@@ -86,6 +87,12 @@ def pytest_collection_finish(session):
                     # Create and Link Google Test Buckets
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
+                if marker_name == "portal" and skip_portal_tests:
+                    item.add_marker(
+                        pytest.mark.skip(
+                            reason="Skipping portal tests as non-supported portal is deployed"
+                        )
+                    )
         # Run Usersync job
         setup.run_usersync()
 

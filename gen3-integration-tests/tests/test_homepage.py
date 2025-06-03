@@ -6,10 +6,6 @@ from pages import home, login
     "portal" not in pytest.deployed_services,
     reason="portal service is not running on this environment",
 )
-@pytest.mark.skipif(
-    pytest.skip_portal_tests,
-    reason="Skipping based on portal version",
-)
 @pytest.mark.portal
 @pytest.mark.sanity
 class TestHomePage:

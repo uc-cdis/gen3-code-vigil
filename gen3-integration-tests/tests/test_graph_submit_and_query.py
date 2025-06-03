@@ -299,10 +299,6 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.portal
-    @pytest.mark.skipif(
-        pytest.skip_portal_tests,
-        reason="Skipping based on portal version",
-    )
     @pytest.mark.graph_query
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,

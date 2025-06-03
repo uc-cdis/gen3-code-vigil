@@ -48,10 +48,6 @@ def page_setup(page):
 @pytest.mark.agg_mds
 @pytest.mark.wts
 @pytest.mark.portal
-@pytest.mark.skipif(
-    pytest.skip_portal_tests,
-    reason="Skipping based on portal version",
-)
 class TestDiscoveryPage(object):
     @classmethod
     def setup_class(cls):

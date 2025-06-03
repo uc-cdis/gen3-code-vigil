@@ -94,10 +94,6 @@ class TestAuditService:
         )
 
     @pytest.mark.portal
-    @pytest.mark.skipif(
-        pytest.skip_portal_tests,
-        reason="Skipping based on portal version",
-    )
     def test_audit_homepage_login_events(self, page: Page):
         """
         Scenario: Homepage login events

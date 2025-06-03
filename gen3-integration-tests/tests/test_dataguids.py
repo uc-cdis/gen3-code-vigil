@@ -18,10 +18,6 @@ from utils.test_execution import screenshot
 )
 @pytest.mark.wip
 @pytest.mark.portal
-@pytest.mark.skipif(
-    pytest.skip_portal_tests,
-    reason="Skipping based on portal version",
-)
 class TestDataGuids(object):
     @classmethod
     def setup_class(cls):
