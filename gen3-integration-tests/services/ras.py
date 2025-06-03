@@ -7,6 +7,7 @@ from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page
 from utils import logger
+from utils.test_execution import screenshot
 
 
 class RAS(object):
@@ -66,6 +67,8 @@ class RAS(object):
             logger.info(f"Registering User {username}@perf.nih.gov")
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
+        screenshot(page, "RASCodePage")
+        page.wait_for_load_state("load")
         current_url = page.url
         assert "code=" in current_url, f"{current_url} is missing code= substring"
         code = current_url.split("code=")[-1]
