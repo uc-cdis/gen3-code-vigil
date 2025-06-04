@@ -32,6 +32,10 @@ on:
         required: false
         type: string
         default: ADMINVM_REMOTE
+      WORKING_DIR:
+        required: false
+        type: string
+        default: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -68,10 +72,10 @@ jobs:
     integration_tests:
         runs-on: ubuntu-latest
 
-        defaults:
-          run:
-            # the test directory in gen3-code-vigil
-            working-directory: gen3-integration-tests
+        # defaults:
+        #   run:
+        #     # the test directory in gen3-code-vigil
+        #     working-directory: gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -99,6 +103,9 @@ jobs:
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
 
         steps:
+          - name: Set up working directory
+            working-directory: ${{ secrets.WORKING_DIR }} # Can be set here for individual steps
+            run: echo "Working directory has been set"
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
