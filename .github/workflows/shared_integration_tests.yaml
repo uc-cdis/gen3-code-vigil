@@ -275,7 +275,7 @@ jobs:
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
               if [ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]; then
-                UPDATED_FOLDERS=$(echo "$PR_FILES" | awk -F'/' '{if (NF > 2) print $1"/"$2}' | grep -v "^workflows$" | sort -u | tr '\n' ',' | sed 's/,$//')
+                UPDATED_FOLDERS=$(echo "$PR_FILES" | awk -F'/' '{if (NF > 2) print $1"/"$2}' | grep -v "^.github$" | sort -u | tr '\n' ',' | sed 's/,$//')
               else
                 UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
               fi
