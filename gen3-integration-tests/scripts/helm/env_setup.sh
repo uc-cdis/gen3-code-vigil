@@ -98,7 +98,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     portal_block=$(yq eval ".portal // \"key not found\"" $new_manifest_values_file_path)
     if [ "$portal_block" != "key not found" ]; then
         echo "Updating PORTAL Block"
-        #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml") | .portal.resources' $new_manifest_values_file_path
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
