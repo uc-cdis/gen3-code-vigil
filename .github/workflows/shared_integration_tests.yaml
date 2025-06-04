@@ -32,6 +32,10 @@ on:
         required: false
         type: string
         default: ADMINVM_REMOTE
+      WORKING_DIR:
+        required: true
+        type: string
+        default: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -71,7 +75,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: gen3-integration-tests
+            working-directory: ${{ inputs.WORKING_DIR }}
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -146,6 +150,7 @@ jobs:
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
+              path: gen3-code-vigil
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}
