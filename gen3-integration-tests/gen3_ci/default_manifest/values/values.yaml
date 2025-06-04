@@ -116,8 +116,6 @@ elasticsearch:
 
 sower:
   replicaCount: 2
-  # pelican:
-  #   bucket: 'sower-jobs-bucket'
   image:
     repository: quay.io/cdis/sower
     tag: 'master'
@@ -183,7 +181,7 @@ sower:
             mountPath: "/pelican-creds.json"
             subPath: config.json
         cpu-limit: "1"
-        memory-limit: 12Gi
+        memory-limit: 4Gi
       volumes:
         - name: pelican-creds-volume
           secret:
@@ -241,7 +239,7 @@ sower:
             mountPath: "/pelican-creds.json"
             subPath: config.json
         cpu-limit: "1"
-        memory-limit: 12Gi
+        memory-limit: 4Gi
       volumes:
         - name: pelican-creds-volume
           secret:
