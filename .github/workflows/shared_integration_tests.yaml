@@ -101,7 +101,7 @@ jobs:
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
-          WORKING_DIR: ${{ secrets.WORKING_DIR }}
+          WORKING_DIR: ${{ inputs.WORKING_DIR }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
