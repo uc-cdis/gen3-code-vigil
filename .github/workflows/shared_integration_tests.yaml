@@ -195,6 +195,7 @@ jobs:
           - name: Set up working directory
             run: |
               cd "$GH_WORKSPACE"
+              echo $(ls -ltr)
               cd "$WORKING_DIR"
               echo "Changed working directory to $WORKING_DIR"
 
