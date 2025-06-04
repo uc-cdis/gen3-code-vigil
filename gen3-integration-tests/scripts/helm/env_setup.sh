@@ -227,6 +227,9 @@ yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i 
 yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $ci_default_manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
+# Remove aws-es-proxy block
+yq -i 'del(.aws-ex-proxy)' $ci_default_manifest_values_yaml
+
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 commit_sha="${COMMIT_SHA}"
 GOOGLE_PREFIX="${commit_sha: -6}"
