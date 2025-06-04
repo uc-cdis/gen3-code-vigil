@@ -101,11 +101,9 @@ jobs:
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
+          WORKING_DIR: ${{ secrets.WORKING_DIR }}
 
         steps:
-          - name: Set up working directory
-            working-directory: ${{ secrets.WORKING_DIR }} # Can be set here for individual steps
-            run: echo "Working directory has been set"
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
@@ -193,6 +191,11 @@ jobs:
             uses: azure/setup-helm@v4.3.0
             with:
               version: latest
+
+          - name: Set up working directory
+            run: |
+              cd "$WORKING_DIR"
+              echo "Changed working directory to $WORKING_DIR"
 
           # # Setup GCP
           # - name: 'Authenticate with GCP'
