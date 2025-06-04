@@ -32,10 +32,6 @@ on:
         required: false
         type: string
         default: ADMINVM_REMOTE
-      WORKING_DIR:
-        required: false
-        type: string
-        default: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -72,10 +68,10 @@ jobs:
     integration_tests:
         runs-on: ubuntu-latest
 
-        # defaults:
-        #   run:
-        #     # the test directory in gen3-code-vigil
-        #     working-directory: gen3-integration-tests
+        defaults:
+          run:
+            # the test directory in gen3-code-vigil
+            working-directory: gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -101,7 +97,6 @@ jobs:
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
-          WORKING_DIR: ${{ inputs.WORKING_DIR }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -191,13 +186,6 @@ jobs:
             uses: azure/setup-helm@v4.3.0
             with:
               version: latest
-
-          - name: Set up working directory
-            run: |
-              cd "$GH_WORKSPACE"
-              echo $(ls -ltr)
-              cd "$WORKING_DIR"
-              echo "Changed working directory to $WORKING_DIR"
 
           # # Setup GCP
           # - name: 'Authenticate with GCP'
