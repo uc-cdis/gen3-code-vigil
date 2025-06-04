@@ -194,6 +194,7 @@ jobs:
 
           - name: Set up working directory
             run: |
+              cd "$GH_WORKSPACE"
               cd "$WORKING_DIR"
               echo "Changed working directory to $WORKING_DIR"
 
