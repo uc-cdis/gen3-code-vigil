@@ -44,14 +44,6 @@ fence:
     # -- (string) Name of the Fence app
     APP_NAME: "Gen3 Data Commons"
 
-    # -- (string) A URL-safe base64-encoded 32-byte key for encrypting keys in db
-    # in python you can use the following script to generate one:
-    #     import base64
-    #     import os
-    #     key = base64.urlsafe_b64encode(os.urandom(32))
-    #     print(key)
-    ENCRYPTION_KEY: REPLACEME
-
     # -- (map) Debug and security settings
     # Modify based on whether you're in a dev environment or in production
     DEBUG: false
