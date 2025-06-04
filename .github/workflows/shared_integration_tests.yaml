@@ -123,12 +123,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
 
-          - name: Get commit time
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
-
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
@@ -152,6 +146,12 @@ jobs:
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
+
+          - name: Get commit time
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
