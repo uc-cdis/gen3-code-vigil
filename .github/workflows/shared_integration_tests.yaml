@@ -248,7 +248,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=nightly-build.ci.planx-pla.net
+              NAMESPACE=nightly-build
               HOSTNAME=nightly-build.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
