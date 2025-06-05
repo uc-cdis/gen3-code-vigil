@@ -1195,7 +1195,7 @@ def is_agg_mds_enabled():
             + " | grep USE_AGG_MDS"
         )
         result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
         )
         if result.returncode == 0:
             if "True" in result.stdout.strip():
