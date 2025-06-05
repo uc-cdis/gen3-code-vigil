@@ -4,6 +4,7 @@ import re
 import time
 
 import pytest
+from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
@@ -31,6 +32,7 @@ class LoginPage(object):
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
         self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
+        self.REGISTER_BUTTON = "//button[contains(text(),'Register')]"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
         self.LOGIN_BUTTONS = [
@@ -43,14 +45,16 @@ class LoginPage(object):
         )
         self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
-    def go_to(self, page: Page, url=None):
+    # TODO: see how to remove this parameter capture_screenshot
+    def go_to(self, page: Page, url=None, capture_screenshot=True):
         """Goes to the login page"""
         if url:
             page.goto(url)
         else:
             page.goto(self.BASE_URL)
             page.wait_for_selector(self.READY_CUE, state="visible")
-        screenshot(page, "LoginPage")
+        if capture_screenshot:
+            screenshot(page, "LoginPage")
 
     def login(
         self,
@@ -58,6 +62,7 @@ class LoginPage(object):
         user="main_account",
         idp="Google",
         validate_username_locator=True,
+        capture_screenshot=True,
     ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
@@ -72,8 +77,6 @@ class LoginPage(object):
                 }
             ]
         )
-        # printing cookies if needed for debugging purposes
-        cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
         self.handle_popup(page)
         if idp == "ORCID":
@@ -81,7 +84,7 @@ class LoginPage(object):
             logged_in_user = os.environ["CI_TEST_ORCID_USERID"]
         elif idp == "RAS":
             self.ras_login(page)
-            logged_in_user = os.environ["CI_TEST_RAS_USERID"]
+            logged_in_user = os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         else:
             logger.info(self.LOGIN_BUTTONS)
             for login_button in self.LOGIN_BUTTONS:
@@ -95,7 +98,14 @@ class LoginPage(object):
                 except Exception:
                     logger.info(f"Login Button {login_button} not found or not enabled")
                 logged_in_user = pytest.users[user]
-        screenshot(page, "AfterLogin")
+        if capture_screenshot:
+            screenshot(page, "AfterLogin")
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {pytest.users[user]}")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:
             res = get_portal_config()
             # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
@@ -113,7 +123,8 @@ class LoginPage(object):
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
             expect(username).to_be_visible(timeout=10000)
-        screenshot(page, "AfterLogin")
+        if capture_screenshot:
+            screenshot(page, "AfterLogin")
         self.handle_popup(page)
         access_token_cookie = next(
             (
@@ -138,6 +149,13 @@ class LoginPage(object):
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
         )
+        # Additional Check for ORCID Login Page
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info("Registering User for ORCID")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email="orcid@example.org")
         # Handle the Cookie Settings Pop-Up
         if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
             page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
@@ -151,7 +169,7 @@ class LoginPage(object):
         password="",
         portal_test=True,
     ):
-        username = username or os.environ["CI_TEST_RAS_USERID"]
+        username = username or os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
@@ -181,7 +199,7 @@ class LoginPage(object):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
-    def logout(self, page: Page):
+    def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config()
         # Check if useProfileDropdown is set to True and perform logout accordingly
@@ -192,7 +210,8 @@ class LoginPage(object):
         else:
             page.get_by_role("link", name="Logout").click()
         nav_bar_login_button = page.get_by_role("link", name="Login")
-        screenshot(page, "AfterLogout")
+        if capture_screenshot:
+            screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login

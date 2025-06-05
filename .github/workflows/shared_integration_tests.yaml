@@ -33,11 +33,11 @@ on:
         required: true
       CI_TEST_ORCID_PASSWORD:
         required: true
-      CI_TEST_RAS_USERID:
+      CI_TEST_RAS_EMAIL:
         required: true
       CI_TEST_RAS_PASSWORD:
         required: true
-      CI_TEST_RAS_2_USERID:
+      CI_TEST_RAS_2_EMAIL:
         required: true
       CI_TEST_RAS_2_PASSWORD:
         required: true
@@ -72,9 +72,9 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
-          CI_TEST_RAS_USERID: ${{ secrets.CI_TEST_RAS_USERID }}
+          CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
-          CI_TEST_RAS_2_USERID: ${{ secrets.CI_TEST_RAS_2_USERID }}
+          CI_TEST_RAS_2_EMAIL: ${{ secrets.CI_TEST_RAS_2_EMAIL }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
