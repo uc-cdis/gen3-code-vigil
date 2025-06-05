@@ -248,8 +248,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=${REPO}-pr-${PR_NUM}
-              HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
+              NAMESPACE=nightly-build.ci.planx-pla.net
+              HOSTNAME=nightly-build.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
