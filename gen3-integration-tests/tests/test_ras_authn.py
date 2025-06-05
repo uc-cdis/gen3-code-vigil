@@ -45,9 +45,9 @@ class TestRasAuthN:
         cls.ras = RAS()
         cls.login_page = LoginPage()
         cls.env_vars = [
-            "CI_TEST_RAS_USERID",
+            "CI_TEST_RAS_EMAIL",
             "CI_TEST_RAS_PASSWORD",
-            "CI_TEST_RAS_2_USERID",
+            "CI_TEST_RAS_2_EMAIL",
             "CI_TEST_RAS_2_PASSWORD",
         ]
         # Validate creds required for test are defined as env variable
@@ -70,8 +70,9 @@ class TestRasAuthN:
         # and click on 'Yes. I authorize' button
         # Get code from the url
         scope = "openid user data google_credentials ga4gh_passport_v1"
-        username = os.environ["CI_TEST_RAS_USERID"]
+        username = os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = os.environ["CI_TEST_RAS_PASSWORD"]
+        email = os.environ["CI_TEST_RAS_2_EMAIL"]
         token = self.ras.get_tokens(
             client_id=client_id,
             client_secret=client_secret,
@@ -79,6 +80,7 @@ class TestRasAuthN:
             username=username,
             password=password,
             page=page,
+            email=email,
         )
 
         # Check if access_token, refresh_token and id_token in token response
@@ -139,8 +141,9 @@ class TestRasAuthN:
         # and click on 'Yes. I authorize' button
         # Get code from the url
         scope = "openid user data google_credentials"
-        username = os.environ["CI_TEST_RAS_2_USERID"]
+        username = os.environ["CI_TEST_RAS_2_EMAIL"].split("@")[0]
         password = os.environ["CI_TEST_RAS_2_PASSWORD"]
+        email = os.environ["CI_TEST_RAS_2_EMAIL"]
         token = self.ras.get_tokens(
             client_id=client_id,
             client_secret=client_secret,
@@ -148,6 +151,7 @@ class TestRasAuthN:
             username=username,
             password=password,
             page=page,
+            email=email,
         )
 
         # Check if access_token, refresh_token and id_token in token response
@@ -180,14 +184,14 @@ class TestRasAuthN:
         NOTE : This test requires CI_TEST_RAS_ID & CI_TEST_RAS_PASSWORD
         secrets to be configured with RAS credentials
         """
-        # Confirm CI_TEST_RAS_USERID and CI_TEST_RAS_PASSWORD are present in env
-        assert "CI_TEST_RAS_USERID" in os.environ, "CI_TEST_RAS_USERID not found"
+        # Confirm CI_TEST_RAS_EMAIL and CI_TEST_RAS_PASSWORD are present in env
+        assert "CI_TEST_RAS_EMAIL" in os.environ, "CI_TEST_RAS_EMAIL not found"
         assert "CI_TEST_RAS_PASSWORD" in os.environ, "CI_TEST_RAS_PASSWORD not found"
 
         self.login_page.go_to(page)
         self.login_page.ras_login(
             page,
-            username=os.environ["CI_TEST_RAS_USERID"],
+            username=os.environ["CI_TEST_RAS_EMAIL"].split("@")[0],
             password="THIS_IS_AN_INVALID_PASSWORD_FOR_USER_1",
         )
         html_content = page.content()

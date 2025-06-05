@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 import pytest
-from gen3.auth import Gen3Auth
+from pages.login import LoginPage
 from utils import TEST_DATA_PATH_OBJECT, gen3_admin_tasks, logger
 
 

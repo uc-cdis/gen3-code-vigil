@@ -47,10 +47,15 @@ def validate_json_for_export_to_pfb_button(data):
     "tube" not in pytest.deployed_services,
     reason="tube service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "pelican-export" not in pytest.enabled_sower_jobs,
+    reason="pelican-export is not part of sower in manifest",
+)
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
 @pytest.mark.portal
+@pytest.mark.sower
 class TestPFBExport(object):
     @classmethod
     def setup_class(cls):
