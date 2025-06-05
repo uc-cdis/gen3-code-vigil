@@ -1418,3 +1418,12 @@ def delete_sqs_queues():
                 logger.info(queue_deletion_result.stderr)
         else:
             logger.info(f"Queue not found. Skipping sqs deletion of {queue}")
+
+
+def skip_portal_tests():
+    deployed_services = get_list_of_services_deployed()
+    if "data-ecosystem-portal" in deployed_services:
+        return True
+    if "dataguids" in deployed_services:
+        return True
+    return False
