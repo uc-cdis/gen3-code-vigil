@@ -1098,4 +1098,6 @@ def skip_portal_tests():
     deployed_services = get_list_of_services_deployed()
     if "data-ecosystem-portal" in deployed_services:
         return True
+    if "dataguids" in deployed_services:
+        return True
     return False
