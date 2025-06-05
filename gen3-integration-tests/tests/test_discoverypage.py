@@ -43,11 +43,16 @@ def page_setup(page):
     "discoveryConfig" not in gat.get_portal_config().keys(),
     reason="discoveryConfig in not in portal config",
 )
+@pytest.mark.skipif(
+    "batch-export" not in pytest.enabled_sower_jobs,
+    reason="batch-export is not part of sower in manifest",
+)
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
 @pytest.mark.wts
 @pytest.mark.portal
+@pytest.mark.sower
 class TestDiscoveryPage(object):
     @classmethod
     def setup_class(cls):
