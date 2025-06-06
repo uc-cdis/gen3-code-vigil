@@ -980,6 +980,7 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
             raise Exception("Unable to retrieve fence-deployment pod")
         bukcet_info = {"dcf-integration-qa": "QA", "dcf-integration-test": "test"}
         for bucket_name in bukcet_info.keys():
+            time.sleep(10)
             create_bucket_cmd = [
                 "kubectl",
                 "-n",
@@ -1017,6 +1018,7 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
             "phs000571": "dcf-integration-test",
         }
         for phs in phs_info.keys():
+            time.sleep(10)
             link_phs_cmd = [
                 "kubectl",
                 "-n",
@@ -1041,6 +1043,8 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
                 return link_phs_result.stdout.strip().replace("'", "")
             else:
                 raise Exception(f"Unable to create google bucket for {bucket_name}")
+        # Add additonal sleep for google slowness
+        time.sleep(30)
 
 
 def fence_enable_register_users_redirect(test_env_namespace: str = ""):
