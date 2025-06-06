@@ -309,7 +309,7 @@ fence:
     # 409s from Google.
     # NOTE: This reduces the number of API calls to Google in the general case, but increases
     #       memory usages by usersync (as it has to track all the Google groups and user access)
-    GOOGLE_BULK_UPDATES: false
+    GOOGLE_BULK_UPDATES: true
 
     # Configuration for various storage systems for the backend
     # NOTE: Remove the {} and supply backends if needed. Example in comments below
