@@ -476,15 +476,6 @@ fence:
     WHITE_LISTED_GOOGLE_PARENT_ORGS: []
     #  - '12345678910'
 
-    # A Google Project with Google Service Accounts determined INVALID will result in the
-    # the entire project being invalid UNLESS that service accounts's email is in this
-    # whitelist.
-    #
-    # NOTE: Remove the [] and service account emails if needed. Example in comments below
-    WHITE_LISTED_SERVICE_ACCOUNT_EMAILS: []
-    #  - 'example@developer.gserviceaccount.com'
-    #  - 'example@test.iam.gserviceaccount.com'
-
     # when service accounts or google projects are determined invalid, an email is sent
     # to the project owners. These settings are for that email
     REMOVE_SERVICE_ACCOUNT_EMAIL_NOTIFICATION:
