@@ -69,6 +69,7 @@ def pytest_collection_finish(session):
     if session.config.option.collectonly:
         return
     # Iterate through the collected test items
+    skip_portal_tests = session.config.skip_portal_tests
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
             # Access the markers for each test item
@@ -87,10 +88,14 @@ def pytest_collection_finish(session):
                     # Create and Link Google Test Buckets
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
+                if marker_name == "portal" and skip_portal_tests:
+                    item.add_marker(
+                        pytest.mark.skip(
+                            reason="Skipping portal tests as non-supported portal is deployed"
+                        )
+                    )
         # Run Usersync job
         setup.run_usersync()
-        # Enable register user
-        gat.fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -151,6 +156,8 @@ def pytest_configure(config):
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
     pytest.google_enabled = gat.is_google_enabled()
+    # Skip portal tests based on portal version
+    config.skip_portal_tests = gat.skip_portal_tests()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
@@ -170,7 +177,6 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_unconfigure(config):
-    gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
         return
