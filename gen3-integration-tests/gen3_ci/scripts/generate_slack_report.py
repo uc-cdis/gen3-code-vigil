@@ -41,7 +41,7 @@ def get_test_result_and_metrics():
         with open(allure_summary_path) as f:
             summary_json = json.load(f)
         statistic_json = summary_json["statistic"]
-        time_json = summary_json["time"]
+        time_json = summary_json.get("time", {})
         total = int(statistic_json["total"])
         passed = int(statistic_json["passed"])
         skipped = int(statistic_json["skipped"])
@@ -50,7 +50,8 @@ def get_test_result_and_metrics():
             + int(statistic_json["broken"])
             + int(statistic_json["unknown"])
         )  # some broken tests are reported as Unknown
-        duration = round(int(time_json["duration"]) / 60000, 2)  # rounded to the minute
+        # duration rounded to the minute
+        duration = round(int(time_json["duration"]) / 60000, 2) if "duration" in time_json else "?"
         if passed + skipped == total:
             test_result = "Successful"
         else:
