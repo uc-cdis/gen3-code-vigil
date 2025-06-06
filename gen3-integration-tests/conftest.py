@@ -18,6 +18,7 @@ requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
 
 collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
+test_outcomes = {"passed": 0, "failed": 0, "error": 0, "skipped": 0}
 
 
 class XDistCustomPlugin:
@@ -109,10 +110,6 @@ def pytest_configure(config):
     pytest.namespace = os.getenv("NAMESPACE")
     pytest.tested_env = os.getenv("TESTED_ENV")
     assert pytest.hostname or pytest.namespace, "Hostname and namespace undefined"
-    if pytest.namespace and not pytest.hostname:
-        pytest.hostname = f"{pytest.namespace}.planx-pla.net"
-    if pytest.hostname and not pytest.namespace:
-        pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
     if not pytest.tested_env:
         pytest.tested_env = pytest.namespace
@@ -154,14 +151,29 @@ def pytest_configure(config):
     pytest.deployed_services = gat.get_list_of_services_deployed()
     # List of sower jobs enabled
     pytest.enabled_sower_jobs = gat.get_enabled_sower_jobs()
-    # Is Flag enabled for USE_AGG_MDS
+    # # Is Flag enabled for USE_AGG_MDS
     pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
+    pytest.google_enabled = gat.is_google_enabled()
     # Skip portal tests based on portal version
     config.skip_portal_tests = gat.skip_portal_tests()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+
+
+# Collect the status of tests to determine teardown steps after PR run
+@pytest.hookimpl
+def pytest_runtest_logreport(report):
+    if report.when == "call":
+        if report.outcome == "passed":
+            test_outcomes["passed"] += 1
+        elif report.outcome == "failed":
+            test_outcomes["failed"] += 1
+        elif report.outcome == "error":
+            test_outcomes["error"] += 1
+    elif report.outcome == "skipped":
+        test_outcomes["skipped"] += 1
 
 
 def pytest_unconfigure(config):
@@ -174,3 +186,6 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+    # if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
+    #     if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+    #         setup.teardown_helm_environment()
