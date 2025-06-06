@@ -309,7 +309,7 @@ fence:
     # 409s from Google.
     # NOTE: This reduces the number of API calls to Google in the general case, but increases
     #       memory usages by usersync (as it has to track all the Google groups and user access)
-    GOOGLE_BULK_UPDATES: false
+    GOOGLE_BULK_UPDATES: true
 
     # Configuration for various storage systems for the backend
     # NOTE: Remove the {} and supply backends if needed. Example in comments below
@@ -475,15 +475,6 @@ fence:
     # NOTE: Remove the [] and Google Organization IDs if needed. Example in comments below
     WHITE_LISTED_GOOGLE_PARENT_ORGS: []
     #  - '12345678910'
-
-    # A Google Project with Google Service Accounts determined INVALID will result in the
-    # the entire project being invalid UNLESS that service accounts's email is in this
-    # whitelist.
-    #
-    # NOTE: Remove the [] and service account emails if needed. Example in comments below
-    WHITE_LISTED_SERVICE_ACCOUNT_EMAILS: []
-    #  - 'example@developer.gserviceaccount.com'
-    #  - 'example@test.iam.gserviceaccount.com'
 
     # when service accounts or google projects are determined invalid, an email is sent
     # to the project owners. These settings are for that email
