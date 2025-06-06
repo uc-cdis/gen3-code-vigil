@@ -1005,11 +1005,10 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
                 stderr=subprocess.PIPE,
                 text=True,
             )
-            if result.returncode == 0:
-                return create_bucket_result.stdout.strip().replace("'", "")
+            if create_bucket_result.returncode == 0:
+                logger.info(f"Created bucket: {bucket_name}")
             else:
                 raise Exception(f"Unable to create google bucket for {bucket_name}")
-        time.sleep(30)
         phs_info = {
             "phs000179": "dcf-integration-qa",
             "phs000178": "dcf-integration-test",
@@ -1037,8 +1036,8 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
             link_phs_result = subprocess.run(
                 link_phs_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-            if result.returncode == 0:
-                return link_phs_result.stdout.strip().replace("'", "")
+            if link_phs_result.returncode == 0:
+                logger.info(f"Created link: {phs}")
             else:
                 raise Exception(f"Unable to create google bucket for {bucket_name}")
 
