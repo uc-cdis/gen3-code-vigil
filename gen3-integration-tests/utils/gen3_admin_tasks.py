@@ -1009,6 +1009,7 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
                 return create_bucket_result.stdout.strip().replace("'", "")
             else:
                 raise Exception(f"Unable to create google bucket for {bucket_name}")
+        time.sleep(30)
         phs_info = {
             "phs000179": "dcf-integration-qa",
             "phs000178": "dcf-integration-test",
