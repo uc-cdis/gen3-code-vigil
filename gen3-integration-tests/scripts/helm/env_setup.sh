@@ -287,8 +287,10 @@ aws sns subscribe \
 
 #delete sns and sqs and remove from bucket during cron
 
-# Update ssjdispatcher to use prefix for "jobPattern"
-yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+# Update ssjdispatcher configuration.
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
 # Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
@@ -343,7 +345,6 @@ install_helm_chart() {
 
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
-  # kubectl delete pvc -l app=gen3-elasticsearch-master -n ${namespace}
   kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master --timeout=5m -n ${namespace}
 
   echo "Running ci_setup.sh with timeout..."
