@@ -1,12 +1,12 @@
 import json
 import os
 import shutil
+from collections import Counter
 
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
-from gen3_ci.scripts.generate_slack_report import get_test_result_and_metrics
 from utils import TEST_DATA_PATH_OBJECT
 from utils import gen3_admin_tasks as gat
 from utils import logger
@@ -152,6 +152,21 @@ def pytest_configure(config):
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
+    # Add results summary counter
+    config.results_summary = Counter()
+
+
+def pytest_runtest_logreport(report):
+    results_summary = report.node.config.results_summary
+
+    if report.when == "call":
+        if report.outcome == "passed":
+            results_summary["passed"] += 1
+        elif report.outcome == "failed":
+            results_summary["failed"] += 1
+        elif report.outcome == "skipped":
+            results_summary["skipped"] += 1
+
 
 def pytest_unconfigure(config):
     gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
@@ -164,7 +179,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    test_result, test_metrics_block = get_test_result_and_metrics()
-    if test_result == "Successful":
+    results_summary = config.results_summary
+    if results_summary["failed"] == 0 and results_summary["error"] == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
