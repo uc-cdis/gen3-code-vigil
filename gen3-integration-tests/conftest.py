@@ -188,7 +188,7 @@ def pytest_unconfigure(config):
 
     logger.info("Test Metrics")
     for key, val in test_outcomes.items():
-        logger.info(f"{key}: {val}")
-    if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
+        logger.info(f"{key.upper()}: {val}")
+    if int(test_outcomes["failed"]) == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
