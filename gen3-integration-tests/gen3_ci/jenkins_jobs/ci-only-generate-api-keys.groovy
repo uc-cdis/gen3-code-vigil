@@ -163,6 +163,7 @@ spec:
                               for attempt in {1..3}; do
                                   if gen3 api api-key "\$email" > "\${NAMESPACE}_\${user}.json"; then
                                     echo "API key created successfully on attempt $attempt."
+                                    break
                                   else
                                     echo "Attempt $attempt failed."
                                     if [ $attempt -lt 3 ]; then
