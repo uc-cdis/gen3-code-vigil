@@ -18,7 +18,6 @@ requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
 
 collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
-test_outcomes = {}
 
 
 class XDistCustomPlugin:
@@ -155,30 +154,7 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
-def pytest_sessionfinish(session, exitstatus):
-    global test_outcomes
-    # Collect metrics such as passed, failed, error and skipped counts
-    test_outcomes["passed"] = len(
-        [item for item in session.items if item._outcome == "passed"]
-    )
-    test_outcomes["failed"] = len(
-        [item for item in session.items if item._outcome == "failed"]
-    )
-    test_outcomes["error"] = len(
-        [item for item in session.items if item._outcome == "error"]
-    )
-    test_outcomes["skipped"] = len(
-        [item for item in session.items if item._outcome == "skipped"]
-    )
-
-    logger.info("Test Metrics:")
-    for key, val in test_outcomes.items():
-        logger.info(f"{key.upper()}: {val}")
-    logger.info(f"Test Metrics Exit code: {exitstatus}")
-
-
 def pytest_unconfigure(config):
-    global test_outcomes
     gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
@@ -189,9 +165,15 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    session = config.pluginmanager.getplugin("session")
-    pytest_sessionfinish(session, session.exitstatus)
-    logger.info(test_outcomes)
+    # Get Test Metrics
+    test_outcomes = {}
+    terminal_summary = config.pluginmanager.get_plugin("terminalreporter")
+    test_outcomes["passed"] = len(terminal_summary.stats.get("passed", []))
+    test_outcomes["failed"] = len(terminal_summary.stats.get("failed", []))
+    test_outcomes["skipped"] = len(terminal_summary.stats.get("skipped", []))
+    test_outcomes["error"] = len(terminal_summary.stats.get("error", []))
+    for key, val in test_outcomes.items():
+        logger.info(f"{key.upper()}: {val}")
     if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
