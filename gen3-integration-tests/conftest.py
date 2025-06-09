@@ -155,22 +155,22 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
-def pytest_runtest_logreport(report):
-    """
-    Hook called after each test's execution.
-    Updates the global test_outcomes dictionary based on the test result.
-    """
-    global test_outcomes
+# def pytest_runtest_logreport(report):
+#     """
+#     Hook called after each test's execution.
+#     Updates the global test_outcomes dictionary based on the test result.
+#     """
+#     global test_outcomes
 
-    if report.when == "call":
-        if report.outcome == "passed":
-            test_outcomes["passed"] += 1
-        elif report.outcome == "failed":
-            test_outcomes["failed"] += 1
-        elif report.outcome == "skipped":
-            test_outcomes["skipped"] += 1
-        elif report.outcome == "error":
-            test_outcomes["error"] += 1
+#     if report.when == "call":
+#         if report.outcome == "passed":
+#             test_outcomes["passed"] += 1
+#         elif report.outcome == "failed":
+#             test_outcomes["failed"] += 1
+#         elif report.outcome == "skipped":
+#             test_outcomes["skipped"] += 1
+#         elif report.outcome == "error":
+#             test_outcomes["error"] += 1
 
 
 def pytest_unconfigure(config):
@@ -186,9 +186,9 @@ def pytest_unconfigure(config):
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
 
-    logger.info("Test Metrics")
-    for key, val in test_outcomes.items():
-        logger.info(f"{key.upper()}: {val}")
-    if int(test_outcomes["failed"]) == 0:
-        if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-            setup.teardown_helm_environment()
+    # logger.info("Test Metrics")
+    # for key, val in test_outcomes.items():
+    #     logger.info(f"{key.upper()}: {val}")
+    # if int(test_outcomes["failed"]) == 0:
+    #     if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+    #         setup.teardown_helm_environment()
