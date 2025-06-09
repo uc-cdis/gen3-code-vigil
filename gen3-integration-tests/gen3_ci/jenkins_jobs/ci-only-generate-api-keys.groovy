@@ -163,12 +163,15 @@ spec:
                               for attempt in {1..3}; do
                                   if gen3 api api-key "\$email" > "\${NAMESPACE}_\${user}.json"; then
                                     echo "API key created successfully on attempt $attempt."
-                                    exit 0
+                                    break
                                   else
                                     echo "Attempt $attempt failed."
                                     if [ $attempt -lt 3 ]; then
                                       echo "Retrying in 60 seconds..."
                                       sleep 60
+                                    else
+                                      echo "Unable to create API key after 3 attempts. Exiting"
+                                      exit 1
                                     fi
                                   fi
                                 done
