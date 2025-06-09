@@ -152,20 +152,6 @@ def pytest_configure(config):
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
-    # Add results summary counter
-    config.results_summary = Counter()
-
-
-def pytest_runtest_logreport(report):
-    results_summary = getattr(report.config, "results_summary", None)
-    if results_summary and report.when == "call":
-        if report.outcome == "passed":
-            results_summary["passed"] += 1
-        elif report.outcome == "failed":
-            results_summary["failed"] += 1
-        elif report.outcome == "skipped":
-            results_summary["skipped"] += 1
-
 
 def pytest_unconfigure(config):
     gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
@@ -178,7 +164,9 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    results_summary = getattr(config, "results_summary", None)
-    if results_summary["failed"] == 0 and results_summary["error"] == 0:
+    session = config._session
+    failed = len([report for report in session.items if report.outcome == "failed"])
+    error = len([report for report in session.items if report.outcome == "error"])
+    if failed == 0 and error == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
