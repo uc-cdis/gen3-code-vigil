@@ -164,19 +164,19 @@ def pytest_configure(config):
 
 
 def pytest_sessionstart(session):
-    session.results_summary = Counter()
+    session.config.results_summary = Counter()
 
 
 def pytest_runtest_logreport(report):
     if report.when == "call":
         if report.outcome == "passed":
-            report.session.results_summary["passed"] += 1
+            report.config.results_summary["passed"] += 1
         elif report.outcome == "failed":
-            report.session.results_summary["failed"] += 1
+            report.config.results_summary["failed"] += 1
         elif report.outcome == "skipped":
-            report.session.results_summary["skipped"] += 1
+            report.config.results_summary["skipped"] += 1
         elif report.outcome == "error":
-            report.session.results_summary["error"] += 1
+            report.config.results_summary["error"] += 1
 
 
 def pytest_unconfigure(config):
@@ -189,8 +189,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    session = config._session
-    results_summary = session.results_summary
+    results_summary = config.results_summary
     logger.info("\nFINAL RESULTS SUMMARY:")
     logger.info(f"Passed tests: {results_summary['passed']}")
     logger.info(f"Failed tests: {results_summary['failed']}")
