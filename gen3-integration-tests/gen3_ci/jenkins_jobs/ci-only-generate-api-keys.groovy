@@ -169,6 +169,9 @@ spec:
                                     if [ $attempt -lt 3 ]; then
                                       echo "Retrying in 60 seconds..."
                                       sleep 60
+                                    else
+                                      echo "Unable to create API key after 3 attempts. Exiting"
+                                      exit 1
                                     fi
                                   fi
                                 done
