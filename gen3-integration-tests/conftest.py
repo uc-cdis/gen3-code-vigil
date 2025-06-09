@@ -184,6 +184,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+    logger.info(test_outcomes)
     if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
