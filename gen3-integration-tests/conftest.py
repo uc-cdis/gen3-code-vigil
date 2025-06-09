@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+from collections import Counter
 
 import pytest
 
@@ -162,18 +163,20 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
-# Collect the status of tests to determine teardown steps after PR run
-@pytest.hookimpl
+def pytest_sessionstart(session):
+    session.results_summary = Counter()
+
+
 def pytest_runtest_logreport(report):
     if report.when == "call":
         if report.outcome == "passed":
-            test_outcomes["passed"] += 1
+            report.session.results_summary["passed"] += 1
         elif report.outcome == "failed":
-            test_outcomes["failed"] += 1
+            report.session.results_summary["failed"] += 1
+        elif report.outcome == "skipped":
+            report.session.results_summary["skipped"] += 1
         elif report.outcome == "error":
-            test_outcomes["error"] += 1
-    elif report.outcome == "skipped":
-        test_outcomes["skipped"] += 1
+            report.session.results_summary["error"] += 1
 
 
 def pytest_unconfigure(config):
@@ -186,6 +189,13 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    # if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
-    #     if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-    #         setup.teardown_helm_environment()
+    session = config._session
+    results_summary = session.results_summary
+    logger.info("\nFINAL RESULTS SUMMARY:")
+    logger.info(f"Passed tests: {results_summary['passed']}")
+    logger.info(f"Failed tests: {results_summary['failed']}")
+    logger.info(f"Skipped tests: {results_summary['skipped']}")
+    logger.info(f"Errors: {results_summary['error']}")
+    if results_summary["failed"] == 0 and results_summary["error"] == 0:
+        if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+            setup.teardown_helm_environment()
