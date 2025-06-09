@@ -208,16 +208,87 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 fi
 
+# Generate Google Prefix by using commit sha so it is unqiue for each env.
+commit_sha="${COMMIT_SHA}"
+ENV_PREFIX="${commit_sha: -6}"
+echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+
+# Update indexd values to set a dynamic prefix for each env and set a dynamic generated pw for ssj/gateway in the indexd database.
+rand_pwd=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
+yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.ssj = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.gateway = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+
 # Create sqs queues and save the URL to a var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
 AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
 UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes \
+  --queue-url "$UPLOAD_QUEUE_URL" \
+  --attribute-name QueueArn \
+  --query 'Attributes.QueueArn' \
+  --output text)
 
 # Update values.yaml to use sqs queues.
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+
+# Create sns topics.
+UPLOAD_SNS_ARN=$(aws sns create-topic --name $namespace --query 'TopicArn' --output text)
+# Allow S3 to publish to sns.
+aws sns set-topic-attributes \
+  --topic-arn "$UPLOAD_SNS_ARN" \
+  --attribute-name Policy \
+  --attribute-value "{
+  \"Version\":\"2012-10-17\",
+  \"Statement\":[
+    {
+      \"Effect\":\"Allow\",
+      \"Principal\":{\"Service\":\"s3.amazonaws.com\"},
+      \"Action\":\"SNS:Publish\",
+      \"Resource\":\"$UPLOAD_SNS_ARN\",
+      \"Condition\":{
+        \"StringEquals\":{\"AWS:SourceArn\":\"arn:aws:s3:::gen3-helm-data-upload-bucket\"}
+      }
+    }
+  ]
+}"
+# Configure bucket to send to sns.
+aws s3api put-bucket-notification-configuration \
+  --bucket "gen3-helm-data-upload-bucket" \
+  --notification-configuration "{
+    \"TopicConfigurations\": [
+      {
+        \"TopicArn\": \"$UPLOAD_SNS_ARN\",
+        \"Events\": [\"s3:ObjectCreated:*\"],
+        \"Filter\": {
+          \"Key\": {
+            \"FilterRules\": [
+              {
+                \"Name\": \"prefix\",
+                \"Value\": \"ci$ENV_PREFIX/\"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }"
+
+aws sns subscribe \
+  --topic-arn "$UPLOAD_SNS_ARN" \
+  --protocol sqs \
+  --notification-endpoint "$UPLOAD_QUEUE_ARN"
+
+
+#delete sns and sqs and remove from bucket during cron
+
+# Update ssjdispatcher to use prefix for "jobPattern"
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 
 # Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
@@ -228,13 +299,6 @@ sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAM
 
 # Remove aws-es-proxy block
 yq -i 'del(.aws-ex-proxy)' $ci_default_manifest_values_yaml
-
-# Generate Google Prefix by using commit sha so it is unqiue for each env.
-commit_sha="${COMMIT_SHA}"
-GOOGLE_PREFIX="${commit_sha: -6}"
-echo "Last 6 characters of COMMIT_SHA: $GOOGLE_PREFIX"
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")

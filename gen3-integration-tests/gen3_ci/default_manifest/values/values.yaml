@@ -72,6 +72,7 @@ indexd:
     requests:
       memory: "105Mi"
       cpu: "15m"
+  # This will be dynamically replaced by env_setup.sh script.
   defaultPrefix: ""
   enabled: true
   image:
@@ -79,6 +80,12 @@ indexd:
     tag: "master"
   externalSecrets:
     createK8sServiceCredsSecret: true
+  secrets:
+    userdb:
+      # This will be dynamically replaced by env_setup.sh script.
+      ssj:
+      # This will be dynamically replaced by env_setup.sh script.
+      gateway:
 
 
 metadata:
@@ -275,9 +282,12 @@ ssjdispatcher:
   ssjcreds:
     # This will be dynamically replaced by env_setup.sh script.
     sqsUrl: https://sqs.us-east-1.amazonaws.com/707767160287/gen3-helm-data-upload-bucket
-    jobPattern: s3://test-12345678901234-upload/*
-    jobUser: sheepdog_gen3
-    metadataserviceUsername: metadata_gen3
+    # This will be dynamically replaced by env_setup.sh script.
+    jobPattern: "s3://gen3-helm-data-upload-bucket/<environment name>/*"
+    # This will be dynamically replaced by env_setup.sh script.
+    jobPassword: "replace_with_password"
+    # This will be dynamically replaced by env_setup.sh script.
+    metadataservicePassword: "replace_with_password"
   serviceAccount:
     create: true
     annotations:
