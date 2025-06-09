@@ -1,12 +1,12 @@
 import json
 import os
 import shutil
-from collections import Counter
 
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
+from gen3_ci.scripts.generate_slack_report import get_test_result_and_metrics
 from utils import TEST_DATA_PATH_OBJECT
 from utils import gen3_admin_tasks as gat
 from utils import logger
@@ -17,9 +17,6 @@ from xdist.scheduler import LoadScopeScheduling
 load_dotenv()
 requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
-
-collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
-test_outcomes = {"passed": 0, "failed": 0, "error": 0, "skipped": 0}
 
 
 class XDistCustomPlugin:
@@ -70,7 +67,6 @@ def pytest_collection_finish(session):
     if session.config.option.collectonly:
         return
     # Iterate through the collected test items
-    skip_portal_tests = session.config.skip_portal_tests
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
             # Access the markers for each test item
@@ -89,14 +85,10 @@ def pytest_collection_finish(session):
                     # Create and Link Google Test Buckets
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
-                if marker_name == "portal" and skip_portal_tests:
-                    item.add_marker(
-                        pytest.mark.skip(
-                            reason="Skipping portal tests as non-supported portal is deployed"
-                        )
-                    )
         # Run Usersync job
         setup.run_usersync()
+        # Enable register user
+        gat.fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -157,29 +149,12 @@ def pytest_configure(config):
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
     pytest.google_enabled = gat.is_google_enabled()
-    # Skip portal tests based on portal version
-    config.skip_portal_tests = gat.skip_portal_tests()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
 
-def pytest_sessionstart(session):
-    session.config.results_summary = Counter()
-
-
-def pytest_runtest_logreport(report):
-    if report.when == "call":
-        if report.outcome == "passed":
-            report.config.results_summary["passed"] += 1
-        elif report.outcome == "failed":
-            report.config.results_summary["failed"] += 1
-        elif report.outcome == "skipped":
-            report.config.results_summary["skipped"] += 1
-        elif report.outcome == "error":
-            report.config.results_summary["error"] += 1
-
-
 def pytest_unconfigure(config):
+    gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
         return
@@ -189,12 +164,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    results_summary = config.results_summary
-    logger.info("\nFINAL RESULTS SUMMARY:")
-    logger.info(f"Passed tests: {results_summary['passed']}")
-    logger.info(f"Failed tests: {results_summary['failed']}")
-    logger.info(f"Skipped tests: {results_summary['skipped']}")
-    logger.info(f"Errors: {results_summary['error']}")
-    if results_summary["failed"] == 0 and results_summary["error"] == 0:
+    test_result, test_metrics_block = get_test_result_and_metrics()
+    if test_result == "Successful":
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
