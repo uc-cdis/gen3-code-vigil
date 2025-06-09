@@ -1,7 +1,6 @@
 import json
 import os
 import shutil
-from collections import Counter
 
 import pytest
 
@@ -17,6 +16,9 @@ from xdist.scheduler import LoadScopeScheduling
 load_dotenv()
 requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
+
+collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
+test_outcomes = {"passed": 0, "failed": 0, "error": 0, "skipped": 0}
 
 
 class XDistCustomPlugin:
@@ -153,6 +155,24 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
+def pytest_runtest_logreport(report):
+    """
+    Hook called after each test's execution.
+    Updates the global test_outcomes dictionary based on the test result.
+    """
+    global test_outcomes  # Reference the global dictionary
+
+    if report.when == "call":  # Only consider the actual test phase
+        if report.outcome == "passed":
+            test_outcomes["passed"] += 1
+        elif report.outcome == "failed":
+            test_outcomes["failed"] += 1
+        elif report.outcome == "skipped":
+            test_outcomes["skipped"] += 1
+        elif report.outcome == "error":  # Additional check for error outcome
+            test_outcomes["error"] += 1
+
+
 def pytest_unconfigure(config):
     gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
     # Skip running code if --collect-only is passed
@@ -164,9 +184,6 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    session = config._session
-    failed = len([report for report in session.items if report.outcome == "failed"])
-    error = len([report for report in session.items if report.outcome == "error"])
-    if failed == 0 and error == 0:
+    if test_outcomes["failed"] == 0 and test_outcomes["error"] == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
