@@ -238,7 +238,14 @@ yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_
 yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 
 # Create sns topics.
-UPLOAD_SNS_ARN=$(aws sns create-topic --name $namespace --query 'TopicArn' --output text)
+UPLOAD_SNS_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_SNS_ARN=$(aws sns create-topic --name "$UPLOAD_SNS_NAME" --query 'TopicArn' --output text)
+if [ -z "$UPLOAD_SNS_ARN" ]; then
+  echo "❌ Failed to create SNS topic: $UPLOAD_SNS_NAME"
+  exit 1
+else
+  echo "✅ Created SNS topic: $UPLOAD_SNS_ARN"
+fi
 # Allow S3 to publish to sns.
 aws sns set-topic-attributes \
   --topic-arn "$UPLOAD_SNS_ARN" \
