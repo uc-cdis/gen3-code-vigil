@@ -157,9 +157,8 @@ def pytest_configure(config):
 
 
 def pytest_runtest_logreport(report):
-    results_summary = report.node.config.results_summary
-
-    if report.when == "call":
+    results_summary = getattr(report.config, "results_summary", None)
+    if results_summary and report.when == "call":
         if report.outcome == "passed":
             results_summary["passed"] += 1
         elif report.outcome == "failed":
@@ -179,7 +178,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    results_summary = config.results_summary
+    results_summary = getattr(config, "results_summary", None)
     if results_summary["failed"] == 0 and results_summary["error"] == 0:
         if os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
             setup.teardown_helm_environment()
