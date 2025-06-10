@@ -4,14 +4,17 @@ import time
 
 from utils import logger
 
+NAMESPACE = os.getenv("NAMESPACE")
+INSTANCE_TYPE = os.getenv("GEN3_INSTANCE_TYPE")
 
-def delete_helm_environment(namespace):
+
+def delete_helm_environment():
     cmd = [
         "helm",
         "delete",
-        namespace,
+        NAMESPACE,
         "-n",
-        namespace,
+        NAMESPACE,
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -20,14 +23,14 @@ def delete_helm_environment(namespace):
         return result.stdout.strip()
     else:
         logger.info(result.stderr)
-        raise Exception(f"Unable to delete environment {namespace}")
+        raise Exception(f"Unable to delete environment {NAMESPACE}")
 
 
-def delete_helm_pvcs(namespace):
+def delete_helm_pvcs():
     for label in ["app.kubernetes.io/name=postgresql", "app=gen3-elasticsearch-master"]:
         cmd = (
             "kubectl get pvc -n "
-            + namespace
+            + NAMESPACE
             + " -l "
             + label
             + " -o name | head -n 1 | cut -d'/' -f2"
@@ -44,7 +47,7 @@ def delete_helm_pvcs(namespace):
                     "pvc",
                     pvc,
                     "-n",
-                    namespace,
+                    NAMESPACE,
                     "--wait=false",
                 ]
                 result = subprocess.run(
@@ -52,15 +55,15 @@ def delete_helm_pvcs(namespace):
                 )
                 if result.returncode != 0:
                     raise Exception(f"Unable to delete pvc for {label}")
-                pvc_status = get_pvc_status(namespace, pvc)
+                pvc_status = get_pvc_status(pvc)
                 if not pvc_status:
-                    force_remove_pvc(namespace, pvc)
+                    force_remove_pvc(pvc)
         else:
             logger.info(result.stderr)
             raise Exception(f"Unable to delete pvc for {label}")
 
 
-def get_pvc_status(namespace, pvc):
+def get_pvc_status(pvc):
     for i in range(15):
         cmd = [
             "kubectl",
@@ -68,7 +71,7 @@ def get_pvc_status(namespace, pvc):
             "pvc",
             pvc,
             "-n",
-            namespace,
+            NAMESPACE,
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -79,14 +82,14 @@ def get_pvc_status(namespace, pvc):
     return False
 
 
-def force_remove_pvc(namespace, pvc):
+def force_remove_pvc(pvc):
     cmd = [
         "kubectl",
         "patch",
         "pvc",
         pvc,
         "-n",
-        namespace,
+        NAMESPACE,
         "-p",
         '\'{"metadata":{"finalizers":null}}\'',
         "--type=merge",
@@ -98,11 +101,11 @@ def force_remove_pvc(namespace, pvc):
         return result.stdout.strip()
     else:
         logger.info(result.stderr)
-        raise Exception(f"Unable to force remove pvc {pvc} from {namespace}")
+        raise Exception(f"Unable to force remove pvc {pvc} from {NAMESPACE}")
 
 
-def delete_helm_namespace(namespace):
-    cmd = ["kubectl", "delete", "ns", namespace]
+def delete_helm_namespace():
+    cmd = ["kubectl", "delete", "ns", NAMESPACE]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
@@ -110,23 +113,23 @@ def delete_helm_namespace(namespace):
         return result.stdout.strip()
     else:
         logger.info(result.stderr)
-        raise Exception(f"Unable to delete namespace {namespace}")
+        raise Exception(f"Unable to delete namespace {NAMESPACE}")
 
 
-def delete_helm_jupyter_pod_namespace(namespace):
-    cmd = ["kubectl", "delete", "ns", f"jupyter-pods-{namespace}"]
+def delete_helm_jupyter_pod_namespace():
+    cmd = ["kubectl", "delete", "ns", f"jupyter-pods-{NAMESPACE}"]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
     if result.returncode == 0:
-        logger.info(f"Deleted namespace jupyter-pods-{namespace} successfully")
+        logger.info(f"Deleted namespace jupyter-pods-{NAMESPACE} successfully")
     else:
         logger.info(result.stderr)
 
 
-def delete_sqs_queues(namespace):
-    audit_queue_url = f"https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-{namespace}"
-    upload_queue_url = f"https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-{namespace}"
+def delete_sqs_queues():
+    audit_queue_url = f"https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-{NAMESPACE}"
+    upload_queue_url = f"https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-{NAMESPACE}"
     for queue in [audit_queue_url, upload_queue_url]:
         cmd = ["aws", "sqs", "get-queue-attributes", "--queue-url", queue]
         result = subprocess.run(
@@ -149,23 +152,22 @@ def delete_sqs_queues(namespace):
             logger.info(f"Queue not found. Skipping sqs deletion of {queue}")
 
 
-def teardown_helm_environment(namespace):
+def teardown_helm_environment():
     # Delete the helm environment
-    delete_helm_environment(namespace)
-    delete_helm_pvcs(namespace)
-    delete_helm_namespace(namespace)
-    delete_helm_jupyter_pod_namespace(namespace)
-    delete_sqs_queues(namespace)
+    delete_helm_environment()
+    delete_helm_pvcs()
+    delete_helm_namespace()
+    delete_helm_jupyter_pod_namespace()
+    delete_sqs_queues()
 
 
 if __name__ == "__main__":
-    namespace = os.getenv("NAMESPACE")
     with open("output/report.md", "r", encoding="utf-8") as file:
         content = file.read().lower()
     if (
         "failed" not in content
         and "error" not in content
-        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL"
+        and INSTANCE_TYPE == "HELM_LOCAL"
     ):
-        logger.info(f"Tearing down environment: {namespace}")
-        teardown_helm_environment(namespace)
+        logger.info(f"Tearing down environment: {NAMESPACE}")
+        teardown_helm_environment()
