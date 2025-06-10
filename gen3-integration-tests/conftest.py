@@ -88,8 +88,6 @@ def pytest_collection_finish(session):
                     requires_google_bucket_marker_present = True
         # Run Usersync job
         setup.run_usersync()
-        # Enable register user
-        gat.fence_enable_register_users_redirect(test_env_namespace=pytest.namespace)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -155,7 +153,6 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
-    gat.fence_disable_register_users_redirect(test_env_namespace=pytest.namespace)
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
         return
@@ -165,18 +162,12 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    # Get Test Metrics
-    test_outcomes = {}
-    terminal_summary = config.pluginmanager.get_plugin("terminalreporter")
-    test_outcomes["passed"] = len(terminal_summary.stats.get("passed", []))
-    test_outcomes["failed"] = len(terminal_summary.stats.get("failed", []))
-    test_outcomes["skipped"] = len(terminal_summary.stats.get("skipped", []))
-    test_outcomes["error"] = len(terminal_summary.stats.get("error", []))
-    for key, val in test_outcomes.items():
-        logger.info(f"{key.upper()}: {val}")
+    # Get report.md to determine failures/error for teardown logic
+    with open(f"{config.rootpath}/output/report.md", "r", encoding="utf-8") as file:
+        content = file.read().lower()
     if (
-        test_outcomes["failed"] == 0
-        and test_outcomes["error"] == 0
+        "failed" not in content
+        and "error" not in content
         and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL"
     ):
         logger.info("Tearing Down Environment")
