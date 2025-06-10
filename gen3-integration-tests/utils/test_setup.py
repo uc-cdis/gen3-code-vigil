@@ -122,12 +122,3 @@ def get_users():
     with open(user_list_path) as f:
         users = {row["USER_ID"]: row["EMAIL"] for row in csv.DictReader(f)}
     return users
-
-
-def teardown_helm_environment():
-    # Delete the helm environment
-    gen3_admin_tasks.delete_helm_environment()
-    gen3_admin_tasks.delete_helm_pvcs()
-    gen3_admin_tasks.delete_helm_namespace()
-    gen3_admin_tasks.delete_helm_jupyter_pod_namespace()
-    gen3_admin_tasks.delete_sqs_queues()

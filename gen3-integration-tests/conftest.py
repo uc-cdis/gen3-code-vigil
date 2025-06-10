@@ -162,13 +162,3 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    # Get report.md to determine failures/error for teardown logic
-    with open(f"{config.rootpath}/output/report.md", "r", encoding="utf-8") as file:
-        content = file.read().lower()
-    if (
-        "failed" not in content
-        and "error" not in content
-        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL"
-    ):
-        logger.info("Tearing Down Environment")
-        setup.teardown_helm_environment()

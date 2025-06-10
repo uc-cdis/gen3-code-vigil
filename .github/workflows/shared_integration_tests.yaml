@@ -344,6 +344,7 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
+              poetry run python -m gen3_ci.scripts.teardown_helm_env
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
