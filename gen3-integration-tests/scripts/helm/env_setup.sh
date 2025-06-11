@@ -251,19 +251,34 @@ aws sns set-topic-attributes \
   --topic-arn "$UPLOAD_SNS_ARN" \
   --attribute-name Policy \
   --attribute-value "{
-  \"Version\":\"2012-10-17\",
-  \"Statement\":[
-    {
-      \"Effect\":\"Allow\",
-      \"Principal\":{\"Service\":\"s3.amazonaws.com\"},
-      \"Action\":\"SNS:Publish\",
-      \"Resource\":\"$UPLOAD_SNS_ARN\",
-      \"Condition\":{
-        \"StringEquals\":{\"AWS:SourceArn\":\"arn:aws:s3:::gen3-helm-data-upload-bucket\"}
+    \"Version\": \"2012-10-17\",
+    \"Id\": \"__default_policy_ID\",
+    \"Statement\": [
+      {
+        \"Sid\": \"__default_statement_ID\",
+        \"Effect\": \"Allow\",
+        \"Principal\": {
+          \"AWS\": \"*\"
+        },
+        \"Action\": [
+          \"SNS:Subscribe\",
+          \"SNS:Receive\",
+          \"SNS:Publish\",
+          \"SNS:ListSubscriptionsByTopic\",
+          \"SNS:GetTopicAttributes\"
+        ],
+        \"Resource\": \"$UPLOAD_SNS_ARN\",
+        \"Condition\": {
+          \"ArnLike\": {
+            \"aws:SourceArn\": \"arn:aws:s3:*:*:gen3-helm-data-upload-bucket\"
+          }
+        }
       }
-    }
-  ]
-}"
+    ]
+  }"
+
+
+
 # Configure bucket to send to sns.
 aws s3api put-bucket-notification-configuration \
   --bucket "gen3-helm-data-upload-bucket" \
