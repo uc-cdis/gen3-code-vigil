@@ -52,10 +52,8 @@ class TestGen3Workflow(object):
         :return: Dictionary with extracted task information.
         :rtype: dict
 
-        #TODO: Replace this with a real Nextflow log line example
         Example log line:
-        "Oct-02 12:34:56.789 [main] Task completed > TaskHandler[random_string name: extract_metadata (1); status: COMPLETED;  exit: 0;  workDir: s3://bucket-name/work-dir]"
-
+        "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
         Example return value:
         {
             "process_name": "extract_metadata (1)",
@@ -239,7 +237,7 @@ class TestGen3Workflow(object):
         - Validate outputs and logs
         """
         message = "hello beautiful world!"
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/s3_folder_name"
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
 
         # Step 1: Upload input file to S3
         self.gen3_workflow.put_bucket_object_with_boto3(

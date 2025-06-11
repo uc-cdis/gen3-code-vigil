@@ -450,7 +450,6 @@ authz:
             - name: 'gen3-workflow'
               subresources:
                 - name: 'user-bucket'
-            - name: 'user-bucket'
         - name: 'dicom-viewer'
           subresources:
             - name: 'studies'

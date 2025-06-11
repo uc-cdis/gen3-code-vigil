@@ -364,7 +364,7 @@ class Gen3Workflow:
         access_token = self._get_access_token(user)
         os.environ["GEN3_TOKEN"] = access_token
         os.environ["HOSTNAME"] = pytest.hostname
-        os.environ["WorkDir"] = s3_working_directory
+        os.environ["WORK_DIR"] = s3_working_directory
 
         original_cwd = Path.cwd()
         workflow_dir_path = Path(workflow_dir).resolve()
@@ -372,6 +372,7 @@ class Gen3Workflow:
         try:
             os.chdir(workflow_dir_path)
             # Run the Nextflow workflow
+            # TODO: Replace nextflow.run with nextflow.run_and_poll to add a timeout of 10 minutes
             execution = nextflow.run(workflow_script, configs=[nextflow_config_file])
 
             log_file_content = ""
