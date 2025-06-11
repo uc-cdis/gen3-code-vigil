@@ -32,10 +32,6 @@ on:
         required: false
         type: string
         default: ADMINVM_REMOTE
-      WORKING_DIR:
-        required: false
-        type: string
-        default: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -75,7 +71,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: ${{ inputs.WORKING_DIR }}
+            working-directory: gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
