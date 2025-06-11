@@ -217,7 +217,7 @@ yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PRE
 
 # Update indexd values to set a dynamic prefix for each env and set a dynamic generated pw for ssj/gateway in the indexd database.
 rand_pwd=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
-yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+# yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.ssj = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.gateway = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
@@ -274,22 +274,45 @@ aws sns set-topic-attributes \
 
 
 
-# Configure bucket to send to sns.
+# # Configure bucket to send to sns.
+# aws s3api put-bucket-notification-configuration \
+#   --bucket "gen3-helm-data-upload-bucket" \
+#   --notification-configuration "{
+#     \"TopicConfigurations\": [
+#       {
+#         \"TopicArn\": \"$UPLOAD_SNS_ARN\",
+#         \"Events\": [
+#           \"s3:ObjectCreated:Put\",
+#           \"s3:ObjectCreated:Post\",
+#           \"s3:ObjectCreated:Copy\",
+#           \"s3:ObjectCreated:CompleteMultipartUpload\"
+#         ]
+#       }
+#     ]
+#   }"
+
+current_config=$(aws s3api get-bucket-notification-configuration --bucket "test")
+
+# Construct your new topic config
+new_topic_config='{
+  "TopicArn": "'"$UPLOAD_SNS_ARN"'",
+  "Events": [
+    "s3:ObjectCreated:Put",
+    "s3:ObjectCreated:Post",
+    "s3:ObjectCreated:Copy",
+    "s3:ObjectCreated:CompleteMultipartUpload"
+  ]
+}'
+
+# Merge it with the existing configuration
+updated_config=$(echo "$current_config" | jq \
+  --argjson new "$new_topic_config" \
+  '.TopicConfigurations += [$new]')
+
+# Apply the merged config
 aws s3api put-bucket-notification-configuration \
   --bucket "gen3-helm-data-upload-bucket" \
-  --notification-configuration "{
-    \"TopicConfigurations\": [
-      {
-        \"TopicArn\": \"$UPLOAD_SNS_ARN\",
-        \"Events\": [
-          \"s3:ObjectCreated:Put\",
-          \"s3:ObjectCreated:Post\",
-          \"s3:ObjectCreated:Copy\",
-          \"s3:ObjectCreated:CompleteMultipartUpload\"
-        ]
-      }
-    ]
-  }"
+  --notification-configuration "$updated_config"
 
 
 aws sns subscribe \
@@ -301,7 +324,8 @@ aws sns subscribe \
 #delete sns and sqs and remove from bucket during cron
 
 # Update ssjdispatcher configuration.
-yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
+# yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/*\"" -i "$ci_default_manifest_values_yaml"
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
