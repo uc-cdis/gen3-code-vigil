@@ -44,23 +44,23 @@ def delete_helm_pvcs():
         if result.returncode == 0:
             if result.stdout.strip() != "":
                 pvc = result.stdout.strip()
-                # cmd = [
-                #     "kubectl",
-                #     "delete",
-                #     "pvc",
-                #     pvc,
-                #     "-n",
-                #     NAMESPACE,
-                #     "--wait=false",
-                # ]
-                # result = subprocess.run(
-                #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-                # )
-                # if result.returncode != 0:
-                #     raise Exception(f"Unable to delete pvc for {label}")
-                # pvc_status = get_pvc_status(pvc)
-                # if not pvc_status:
-                #     force_remove_pvc(pvc)
+                cmd = [
+                    "kubectl",
+                    "delete",
+                    "pvc",
+                    pvc,
+                    "-n",
+                    NAMESPACE,
+                    "--wait=false",
+                ]
+                result = subprocess.run(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                )
+                if result.returncode != 0:
+                    raise Exception(f"Unable to delete pvc for {label}")
+                pvc_status = get_pvc_status(pvc)
+                if not pvc_status:
+                    force_remove_pvc(pvc)
                 force_remove_pvc(pvc)
         else:
             logger.info(result.stderr)
@@ -68,7 +68,7 @@ def delete_helm_pvcs():
 
 
 def get_pvc_status(pvc):
-    for i in range(15):
+    for i in range(6):
         cmd = [
             "kubectl",
             "get",
