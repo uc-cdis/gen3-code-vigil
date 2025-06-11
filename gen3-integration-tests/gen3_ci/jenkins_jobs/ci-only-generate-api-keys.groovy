@@ -146,27 +146,36 @@ spec:
                             export GEN3_HOME=\$WORKSPACE/cloud-automation
                             export KUBECTL_NAMESPACE=\${NAMESPACE}
                             source $GEN3_HOME/gen3/gen3setup.sh
+                            
+                            accounts=(
+                              "main@example.org:main_account"
+                              "indexing@example.org:indexing_account"
+                              "dummy-one@example.org:dummy_one"
+                              "smarty-two@example.org:smarty_two"
+                              "user0@example.org:user0_account"
+                              "user1@example.org:user1_account"
+                              "user2@example.org:user2_account"
+                            )
 
-                            echo "creating main_account api key for \$NAMESPACE"
-                            gen3 api api-key main@example.org > \${NAMESPACE}_main_account.json
-
-                            echo "creating indexing_account for \$NAMESPACE"
-                            gen3 api api-key indexing@example.org > \${NAMESPACE}_indexing_account.json
-
-                            echo "creating auxAcct1 for \$NAMESPACE"
-                            gen3 api api-key dummy-one@example.org > \${NAMESPACE}_dummy_one.json
-
-                            echo "creating auxAcct2 for \$NAMESPACE"
-                            gen3 api api-key smarty-two@example.org > \${NAMESPACE}_smarty_two.json
-
-                            echo "creating user0 for \$NAMESPACE"
-                            gen3 api api-key user0@example.org > \${NAMESPACE}_user0_account.json
-
-                            echo "creating user1 for \$NAMESPACE"
-                            gen3 api api-key user1@example.org > \${NAMESPACE}_user1_account.json
-
-                            echo "creating user2 for \$NAMESPACE"
-                            gen3 api api-key user2@example.org > \${NAMESPACE}_user2_account.json
+                            for entry in "${accounts[@]}"; do
+                              IFS=":" read -r email user <<< "$entry"
+                              echo "creating $user for \$NAMESPACE"
+                              for attempt in {1..3}; do
+                                  if gen3 api api-key "\$email" > "\${NAMESPACE}_\${user}.json"; then
+                                    echo "API key created successfully on attempt $attempt."
+                                    break
+                                  else
+                                    echo "Attempt $attempt failed."
+                                    if [ $attempt -lt 3 ]; then
+                                      echo "Retrying in 60 seconds..."
+                                      sleep 60
+                                    else
+                                      echo "Unable to create API key after 3 attempts. Exiting"
+                                      exit 1
+                                    fi
+                                  fi
+                                done
+                            done
                         '''
                     }
                 }
