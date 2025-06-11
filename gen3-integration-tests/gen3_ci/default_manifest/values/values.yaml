@@ -293,6 +293,9 @@ ssjdispatcher:
     annotations:
       eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/ssjdispatcher-role
     name: "ssjdispatcher-service-account"
+  jobServiceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/ssjdispatcher-role-job
   externalSecrets:
     createK8sSsjdispatcherSecret: true
   # This will be dynamically replaced by env_setup.sh script.
