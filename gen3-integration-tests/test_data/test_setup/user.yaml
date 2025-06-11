@@ -315,6 +315,17 @@ authz:
       resource_paths:
       - '/requestor_integration_test'
 
+    - id: workflow_user
+      role_ids:
+      - workflow_user
+      resource_paths:
+      - '/services/workflow/gen3-workflow'
+    - id: workflow_storage_deleter
+      role_ids:
+      - workflow_storage_deleter
+      resource_paths:
+      - '/services/workflow/gen3-workflow/user-bucket'
+
 
   resources:
     # General Access
@@ -436,6 +447,9 @@ authz:
             - name: 'argo'
               subresources:
                 - name: 'admin'
+            - name: 'gen3-workflow'
+              subresources:
+                - name: 'user-bucket'
         - name: 'dicom-viewer'
           subresources:
             - name: 'studies'
@@ -719,6 +733,20 @@ authz:
             service: 'arborist'
             method: 'delete'
 
+    # Gen3 Workflow
+    - id: workflow_user
+      permissions:
+      - id: workflow_user
+        action:
+          service: gen3-workflow
+          method: create
+    - id: workflow_storage_deleter
+      permissions:
+      - id: workflow_storage_deleter
+        action:
+          service: gen3-workflow
+          method: delete
+
 clients:
   wts:
     policies:
@@ -755,6 +783,8 @@ users:
     - 'abc-admin'
     - 'requestor_integration_test'
     - 'workflow_admin'
+    - 'workflow_user'
+    - 'workflow_storage_deleter'
     - 'argo'
     - 'all_dicom_studies_admin'
     projects:
