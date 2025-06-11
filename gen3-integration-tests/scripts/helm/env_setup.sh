@@ -71,7 +71,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     # Update all AWS images to QUAY
     ####################################################################################
-    yq eval '. | (.[] |= sub(".*\.dkr\.ecr\.us-east-1\.amazonaws\.com/gen3", "quay.io/cdis"))' $new_manifest_values_file_path
+    # sed -i 's/[a-zA-Z0-9.-]*\.dkr\.ecr\.us-east-1\.amazonaws\.com\/gen3/quay.io\/cdis/g' $new_manifest_values_file_path
 
     ####################################################################################
     # Update ETL Block
@@ -313,7 +313,7 @@ yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $ci_default_manifes
 sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
 # Remove aws-es-proxy block
-yq -i 'del(.aws-ex-proxy)' $ci_default_manifest_values_yaml
+yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
