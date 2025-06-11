@@ -71,7 +71,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     # Update all AWS images to QUAY
     ####################################################################################
-    yq eval '. | (.[] |= sub(".*\.dkr\.ecr\.us-east-1\.amazonaws\.com/gen3", "quay.io/cdis"))' $new_manifest_values_file_path
+    # yq eval '. | (.[] |= sub(".*\.dkr\.ecr\.us-east-1\.amazonaws\.com/gen3", "quay.io/cdis"))' $new_manifest_values_file_path
 
     ####################################################################################
     # Update ETL Block
