@@ -68,6 +68,7 @@ def pytest_collection_finish(session):
     if session.config.option.collectonly:
         return
     # Iterate through the collected test items
+    skip_portal_tests = session.config.skip_portal_tests
     if not hasattr(session.config, "workerinput"):
         for item in session.items:
             # Access the markers for each test item
@@ -86,6 +87,12 @@ def pytest_collection_finish(session):
                     # Create and Link Google Test Buckets
                     setup.setup_google_buckets()
                     requires_google_bucket_marker_present = True
+                if marker_name == "portal" and skip_portal_tests:
+                    item.add_marker(
+                        pytest.mark.skip(
+                            reason="Skipping portal tests as non-supported portal is deployed"
+                        )
+                    )
         # Run Usersync job
         setup.run_usersync()
 
@@ -144,14 +151,15 @@ def pytest_configure(config):
         pytest.root_url_portal = pytest.root_url
 
     # List of services deployed
-    pytest.deployed_services = setup.get_list_of_services_deployed()
+    pytest.deployed_services = gat.get_list_of_services_deployed()
     # List of sower jobs enabled
-    pytest.enabled_sower_jobs = setup.get_enabled_sower_jobs()
+    pytest.enabled_sower_jobs = gat.get_enabled_sower_jobs()
     # Is Flag enabled for USE_AGG_MDS
-    pytest.use_agg_mdg_flag = setup.check_agg_mds_is_enabled()
+    pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
-    pytest.indexs3client_job_deployed = setup.check_indexs3client_job_deployed()
-
+    pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
+    # Skip portal tests based on portal version
+    config.skip_portal_tests = gat.skip_portal_tests()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 

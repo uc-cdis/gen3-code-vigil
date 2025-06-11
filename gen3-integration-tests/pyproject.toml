@@ -45,6 +45,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
+testpaths = ["tests/"]
 addopts = "--log-cli-level=ERROR"
 markers = [
   # general
@@ -88,4 +89,5 @@ md_report = "true"
 md_report_verbose = 0
 md_report_output = "output/report.md"
 md_report_flavor = "gfm"
-md_report_skip_color = "#FFA500"
+# md_report_skip_color = "#FFA500"
+md_report_color = "never"
