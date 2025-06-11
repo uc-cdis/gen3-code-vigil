@@ -71,7 +71,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: gen3-integration-tests
+            working-directory: gen3-code-vigil/gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
