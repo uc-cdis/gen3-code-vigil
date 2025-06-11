@@ -71,7 +71,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: gen3-integration-tests
+            working-directory: gen3-code-vigil/gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -118,12 +118,6 @@ jobs:
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
-          # Checkout current repo
-          - name: Checkout current repo
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
-
-
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -138,6 +132,13 @@ jobs:
                 echo "All files are markdown, skipping step."
                 echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
+
+          # Checkout current repo
+          - name: Checkout current repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/checkout@v4
+            with:
+              path: ${{ env.REPO }}
 
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
