@@ -286,20 +286,16 @@ aws s3api put-bucket-notification-configuration \
     \"TopicConfigurations\": [
       {
         \"TopicArn\": \"$UPLOAD_SNS_ARN\",
-        \"Events\": [\"s3:ObjectCreated:*\"],
-        \"Filter\": {
-          \"Key\": {
-            \"FilterRules\": [
-              {
-                \"Name\": \"prefix\",
-                \"Value\": \"ci$ENV_PREFIX/\"
-              }
-            ]
-          }
-        }
+        \"Events\": [
+          \"s3:ObjectCreated:Put\",
+          \"s3:ObjectCreated:Post\",
+          \"s3:ObjectCreated:Copy\",
+          \"s3:ObjectCreated:CompleteMultipartUpload\"
+        ]
       }
     ]
   }"
+
 
 aws sns subscribe \
   --topic-arn "$UPLOAD_SNS_ARN" \
@@ -310,7 +306,7 @@ aws sns subscribe \
 #delete sns and sqs and remove from bucket during cron
 
 # Update ssjdispatcher configuration.
-yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
