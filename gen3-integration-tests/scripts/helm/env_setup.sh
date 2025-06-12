@@ -208,16 +208,186 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 fi
 
+# Generate Google Prefix by using commit sha so it is unqiue for each env.
+commit_sha="${COMMIT_SHA}"
+ENV_PREFIX="${commit_sha: -6}"
+echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+
+# Update indexd values to set a dynamic prefix for each env and set a dynamic generated pw for ssj/gateway in the indexd database.
+rand_pwd=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
+yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.ssj = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.gateway = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+
 # Create sqs queues and save the URL to a var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
 AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
 UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes \
+  --queue-url "$UPLOAD_QUEUE_URL" \
+  --attribute-name QueueArn \
+  --query 'Attributes.QueueArn' \
+  --output text)
 
 # Update values.yaml to use sqs queues.
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+
+# Create sns topics.
+UPLOAD_SNS_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_SNS_ARN=$(aws sns create-topic --name "$UPLOAD_SNS_NAME" --query 'TopicArn' --output text)
+
+# Allow S3 to publish to sns.
+aws sns set-topic-attributes \
+  --topic-arn "$UPLOAD_SNS_ARN" \
+  --attribute-name Policy \
+  --attribute-value "{
+    \"Version\": \"2012-10-17\",
+    \"Id\": \"__default_policy_ID\",
+    \"Statement\": [
+      {
+        \"Sid\": \"__default_statement_ID\",
+        \"Effect\": \"Allow\",
+        \"Principal\": {
+          \"AWS\": \"*\"
+        },
+        \"Action\": [
+          \"SNS:Subscribe\",
+          \"SNS:Receive\",
+          \"SNS:Publish\",
+          \"SNS:ListSubscriptionsByTopic\",
+          \"SNS:GetTopicAttributes\"
+        ],
+        \"Resource\": \"$UPLOAD_SNS_ARN\",
+        \"Condition\": {
+          \"ArnLike\": {
+            \"aws:SourceArn\": \"arn:aws:s3:*:*:gen3-helm-data-upload-bucket\"
+          }
+        }
+      }
+    ]
+  }"
+
+
+
+# # Configure bucket to send to sns.
+# aws s3api put-bucket-notification-configuration \
+#   --bucket "gen3-helm-data-upload-bucket" \
+#   --notification-configuration "{
+#     \"TopicConfigurations\": [
+#       {
+#         \"TopicArn\": \"$UPLOAD_SNS_ARN\",
+#         \"Events\": [
+#           \"s3:ObjectCreated:Put\",
+#           \"s3:ObjectCreated:Post\",
+#           \"s3:ObjectCreated:Copy\",
+#           \"s3:ObjectCreated:CompleteMultipartUpload\"
+#         ]
+#       }
+#     ]
+#   }"
+
+BUCKET="gen3-helm-data-upload-bucket"
+
+# Get current config
+current_config=$(aws s3api get-bucket-notification-configuration --bucket "$BUCKET")
+
+# New topic configuration
+new_topic_config='{
+  "TopicArn": "'"$UPLOAD_SNS_ARN"'",
+  "Events": [
+    "s3:ObjectCreated:Put",
+    "s3:ObjectCreated:Post",
+    "s3:ObjectCreated:Copy",
+    "s3:ObjectCreated:CompleteMultipartUpload"
+  ]
+}'
+
+# Merge: remove old config with same ARN, then append new one
+updated_config=$(echo "$current_config" | jq \
+  --argjson new "$new_topic_config" \
+  --arg arn "$UPLOAD_SNS_ARN" '
+  .TopicConfigurations = (
+    (.TopicConfigurations // [])
+    | map(select(.TopicArn != $arn))
+    + [$new]
+  )')
+
+# Save to temp file
+config_file=$(mktemp)
+echo "$updated_config" > "$config_file"
+
+# Apply the updated config
+aws s3api put-bucket-notification-configuration \
+  --bucket "$BUCKET" \
+  --notification-configuration "file://$config_file"
+
+
+aws sns subscribe \
+  --topic-arn "$UPLOAD_SNS_ARN" \
+  --protocol sqs \
+  --notification-endpoint "$UPLOAD_QUEUE_ARN"
+
+# cat <<EOF > policy.json
+#   {
+#     "Sid": "100",
+#     "Effect": "Allow",
+#     "Principal": "*",
+#     "Action": "sqs:SendMessage",
+#     "Resource": "$UPLOAD_QUEUE_ARN",
+#     "Condition": {
+#       "ArnEquals": {
+#         "aws:SourceArn": "$UPLOAD_SNS_ARN"
+#       }
+#     }
+#   }
+# EOF
+
+cat <<EOF > raw-policy.json
+{
+  "Version": "2012-10-17",
+  "Id": "sqspolicy",
+  "Statement": [
+    {
+      "Sid": "100",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "$UPLOAD_QUEUE_ARN",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "$UPLOAD_SNS_ARN"
+        }
+      }
+    }
+  ]
+}
+EOF
+
+# Step 2: Escape the policy JSON into a single string and embed it in the final file
+escaped_policy=$(jq -c . raw-policy.json | jq -R '{ Policy: . }')
+
+# Save as final attributes JSON
+echo "$escaped_policy" > policy.json
+
+if ! aws sqs set-queue-attributes \
+  --queue-url "$UPLOAD_QUEUE_URL" \
+  --attributes file://policy.json ; then
+  echo "❌ Failed to set SQS queue attributes" >&2
+  exit 1
+fi
+
+#delete sns and sqs and remove from bucket during cron
+
+# Update ssjdispatcher configuration.
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
+# yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
 # Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
@@ -228,13 +398,6 @@ sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAM
 
 # Remove aws-es-proxy block
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
-
-# Generate Google Prefix by using commit sha so it is unqiue for each env.
-commit_sha="${COMMIT_SHA}"
-GOOGLE_PREFIX="${commit_sha: -6}"
-echo "Last 6 characters of COMMIT_SHA: $GOOGLE_PREFIX"
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$GOOGLE_PREFIX\"" -i $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
@@ -279,7 +442,6 @@ install_helm_chart() {
 
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
-  # kubectl delete pvc -l app=gen3-elasticsearch-master -n ${namespace}
   kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master --timeout=5m -n ${namespace}
 
   echo "Running ci_setup.sh with timeout..."
