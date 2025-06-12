@@ -217,7 +217,7 @@ yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PRE
 
 # Update indexd values to set a dynamic prefix for each env and set a dynamic generated pw for ssj/gateway in the indexd database.
 rand_pwd=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
-yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.ssj = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.gateway = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
