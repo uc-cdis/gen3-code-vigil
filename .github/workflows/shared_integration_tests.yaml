@@ -138,6 +138,13 @@ jobs:
                 echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
+          - name: Get commit time
+            working-directory: ${{ github.workspace }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
@@ -148,17 +155,11 @@ jobs:
               path: gen3-code-vigil
 
           - name: List out folders
+            working-directory: ${{ github.workspace }}
             run:
               echo ${{ github.workspace }}
               pwd
               ls -R
-
-          - name: Get commit time
-            working-directory: ${{ github.workspace }}
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
           # # gen3-integration-tests run with python 3.9
           # - name: Set up Python
