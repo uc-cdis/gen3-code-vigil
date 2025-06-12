@@ -291,9 +291,12 @@ aws sns set-topic-attributes \
 #     ]
 #   }"
 
-current_config=$(aws s3api get-bucket-notification-configuration --bucket "gen3-helm-data-upload-bucket")
+BUCKET="gen3-helm-data-upload-bucket"
 
-# Construct your new topic config
+# Get current config
+current_config=$(aws s3api get-bucket-notification-configuration --bucket "$BUCKET")
+
+# New topic configuration
 new_topic_config='{
   "TopicArn": "'"$UPLOAD_SNS_ARN"'",
   "Events": [
@@ -304,15 +307,24 @@ new_topic_config='{
   ]
 }'
 
-# Merge it with the existing configuration
+# Merge: remove old config with same ARN, then append new one
 updated_config=$(echo "$current_config" | jq \
   --argjson new "$new_topic_config" \
-  '.TopicConfigurations += [$new]')
+  --arg arn "$UPLOAD_SNS_ARN" '
+  .TopicConfigurations = (
+    (.TopicConfigurations // [])
+    | map(select(.TopicArn != $arn))
+    + [$new]
+  )')
 
-# Apply the merged config
+# Save to temp file
+config_file=$(mktemp)
+echo "$updated_config" > "$config_file"
+
+# Apply the updated config
 aws s3api put-bucket-notification-configuration \
-  --bucket "gen3-helm-data-upload-bucket" \
-  --notification-configuration "$updated_config"
+  --bucket "$BUCKET" \
+  --notification-configuration "file://$config_file"
 
 
 aws sns subscribe \
