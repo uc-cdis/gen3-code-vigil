@@ -332,9 +332,7 @@ aws sns subscribe \
   --protocol sqs \
   --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
-if ! aws sqs set-queue-attributes \
-  --queue-url "$UPLOAD_QUEUE_URL" \
-  --attributes Policy="$(cat <<EOF
+policy_json=$(cat <<EOF
 {
   "Version": "2012-10-17",
   "Id": "sqspolicy",
@@ -354,7 +352,14 @@ if ! aws sqs set-queue-attributes \
   ]
 }
 EOF
-)"; then
+)
+
+# Escape newlines and double quotes for CLI compatibility
+escaped_policy=$(echo "$policy_json" | jq -c .)
+
+if ! aws sqs set-queue-attributes \
+  --queue-url "$UPLOAD_QUEUE_URL" \
+  --attributes Policy="$escaped_policy"; then
   echo "❌ Failed to set SQS queue attributes" >&2
   exit 1
 fi
