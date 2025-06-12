@@ -156,7 +156,7 @@ jobs:
 
           - name: List out folders
             working-directory: ${{ github.workspace }}
-            run:
+            run: |
               echo ${{ github.workspace }}
               pwd
               ls -R
