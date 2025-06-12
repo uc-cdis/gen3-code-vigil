@@ -154,13 +154,6 @@ jobs:
               ref: ${{ inputs.TEST_REPO_BRANCH }}
               path: gen3-code-vigil
 
-          - name: List out folders
-            working-directory: ${{ github.workspace }}
-            run: |
-              echo ${{ github.workspace }}
-              pwd
-              ls -R
-
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
