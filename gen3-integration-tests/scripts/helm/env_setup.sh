@@ -347,9 +347,7 @@ aws sns subscribe \
 #   }
 # EOF
 
-cat <<EOF > policy.json
-{
-  "Policy": "$(jq -c . <<POLICY
+cat <<EOF > raw-policy.json
 {
   "Version": "2012-10-17",
   "Id": "sqspolicy",
@@ -368,10 +366,13 @@ cat <<EOF > policy.json
     }
   ]
 }
-POLICY
-)"
-}
 EOF
+
+# Step 2: Escape the policy JSON into a single string and embed it in the final file
+escaped_policy=$(jq -c . raw-policy.json | jq -R '{ Policy: . }')
+
+# Save as final attributes JSON
+echo "$escaped_policy" > policy.json
 
 if ! aws sqs set-queue-attributes \
   --queue-url "$UPLOAD_QUEUE_URL" \
