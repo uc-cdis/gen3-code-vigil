@@ -334,24 +334,27 @@ aws sns subscribe \
 
 if ! aws sqs set-queue-attributes \
   --queue-url "$UPLOAD_QUEUE_URL" \
-  --attributes "Policy={
-    \"Version\": \"2012-10-17\",
-    \"Id\": \"sqspolicy\",
-    \"Statement\": [
-      {
-        \"Sid\": \"100\",
-        \"Effect\": \"Allow\",
-        \"Principal\": \"*\",
-        \"Action\": \"sqs:SendMessage\",
-        \"Resource\": \"$UPLOAD_QUEUE_ARN\",
-        \"Condition\": {
-          \"ArnEquals\": {
-            \"aws:SourceArn\": \"$UPLOAD_SNS_ARN\"
-          }
+  --attributes Policy="$(cat <<EOF
+{
+  "Version": "2012-10-17",
+  "Id": "sqspolicy",
+  "Statement": [
+    {
+      "Sid": "100",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "$UPLOAD_QUEUE_ARN",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "$UPLOAD_SNS_ARN"
         }
       }
-    ]
-  }"; then
+    }
+  ]
+}
+EOF
+)"; then
   echo "❌ Failed to set SQS queue attributes" >&2
   exit 1
 fi
