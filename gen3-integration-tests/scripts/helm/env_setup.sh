@@ -217,7 +217,7 @@ yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PRE
 
 # Update indexd values to set a dynamic prefix for each env and set a dynamic generated pw for ssj/gateway in the indexd database.
 rand_pwd=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
-# yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.ssj = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.gateway = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
@@ -291,7 +291,7 @@ aws sns set-topic-attributes \
 #     ]
 #   }"
 
-current_config=$(aws s3api get-bucket-notification-configuration --bucket "test")
+current_config=$(aws s3api get-bucket-notification-configuration --bucket "gen3-helm-data-upload-bucket")
 
 # Construct your new topic config
 new_topic_config='{
@@ -320,12 +320,38 @@ aws sns subscribe \
   --protocol sqs \
   --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
+aws sqs set-queue-attributes \
+  --queue-url $UPLOAD_QUEUE_URL \
+  --attributes "{
+    \"Policy\": $(cat <<EOF
+{
+  "Version": "2012-10-17",
+  "Id": "sqspolicy",
+  "Statement": [
+    {
+      "Sid": "100",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "$UPLOAD_QUEUE_ARN",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "$UPLOAD_SNS_ARN"
+        }
+      }
+    }
+  ]
+}
+EOF
+  )
+}"
+
 
 #delete sns and sqs and remove from bucket during cron
 
 # Update ssjdispatcher configuration.
-# yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
-yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
+# yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/*\"" -i "$ci_default_manifest_values_yaml"
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
