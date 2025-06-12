@@ -332,19 +332,45 @@ aws sns subscribe \
   --protocol sqs \
   --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
+# cat <<EOF > policy.json
+#   {
+#     "Sid": "100",
+#     "Effect": "Allow",
+#     "Principal": "*",
+#     "Action": "sqs:SendMessage",
+#     "Resource": "$UPLOAD_QUEUE_ARN",
+#     "Condition": {
+#       "ArnEquals": {
+#         "aws:SourceArn": "$UPLOAD_SNS_ARN"
+#       }
+#     }
+#   }
+# EOF
+
 cat <<EOF > policy.json
-  {
-    "Sid": "100",
-    "Effect": "Allow",
-    "Principal": "*",
-    "Action": "sqs:SendMessage",
-    "Resource": "$UPLOAD_QUEUE_ARN",
-    "Condition": {
-      "ArnEquals": {
-        "aws:SourceArn": "$UPLOAD_SNS_ARN"
+{
+  "Policy": "$(jq -c . <<POLICY
+{
+  "Version": "2012-10-17",
+  "Id": "sqspolicy",
+  "Statement": [
+    {
+      "Sid": "100",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "sqs:SendMessage",
+      "Resource": "$UPLOAD_QUEUE_ARN",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "$UPLOAD_SNS_ARN"
+        }
       }
     }
-  }
+  ]
+}
+POLICY
+)"
+}
 EOF
 
 if ! aws sqs set-queue-attributes \
