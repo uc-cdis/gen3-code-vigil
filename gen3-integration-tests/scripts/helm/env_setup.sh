@@ -384,8 +384,7 @@ fi
 #delete sns and sqs and remove from bucket during cron
 
 # Update ssjdispatcher configuration.
-yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}[^/]+/.*\"" -i "$ci_default_manifest_values_yaml"
-# yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}/*\"" -i "$ci_default_manifest_values_yaml"
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
 
