@@ -320,7 +320,7 @@ aws sns subscribe \
   --protocol sqs \
   --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
-aws sqs set-queue-attributes \
+if ! aws sqs set-queue-attributes \
   --queue-url "$UPLOAD_QUEUE_URL" \
   --attributes "Policy={
     \"Version\": \"2012-10-17\",
@@ -339,7 +339,10 @@ aws sqs set-queue-attributes \
         }
       }
     ]
-  }"
+  }"; then
+  echo "❌ Failed to set SQS queue attributes" >&2
+  exit 1
+fi
 
 #delete sns and sqs and remove from bucket during cron
 
