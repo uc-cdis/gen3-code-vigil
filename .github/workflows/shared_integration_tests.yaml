@@ -147,7 +147,7 @@ jobs:
 
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
-            if: ${{ env.SKIP_TESTS != 'true' && env.REPO != 'gen3-code-vigil' }}
+            # if: ${{ env.SKIP_TESTS != 'true' && env.REPO != 'gen3-code-vigil' }}
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
