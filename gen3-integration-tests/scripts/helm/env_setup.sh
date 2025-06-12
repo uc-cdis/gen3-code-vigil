@@ -321,31 +321,25 @@ aws sns subscribe \
   --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
 aws sqs set-queue-attributes \
-  --queue-url $UPLOAD_QUEUE_URL \
-  --attributes "{
-    \"Policy\": $(cat <<EOF
-{
-  "Version": "2012-10-17",
-  "Id": "sqspolicy",
-  "Statement": [
-    {
-      "Sid": "100",
-      "Effect": "Allow",
-      "Principal": "*",
-      "Action": "sqs:SendMessage",
-      "Resource": "$UPLOAD_QUEUE_ARN",
-      "Condition": {
-        "ArnEquals": {
-          "aws:SourceArn": "$UPLOAD_SNS_ARN"
+  --queue-url "$UPLOAD_QUEUE_URL" \
+  --attributes "Policy={
+    \"Version\": \"2012-10-17\",
+    \"Id\": \"sqspolicy\",
+    \"Statement\": [
+      {
+        \"Sid\": \"100\",
+        \"Effect\": \"Allow\",
+        \"Principal\": \"*\",
+        \"Action\": \"sqs:SendMessage\",
+        \"Resource\": \"$UPLOAD_QUEUE_ARN\",
+        \"Condition\": {
+          \"ArnEquals\": {
+            \"aws:SourceArn\": \"$UPLOAD_SNS_ARN\"
+          }
         }
       }
-    }
-  ]
-}
-EOF
-  )
-}"
-
+    ]
+  }"
 
 #delete sns and sqs and remove from bucket during cron
 
