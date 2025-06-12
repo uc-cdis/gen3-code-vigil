@@ -274,59 +274,24 @@ def check_job_pod(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        # Wait for the job pod to start
         cmd = [
             "kubectl",
             "-n",
             test_env_namespace,
-            "get",
-            "pods",
-            f"--selector=job-name={job_name}",
-            "-o",
-            "jsonpath='{.items[0].status.phase}'",
+            "wait",
+            "--for=condition=complete",
+            f"job/{job_name}",
+            "--timeout=20m",
         ]
-        i = 0
-        job_started = False
-        for i in range(15):
-            result = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            logger.info(f"Job {job_name} completed successfully")
+        else:
+            raise Exception(
+                f"Job {job_name} failed to complete in 20 minutes. Info: {result.stderr.strip()}"
             )
-            if result.stdout.replace("'", "") in [
-                "Running",
-                "Succeeded",
-                "Failed",
-                "Completed",
-            ]:
-                job_started = True
-                break
-            else:
-                time.sleep(10)
-        if job_started is False:
-            raise Exception(f"Pod failed to start for job {job_name}")
-
-        # Wait for the job to complete
-        cmd = [
-            "kubectl",
-            "-n",
-            test_env_namespace,
-            "get",
-            "job",
-            job_name,
-            "-o",
-            "jsonpath='{.status.conditions[?(@.type==\"Complete\")].status}'",
-        ]
-        job_completed = False
-        for i in range(40):
-            result = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-            )
-            if result.stdout.replace("'", "") == "True":
-                job_completed = True
-                break
-            else:
-                time.sleep(30)
-        if job_completed is False:
-            raise Exception(f"Job {job_name} failed to complete in 20 minutes")
 
 
 def setup_fence_test_clients(
