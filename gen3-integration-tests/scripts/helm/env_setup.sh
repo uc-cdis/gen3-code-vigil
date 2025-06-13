@@ -215,11 +215,10 @@ echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 
-# Update indexd values to set a dynamic prefix for each env and set a dynamic generated pw for ssj/gateway in the indexd database.
-rand_pwd=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32)
+# Update indexd values to set a dynamic prefix for each env and set a pw for ssj/gateway in the indexd database.
 yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
-yq eval ".indexd.secrets.userdb.ssj = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
-yq eval ".indexd.secrets.userdb.gateway = \"$rand_pwd\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.ssj = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.gateway = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 
 # Create sqs queues and save to var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
