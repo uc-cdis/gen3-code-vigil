@@ -188,7 +188,7 @@ sower:
             mountPath: "/pelican-creds.json"
             subPath: config.json
         cpu-limit: "0.5"
-        memory-limit: 2Gi
+        memory-limit: 1Gi
       volumes:
         - name: pelican-creds-volume
           secret:
@@ -445,3 +445,8 @@ dicom-server:
   image:
     repository: "quay.io/cdis/gen3-orthanc"
     tag: "master"
+
+gen3-user-data-library:
+  image:
+  repository: quay.io/cdis/gen3-user-data-library
+  tag: main
