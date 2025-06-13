@@ -1,6 +1,5 @@
 # Exploration Page
 import pytest
-import utils.gen3_admin_tasks as gat
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.test_execution import screenshot
@@ -83,9 +82,7 @@ class ExplorationPage(object):
             screenshot(page, "ExportToPFBMessage")
 
     def check_pfb_status(self, page: Page):
-        gat.check_job_pod(
-            "pelican-export", "helmjob", test_env_namespace=pytest.namespace
-        )
+        screenshot(page, "BeforePfbMessageFooter")
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
         wait_footer_locator.wait_for(timeout=60000)
         screenshot(page, "PfbWaitMessageFooter")
