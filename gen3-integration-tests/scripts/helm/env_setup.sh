@@ -321,14 +321,16 @@ updated_config=$(echo "$current_config" | jq \
 config_file=$(mktemp)
 echo "$updated_config" > "$config_file"
 
+jq empty "$config_file" || { echo "Invalid JSON config"; exit 1; }
+
 # Apply the updated config
 if ! aws s3api put-bucket-notification-configuration \
   --bucket "$BUCKET" \
   --notification-configuration "file://$config_file"; then
   echo "Error: Failed to set bucket notification configuration"
+  cat "$config_file" >&2  # Optional: show what failed
   exit 1
 fi
-
 
 aws sns subscribe \
   --topic-arn "$UPLOAD_SNS_ARN" \
