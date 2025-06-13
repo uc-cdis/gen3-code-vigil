@@ -202,13 +202,14 @@ class LoginPage(object):
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config()
+        self.handle_popup(page)
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
         # Click on Logout button to logout
         else:
-            page.get_by_role("link", name="Logout").click()
+            page.get_by_role("link", name="Logout").click(timeout=60000)
         nav_bar_login_button = page.get_by_role("link", name="Login")
         if capture_screenshot:
             screenshot(page, "AfterLogout")
