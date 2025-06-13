@@ -114,14 +114,14 @@ class TestDataUpload:
         node_name = "core_metadata_collection"
         self.sd_tools.submit_new_record(node_name)
 
-    def teardown_method(self, method):
-        os.remove(file_path)
-        os.remove(big_file_path)
-        # Delete all test records at the end of each test
-        self.sd_tools.delete_all_records()
-        # Delete all guids
-        self.indexd.delete_records(self.created_guids)
-        self.created_guids = []
+    # def teardown_method(self, method):
+    #     os.remove(file_path)
+    #     os.remove(big_file_path)
+    #     # Delete all test records at the end of each test
+    #     self.sd_tools.delete_all_records()
+    #     # Delete all guids
+    #     self.indexd.delete_records(self.created_guids)
+    #     self.created_guids = []
 
     @pytest.mark.skipif(
         not pytest.indexs3client_job_deployed,
