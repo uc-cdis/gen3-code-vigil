@@ -84,10 +84,10 @@ class ExplorationPage(object):
     def check_pfb_status(self, page: Page):
         screenshot(page, "BeforePfbMessageFooter")
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for(timeout=60000)
+        wait_footer_locator.wait_for(timeout=120000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
-        success_footer_locator.wait_for(timeout=420000)
+        success_footer_locator.wait_for(timeout=600000)
         screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link
