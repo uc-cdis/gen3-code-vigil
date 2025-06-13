@@ -322,9 +322,12 @@ config_file=$(mktemp)
 echo "$updated_config" > "$config_file"
 
 # Apply the updated config
-aws s3api put-bucket-notification-configuration \
+if ! aws s3api put-bucket-notification-configuration \
   --bucket "$BUCKET" \
-  --notification-configuration "file://$config_file"
+  --notification-configuration "file://$config_file"; then
+  echo "Error: Failed to set bucket notification configuration"
+  exit 1
+fi
 
 
 aws sns subscribe \
