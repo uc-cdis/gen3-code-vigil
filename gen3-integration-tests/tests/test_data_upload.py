@@ -100,9 +100,9 @@ class TestDataUpload:
         cls.indexd.clear_previous_upload_files(user="user1_account")
         cls.indexd.clear_previous_upload_files(user="indexing_account")
 
-    @classmethod
-    def teardown_class(cls):
-        cls.sd_tools.delete_all_records()
+    # @classmethod
+    # def teardown_class(cls):
+    #     cls.sd_tools.delete_all_records()
 
     def setup_method(self, method):
         # Create a local small file to upload. Store its size and hash
