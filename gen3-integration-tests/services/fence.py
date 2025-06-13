@@ -47,8 +47,6 @@ class Fence(object):
         if user:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
             response = auth.curl(path=url)
-            logger.info("*****HELLLO")
-            logger.info(response.json())
         elif access_token:
             response = requests.get(
                 self.BASE_URL + url,
