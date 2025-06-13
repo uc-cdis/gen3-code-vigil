@@ -245,8 +245,8 @@ sower:
             readOnly: true
             mountPath: "/pelican-creds.json"
             subPath: config.json
-        cpu-limit: "1"
-        memory-limit: 4Gi
+        cpu-limit: "0.5"
+        memory-limit: 1Gi
       volumes:
         - name: pelican-creds-volume
           secret:
