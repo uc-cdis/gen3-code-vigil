@@ -50,7 +50,6 @@ spec:
                     # TODO: How to make logs if queue dosn't exist.
                     AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
                     UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
-                    UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket-${env}"
                     if aws sqs get-queue-attributes --queue-url "$AUDIT_QUEUE_URL" &>/dev/null; then
                         aws sqs delete-queue --queue-url "$AUDIT_QUEUE_URL"
                         echo "Deleted: $AUDIT_QUEUE_URL"
@@ -59,25 +58,7 @@ spec:
                     fi
                     if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" &>/dev/null; then
                         aws sqs delete-queue --queue-url "$UPLOAD_QUEUE_URL"
-                        aws sns delete-topic --topic-arn "$UPLOAD_SNS_ARN"
-
-                        # Get current config
-                        aws s3api get-bucket-notification-configuration --bucket "$BUCKET_NAME" > config.json
-
-                        # Strip only the matching topic from TopicConfigurations
-                        jq \
-                        --arg TOPIC "$SNS_TOPIC_TO_REMOVE" \
-                        'del(.TopicConfigurations[] | select(.TopicArn == $TOPIC))' \
-                        config.json > updated-config.json
-
-                        # Apply the updated config
-                        aws s3api put-bucket-notification-configuration \
-                        --bucket "$BUCKET_NAME" \
-                        --notification-configuration file://updated-config.json || {
-                            echo "❌ Failed to update S3 notification configuration"
-                            exit 1
-                        }
-                        echo "Deleted: $UPLOAD_QUEUE_URL and $UPLOAD_SNS_ARN"
+                        echo "Deleted: $UPLOAD_QUEUE_URL"
                     else
                         echo "Upload queue not found, skipping."
                     fi
