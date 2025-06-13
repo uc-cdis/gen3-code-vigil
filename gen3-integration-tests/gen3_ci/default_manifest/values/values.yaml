@@ -447,7 +447,9 @@ dicom-server:
     tag: "master"
 
 gen3-user-data-library:
+  replicaCount: 2
   enabled: true
+  release: dev
   image:
-    repository: quay.io/cdis/gen3-user-data-library
-    tag: main
+    repository: "quay.io/cdis/gen3-user-data-library"
+    tag: "main"
