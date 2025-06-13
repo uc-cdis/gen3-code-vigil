@@ -82,7 +82,7 @@ def get_pvc_status(pvc):
         )
         if result.stdout.strip() == "":
             return True
-        time.sleep(5)
+        time.sleep(30)
     return False
 
 
