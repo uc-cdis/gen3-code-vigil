@@ -238,119 +238,87 @@ yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_
 yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 
 # Create sns topics.
-UPLOAD_SNS_NAME="ci-data-upload-bucket-${namespace}"
-UPLOAD_SNS_ARN=$(aws sns create-topic --name "$UPLOAD_SNS_NAME" --query 'TopicArn' --output text)
+# UPLOAD_SNS_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_SNS_NAME="ci-data-upload-bucket"
+UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+# UPLOAD_SNS_ARN=$(aws sns create-topic --name "$UPLOAD_SNS_NAME" --query 'TopicArn' --output text)
 
-# Allow S3 to publish to sns.
-aws sns set-topic-attributes \
-  --topic-arn "$UPLOAD_SNS_ARN" \
-  --attribute-name Policy \
-  --attribute-value "{
-    \"Version\": \"2012-10-17\",
-    \"Id\": \"__default_policy_ID\",
-    \"Statement\": [
-      {
-        \"Sid\": \"__default_statement_ID\",
-        \"Effect\": \"Allow\",
-        \"Principal\": {
-          \"AWS\": \"*\"
-        },
-        \"Action\": [
-          \"SNS:Subscribe\",
-          \"SNS:Receive\",
-          \"SNS:Publish\",
-          \"SNS:ListSubscriptionsByTopic\",
-          \"SNS:GetTopicAttributes\"
-        ],
-        \"Resource\": \"$UPLOAD_SNS_ARN\",
-        \"Condition\": {
-          \"ArnLike\": {
-            \"aws:SourceArn\": \"arn:aws:s3:*:*:gen3-helm-data-upload-bucket\"
-          }
-        }
-      }
-    ]
-  }"
-
-
-
-# # Configure bucket to send to sns.
-# aws s3api put-bucket-notification-configuration \
-#   --bucket "gen3-helm-data-upload-bucket" \
-#   --notification-configuration "{
-#     \"TopicConfigurations\": [
+# # Allow S3 to publish to sns.
+# aws sns set-topic-attributes \
+#   --topic-arn "$UPLOAD_SNS_ARN" \
+#   --attribute-name Policy \
+#   --attribute-value "{
+#     \"Version\": \"2012-10-17\",
+#     \"Id\": \"__default_policy_ID\",
+#     \"Statement\": [
 #       {
-#         \"TopicArn\": \"$UPLOAD_SNS_ARN\",
-#         \"Events\": [
-#           \"s3:ObjectCreated:Put\",
-#           \"s3:ObjectCreated:Post\",
-#           \"s3:ObjectCreated:Copy\",
-#           \"s3:ObjectCreated:CompleteMultipartUpload\"
-#         ]
+#         \"Sid\": \"__default_statement_ID\",
+#         \"Effect\": \"Allow\",
+#         \"Principal\": {
+#           \"AWS\": \"*\"
+#         },
+#         \"Action\": [
+#           \"SNS:Subscribe\",
+#           \"SNS:Receive\",
+#           \"SNS:Publish\",
+#           \"SNS:ListSubscriptionsByTopic\",
+#           \"SNS:GetTopicAttributes\"
+#         ],
+#         \"Resource\": \"$UPLOAD_SNS_ARN\",
+#         \"Condition\": {
+#           \"ArnLike\": {
+#             \"aws:SourceArn\": \"arn:aws:s3:*:*:gen3-helm-data-upload-bucket\"
+#           }
+#         }
 #       }
 #     ]
 #   }"
 
-BUCKET="gen3-helm-data-upload-bucket"
+# BUCKET="gen3-helm-data-upload-bucket"
 
-# Get current config
-current_config=$(aws s3api get-bucket-notification-configuration --bucket "$BUCKET")
+# # Get current config
+# current_config=$(aws s3api get-bucket-notification-configuration --bucket "$BUCKET")
 
-# New topic configuration
-new_topic_config='{
-  "TopicArn": "'"$UPLOAD_SNS_ARN"'",
-  "Events": [
-    "s3:ObjectCreated:Put",
-    "s3:ObjectCreated:Post",
-    "s3:ObjectCreated:Copy",
-    "s3:ObjectCreated:CompleteMultipartUpload"
-  ]
-}'
+# # New topic configuration
+# new_topic_config='{
+#   "TopicArn": "'"$UPLOAD_SNS_ARN"'",
+#   "Events": [
+#     "s3:ObjectCreated:Put",
+#     "s3:ObjectCreated:Post",
+#     "s3:ObjectCreated:Copy",
+#     "s3:ObjectCreated:CompleteMultipartUpload"
+#   ]
+# }'
 
-# Merge: remove old config with same ARN, then append new one
-updated_config=$(echo "$current_config" | jq \
-  --argjson new "$new_topic_config" \
-  --arg arn "$UPLOAD_SNS_ARN" '
-  .TopicConfigurations = (
-    (.TopicConfigurations // [])
-    | map(select(.TopicArn != $arn))
-    + [$new]
-  )')
+# # Merge: remove old config with same ARN, then append new one
+# updated_config=$(echo "$current_config" | jq \
+#   --argjson new "$new_topic_config" \
+#   --arg arn "$UPLOAD_SNS_ARN" '
+#   .TopicConfigurations = (
+#     (.TopicConfigurations // [])
+#     | map(select(.TopicArn != $arn))
+#     + [$new]
+#   )')
 
-# Save to temp file
-config_file=$(mktemp)
-echo "$updated_config" > "$config_file"
+# # Save to temp file
+# config_file=$(mktemp)
+# echo "$updated_config" > "$config_file"
 
-jq empty "$config_file" || { echo "Invalid JSON config"; exit 1; }
+# jq empty "$config_file" || { echo "Invalid JSON config"; exit 1; }
 
-# Apply the updated config
-if ! aws s3api put-bucket-notification-configuration \
-  --bucket "$BUCKET" \
-  --notification-configuration "file://$config_file"; then
-  echo "Error: Failed to set bucket notification configuration"
-  cat "$config_file" >&2  # Optional: show what failed
-  exit 1
-fi
+# # Apply the updated config
+# if ! aws s3api put-bucket-notification-configuration \
+#   --bucket "$BUCKET" \
+#   --notification-configuration "file://$config_file"; then
+#   echo "Error: Failed to set bucket notification configuration"
+#   cat "$config_file" >&2  # Optional: show what failed
+#   exit 1
+# fi
 
 aws sns subscribe \
   --topic-arn "$UPLOAD_SNS_ARN" \
   --protocol sqs \
   --notification-endpoint "$UPLOAD_QUEUE_ARN"
-
-# cat <<EOF > policy.json
-#   {
-#     "Sid": "100",
-#     "Effect": "Allow",
-#     "Principal": "*",
-#     "Action": "sqs:SendMessage",
-#     "Resource": "$UPLOAD_QUEUE_ARN",
-#     "Condition": {
-#       "ArnEquals": {
-#         "aws:SourceArn": "$UPLOAD_SNS_ARN"
-#       }
-#     }
-#   }
-# EOF
 
 cat <<EOF > raw-policy.json
 {
