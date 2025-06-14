@@ -89,6 +89,7 @@ class TestDataUpload:
         cls.login_page = LoginPage()
         cls.submission = SubmissionPage()
         cls.created_guids = []
+
         # Create the graph record for core_metadata_collection
         cls.sd_tools.delete_all_records()
         node_name = "core_metadata_collection"
