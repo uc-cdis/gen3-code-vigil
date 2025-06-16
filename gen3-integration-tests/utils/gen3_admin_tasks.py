@@ -688,7 +688,72 @@ def mutate_manifest_for_guppy_test(
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        # Command to get guppy config map
+        get_guppy_cm = f"kubectl -n {test_env_namespace} get cm manifest-guppy -o yaml > original_guppy_config.yaml"
+        get_guppy_cm_result = subprocess.run(
+            get_guppy_cm,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
+        )
+        if not get_guppy_cm_result.returncode == 0:
+            raise Exception("Unable to get guppy confi map")
+        # If indexname is set to jenkins set guppy config to default ci based changes
+        if indexname == "jenkins":
+            cmd_list = [
+                'sed -i \'s/"index":"[^"]*_subject"/"index":"\'ci_subject_alias\'"/\' original_guppy_config.yaml',
+                'sed -i \'s/"index":"[^"]*_file"/"index":"\'ci_file_alias\'"/\' original_guppy_config.yaml'
+                'sed -i \'s/"config_index": "[^"]*config"/"config_index": "\'ci_configs_alias\'"/\' original_guppy_config.yaml',
+            ]
+            for cmd in cmd_list:
+                cmd_result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                )
+                if not cmd_result.returncode == 0:
+                    raise Exception(f"Unable to execute {cmd}")
+        # If indexname is not set to jenkins set guppy config to manifest based changes
+        else:
+            cmd_list = [
+                "kubectl -n "
+                + {test_env_namespace}
+                + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' > etlMapping.yaml",
+                'sed -i "s/"index":"[^"]*_subject_alias"/"index":"\$(yq \'.mappings[].name\' etlMapping.yaml | grep subject)"/" original_guppy_config.yaml',
+                'sed -i "s/"index":"[^"]*_file_alias"/"index":"\$(yq \'.mappings[].name\' etlMapping.yaml | grep file)"/" original_guppy_config.yaml',
+            ]
+            for cmd in cmd_list:
+                cmd_result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                )
+                if not cmd_result.returncode == 0:
+                    raise Exception(f"Unable to execute {cmd}")
+        # Run commands to set new guppy config and clear up files
+        cmd_list = [
+            f"kubectl -n {test_env_namespace} delete configmap manifest-guppy",
+            f"kubectl -n {test_env_namespace} apply -f original_guppy_config.yaml",
+            f"kubectl -n {test_env_namespace} rollout restart deployment/guppy-deployment",
+            f"kubectl -n {test_env_namespace} wait --for=condition=Ready pod -l app=guppy --timeout=5m",
+            "cat original_guppy_config.yaml",
+            "rm -rf original_guppy_config.yaml",
+        ]
+        for cmd in cmd_list:
+            cmd_result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+            if not cmd_result.returncode == 0:
+                raise Exception(f"Unable to execute {cmd}")
 
 
 def clean_up_indices(test_env_namespace: str = ""):
