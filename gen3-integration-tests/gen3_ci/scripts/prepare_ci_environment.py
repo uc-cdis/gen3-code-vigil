@@ -110,7 +110,6 @@ def modify_env_for_service_pr(namespace, service, tag):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        EKS_CLUSTER_NAME = os.getenv("EKS_CLUSTER_NAME")
         ci_default_manifest = "gen3_ci/default_manifest/values"
         arguments = [
             namespace,
@@ -119,7 +118,6 @@ def modify_env_for_service_pr(namespace, service, tag):
             ci_default_manifest,
             service,
             tag,
-            EKS_CLUSTER_NAME,
         ]
         return setup_env_for_helm(arguments)
 
@@ -164,7 +162,6 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        EKS_CLUSTER_NAME = os.getenv("EKS_CLUSTER_NAME")
         ci_default_manifest = "gen3_ci/default_manifest/values"
         target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/{updated_folder}/values"
 
@@ -174,7 +171,6 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
             helm_branch,
             ci_default_manifest,
             target_manifest_path,
-            EKS_CLUSTER_NAME,
             # updated_folder,
         ]
         return setup_env_for_helm(arguments)
@@ -221,14 +217,12 @@ def modify_env_for_test_repo_pr(namespace):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        EKS_CLUSTER_NAME = os.getenv("EKS_CLUSTER_NAME")
         ci_default_manifest = "gen3_ci/default_manifest/values"
         arguments = [
             namespace,
             "test-env-setup",
             helm_branch,
             ci_default_manifest,
-            EKS_CLUSTER_NAME,
         ]
         return setup_env_for_helm(arguments)
 
