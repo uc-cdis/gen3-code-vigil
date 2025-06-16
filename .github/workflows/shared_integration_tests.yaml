@@ -32,10 +32,6 @@ on:
         required: false
         type: string
         default: ADMINVM_REMOTE
-      WORKING_DIR:
-        required: false
-        type: string
-        default: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -75,7 +71,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: ${{ inputs.WORKING_DIR }}
+            working-directory: gen3-code-vigil/gen3-integration-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -127,7 +123,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
 
-
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -143,20 +138,20 @@ jobs:
                 echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
+          - name: Get commit time
+            working-directory: ${{ github.workspace }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
-            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
               path: gen3-code-vigil
-
-          - name: Get commit time
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
-              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
