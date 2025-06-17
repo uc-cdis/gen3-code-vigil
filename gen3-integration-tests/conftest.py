@@ -94,7 +94,7 @@ def pytest_collection_finish(session):
                         )
                     )
         # Run Usersync job
-        # setup.run_usersync()
+        setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
