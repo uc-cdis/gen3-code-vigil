@@ -10,6 +10,7 @@ import requests
 from dotenv import load_dotenv
 from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
 from utils.jenkins import JenkinsJob
+from utils.misc import retry
 
 load_dotenv()
 CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
@@ -227,6 +228,7 @@ def modify_env_for_test_repo_pr(namespace):
         return setup_env_for_helm(arguments)
 
 
+@retry(times=3, delay=30, exceptions=(Exception))
 def generate_api_keys_for_test_users(namespace):
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
