@@ -86,6 +86,11 @@ jobs:
 
 
         steps:
+          # Checkout current repo
+          - name: Checkout current repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/checkout@v4
+
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
@@ -93,11 +98,6 @@ jobs:
             run:  |
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
-          # Checkout current repo
-          - name: Checkout current repo
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
 
           # gen3-load-tests run with python 3.9
           - name: Set up Python
