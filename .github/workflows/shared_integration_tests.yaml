@@ -275,7 +275,7 @@ jobs:
           # Ensure we do not cross the threshold of maximum number of CI envs allowed
           # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
           - name: Wait for CI environment
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'LOCAL_HELM' }}
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             id: wait_for_ci_env
             run: |
               MAX_ENVS=10
