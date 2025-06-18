@@ -432,9 +432,9 @@ manifestservice:
     createK8sManifestServiceSecret: true
 
 
-dicom-viewer:
+ohif-viewer:
   replicaCount: 2
-  enabled: false
+  enabled: true
   image:
     repository: "quay.io/cdis/ohif-viewer"
     tag: "master"
