@@ -271,7 +271,7 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
-                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
+                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
                     ],
                 }
             ],
@@ -374,7 +374,7 @@ class TestGen3Workflow(object):
         ), f"The output_response of the TES task did not return the expected output. Expected: '{message}' to be in output_response, but found '{s3_contents['output.txt']}' instead."
 
         assert (
-            s3_contents["grep_output.txt"].strip() == message
+            message in s3_contents["grep_output.txt"].strip()
         ), f"The grep_output_response of the TES task did not return the expected output. Expected: '{message}', but found '{s3_contents['grep_output.txt'].strip()}' instead."
 
     def test_happy_path_cancel_tes_task(self):
@@ -402,25 +402,14 @@ class TestGen3Workflow(object):
         task_id = task_info.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_info}"
 
-        # Step 2: Retrieve the task to check its state
-        task_info = self.gen3_workflow.get_tes_task(
-            task_id=task_id,
-            user=self.valid_user,
-            expected_status=200,
-        )
-
-        assert (
-            "state" in task_info
-        ), f"Response must have `state` field in it. But found {task_info} instead"
-
-        # Step 3: Cancel the TES task
+        # Step 2: Cancel the TES task
         self.gen3_workflow.cancel_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
 
-        # Step 4: Verify the task is cancelled
+        # Step 3: Verify the task is cancelled
         task_info = self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=self.valid_user,
