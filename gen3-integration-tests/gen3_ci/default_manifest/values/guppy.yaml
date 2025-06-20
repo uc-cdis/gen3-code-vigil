@@ -16,12 +16,12 @@ guppy:
       type: subject
     - index: ci_file_alias
       type: file
-    - index: ci_cmc_alias
-      type: clinical_trials
-    - index: ci_dataset_alias
-      type: dataset
-    - index: ci_case_alias
-      type: case
+    # - index: ci_cmc_alias
+    #   type: clinical_trials
+    # - index: ci_dataset_alias
+    #   type: dataset
+    # - index: ci_case_alias
+    #   type: case
     - index: ci_imaging_data_file_alias
       type: imaging_data_file
     - index: ci_imaging_study_alias
