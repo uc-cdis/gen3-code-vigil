@@ -832,44 +832,40 @@ files = [
 
 [[package]]
 name = "gen3"
-version = "4.27.2"
+version = "4.27.3"
 description = "Gen3 CLI and Python SDK"
 optional = false
-python-versions = ">=3.9, <4"
+python-versions = "<4,>=3.9"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "gen3-4.27.3-py3-none-any.whl", hash = "sha256:e03391737ddfed8821b95aae29baaeec585448ce7c0145de04fad60921654736"},
+    {file = "gen3-4.27.3.tar.gz", hash = "sha256:252b4e63285ef41b08d0bc9046616c35586c48d0a59291caf28f384090738a9a"},
+]
 
 [package.dependencies]
-aiofiles = "^0.8.0"
+aiofiles = ">=0.8.0,<0.9.0"
 aiohttp = "*"
 backoff = "*"
-cdislogging = "^1.1.0"
+cdislogging = ">=1.1.0,<2.0.0"
 click = "*"
 dataclasses-json = "<=0.5.9"
 drsclient = ">=0.3.0"
 gen3users = "*"
 httpx = "*"
 humanfriendly = "*"
-indexclient = "^2.3.0"
+indexclient = ">=2.3.0,<3.0.0"
 jsonschema = "*"
 pandas = ">=1.4.2"
 pypfb = ">=0.5.33"
 python-dateutil = "*"
 pyyaml = ">=6.0.1"
 requests = "*"
-tqdm = "^4.61.2"
+tqdm = ">=4.61.2,<5.0.0"
 urllib3 = "*"
-xmltodict = "^0.13.0"
+xmltodict = ">=0.13.0,<0.14.0"
 
 [package.extras]
 fhir = ["fhirclient"]
-
-[package.source]
-type = "git"
-url = "https://github.com/uc-cdis/gen3sdk-python.git"
-reference = "chore/deps-urllib"
-resolved_reference = "540abfa5ecf555cb13ae642915c24f22e35aa66e"
 
 [[package]]
 name = "gen3datamodel"
@@ -2970,4 +2966,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "a5e4af1912616db3589eb3b70d25e15c1e295922600880db27ecd147acdac450"
+content-hash = "d462ef99664e4df75f386c693f698b2008a19c1c4a79d373fafc98afbb45ecdf"
