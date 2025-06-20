@@ -1313,3 +1313,23 @@ def skip_portal_tests():
     if "dataguids" in deployed_services:
         return True
     return False
+
+
+def is_register_user_enabled():
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        return
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        cmd = (
+            "kubectl get cm manifest-fence -o yaml -n "
+            + pytest.namespace
+            + " | grep REGISTER_USERS_ON"
+        )
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
+        )
+        if result.returncode == 0:
+            if "true" in result.stdout.strip():
+                return True
+        return False

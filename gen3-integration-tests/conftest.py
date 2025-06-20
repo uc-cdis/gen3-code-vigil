@@ -157,6 +157,8 @@ def pytest_configure(config):
     pytest.google_enabled = gat.is_google_enabled()
     # Skip portal tests based on portal version
     config.skip_portal_tests = gat.skip_portal_tests()
+    # Is REGISTER_USERS_ON enabled
+    pytest.is_register_user_enabled = gat.is_register_user_enabled()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 

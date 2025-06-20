@@ -23,8 +23,8 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     reason="fence service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "midrc" not in os.getenv("UPDATED_FOLDERS", ""),
-    reason="RegisterUser works only for MIDRC",
+    not pytest.is_register_user_enabled,
+    reason="RegisterUser is not enabled",
 )
 @pytest.mark.portal
 @pytest.mark.fence
