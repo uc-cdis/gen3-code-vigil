@@ -139,12 +139,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     for key in $keys_manifest; do
     if [ "$key" != "global" ]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
+      image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
+      elif [ "$image_tag_value" = "null" ]; then
+          echo "Using CI default image value for ${key}"
       else
-        image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
