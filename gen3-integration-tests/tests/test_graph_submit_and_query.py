@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import pytest
 import requests
@@ -130,6 +131,7 @@ class TestGraphSubmitAndQuery:
             pytest.users["main_account"],
             test_env_namespace=pytest.namespace,
         )
+        time.sleep(5)
 
         res = res.splitlines()[-1].strip()
         auth_header = {

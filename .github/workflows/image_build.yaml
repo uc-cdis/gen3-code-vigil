@@ -7,9 +7,9 @@ on:
         description: "The tag to apply to this build. Defaults to 'latest'."
         default: "latest"
         required: false
-  push:
-    paths:
-      - gen3-integration-tests/**
+  # push:
+  #   paths:
+  #     - gen3-integration-tests/**
 
 jobs:
   CI:
