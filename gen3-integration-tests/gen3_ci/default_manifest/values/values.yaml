@@ -437,7 +437,7 @@ ohif-viewer:
   enabled: true
   image:
     repository: "quay.io/cdis/ohif-viewer"
-    tag: "master"
+    tag: "gen3-v3.8.0"
 
 dicom-server:
   replicaCount: 2
@@ -461,7 +461,7 @@ orthanc:
   enabled: true
   image:
       repository: "quay.io/cdis/gen3-orthanc"
-      tag: "orthancteam-master-gen3-24.3.5"
+      tag: "master"
   # -- (map) External Secrets settings.
   externalSecrets:
     # -- (string) Will override the name of the aws secrets manager secret. Default is "orthanc-s3-g3auto"
