@@ -644,7 +644,8 @@ portal:
               "type": "export-to-pfb",
               "title": "Export to PFB",
               "leftIcon": "datafile",
-              "rightIcon": "download"
+              "rightIcon": "download",
+              "dropdownId": "download"
             },
             {
               "enabled": true,
