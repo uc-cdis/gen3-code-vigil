@@ -22,8 +22,8 @@ guppy:
     #   type: dataset
     # - index: ci_case_alias
     #   type: case
-    - index: ci_imaging_data_file_alias
-      type: imaging_data_file
+    # - index: ci_imaging_data_file_alias
+    #   type: imaging_data_file
     - index: ci_imaging_study_alias
       type: imaging_study
   configIndex: ci_configs_alias
