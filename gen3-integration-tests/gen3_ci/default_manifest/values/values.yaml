@@ -452,6 +452,8 @@ gen3-user-data-library:
   image:
     repository: "quay.io/cdis/gen3-user-data-library"
     tag: "main"
+  externalSecrets:
+    createK8sGen3UserDataLibrarySecret: true
 
 access-backend:
   enabled: false
