@@ -24,6 +24,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 )
 @pytest.mark.audit
 @pytest.mark.ras
+@pytest.mark.fence
 class TestAuditService:
     @classmethod
     def setup_class(cls):
@@ -173,7 +174,6 @@ class TestAuditService:
         )
 
     @pytest.mark.indexd
-    @pytest.mark.fence
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,
         reason="indexd is not running on this environment",
