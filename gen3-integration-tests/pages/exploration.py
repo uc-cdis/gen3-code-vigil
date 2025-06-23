@@ -27,7 +27,7 @@ class ExplorationPage(object):
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.LOGIN_TO_DOWNLOAD_BUTTON = (
-            "//button[normalize-space()='Login to download table']"
+            "//button[contains(text(), 'Login to download')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
             '//*[contains(@class, " g3-dropdown__item ")][1]'
@@ -108,12 +108,8 @@ class ExplorationPage(object):
         # Click on the Download Button
         try:
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
-            download_button.wait_for(state="visible")
             download_button.click()
         except TimeoutError:
-            print(
-                "### The `Export to PFB` is disabled on the 'Data' tab. Let's switch to the 'File' tab..."
-            )
             page.locator(self.FILE_TAB).click()
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
