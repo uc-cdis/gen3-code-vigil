@@ -32,7 +32,7 @@ class ExplorationPage(object):
             "//button[contains(text(), 'Login to download')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
-            '//*[contains(@class, " g3-dropdown__item ")][1]'
+            '//*[contains(@class, " g3-dropdown__item ")]'
         )
         self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
 
@@ -109,39 +109,43 @@ class ExplorationPage(object):
     def click_on_login_to_download(self, page):
         # Click on the Download Button
         try:
-            logger.info("Trying on Data Tab")
+            logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
+            screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
-            logger.info("Found Download button on Data Tab")
+            logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
-            logger.info("Trying on File Tab")
+            logger.info("Trying on Second Tab")
             page.locator(self.FILE_TAB).click()
             page.wait_for_load_state("load")
+            screenshot(page, "SecondExplorationTab")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
-            logger.info("Found Download button on File Tab")
+            logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingLoginToDownload")
 
     def click_on_download(self, page):
         # Click on the Download Button
         try:
-            logger.info("Trying on Data Tab")
+            logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
+            screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.DOWNLOAD_BUTTON)
             download_button.click()
-            logger.info("Found Download button on Data Tab")
+            logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
-            logger.info("Trying on File Tab")
+            logger.info("Trying on Second Tab")
             page.locator(self.FILE_TAB).click()
             page.wait_for_load_state("load")
+            screenshot(page, "SecondExplorationTab")
             download_button = page.locator(self.DOWNLOAD_BUTTON)
             download_button.click()
-            logger.info("Found Download button on File Tab")
+            logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingDownload")
         # Click on the file type to download
         login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
-        )
+        ).first
         login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
         login_to_download_list_first_item.click()
