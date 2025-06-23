@@ -1,6 +1,8 @@
 # Exploration Page
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import expect
 from utils import logger
 from utils.test_execution import screenshot
 
@@ -107,21 +109,32 @@ class ExplorationPage(object):
     def click_on_login_to_download(self, page):
         # Click on the Download Button
         try:
+            logger.info("Trying on First Tab")
+            page.wait_for_selector(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
-        except TimeoutError:
+        except (TimeoutError, PlaywrightTimeoutError):
+            logger.info("Trying on File Tab")
             page.locator(self.FILE_TAB).click()
+            page.wait_for_selector(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
         screenshot(page, "AfterClickingLoginToDownload")
 
     def click_on_download(self, page):
         # Click on the Download Button
-        download_button = page.locator(self.DOWNLOAD_BUTTON)
-        assert download_button.is_enabled()
-        download_button.click()
+        try:
+            logger.info("Trying on First Tab")
+            page.wait_for_selector(self.DOWNLOAD_BUTTON)
+            download_button = page.locator(self.DOWNLOAD_BUTTON)
+            download_button.click()
+        except (TimeoutError, PlaywrightTimeoutError):
+            logger.info("Trying on File Tab")
+            page.locator(self.FILE_TAB).click()
+            page.wait_for_selector(self.DOWNLOAD_BUTTON)
+            download_button = page.locator(self.DOWNLOAD_BUTTON)
+            download_button.click()
         screenshot(page, "AfterClickingDownload")
-
         # Click on the file type to download
         login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
