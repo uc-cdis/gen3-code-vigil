@@ -495,7 +495,7 @@ class TestGen3Workflow(object):
 
             # Verify the expected file is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{self.s3_storage_config.bucket_name}/{expected['filename']}",
+                object_path=f"{task['workDir']}/{expected['filename']}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
@@ -504,35 +504,60 @@ class TestGen3Workflow(object):
                 response["ContentLength"] > 0
             ), f"Expected to have some data in {expected['filename']}. But found empty file instead. Response :{response}"
 
-            # Verify the contents of the command file match the expected commands.
-            command_file_keys = [
-                file["Key"]
-                for file in s3_file_list
-                if file["Key"].endswith("/.command.sh")
+            test_files = [
+                "/.command.sh",
+                "/.command.err",
+                "/.command.out",
+                "/.command.log",
+                "/.exitcode",
             ]
-            assert (
-                len(command_file_keys) == 1
-            ), f"Expected to find exactly one .command.sh file for task '{task_name}', but got {len(command_file_keys)}. Files: {command_file_keys}"
 
-            command_file_key = command_file_keys[0]
+            for test_file_name in test_files:
+                # Verify the contents of the command file match the expected commands.
+                matching_keys = [
+                    file["Key"]
+                    for file in s3_file_list
+                    if file["Key"].endswith(test_file_name)
+                ]
+                assert (
+                    len(matching_keys) == 1
+                ), f"[{task_name}] Expected to find exactly one {test_file_name} file', but got {len(matching_keys)}. Files: {matching_keys}"
 
-            # get contents of .command.sh file
-            response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{self.s3_storage_config.bucket_name}/{command_file_key}",
-                s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
-            )
+                s3_key = matching_keys[0]
 
-            try:
-                command_script_contents = response["Body"].read().decode("utf-8")
-            except Exception as e:
-                raise ValueError(
-                    f"Failed to read or decode content of {command_file_key} from S3. Error: {e}"
+                # get contents of file
+                response = self.gen3_workflow.get_bucket_object_with_boto3(
+                    object_path=f"{self.s3_storage_config.bucket_name}/{s3_key}",
+                    s3_storage_config=self.s3_storage_config,
+                    user=self.valid_user,
                 )
 
-            assert (
-                expected["command"] in command_script_contents
-            ), f"Expected to find `{expected['command']}` in the .command.sh file for task {task_name}, but got {command_script_contents}"
+                try:
+                    file_contents = response["Body"].read().decode("utf-8")
+                except Exception as e:
+                    raise ValueError(
+                        f"[{task_name}] Failed to read or decode content of {s3_key} from S3. Error: {e}"
+                    )
+
+                if test_file_name == "/.command.sh":
+                    assert expected["command"] in file_contents, {
+                        f"[{task_name}] .command.sh file does not contain the expected command.\n"
+                        f"Expected to find: {expected['command']}\n"
+                        f"Actual content: {file_contents}"
+                    }
+                elif test_file_name == "/.exitcode":
+                    assert "0\r\n" in file_contents, (
+                        f"[{task_name}] exitcode file does not contain '0'.\n"
+                        f"Actual content: {file_contents}"
+                    )
+                else:
+                    # TODO: Currently, we're only checking that the files are not empty.
+                    # It's unclear what specific content we should validate in the other files.
+                    # We can revisit this once the output files no longer contain the extra text.
+                    assert file_contents, (
+                        f"[{task_name}] {test_file_name} file is unexpectedly empty.\n"
+                        f"Expected some content, but found: {file_contents!r}"
+                    )
 
 
 # TODO: Add more tests for the following:
