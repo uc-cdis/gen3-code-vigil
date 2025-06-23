@@ -106,9 +106,19 @@ class ExplorationPage(object):
 
     def click_on_login_to_download(self, page):
         # Click on the Download Button
-        download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
-        assert download_button.is_enabled()
-        download_button.click()
+        try:
+            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            download_button.wait_for(state="visible")
+            assert download_button.is_enabled()
+            download_button.click()
+        except TimeoutError:
+            print(
+                "### The `Export to PFB` is disabled on the 'Data' tab. Let's switch to the 'File' tab..."
+            )
+            page.locator(self.FILE_TAB).click()
+            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            assert download_button.is_enabled()
+            download_button.click()
         screenshot(page, "AfterClickingLoginToDownload")
 
     def click_on_download(self, page):

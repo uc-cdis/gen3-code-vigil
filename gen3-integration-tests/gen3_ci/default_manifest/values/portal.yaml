@@ -629,15 +629,6 @@ portal:
           "buttons": [
             {
               "enabled": true,
-              "type": "manifest",
-              "title": "Download Manifest",
-              "leftIcon": "datafile",
-              "rightIcon": "download",
-              "fileName": "manifest.json",
-              "dropdownId": "download"
-            },
-            {
-              "enabled": true,
               "type": "export",
               "title": "Export All to Terra",
               "rightIcon": "external-link"
@@ -653,7 +644,7 @@ portal:
               "type": "export-to-pfb",
               "title": "Export to PFB",
               "leftIcon": "datafile",
-              "rightIcon": "download",
+              "rightIcon": "download"
             },
             {
               "enabled": true,
