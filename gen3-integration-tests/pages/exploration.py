@@ -32,7 +32,7 @@ class ExplorationPage(object):
             "//button[contains(text(), 'Login to download')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
-            '//*[contains(@class, " g3-dropdown__item ")]'
+            '//*[contains(@class, " g3-dropdown__item ")][1]'
         )
         self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
 
@@ -143,9 +143,9 @@ class ExplorationPage(object):
             download_button.click()
             logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingDownload")
-        # Click on the file type to download
-        login_to_download_list_first_item = page.locator(
+        login_to_download_list_first_item = page.query_selector(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
-        ).first
-        login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
-        login_to_download_list_first_item.click()
+        )
+        if login_to_download_list_first_item:
+            login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
+            login_to_download_list_first_item.click()
