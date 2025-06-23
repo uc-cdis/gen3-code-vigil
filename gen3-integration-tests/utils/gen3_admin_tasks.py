@@ -1315,15 +1315,37 @@ def skip_portal_tests():
     return False
 
 
-def is_register_user_enabled():
+def is_register_user_enabled(test_env_namespace: str = ""):
     # Admin VM Deployments
     if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        return
+        job = JenkinsJob(
+            os.getenv("JENKINS_URL"),
+            os.getenv("JENKINS_USERNAME"),
+            os.getenv("JENKINS_PASSWORD"),
+            "ci-only-check-register-users-on",
+        )
+        params = {
+            "NAMESPACE": test_env_namespace,
+            "CLOUD_AUTO_BRANCH": CLOUD_AUTO_BRANCH,
+        }
+        build_num = job.build_job(params)
+        if build_num:
+            status = job.wait_for_build_completion(build_num)
+            if status == "Completed":
+                result = job.get_artifact_content(build_num, "register_users_on.txt")
+            else:
+                job.terminate_build(build_num)
+                raise Exception("Build timed out. Consider increasing max_duration")
+        else:
+            raise Exception("Build number not found")
+        if "true" in result:
+            return True
+        return False
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         cmd = (
             "kubectl get cm manifest-fence -o yaml -n "
-            + pytest.namespace
+            + test_env_namespace
             + " | grep REGISTER_USERS_ON"
         )
         result = subprocess.run(
