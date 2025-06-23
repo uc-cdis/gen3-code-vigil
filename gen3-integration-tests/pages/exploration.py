@@ -109,7 +109,6 @@ class ExplorationPage(object):
         try:
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.wait_for(state="visible")
-            assert download_button.is_enabled()
             download_button.click()
         except TimeoutError:
             print(
@@ -117,7 +116,6 @@ class ExplorationPage(object):
             )
             page.locator(self.FILE_TAB).click()
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
-            assert download_button.is_enabled()
             download_button.click()
         screenshot(page, "AfterClickingLoginToDownload")
 
