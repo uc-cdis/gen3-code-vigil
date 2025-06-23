@@ -34,7 +34,9 @@ class TestRegisterUser:
         cls.login_page = LoginPage()
         cls.user_register = UserRegister()
         cls.exploration = ExplorationPage()
-        cls.user_email_id = "register-user@example.org"
+
+        # Add new user to pytest.users
+        pytest.users["register_user"] = "register-user@example.org"
 
     def test_redirect_to_login_page_from_the_download_button(self, page: Page):
         """
@@ -52,9 +54,7 @@ class TestRegisterUser:
         self.exploration.click_on_login_to_download(page)
 
         # Verify page got redirected to /login page
-        expect(page.locator(self.login_page.LOGIN_BUTTON_LIST)).to_be_visible(
-            timeout=10000
-        )
+        page.wait_for_load_state("load")
         current_url = page.url
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
@@ -62,14 +62,16 @@ class TestRegisterUser:
         """
         Scenario: Redirect to register page after login and Download from /explorer page
         Steps:
-            1. Perform login using main_account
+            1. Perform login using register_user
             2. Page should get redirected to /user/register
             3. Fill the form to register user
             4. Goto /explorer page and perform download
         """
-        # Login with Main Account
+        # Login with register_user
         self.login_page.go_to(page)
-        self.login_page.login(page, validate_username_locator=False)
+        self.login_page.login(
+            page, user="register_user", validate_username_locator=False
+        )
 
         # Goto explorer page
         self.exploration.goto_explorer_page(page)

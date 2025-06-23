@@ -109,31 +109,35 @@ class ExplorationPage(object):
     def click_on_login_to_download(self, page):
         # Click on the Download Button
         try:
-            logger.info("Trying on First Tab")
-            page.wait_for_selector(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            logger.info("Trying on Data Tab")
+            page.wait_for_load_state("load")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
+            logger.info("Found Download button on Data Tab")
         except (TimeoutError, PlaywrightTimeoutError):
             logger.info("Trying on File Tab")
             page.locator(self.FILE_TAB).click()
-            page.wait_for_selector(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            page.wait_for_load_state("load")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
             download_button.click()
+            logger.info("Found Download button on File Tab")
         screenshot(page, "AfterClickingLoginToDownload")
 
     def click_on_download(self, page):
         # Click on the Download Button
         try:
-            logger.info("Trying on First Tab")
-            page.wait_for_selector(self.DOWNLOAD_BUTTON)
+            logger.info("Trying on Data Tab")
+            page.wait_for_load_state("load")
             download_button = page.locator(self.DOWNLOAD_BUTTON)
             download_button.click()
+            logger.info("Found Download button on Data Tab")
         except (TimeoutError, PlaywrightTimeoutError):
             logger.info("Trying on File Tab")
             page.locator(self.FILE_TAB).click()
-            page.wait_for_selector(self.DOWNLOAD_BUTTON)
+            page.wait_for_load_state("load")
             download_button = page.locator(self.DOWNLOAD_BUTTON)
             download_button.click()
+            logger.info("Found Download button on File Tab")
         screenshot(page, "AfterClickingDownload")
         # Click on the file type to download
         login_to_download_list_first_item = page.locator(
