@@ -116,7 +116,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "###################################################################################"
     for key in $keys_ci; do
     if ! echo "$keys_manifest" | grep -q "^$key$"; then
-        if [[ "$key" != "postgresql" && "$key" != "global" && "$key" != "external-secrets" ]]; then
+        if [[ "$key" != "postgresql" && "$key" != "global" && "$key" != "external-secrets" && "$key" != "mutatingWebhook" && "$key" != "neuvector" ]]; then
             echo "Removing ${key} section in default ci manifest as its not present in target manifest"
             yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
         fi
