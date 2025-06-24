@@ -271,6 +271,8 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
+                        # TODO: The command below fails due to the quotes around the echo '{echo_message}',so removed the quotes temporarily for the tests to run. Replace the quotes once this issue is resolved from funnel side.
+                        # f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                         f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
                     ],
                 }
@@ -365,10 +367,12 @@ class TestGen3Workflow(object):
             try:
                 s3_contents[file_name] = response["Body"].read().decode("utf-8")
             except Exception as e:
-                raise ValueError(
+                logger.error(
                     f"Failed to read or decode content of {file_name} from S3. Error: {e}"
                 )
+                raise
 
+        # TODO: Replace `message in s3_contents[...]` with `message == s3_contents[...]` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
         assert (
             message in s3_contents["output.txt"]
         ), f"The output_response of the TES task did not return the expected output. Expected: '{message}' to be in output_response, but found '{s3_contents['output.txt']}' instead."
@@ -465,6 +469,10 @@ class TestGen3Workflow(object):
                 task_name in expected_task_outputs
             ), f"Unexpected task name: {task_name}. Expected one of {list(expected_task_outputs.keys())}"
 
+            assert task["workDir"].startswith(
+                f"{self.s3_storage_config.bucket_name}/"
+            ), f"[{task_name}] Expected workDir to begin with bucket name -- {self.s3_storage_config.bucket_name}, but got {task['workDir']}"
+
             expected = expected_task_outputs[task_name]
 
             assert (
@@ -513,7 +521,6 @@ class TestGen3Workflow(object):
             ]
 
             for test_file_name in test_files:
-                # Verify the contents of the command file match the expected commands.
                 matching_keys = [
                     file["Key"]
                     for file in s3_file_list
@@ -535,17 +542,20 @@ class TestGen3Workflow(object):
                 try:
                     file_contents = response["Body"].read().decode("utf-8")
                 except Exception as e:
-                    raise ValueError(
+                    logger.error(
                         f"[{task_name}] Failed to read or decode content of {s3_key} from S3. Error: {e}"
                     )
+                    raise
 
                 if test_file_name == "/.command.sh":
+                    # TODO: Replace `expected["command"] in file_contents` with `expected["command"] == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
                     assert expected["command"] in file_contents, {
                         f"[{task_name}] .command.sh file does not contain the expected command.\n"
                         f"Expected to find: {expected['command']}\n"
                         f"Actual content: {file_contents}"
                     }
                 elif test_file_name == "/.exitcode":
+                    # TODO: Replace `"0\r\n" in file_contents` with `"0\r\n" == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
                     assert "0\r\n" in file_contents, (
                         f"[{task_name}] exitcode file does not contain '0'.\n"
                         f"Actual content: {file_contents}"
@@ -553,7 +563,7 @@ class TestGen3Workflow(object):
                 else:
                     # TODO: Currently, we're only checking that the files are not empty.
                     # It's unclear what specific content we should validate in the other files.
-                    # We can revisit this once the output files no longer contain the extra text.
+                    # We can revisit this once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
                     assert file_contents, (
                         f"[{task_name}] {test_file_name} file is unexpectedly empty.\n"
                         f"Expected some content, but found: {file_contents!r}"
