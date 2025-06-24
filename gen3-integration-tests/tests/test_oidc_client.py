@@ -38,6 +38,7 @@ class TestOIDCClient:
         }
         for client_name, client_details in clients.items():
             # checking if the access_token is created with client_id and client_secret
+            logger.info(f"Creating access token for client: {client_name}")
             gen3auth = Gen3Auth(
                 endpoint=pytest.root_url,
                 client_credentials=(
