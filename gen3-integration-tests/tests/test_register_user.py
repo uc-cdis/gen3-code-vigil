@@ -10,6 +10,7 @@ from pages.exploration import ExplorationPage
 from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
+from utils import gen3_admin_tasks as gat
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -22,10 +23,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
-@pytest.mark.skipif(
-    not pytest.is_register_user_enabled,
-    reason="RegisterUser is not enabled",
-)
 @pytest.mark.portal
 @pytest.mark.fence
 class TestRegisterUser:
@@ -34,6 +31,7 @@ class TestRegisterUser:
         cls.login_page = LoginPage()
         cls.user_register = UserRegister()
         cls.exploration = ExplorationPage()
+        cls.register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
 
         # Add new user to pytest.users
         pytest.users["register_user"] = "register-user@example.org"
@@ -46,6 +44,8 @@ class TestRegisterUser:
             2. Click on download button
             3. Page should get rediected to /login page
         """
+        if not self.register_user_enabled:
+            pytest.skip("RegisterUser is not enabled")
         # Goto explorer page
         self.login_page.go_to(page)
         self.exploration.goto_explorer_page(page)
@@ -67,6 +67,8 @@ class TestRegisterUser:
             3. Fill the form to register user
             4. Goto /explorer page and perform download
         """
+        if not self.register_user_enabled:
+            pytest.skip("RegisterUser is not enabled")
         # Login with register_user
         self.login_page.go_to(page)
         self.login_page.login(
