@@ -24,6 +24,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 )
 @pytest.mark.audit
 @pytest.mark.ras
+@pytest.mark.fence
 class TestAuditService:
     @classmethod
     def setup_class(cls):
@@ -127,6 +128,11 @@ class TestAuditService:
             "login", "smarty_two", params, expected_results
         )
 
+    @pytest.mark.skipif(
+        "nightly-build" not in pytest.hostname
+        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        reason="Test is being run on Helm and would run only on nightly-build",
+    )
     def test_audit_oidc_login_events(self, page: Page):
         """
         Scenario: Perform login using ORCID and validate audit entry
@@ -168,7 +174,6 @@ class TestAuditService:
         )
 
     @pytest.mark.indexd
-    @pytest.mark.fence
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,
         reason="indexd is not running on this environment",

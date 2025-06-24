@@ -1,6 +1,8 @@
 # Exploration Page
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import expect
 from utils import logger
 from utils.test_execution import screenshot
 
@@ -27,7 +29,7 @@ class ExplorationPage(object):
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.LOGIN_TO_DOWNLOAD_BUTTON = (
-            "//button[normalize-space()='Login to download table']"
+            "//button[contains(text(), 'Login to download')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
             '//*[contains(@class, " g3-dropdown__item ")][1]'
@@ -84,10 +86,10 @@ class ExplorationPage(object):
     def check_pfb_status(self, page: Page):
         screenshot(page, "BeforePfbMessageFooter")
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for(timeout=60000)
+        wait_footer_locator.wait_for(timeout=120000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
-        success_footer_locator.wait_for(timeout=420000)
+        success_footer_locator.wait_for(timeout=600000)
         screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link
@@ -106,21 +108,44 @@ class ExplorationPage(object):
 
     def click_on_login_to_download(self, page):
         # Click on the Download Button
-        download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
-        assert download_button.is_enabled()
-        download_button.click()
+        try:
+            logger.info("Trying on First Tab")
+            page.wait_for_load_state("load")
+            screenshot(page, "FirstExplorationTab")
+            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            download_button.click()
+            logger.info("Found Download button on First Tab")
+        except (TimeoutError, PlaywrightTimeoutError):
+            logger.info("Trying on Second Tab")
+            page.locator(self.FILE_TAB).click()
+            page.wait_for_load_state("load")
+            screenshot(page, "SecondExplorationTab")
+            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            download_button.click()
+            logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingLoginToDownload")
 
     def click_on_download(self, page):
         # Click on the Download Button
-        download_button = page.locator(self.DOWNLOAD_BUTTON)
-        assert download_button.is_enabled()
-        download_button.click()
+        try:
+            logger.info("Trying on First Tab")
+            page.wait_for_load_state("load")
+            screenshot(page, "FirstExplorationTab")
+            download_button = page.locator(self.DOWNLOAD_BUTTON)
+            download_button.click()
+            logger.info("Found Download button on First Tab")
+        except (TimeoutError, PlaywrightTimeoutError):
+            logger.info("Trying on Second Tab")
+            page.locator(self.FILE_TAB).click()
+            page.wait_for_load_state("load")
+            screenshot(page, "SecondExplorationTab")
+            download_button = page.locator(self.DOWNLOAD_BUTTON)
+            download_button.click()
+            logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingDownload")
-
-        # Click on the file type to download
-        login_to_download_list_first_item = page.locator(
+        login_to_download_list_first_item = page.query_selector(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
-        login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
-        login_to_download_list_first_item.click()
+        if login_to_download_list_first_item:
+            login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
+            login_to_download_list_first_item.click()

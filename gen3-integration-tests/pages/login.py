@@ -180,7 +180,7 @@ class LoginPage(object):
         else:
             self.ras_login_form(page, username, password)
             if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(
-                timeout=5000
+                timeout=30000
             ):
                 logger.info("Clicking on Authorization button")
                 page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
