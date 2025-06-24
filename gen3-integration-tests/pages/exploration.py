@@ -29,7 +29,7 @@ class ExplorationPage(object):
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.LOGIN_TO_DOWNLOAD_BUTTON = (
-            "//button[normalize-space()='Login to download table']"
+            "//button[contains(text(), 'Login to download')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
             '//*[contains(@class, " g3-dropdown__item ")][1]'
