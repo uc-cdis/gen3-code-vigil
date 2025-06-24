@@ -18,6 +18,8 @@ def get_failed_suites():
                 row = {k.upper(): v for k, v in row.items()}
                 if row["STATUS"] not in ("passed", "skipped"):
                     failed_suites.add(row["SUB SUITE"])
+        if os.getenv("IS_NIGHTLY_RUN") == "true":
+            failed_suites.add("nightly-run")
         failed_suites_block = {
             "type": "section",
             "text": {
@@ -131,8 +133,7 @@ def generate_slack_report():
         if failed_suites_block:
             slack_report_json["blocks"].append(failed_suites_block)
 
-    is_nightly_run = os.getenv("IS_NIGHTLY_RUN")
-    if is_nightly_run == "true":
+    if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
