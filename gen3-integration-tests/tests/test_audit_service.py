@@ -97,7 +97,7 @@ class TestAuditService:
         )
 
     @pytest.mark.portal
-    def test_audit_homepage_login_events(self, page: Page):
+    def test_audit_homepage_mock_login_events(self, page: Page):
         """
         Scenario: Homepage login events
         Steps:
@@ -135,7 +135,7 @@ class TestAuditService:
         and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
         reason="Test is being run on Helm and would run only on nightly-build",
     )
-    def test_audit_oidc_login_events(self, page: Page):
+    def test_audit_homepage_real_orcid_login_events(self, page: Page):
         """
         Scenario: Perform login using ORCID and validate audit entry
         Steps :
