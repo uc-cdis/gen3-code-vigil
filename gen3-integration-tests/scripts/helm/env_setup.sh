@@ -116,7 +116,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "###################################################################################"
     for key in $keys_ci; do
     if ! echo "$keys_manifest" | grep -q "^$key$"; then
-        if [[ "$key" != "postgresql" && "$key" != "global" && "$key" != "external-secrets" ]]; then
+        if [[ "$key" != "postgresql" && "$key" != "global" && "$key" != "external-secrets" && "$key" != "mutatingWebhook" && "$key" != "neuvector" ]]; then
             echo "Removing ${key} section in default ci manifest as its not present in target manifest"
             yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
         fi
@@ -303,6 +303,9 @@ if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
     echo "Key global.manifestGlobalExtraValues.fence_url found in \"$ci_default_manifest_values_yaml\""
     yq eval ".global.manifestGlobalExtraValues.fence_url = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
+
+# delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
+kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 
 echo $HOSTNAME
 install_helm_chart() {
