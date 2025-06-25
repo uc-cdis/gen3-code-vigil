@@ -8,6 +8,8 @@ fence:
     createK8sGoogleAppSecrets: false
     fenceConfig: ci-fence-config-priv
     fenceSshKeys: ci-fence-ssh-keys
+  fenceDeleteExpiredClients:
+    schedule: "0 0 * * *"
   replicaCount: 2
   image:
     repository: quay.io/cdis/fence
