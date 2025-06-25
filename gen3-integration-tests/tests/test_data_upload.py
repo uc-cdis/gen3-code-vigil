@@ -628,8 +628,6 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
-        logger.info(file_guid)
-        logger.info(presigned_url)
 
         self.login_page.go_to(page)
         self.login_page.login(page)
