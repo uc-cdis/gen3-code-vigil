@@ -72,7 +72,7 @@ class TestRasAuthN:
         scope = "openid user data google_credentials ga4gh_passport_v1"
         username = os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = os.environ["CI_TEST_RAS_PASSWORD"]
-        email = os.environ["CI_TEST_RAS_2_EMAIL"]
+        email = os.environ["CI_TEST_RAS_EMAIL"]
         token = self.ras.get_tokens(
             client_id=client_id,
             client_secret=client_secret,

@@ -13,6 +13,7 @@ from playwright.sync_api import Page
 from services.audit import Audit
 from services.fence import Fence
 from services.indexd import Indexd
+from services.ras import RAS
 from utils import logger
 from utils.gen3_admin_tasks import update_audit_service_logging
 
@@ -25,6 +26,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 @pytest.mark.audit
 @pytest.mark.ras
 @pytest.mark.fence
+@pytest.mark.requires_fence_client
 class TestAuditService:
     @classmethod
     def setup_class(cls):
@@ -338,6 +340,49 @@ class TestAuditService:
             "username": str(os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]),
             "idp": "ras",
             "client_id": None,
+            "status_code": 302,
+        }
+        assert audit.check_query_results(
+            "login", "smarty_two", params, expected_results
+        )
+
+    def test_audit_oidc_idp_ras_login_events(self, page: Page):
+        """
+        Scenario: Perform login in via the OIDC flow (IDP RAS)
+        Steps :
+            1. Login via OIDC flow (IDP RAS)
+            2. Call Audit log API using auxAcct2 user
+            3. Check if entry for ORCID user is present
+        NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
+        secrets to be configured with ORCID credentials
+        """
+        client_id = pytest.clients["ras-test-client"]["client_id"]
+        scope = "openid user data google_credentials"
+        username = os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
+        password = os.environ["CI_TEST_RAS_PASSWORD"]
+        email = os.environ["CI_TEST_RAS_EMAIL"]
+        audit = Audit()
+        ras = RAS()
+        timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
+        params = [
+            "start={}".format(timestamp),
+            "username={}".format(username),
+        ]
+        token = ras.get_auth_code(
+            scope=scope,
+            username=username,
+            password=password,
+            client_id=client_id,
+            email=email,
+            page=page,
+        )
+        assert token != "", "Token returned was empty"
+
+        # Check the query results with auxAcct2 user
+        expected_results = {
+            "username": username,
+            "idp": "ras",
+            "client_id": client_id,
             "status_code": 302,
         }
         assert audit.check_query_results(
