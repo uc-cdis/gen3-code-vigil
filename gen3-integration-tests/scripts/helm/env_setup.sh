@@ -304,6 +304,9 @@ if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
     yq eval ".global.manifestGlobalExtraValues.fence_url = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
+# delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
+kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
+
 echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
