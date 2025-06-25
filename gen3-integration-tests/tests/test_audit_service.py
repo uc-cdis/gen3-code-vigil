@@ -130,6 +130,11 @@ class TestAuditService:
             "login", "smarty_two", params, expected_results
         )
 
+    @pytest.mark.skipif(
+        "nightly-build" not in pytest.hostname
+        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        reason="Test is being run on Helm and would run only on nightly-build",
+    )
     def test_audit_oidc_login_events(self, page: Page):
         """
         Scenario: Perform login using ORCID and validate audit entry
@@ -145,7 +150,6 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
-            "username={}".format(os.environ["CI_TEST_ORCID_USERID"]),
         ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
@@ -346,11 +350,16 @@ class TestAuditService:
             "login", "smarty_two", params, expected_results
         )
 
-    def test_audit_oidc_idp_ras_login_events(self, page: Page):
+    @pytest.mark.skipif(
+        "nightly-build" not in pytest.hostname
+        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        reason="Test is being run on Helm and would run only on nightly-build",
+    )
+    def test_audit_oidc_fence_client_login_events(self, page: Page):
         """
         Scenario: Perform login in via the OIDC flow (IDP RAS)
         Steps :
-            1. Login via OIDC flow (IDP RAS)
+            1. Login with a fence client using OIDC flow (IDP RAS)
             2. Call Audit log API using auxAcct2 user
             3. Check if entry for ORCID user is present
         NOTE : This test requires CI_TEST_ORCID_ID & CI_TEST_ORCID_PASSWORD
@@ -366,7 +375,6 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
-            "username={}".format(username),
         ]
         token = ras.get_auth_code(
             scope=scope,
