@@ -219,6 +219,8 @@ yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PRE
 
 # Update indexd values to set a dynamic prefix for each env and set a pw for ssj/gateway in the indexd database.
 yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.fence = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.sheepdog = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.ssj = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.gateway = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 

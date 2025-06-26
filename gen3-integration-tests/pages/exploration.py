@@ -124,6 +124,12 @@ class ExplorationPage(object):
             download_button.click()
             logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingLoginToDownload")
+        login_to_download_list_first_item = page.query_selector(
+            self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
+        )
+        if login_to_download_list_first_item:
+            login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
+            login_to_download_list_first_item.click()
 
     def click_on_download(self, page):
         # Click on the Download Button
