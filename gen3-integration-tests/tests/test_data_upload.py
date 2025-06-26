@@ -604,7 +604,7 @@ class TestDataUpload:
         """
         Scenario: Map uploaded files in windmill submission page
         Steps:
-            1. Create a presigned url for uploading the file with main_account
+            1. Create a presigned url for uploading the file with smarty_two
             2. Goto submission page and verify "1 files | 0 B" entry is available under unmapped files section
             3. Upload the file using the presigned url
             4. Goto submission page and verify "1 files | 128 B" entry is available under unmapped files section
