@@ -619,7 +619,7 @@ class TestDataUpload:
         }
 
         fence_upload_res = self.fence.get_url_for_data_upload(
-            file_name, "main_account"
+            file_name, "smarty_two"
         ).json()
         assert (
             "url" in fence_upload_res.keys()
@@ -631,7 +631,7 @@ class TestDataUpload:
         logger.info(presigned_url)
 
         self.login_page.go_to(page)
-        self.login_page.login(page)
+        self.login_page.login(page, user="smarty_two")
         # user should see 1 file, but not ready yet
         self.submission.check_unmapped_files_submission_page(page, text="1 files | 0 B")
 
