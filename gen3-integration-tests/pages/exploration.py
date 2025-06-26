@@ -111,7 +111,7 @@ class ExplorationPage(object):
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
             screenshot(page, "FirstExplorationTab")
-            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
             download_button.click()
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
@@ -119,7 +119,7 @@ class ExplorationPage(object):
             page.locator(self.FILE_TAB).click()
             page.wait_for_load_state("load")
             screenshot(page, "SecondExplorationTab")
-            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON)
+            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
             download_button.click()
             logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingLoginToDownload")
@@ -136,7 +136,7 @@ class ExplorationPage(object):
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
             screenshot(page, "FirstExplorationTab")
-            download_button = page.locator(self.DOWNLOAD_BUTTON)
+            download_button = page.locator(self.DOWNLOAD_BUTTON).first
             download_button.click()
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
@@ -144,7 +144,7 @@ class ExplorationPage(object):
             page.locator(self.FILE_TAB).click()
             page.wait_for_load_state("load")
             screenshot(page, "SecondExplorationTab")
-            download_button = page.locator(self.DOWNLOAD_BUTTON)
+            download_button = page.locator(self.DOWNLOAD_BUTTON).first
             download_button.click()
             logger.info("Found Download button on Second Tab")
         screenshot(page, "AfterClickingDownload")
