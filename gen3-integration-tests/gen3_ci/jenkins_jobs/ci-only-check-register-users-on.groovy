@@ -43,7 +43,7 @@ pipeline {
                         export KUBECTL_NAMESPACE=\${NAMESPACE}
                         source $GEN3_HOME/gen3/gen3setup.sh
 
-                        gen3 secrets decode fence-config | grep REGISTER_USERS_ON > register_users_on.txt
+                        gen3 secrets decode fence-config | grep REGISTER_USERS_ON > register_users_on.txt || true
                         '''
                     }
                 }
