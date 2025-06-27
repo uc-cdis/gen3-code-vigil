@@ -38,6 +38,7 @@ class TestOIDCClient:
         }
         for client_name, client_details in clients.items():
             # checking if the access_token is created with client_id and client_secret
+            logger.info(f"Creating access token for client: {client_name}")
             gen3auth = Gen3Auth(
                 endpoint=pytest.root_url,
                 client_credentials=(
@@ -113,7 +114,6 @@ class TestOIDCClient:
         # Rotated client_id and client_secret are retrieved from pytest.rotated_clients.
         client_rotate_id = pytest.rotated_clients[client_name]["client_id"]
         client_rotate_secret = pytest.rotated_clients[client_name]["client_secret"]
-        logger.info(client_rotate_id, client_rotate_secret)
 
         # Get access_token with client_id and client_secret before running client-fence-rotate command
         gen3auth_before = Gen3Auth(
