@@ -45,22 +45,35 @@ spec:
                 done
                 }
 
-                delete_sqs_queues() {
-                local env=$1
-                    # TODO: How to make logs if queue dosn't exist.
-                    AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
-                    UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
+                delete_queue_and_subscription() {
+                AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
+                UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
+                UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}")
+                SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+
+                    if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_ARN" &>/dev/null; then
+
+                        # List subscriptions to the topic and filter by the queue ARN
+                        SUBSCRIPTION_ARN=$(aws sns list-subscriptions-by-topic --topic-arn "$SNS_TOPIC_ARN" \
+                            --query "Subscriptions[?Endpoint=='$UPLOAD_QUEUE_ARN'].SubscriptionArn" --output text)
+
+                        # Unsubscribe if subscription exists
+                        if [[ -n "$SUBSCRIPTION_ARN" && "$SUBSCRIPTION_ARN" != "PendingConfirmation" ]]; then
+                            aws sns unsubscribe --subscription-arn "$SUBSCRIPTION_ARN"
+                            echo "Unsubscribed: $SUBSCRIPTION_ARN"
+                        fi
+
+                        # Delete the queue
+                        aws sqs delete-queue --queue-url "$UPLOAD_QUEUE_ARN"
+                        echo "Deleted: $UPLOAD_QUEUE_ARN"
+                    else
+                        echo "Upload queue not found, skipping."
+                    fi
                     if aws sqs get-queue-attributes --queue-url "$AUDIT_QUEUE_URL" &>/dev/null; then
                         aws sqs delete-queue --queue-url "$AUDIT_QUEUE_URL"
                         echo "Deleted: $AUDIT_QUEUE_URL"
                     else
                         echo "Audit queue not found, skipping."
-                    fi
-                    if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" &>/dev/null; then
-                        aws sqs delete-queue --queue-url "$UPLOAD_QUEUE_URL"
-                        echo "Deleted: $UPLOAD_QUEUE_URL"
-                    else
-                        echo "Upload queue not found, skipping."
                     fi
                 }
 
@@ -69,7 +82,7 @@ spec:
                     delete_pvcs $env
                     kubectl delete ns $env
                     kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
-                    delete_sqs_queues $env
+                    delete_queue_and_subscription $env
                 }
 
                 for env in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep -v jupyter | grep -- '-pr-'); do
@@ -105,5 +118,6 @@ spec:
                         delete_pvcs $env
                         kubectl delete ns $env
                         kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
+                        delete_queue_and_subscription $env
                     fi
                 done

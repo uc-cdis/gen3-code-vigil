@@ -605,7 +605,7 @@ class TestDataUpload:
         """
         Scenario: Map uploaded files in windmill submission page
         Steps:
-            1. Create a presigned url for uploading the file with main_account
+            1. Create a presigned url for uploading the file with smarty_two
             2. Goto submission page and verify "1 files | 0 B" entry is available under unmapped files section
             3. Upload the file using the presigned url
             4. Goto submission page and verify "1 files | 128 B" entry is available under unmapped files section
@@ -620,7 +620,7 @@ class TestDataUpload:
         }
 
         fence_upload_res = self.fence.get_url_for_data_upload(
-            file_name, "main_account"
+            file_name, "smarty_two"
         ).json()
         assert (
             "url" in fence_upload_res.keys()
@@ -630,7 +630,7 @@ class TestDataUpload:
         presigned_url = fence_upload_res["url"]
 
         self.login_page.go_to(page)
-        self.login_page.login(page)
+        self.login_page.login(page, user="smarty_two")
         # user should see 1 file, but not ready yet
         self.submission.check_unmapped_files_submission_page(page, text="1 files | 0 B")
 

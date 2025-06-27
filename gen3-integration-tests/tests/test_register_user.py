@@ -23,13 +23,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
-<<<<<<< feat/GPE-1747
-@pytest.mark.skipif(
-    not pytest.is_register_user_enabled,
-    reason="RegisterUser is not enabled",
-)
-=======
->>>>>>> master
 @pytest.mark.portal
 @pytest.mark.fence
 class TestRegisterUser:
@@ -38,10 +31,7 @@ class TestRegisterUser:
         cls.login_page = LoginPage()
         cls.user_register = UserRegister()
         cls.exploration = ExplorationPage()
-<<<<<<< feat/GPE-1747
-=======
         cls.register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
->>>>>>> master
 
         # Add new user to pytest.users
         pytest.users["register_user"] = "register-user@example.org"
@@ -77,11 +67,8 @@ class TestRegisterUser:
             3. Fill the form to register user
             4. Goto /explorer page and perform download
         """
-<<<<<<< feat/GPE-1747
-=======
         if not self.register_user_enabled:
             pytest.skip("RegisterUser is not enabled")
->>>>>>> master
         # Login with register_user
         self.login_page.go_to(page)
         self.login_page.login(
