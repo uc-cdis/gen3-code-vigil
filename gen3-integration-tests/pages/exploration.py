@@ -17,6 +17,7 @@ class ExplorationPage(object):
         self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
         self.GUPPY_TABS = "//div[@id='guppy-explorer-main-tabs']"
         self.FILE_TAB = "//h3[contains(text(), 'File')]"
+        self.IMAGING_STUDIES_TAB = "//h3[contains(text(), 'Imaging Studies')]"
         self.GUPPY_FILTERS = "//div[@class='guppy-data-explorer__filter']"
         self.EXPORT_TO_PFB_BUTTON = "//button[contains(text(), 'Export to PFB')]"
         self.PFB_WAIT_FOOTER = "//div[text()='Your export is in progress.']"
@@ -29,7 +30,7 @@ class ExplorationPage(object):
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.LOGIN_TO_DOWNLOAD_BUTTON = (
-            "//button[contains(text(), 'Login to download')]"
+            "//button[contains(text(), 'Login to download table')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
             '//*[contains(@class, " g3-dropdown__item ")][1]'
@@ -116,7 +117,7 @@ class ExplorationPage(object):
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
             logger.info("Trying on Second Tab")
-            page.locator(self.FILE_TAB).click()
+            page.locator(self.IMAGING_STUDIES_TAB).click()
             page.wait_for_load_state("load")
             screenshot(page, "SecondExplorationTab")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
@@ -127,7 +128,6 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item:
-            login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
             login_to_download_list_first_item.click()
 
     def click_on_download(self, page):
@@ -141,7 +141,7 @@ class ExplorationPage(object):
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
             logger.info("Trying on Second Tab")
-            page.locator(self.FILE_TAB).click()
+            page.locator(self.IMAGING_STUDIES_TAB).click()
             page.wait_for_load_state("load")
             screenshot(page, "SecondExplorationTab")
             download_button = page.locator(self.DOWNLOAD_BUTTON).first
@@ -152,5 +152,4 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item:
-            login_to_download_list_first_item.wait_for(state="visible", timeout=10000)
             login_to_download_list_first_item.click()
