@@ -104,6 +104,7 @@ class LoginPage(object):
             screenshot(page, "AfterLogin")
         page.wait_for_load_state("load")
         current_url = page.url
+        logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
             logger.info(f"Registering User {pytest.users[user]}")
             user_register = UserRegister()
@@ -164,6 +165,7 @@ class LoginPage(object):
             page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
+        page.wait_for_url(f"https://{pytest.hostname}/**")
 
     def ras_login(
         self,
