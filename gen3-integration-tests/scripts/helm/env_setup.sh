@@ -127,7 +127,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "###################################################################################"
     for key in $keys_manifest; do
     if ! echo "$keys_ci" | grep -q "^$key$"; then
-      if [[ "$key" != "mutatingWebhook" && "$key" != "neuvector" && "$key" != "dashboard"]]; then
+      if [[ "$key" != "mutatingWebhook" && "$key" != "neuvector" && "$key" != "dashboard" ]]; then
         echo "Adding ${key} section in default ci manifest as its present in target manifest"
         yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
       fi
