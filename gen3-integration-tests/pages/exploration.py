@@ -114,15 +114,20 @@ class ExplorationPage(object):
             screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
             download_button.click()
-            logger.info("Found Download button on First Tab")
+            logger.info("Found Login to Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
-            logger.info("Trying on Second Tab")
-            page.locator(self.IMAGING_STUDIES_TAB).click()
-            page.wait_for_load_state("load")
-            screenshot(page, "SecondExplorationTab")
-            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-            download_button.click()
-            logger.info("Found Download button on Second Tab")
+            for tab in [self.FILE_TAB, self.IMAGING_STUDIES_TAB]:
+                try:
+                    logger.info(f"Trying on {tab} Tab")
+                    page.locator(tab).click()
+                    page.wait_for_load_state("load")
+                    screenshot(page, "ExplorationTab")
+                    download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
+                    download_button.click()
+                    logger.info(f"Found Login to Download button on {tab} Tab")
+                    break
+                except (TimeoutError, PlaywrightTimeoutError):
+                    logger.info(f"Didn't Find Download button on {tab} Tab")
         screenshot(page, "AfterClickingLoginToDownload")
         login_to_download_list_first_item = page.query_selector(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
@@ -140,13 +145,18 @@ class ExplorationPage(object):
             download_button.click()
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
-            logger.info("Trying on Second Tab")
-            page.locator(self.IMAGING_STUDIES_TAB).click()
-            page.wait_for_load_state("load")
-            screenshot(page, "SecondExplorationTab")
-            download_button = page.locator(self.DOWNLOAD_BUTTON).first
-            download_button.click()
-            logger.info("Found Download button on Second Tab")
+            for tab in [self.FILE_TAB, self.IMAGING_STUDIES_TAB]:
+                try:
+                    logger.info(f"Trying on {tab} Tab")
+                    page.locator(tab).click()
+                    page.wait_for_load_state("load")
+                    screenshot(page, "ExplorationTab")
+                    download_button = page.locator(self.DOWNLOAD_BUTTON).first
+                    download_button.click()
+                    logger.info(f"Found Download button on {tab} Tab")
+                    break
+                except (TimeoutError, PlaywrightTimeoutError):
+                    logger.info(f"Didn't Find Download button on {tab} Tab")
         screenshot(page, "AfterClickingDownload")
         login_to_download_list_first_item = page.query_selector(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
