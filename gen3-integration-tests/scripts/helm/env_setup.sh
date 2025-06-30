@@ -186,6 +186,22 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     done
 
+    ############################################################################################################################
+    # Set jupyterNamespace to empty for ambassador and hatchery if found
+    ############################################################################################################################
+    keys=("ambassador.jupyterNamespace"
+    "hatchery.jupyterNamespace")
+    echo "###################################################################################"
+    for key in "${keys[@]}"; do
+        ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
+        if [ "$ci_value" = "key not found" ]; then
+            echo "The key '$key' is not present in target manifest."
+        else
+            echo "CI default value of the key '$key' is: $ci_value"
+            yq eval ".${key} = \"\"" -i "$ci_default_manifest_values_yaml"
+        fi
+    done
+
     # Update mds_url and common_url under metadata if present
     json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
