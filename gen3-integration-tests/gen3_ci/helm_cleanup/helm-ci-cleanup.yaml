@@ -48,7 +48,7 @@ spec:
                 delete_queue_and_subscription() {
                 AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
                 UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
-                UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}")
+                UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
                 SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
 
                     if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_ARN" &>/dev/null; then

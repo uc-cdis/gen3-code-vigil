@@ -26,6 +26,10 @@ global:
     google_enabled: true
   tierAccessLevel: libre
 
+mutatingWebhook:
+  # -- (bool) Whether to deploy the mutating webhook service.
+  enabled: false
+
 postgresql:
   primary:
     persistence:
