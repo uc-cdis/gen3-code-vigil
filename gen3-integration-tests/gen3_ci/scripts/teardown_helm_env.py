@@ -144,6 +144,53 @@ def delete_sqs_queues():
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0 and result.stdout.strip() != "":
+            subscription_arn_cmd = [
+                "aws",
+                "sns",
+                "list-subscriptions-by-topic",
+                "--topic-arn",
+                "arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket",
+                "--query",
+                f"Subscriptions[?Endpoint=='https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${NAMESPACE}'].SubscriptionArn",
+                "--output",
+                "text",
+            ]
+            subscription_arn_result = subprocess.run(
+                subscription_arn_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            if (
+                subscription_arn_result.returncode == 0
+                and subscription_arn_result.stdout.strip() != "PendingConfirmation"
+            ):
+                unsubscribe_arn_cmd = [
+                    "aws",
+                    "sns",
+                    "unsubscribe",
+                    "--subscription-arn",
+                    subscription_arn_result.stdout.strip(),
+                ]
+                unsubscribe_arn_result = subprocess.run(
+                    unsubscribe_arn_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                if unsubscribe_arn_result.returncode == 0:
+                    logger.info(
+                        f"Unsubscribed: {subscription_arn_result.stdout.strip()}"
+                    )
+                else:
+                    logger.info(
+                        f"Unable to unsubscribe {subscription_arn_result.stdout.strip()}"
+                    )
+                    logger.info(subscription_arn_result.stderr)
+            else:
+                logger.info("Unable to list subscriptions")
+                logger.info(subscription_arn_cmd.stderr)
+
             queue_deletion_cmd = ["aws", "sqs", "delete-queue", "--queue-url", queue]
             queue_deletion_result = subprocess.run(
                 queue_deletion_cmd,
