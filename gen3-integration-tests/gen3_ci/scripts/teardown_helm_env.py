@@ -64,7 +64,6 @@ def delete_helm_pvcs():
                 force_remove_pvc(pvc)
         else:
             logger.info(result.stderr)
-            raise Exception(f"Unable to delete pvc for {label}")
 
 
 def get_pvc_status(pvc):
