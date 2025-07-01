@@ -186,6 +186,22 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     done
 
+    ############################################################################################################################
+    # Set jupyterNamespace to empty for ambassador and hatchery if found
+    ############################################################################################################################
+    keys=("ambassador.jupyterNamespace"
+    "hatchery.jupyterNamespace")
+    echo "###################################################################################"
+    for key in "${keys[@]}"; do
+        ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
+        if [ "$ci_value" = "key not found" ]; then
+            echo "The key '$key' is not present in target manifest."
+        else
+            echo "CI default value of the key '$key' is: $ci_value"
+            yq eval ".${key} = \"\"" -i "$ci_default_manifest_values_yaml"
+        fi
+    done
+
     # Update mds_url and common_url under metadata if present
     json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
@@ -340,7 +356,29 @@ install_helm_chart() {
 
 ci_es_indices_setup() {
   echo "Setting up ES port-forward..."
-  kubectl wait --for=condition=ready pod -l app=gen3-elasticsearch-master --timeout=5m -n ${namespace}
+  label="app=gen3-elasticsearch-master"
+  max_retries=3
+  delay=30
+
+  for attempt in $(seq 0 $max_retries); do
+    echo "Attempt $((attempt + 1))..."
+    if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
+      if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
+        echo "Pod is ready!"
+        break
+      fi
+    else
+      echo "Elasticsearch Pod not found."
+    fi
+
+    if [ "$attempt" -lt "$max_retries" ]; then
+      echo "Retrying in $delay seconds..."
+      sleep "$delay"
+    else
+      echo "Failed after $((max_retries + 1)) attempts."
+      exit 1
+    fi
+  done
 
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
