@@ -98,6 +98,8 @@ spec:
                         echo "Release $env last updated $age_minutes minutes ago"
                         # Check if the namespace is quarantined.
                         quarantine=$(kubectl get ns "$env" -o jsonpath='{.metadata.labels.quarantine}')
+                        # Check if the namespace can be torn down due to successful run.
+                        teardown=$(kubectl get ns "$env" -o jsonpath='{.metadata.labels.teardown}')
                         # If quarantined, check if it is older than 8 hours.
                         if [[ "$quarantine" == "true" ]]; then
                             if (( age_minutes > 480 )); then
@@ -106,6 +108,10 @@ spec:
                             else
                                 echo "Quarantined environment is not older than 8 hours. Skipping..."
                             fi
+                        # Check if teardown is "true".
+                        elif [[ "$teardown" == "true" ]]; then
+                            echo "CI environment has successfully passed all suites. Performing teardown..."
+                            teardown_environment $env
                         # Check if it's older than 90 minutes.
                         elif (( age_minutes > 90 )); then
                             echo "CI environment is older than 90 minutes. Performing teardown..."
