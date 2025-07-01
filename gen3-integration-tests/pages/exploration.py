@@ -63,6 +63,7 @@ class ExplorationPage(object):
     def check_pfbExport_button(self, page: Page):
         page.wait_for_selector(self.GUPPY_TABS)
         page.wait_for_selector(self.GUPPY_FILTERS)
+        page.wait_for_load_state("load")
         screenshot(page, "GuppyExplorationPage")
         try:
             export_to_pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
