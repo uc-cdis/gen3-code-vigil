@@ -99,7 +99,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$portal_block" != "key not found" ]; then
         echo "Updating PORTAL Block"
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
-        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        # yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        json_value=$(yq eval .portal.json "$new_manifest_values_file_path")
+        # Escape control characters and quotes into a single-line JSON-safe string
+        escaped_json=$(printf '%s' "$json_value" | jq -Rs .)
+        # Inject the escaped string back into the values file
+        yq eval ".portal.json = $escaped_json" -i "$ci_default_manifest_values_yaml"
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
         sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
     fi
