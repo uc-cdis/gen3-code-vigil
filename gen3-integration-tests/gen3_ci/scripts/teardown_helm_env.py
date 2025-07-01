@@ -68,7 +68,7 @@ def delete_helm_pvcs():
 
 
 def get_pvc_status(pvc):
-    for i in range(6):
+    for i in range(10):
         cmd = [
             "kubectl",
             "get",

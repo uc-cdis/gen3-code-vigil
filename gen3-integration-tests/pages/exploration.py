@@ -67,7 +67,7 @@ class ExplorationPage(object):
         screenshot(page, "GuppyExplorationPage")
         try:
             export_to_pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            export_to_pfb_button.wait_for(state="visible")
+            expect(export_to_pfb_button).to_be_enabled(timeout=30000)
             print(
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
