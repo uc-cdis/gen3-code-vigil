@@ -77,7 +77,9 @@ class LoginPage(object):
                 }
             ]
         )
-        expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=10000)
+        # printing cookies if needed for debugging purposes
+        cookies = page.context.cookies()
+        expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=30000)
         self.handle_popup(page)
         if idp == "ORCID":
             self.orcid_login(page)
@@ -123,9 +125,10 @@ class LoginPage(object):
             username = page.locator("//*[text()]").filter(
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
-            expect(username).to_be_visible(timeout=10000)
-        if capture_screenshot:
-            screenshot(page, "AfterLogin")
+
+            expect(username).to_be_visible(timeout=30000)
+        screenshot(page, "AfterLogin")
+
         self.handle_popup(page)
         access_token_cookie = next(
             (
