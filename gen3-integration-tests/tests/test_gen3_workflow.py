@@ -18,6 +18,9 @@ def is_service_missing(service_name: str):
     return service_name not in manifest_data["versions"]
 
 
+@pytest.mark.skip(
+    reason="Jenkins environments are not yet ready to run funnel tests. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
+)
 @pytest.mark.skipif(
     is_service_missing("funnel"),
     reason="funnel service is not running on this environment",
