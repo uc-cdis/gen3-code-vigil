@@ -18,7 +18,7 @@ data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.
 filelock = "<4"
 gen3 = "^4.27.3"
 nextflow = "^24.10.3"
-pandas = ">=1.4.2,<2"
+pandas = "<3"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
 pytest-env = "^1.0.0"
