@@ -99,12 +99,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$portal_block" != "key not found" ]; then
         echo "Updating PORTAL Block"
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
-        # yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
-        json_value=$(yq eval .portal.json "$new_manifest_values_file_path")
-        # Escape control characters and quotes into a single-line JSON-safe string
-        escaped_json=$(printf '%s' "$json_value" | jq -Rs .)
-        # Inject the escaped string back into the values file
-        yq eval ".portal.json = $escaped_json" -i "$ci_default_manifest_values_yaml"
+        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
         sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
     fi
@@ -255,6 +250,27 @@ UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --quer
 UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
 UPLOAD_SNS_NAME="ci-data-upload-bucket"
 UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+
+if [ -z "$AUDIT_QUEUE_URL" ]; then
+  echo "Initial Audit SQS queue creation failed, retrying in 60 seconds..."
+  sleep 60
+  AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
+  if [ -z "$AUDIT_QUEUE_URL" ]; then
+    echo "SQS Audit queue creation failed after retry."
+    exit 1
+  fi
+fi
+
+if [ -z "$UPLOAD_QUEUE_URL" ]; then
+  echo "Initial Upload SQS queue creation failed, retrying in 60 seconds..."
+  sleep 60
+  UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+  if [ -z "$UPLOAD_QUEUE_URL" ]; then
+    echo "SQS Upload queue creation failed after retry."
+    exit 1
+  fi
+fi
+
 
 # Update values.yaml to use sqs queues.
 yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml

@@ -223,5 +223,14 @@ if __name__ == "__main__":
         and "error" not in content
         and INSTANCE_TYPE == "HELM_LOCAL"
     ):
-        logger.info(f"Tearing down environment: {NAMESPACE}")
-        teardown_helm_environment()
+        # logger.info(f"Tearing down environment: {NAMESPACE}")
+        # teardown_helm_environment()
+        logger.info(f"Setting label teardown for environment: {NAMESPACE}")
+        cmd = ["kubectl", "label", "namespace", NAMESPACE, "teardown=true"]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            logger.info(f"Set label teardown for environment: {NAMESPACE}")
+        else:
+            logger.info(result.stderr)
