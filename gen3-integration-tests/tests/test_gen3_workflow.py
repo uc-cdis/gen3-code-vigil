@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import time
 
@@ -30,6 +31,10 @@ def is_service_missing(service_name: str):
     reason="gen3-workflow is not running on this environment",
 )
 @pytest.mark.gen3_workflow
+@pytest.mark.skipif(
+    os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+    reason="gen3 workflow doesnt support HELM_LOCAL yet",
+)
 class TestGen3Workflow(object):
     gen3_workflow = Gen3Workflow()
     valid_user = "main_account"
