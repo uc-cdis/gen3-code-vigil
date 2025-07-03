@@ -402,6 +402,10 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
+              AWS_DEFAULT_REGION: 'us-east-1'
 
           - name: Archive pod logs from CI environment
             id: archive_pod_logs
