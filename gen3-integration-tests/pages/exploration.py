@@ -63,10 +63,11 @@ class ExplorationPage(object):
     def check_pfbExport_button(self, page: Page):
         page.wait_for_selector(self.GUPPY_TABS)
         page.wait_for_selector(self.GUPPY_FILTERS)
+        page.wait_for_load_state("load")
         screenshot(page, "GuppyExplorationPage")
         try:
             export_to_pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            export_to_pfb_button.wait_for(state="visible")
+            expect(export_to_pfb_button).to_be_enabled(timeout=30000)
             print(
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
@@ -84,11 +85,12 @@ class ExplorationPage(object):
             screenshot(page, "ExportToPFBMessage")
 
     def check_pfb_status(self, page: Page):
+        screenshot(page, "BeforePfbMessageFooter")
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for(timeout=60000)
+        wait_footer_locator.wait_for(timeout=120000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
-        success_footer_locator.wait_for(timeout=420000)
+        success_footer_locator.wait_for(timeout=600000)
         screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link

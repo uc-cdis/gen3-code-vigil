@@ -2,6 +2,7 @@
 Register User
 """
 
+import json
 import os
 
 import pytest
@@ -22,6 +23,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "Exploration" not in json.dumps(gat.get_portal_config()),
+    reason="Exploration tab not found in gitops.json",
 )
 @pytest.mark.portal
 @pytest.mark.fence

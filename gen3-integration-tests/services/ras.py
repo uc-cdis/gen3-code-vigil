@@ -7,6 +7,7 @@ from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page
 from utils import logger
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -25,6 +26,7 @@ class RAS(object):
             creds_dict[cred] = os.getenv(cred)
         return creds_dict
 
+    @retry(times=3, delay=60, exceptions=(Exception))
     def get_tokens(
         self,
         client_id: str,

@@ -89,6 +89,7 @@ class TestDataUpload:
         cls.login_page = LoginPage()
         cls.submission = SubmissionPage()
         cls.created_guids = []
+
         # Create the graph record for core_metadata_collection
         cls.sd_tools.delete_all_records()
         node_name = "core_metadata_collection"
@@ -627,8 +628,6 @@ class TestDataUpload:
         file_guid = fence_upload_res["guid"]
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
-        logger.info(file_guid)
-        logger.info(presigned_url)
 
         self.login_page.go_to(page)
         self.login_page.login(page, user="smarty_two")
