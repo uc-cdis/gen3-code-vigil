@@ -25,14 +25,13 @@ from utils import logger
     reason="gen3 workflow doesnt support HELM_LOCAL yet",
 )
 class TestGen3Workflow(object):
-    gen3_workflow = Gen3Workflow()
-    valid_user = "main_account"
-    invalid_user = "dummy_one"
-    s3_folder_name = "integration-tests"
-    s3_file_name = "test-input.txt"
-
     @classmethod
     def setup_class(cls):
+        cls.gen3_workflow = Gen3Workflow()
+        cls.valid_user = "main_account"
+        cls.invalid_user = "dummy_one"
+        cls.s3_folder_name = "integration-tests"
+        cls.s3_file_name = "test-input.txt"
         # Ensure the bucket is wiped before running the tests
         cls.gen3_workflow.delete_user_bucket()
 
