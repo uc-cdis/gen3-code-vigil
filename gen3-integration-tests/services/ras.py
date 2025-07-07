@@ -71,7 +71,6 @@ class RAS(object):
         if authorize_button:
             authorize_button.click()
             page.wait_for_load_state("load")
-            current_url = page.url
         screenshot(page, "RASCodePage")
         page.wait_for_load_state("load")
         current_url = page.url
