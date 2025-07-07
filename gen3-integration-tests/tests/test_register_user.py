@@ -74,7 +74,7 @@ class TestRegisterUser:
         self.login_page.login(
             page, user="register_user", validate_username_locator=False
         )
-        accept_button = page.locator(self.login_page.POP_UP_ACCEPT_BUTTON)
+        accept_button = page.query_selector(self.login_page.POP_UP_ACCEPT_BUTTON)
         if accept_button:
             accept_button.click()
 
