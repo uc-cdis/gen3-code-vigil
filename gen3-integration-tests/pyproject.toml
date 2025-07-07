@@ -16,7 +16,9 @@ python = "^3.9"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
-gen3 = "<5"
+gen3 = "^4.27.3"
+nextflow = "^24.10.3"
+pandas = "<3"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
 pytest-env = "^1.0.0"
@@ -31,6 +33,15 @@ fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"
 allure-pytest = "^2.13.5"
+nextflowpy = "^0.11.0"
+boto3 = "^1.38.20"
+
+# NOTE: NumPy version is pinned to <2.0.0
+# Without this, importing pandas throws the following error during CI:
+# ValueError: numpy.dtype size changed, may indicate binary incompatibility.
+# Expected 96 from C header, got 88 from PyObject
+# This is caused by a tertiary dependency conflict between newer versions of NumPy, Pandas, and Gen3.
+numpy = "<2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
@@ -54,6 +65,7 @@ markers = [
   "fence: test for fence service",
   "frontend_framework: tests for frontend-framework",
   "gen3_client: tests for gen3-client / cdis-data-client",
+  "gen3_workflow: tests for gen3-workflow",
   "gen3_user_data_library: tests for gen3-user-data-library",
   "guppy: tests for guppy-service",
   "indexd: tests for indexd service",
