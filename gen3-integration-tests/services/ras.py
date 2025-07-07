@@ -63,15 +63,15 @@ class RAS(object):
         time.sleep(10)
         page.wait_for_load_state("load")
         current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {username}@perf.nih.gov")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=email)
         authorize_button = page.query_selector(login.RAS_ACCEPT_AUTHORIZATION_BUTTON)
         if authorize_button:
             authorize_button.click()
             page.wait_for_load_state("load")
             current_url = page.url
-        if "/user/register" in current_url:
-            logger.info(f"Registering User {username}@perf.nih.gov")
-            user_register = UserRegister()
-            user_register.register_user(page, user_email=email)
         screenshot(page, "RASCodePage")
         page.wait_for_load_state("load")
         current_url = page.url
