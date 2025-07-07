@@ -4,6 +4,7 @@ from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import expect
 from utils import logger
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -106,6 +107,7 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def click_on_login_to_download(self, page):
         # Click on the Download Button
         try:
@@ -135,6 +137,7 @@ class ExplorationPage(object):
         if login_to_download_list_first_item:
             login_to_download_list_first_item.click()
 
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def click_on_download(self, page):
         # Click on the Download Button
         try:
