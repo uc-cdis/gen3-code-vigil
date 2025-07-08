@@ -109,7 +109,6 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
-    @retry(times=3, delay=10, exceptions=(AssertionError))
     def click_on_login_to_download(self, page):
         # Click on the Download Button
         try:
@@ -136,8 +135,10 @@ class ExplorationPage(object):
         login_to_download_list_first_item = page.query_selector(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
-        if login_to_download_list_first_item:
-            login_to_download_list_first_item.click()
+        login_to_download_list_first_item.wait_for_element_state(
+            "enabled", timeout=60000
+        )
+        login_to_download_list_first_item.click()
 
     @retry(times=3, delay=10, exceptions=(AssertionError))
     def click_on_download(self, page):
