@@ -784,7 +784,77 @@ def clean_up_indices(test_env_namespace: str = ""):
             raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        pass
+        kubectl_port_forward_process = subprocess.Popen(
+            [
+                "kubectl",
+                "port-forward",
+                "service/gen3-elasticsearch-master",
+                "9200:9200",
+                "-n",
+                test_env_namespace,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        time.sleep(30)
+        get_alias_cmd = (
+            "kubectl -n "
+            + test_env_namespace
+            + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        )
+        get_alias_result = subprocess.run(
+            get_alias_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
+        )
+        if not get_alias_result.returncode == 0:
+            raise Exception(
+                f"Unable to get alias. Error: {get_alias_result.stderr.strip()}"
+            )
+        logger.info(f"Stderr: {get_alias_result.stderr.strip()}")
+        logger.info(f"List of aliases: {get_alias_result.stdout.strip()}")
+        for alias_name in get_alias_result.stdout.strip().split(" "):
+            get_indices_cmd = [
+                "curl",
+                "-s",
+                f"http://localhost:9200/_cat/indices/{alias_name}*?h=index",
+            ]
+            logger.info(get_indices_cmd)
+            get_indices_result = subprocess.run(
+                get_indices_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+
+            if not get_indices_result.returncode == 0:
+                raise Exception(
+                    f"Unable to get indices code for {alias_name}. Error: {get_indices_result.stderr.strip()}"
+                )
+
+            indices = get_indices_result.stdout.strip().split("\n")
+            indices = [i for i in indices if i]
+            for index_name in indices:
+                delete_indices_cmd = [
+                    "curl",
+                    "-X",
+                    "DELETE",
+                    f"localhost:9200/{index_name}",
+                ]
+                delete_indices_result = subprocess.run(
+                    delete_indices_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                if not delete_indices_result.returncode == 0:
+                    raise Exception(
+                        f"Unable to delete index {alias_name}. Error: {delete_indices_result.stderr.strip()}"
+                    )
+        os.kill(kubectl_port_forward_process.pid, 9)  # Send SIGKILL to the process
+        kubectl_port_forward_process.wait()
 
 
 def check_indices_after_etl(test_env_namespace: str):
