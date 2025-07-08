@@ -136,7 +136,7 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item:
-            login_to_download_list_first_item.wait_for(state="enabled", timeout=60000)
+            login_to_download_list_first_item.wait_for(state="visible", timeout=60000)
             login_to_download_list_first_item.click()
 
     @retry(times=3, delay=10, exceptions=(AssertionError))
@@ -167,5 +167,5 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item:
-            login_to_download_list_first_item.wait_for(state="enabled", timeout=60000)
+            login_to_download_list_first_item.wait_for(state="visible", timeout=60000)
             login_to_download_list_first_item.click()
