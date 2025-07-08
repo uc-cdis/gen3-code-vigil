@@ -233,7 +233,7 @@ def fence_delete_expired_clients():
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=10,
+            timeout=30,
         )
         if not delete_explired_client_result.returncode == 0:
             logger.info(delete_explired_client_result.stderr)
@@ -450,7 +450,7 @@ def setup_fence_test_clients(
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=10,
+                timeout=30,
             )
             if create_result.returncode == 0:
                 client_info = create_result.stdout.strip().split("\n")[-1]
