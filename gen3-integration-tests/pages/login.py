@@ -184,9 +184,7 @@ class LoginPage(object):
             screenshot(page, "RASAfterClickingGrantButton")
         else:
             self.ras_login_form(page, username, password)
-            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(
-                timeout=30000
-            ):
+            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
                 logger.info("Clicking on Authorization button")
                 page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
                 time.sleep(5)
@@ -200,7 +198,7 @@ class LoginPage(object):
         ras_signin_button.click()
         screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=5000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible():
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
