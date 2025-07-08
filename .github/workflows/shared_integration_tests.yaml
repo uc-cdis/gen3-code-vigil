@@ -232,6 +232,7 @@ jobs:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: "us-east-1"
+                role-duration-seconds: 7200
 
           # Create kubeconfig to point at cluster.
           - name: Update kube config
