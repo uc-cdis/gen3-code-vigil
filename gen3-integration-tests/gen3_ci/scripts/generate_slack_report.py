@@ -53,8 +53,14 @@ def get_test_result_and_metrics():
             + int(statistic_json["unknown"])
         )  # some broken tests are reported as Unknown
         # duration rounded to the minute
-        duration = round(int(time_json["duration"]) / 60000, 2) if "duration" in time_json else "?"
-        if passed + skipped == total:
+        duration = (
+            round(int(time_json["duration"]) / 60000, 2)
+            if "duration" in time_json
+            else "?"
+        )
+        if total == 0:  # If no test runs on a PR treat it as failed
+            test_result = "Failed"
+        elif passed + skipped == total:
             test_result = "Successful"
         else:
             test_result = "Failed"
