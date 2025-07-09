@@ -1,5 +1,6 @@
 # Exploration Page
 import pytest
+from pages.login import LoginPage
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import expect
@@ -114,8 +115,9 @@ class ExplorationPage(object):
         try:
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
-            screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
+            expect(download_button).to_be_enabled()
+            screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Login to Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
@@ -124,9 +126,9 @@ class ExplorationPage(object):
                     logger.info(f"Trying on {tab} Tab")
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
-                    screenshot(page, "ExplorationTab")
                     download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-                    download_button.wait_for(state="visible")
+                    expect(download_button).to_be_enabled()
+                    screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Login to Download button on {tab} Tab")
                     break
@@ -137,16 +139,19 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item.count() > 0:
-            login_to_download_list_first_item.wait_for(state="visible")
+            expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click()
 
     def click_on_download(self, page):
+        login_page = LoginPage()
+        page.wait_for_load_state("load")
+        login_page.handle_popup(page)
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
-            page.wait_for_load_state("load")
-            screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.DOWNLOAD_BUTTON).first
+            expect(download_button).to_be_enabled()
+            screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
@@ -155,9 +160,9 @@ class ExplorationPage(object):
                     logger.info(f"Trying on {tab} Tab")
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
-                    screenshot(page, "ExplorationTab")
                     download_button = page.locator(self.DOWNLOAD_BUTTON).first
-                    download_button.wait_for(state="visible")
+                    expect(download_button).to_be_enabled()
+                    screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Download button on {tab} Tab")
                     break
@@ -168,5 +173,5 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item.count() > 0:
-            login_to_download_list_first_item.wait_for(state="visible")
+            expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click()
