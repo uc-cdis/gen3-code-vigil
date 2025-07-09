@@ -5,8 +5,9 @@ import pytest
 import requests
 from pages.login import LoginPage
 from pages.user_register import UserRegister
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from utils import logger
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -25,6 +26,7 @@ class RAS(object):
             creds_dict[cred] = os.getenv(cred)
         return creds_dict
 
+    @retry(times=3, delay=30, exceptions=(AssertionError))
     def get_tokens(
         self,
         client_id: str,
@@ -68,8 +70,9 @@ class RAS(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
         page.wait_for_load_state("load")
-        authorize_button = page.query_selector(login.RAS_ACCEPT_AUTHORIZATION_BUTTON)
-        if authorize_button:
+        authorize_button = page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON)
+        if authorize_button.count() > 0:
+            expect(authorize_button).to_be_enabled()
             logger.info("Clicking on authorization button")
             authorize_button.click()
             page.wait_for_load_state("load")
