@@ -1,0 +1,129 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ci-env-cleanup
+  namespace: default
+spec:
+  schedule: "*/15 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: helm-cleaner
+          restartPolicy: OnFailure
+          containers:
+          - name: helm-cleaner
+            image: quay.io/cdis/helm_cleanup:master
+            command:
+              - /bin/sh
+              - -c
+              - |
+                #label pvcs with ci label
+                delete_pvcs() {
+                local env=$1
+                for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master"; do
+                    pvc=$(kubectl get pvc -n "$env" -l "$label" -o name | head -n 1 | cut -d'/' -f2)
+                    [ -z "$pvc" ] && echo "No PVC found for label: $label" && continue
+
+                    echo "Deleting PVC $pvc with label: $label..."
+                    kubectl delete pvc "$pvc" -n "$env" --wait=false
+
+                    for i in {1..15}; do
+                    kubectl get pvc "$pvc" -n "$env" &>/dev/null || { echo "PVC $pvc deleted."; break; }
+                    echo "Waiting for PVC $pvc to delete..."
+                    sleep 5
+                    done
+
+                    # If still exists after 15 retries, remove finalizers.
+                    if kubectl get pvc "$pvc" -n "$env" &>/dev/null; then
+                    echo "Force removing finalizers from $pvc..."
+                    kubectl patch pvc "$pvc" -n "$env" -p '{"metadata":{"finalizers":null}}' --type=merge
+                    fi
+                done
+                }
+
+                delete_queue_and_subscription() {
+                AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
+                UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
+                UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
+                SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+
+                    if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_ARN" &>/dev/null; then
+
+                        # List subscriptions to the topic and filter by the queue ARN
+                        SUBSCRIPTION_ARN=$(aws sns list-subscriptions-by-topic --topic-arn "$SNS_TOPIC_ARN" \
+                            --query "Subscriptions[?Endpoint=='$UPLOAD_QUEUE_ARN'].SubscriptionArn" --output text)
+
+                        # Unsubscribe if subscription exists
+                        if [[ -n "$SUBSCRIPTION_ARN" && "$SUBSCRIPTION_ARN" != "PendingConfirmation" ]]; then
+                            aws sns unsubscribe --subscription-arn "$SUBSCRIPTION_ARN"
+                            echo "Unsubscribed: $SUBSCRIPTION_ARN"
+                        fi
+
+                        # Delete the queue
+                        aws sqs delete-queue --queue-url "$UPLOAD_QUEUE_ARN"
+                        echo "Deleted: $UPLOAD_QUEUE_ARN"
+                    else
+                        echo "Upload queue not found, skipping."
+                    fi
+                    if aws sqs get-queue-attributes --queue-url "$AUDIT_QUEUE_URL" &>/dev/null; then
+                        aws sqs delete-queue --queue-url "$AUDIT_QUEUE_URL"
+                        echo "Deleted: $AUDIT_QUEUE_URL"
+                    else
+                        echo "Audit queue not found, skipping."
+                    fi
+                }
+
+                teardown_environment() {
+                    helm delete $env -n $env
+                    delete_pvcs $env
+                    kubectl delete ns $env
+                    kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
+                    delete_queue_and_subscription $env
+                }
+
+                for env in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep -v jupyter | grep -- '-pr-'); do
+                    if helm ls -n "$env" --short | grep .; then
+                        last_updated=$(helm history  $env -n $env | tail -1 | awk '{print $2 " " $3 " " $4 " " $5}')
+                        # Convert helm time to epoch seconds.
+                        helm_epoch=$(date -d "$last_updated UTC" +%s)
+                        # Get current time in UTC, as epoch seconds.
+                        now_epoch=$(date -u +%s)
+                        # Calculate age in minutes
+                        age_seconds=$((now_epoch - helm_epoch))
+                        age_minutes=$((age_seconds / 60))
+                        echo "Release $env last updated $age_minutes minutes ago"
+                        # Check if the namespace is quarantined.
+                        quarantine=$(kubectl get ns "$env" -o jsonpath='{.metadata.labels.quarantine}')
+                        # Check if the namespace can be torn down due to successful run.
+                        teardown=$(kubectl get ns "$env" -o jsonpath='{.metadata.labels.teardown}')
+                        # If quarantined, check if it is older than 8 hours.
+                        if [[ "$quarantine" == "true" ]]; then
+                            if (( age_minutes > 480 )); then
+                                echo "Quarantined environment older than 8 hours. Performing teardown..."
+                                teardown_environment $env
+                            else
+                                echo "Quarantined environment is not older than 8 hours. Skipping..."
+                            fi
+                        # Check if teardown is "true".
+                        elif [[ "$teardown" == "true" ]]; then
+                            echo "CI environment has successfully passed all suites. Performing teardown..."
+                            teardown_environment $env
+                        # Check if it's older than 90 minutes.
+                        elif (( age_minutes > 90 )); then
+                            echo "CI environment is older than 90 minutes. Performing teardown..."
+                            teardown_environment $env
+                        else
+                            echo "CI environment is not older than 90 minutes. Skipping..."
+                        fi
+                    else
+                        echo "No Helm installation found... Deleting namespace."
+                        delete_pvcs $env
+                        kubectl delete ns $env
+                        kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
+                        delete_queue_and_subscription $env
+                    fi
+                done

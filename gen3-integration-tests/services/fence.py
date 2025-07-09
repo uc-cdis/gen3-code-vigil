@@ -89,7 +89,9 @@ class Fence(object):
     def get_file(self, url: str) -> str:
         """Gets the file content from the presigned url"""
         response = requests.get(url=url)
-        assert response.status_code == 200
+        assert (
+            response.status_code == 200
+        ), f"Expected response was 200 but got {response.status_code}"
         return response.content.decode()
 
     def check_file_equals(self, signed_url_res: dict, file_content: str):
