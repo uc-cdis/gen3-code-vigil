@@ -117,7 +117,7 @@ class ExplorationPage(object):
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-            expect(download_button).to_be_enabled()
+            download_button.wait_for_element_state(state="enabled")
             screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Login to Download button on First Tab")
@@ -128,7 +128,7 @@ class ExplorationPage(object):
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-                    expect(download_button).to_be_enabled()
+                    download_button.wait_for_element_state(state="enabled")
                     screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Login to Download button on {tab} Tab")
@@ -140,7 +140,7 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item.count() > 0:
-            expect(login_to_download_list_first_item).to_be_enabled()
+            login_to_download_list_first_item.wait_for_element_state(state="enabled")
             login_to_download_list_first_item.click()
 
     def click_on_download(self, page):
@@ -151,7 +151,7 @@ class ExplorationPage(object):
         try:
             logger.info("Trying on First Tab")
             download_button = page.locator(self.DOWNLOAD_BUTTON).first
-            expect(download_button).to_be_enabled()
+            download_button.wait_for_element_state(state="enabled")
             screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Download button on First Tab")
@@ -162,7 +162,7 @@ class ExplorationPage(object):
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.DOWNLOAD_BUTTON).first
-                    expect(download_button).to_be_enabled()
+                    download_button.wait_for_element_state(state="enabled")
                     screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Download button on {tab} Tab")
@@ -174,5 +174,5 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         if login_to_download_list_first_item.count() > 0:
-            expect(login_to_download_list_first_item).to_be_enabled()
+            login_to_download_list_first_item.wait_for_element_state(state="enabled")
             login_to_download_list_first_item.click()
