@@ -2,7 +2,6 @@
 Register User
 """
 
-import json
 import os
 
 import pytest
@@ -12,6 +11,7 @@ from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import gen3_admin_tasks as gat
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -23,10 +23,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
-)
-@pytest.mark.skipif(
-    "Exploration" not in json.dumps(gat.get_portal_config()),
-    reason="Exploration tab not found in gitops.json",
 )
 @pytest.mark.portal
 @pytest.mark.fence
@@ -53,14 +49,14 @@ class TestRegisterUser:
             pytest.skip("RegisterUser is not enabled")
         # Goto explorer page
         self.login_page.go_to(page)
-        self.exploration.goto_explorer_page(page)
 
-        # Click on download button
+        # Goto explorer page and click on download button
         self.exploration.click_on_login_to_download(page)
 
         # Verify page got redirected to /login page
         page.wait_for_load_state("load")
         current_url = page.url
+        screenshot(page, "AfterLoginToDownloadRedirect")
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
     def test_redirect_to_register_page_after_login(self, page: Page):
@@ -80,8 +76,5 @@ class TestRegisterUser:
             page, user="register_user", validate_username_locator=False
         )
 
-        # Goto explorer page
-        self.exploration.goto_explorer_page(page)
-
-        # Click on download button
+        # Goto explorer page and click on download button
         self.exploration.click_on_download(page)

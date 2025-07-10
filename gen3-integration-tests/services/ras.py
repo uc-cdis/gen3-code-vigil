@@ -26,7 +26,6 @@ class RAS(object):
             creds_dict[cred] = os.getenv(cred)
         return creds_dict
 
-    @retry(times=3, delay=60, exceptions=(Exception))
     def get_tokens(
         self,
         client_id: str,
@@ -49,6 +48,7 @@ class RAS(object):
         token_data = get_ras_token.json()
         return token_data
 
+    @retry(times=3, delay=60, exceptions=(Exception))
     def get_auth_code(
         self,
         scope: str,
@@ -62,7 +62,6 @@ class RAS(object):
         url = f"{self.RAS_AUTH_ENDPOINT}?response_type=code&client_id={client_id}&redirect_uri={pytest.root_url}&scope={scope}&idp=ras"
         page.goto(url)
         login.ras_login(page, username=username, password=password, portal_test=False)
-        time.sleep(10)
         page.wait_for_load_state("load")
         current_url = page.url
         if "/user/register" in current_url:
