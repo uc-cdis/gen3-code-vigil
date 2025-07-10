@@ -796,7 +796,13 @@ def clean_up_indices(test_env_namespace: str = ""):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        time.sleep(30)
+        for i in range(6):
+            line = (
+                kubectl_port_forward_process.stdout.readline().decode("utf-8").strip()
+            )
+            if "Forwarding from" in line:
+                break
+            time.sleep(5)
         get_alias_cmd = (
             "kubectl -n "
             + test_env_namespace
@@ -897,7 +903,13 @@ def check_indices_after_etl(test_env_namespace: str):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        time.sleep(30)
+        for i in range(6):
+            line = (
+                kubectl_port_forward_process.stdout.readline().decode("utf-8").strip()
+            )
+            if "Forwarding from" in line:
+                break
+            time.sleep(5)
         get_alias_cmd = (
             "kubectl -n "
             + test_env_namespace
@@ -923,7 +935,6 @@ def check_indices_after_etl(test_env_namespace: str):
                 "-s",
                 f"localhost:9200/_alias/{alias_name}",
             ]
-            logger.info(get_alias_status_cmd)
             get_alias_status_result = subprocess.run(
                 get_alias_status_cmd,
                 stdout=subprocess.PIPE,
@@ -962,6 +973,9 @@ def check_indices_after_etl(test_env_namespace: str):
             version = indices_name.split("_")[-1]
             if version == "1":
                 logger.info(f"Index version has increased for {alias_name}")
+            else:
+                logger.info(data)
+                raise Exception(f"Index version has not increased for {alias_name}")
         os.kill(kubectl_port_forward_process.pid, 9)  # Send SIGKILL to the process
         kubectl_port_forward_process.wait()
 
