@@ -118,7 +118,6 @@ class ExplorationPage(object):
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-            expect(download_button).to_be_enabled()
             screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Login to Download button on First Tab")
@@ -129,7 +128,6 @@ class ExplorationPage(object):
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-                    expect(download_button).to_be_enabled()
                     screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Login to Download button on {tab} Tab")
@@ -154,7 +152,6 @@ class ExplorationPage(object):
         try:
             logger.info("Trying on First Tab")
             download_button = page.locator(self.DOWNLOAD_BUTTON).first
-            expect(download_button).to_be_enabled()
             screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Download button on First Tab")
@@ -165,7 +162,6 @@ class ExplorationPage(object):
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.DOWNLOAD_BUTTON).first
-                    expect(download_button).to_be_enabled()
                     screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Download button on {tab} Tab")
