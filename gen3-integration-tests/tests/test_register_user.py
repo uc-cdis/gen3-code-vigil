@@ -48,9 +48,8 @@ class TestRegisterUser:
             pytest.skip("RegisterUser is not enabled")
         # Goto explorer page
         self.login_page.go_to(page)
-        self.exploration.goto_explorer_page(page)
 
-        # Click on download button
+        # Goto explorer page and click on download button
         self.exploration.click_on_login_to_download(page)
 
         # Verify page got redirected to /login page
@@ -75,8 +74,5 @@ class TestRegisterUser:
             page, user="register_user", validate_username_locator=False
         )
 
-        # Goto explorer page
-        self.exploration.goto_explorer_page(page)
-
-        # Click on download button
+        # Goto explorer page and click on download button
         self.exploration.click_on_download(page)

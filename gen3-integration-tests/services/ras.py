@@ -70,6 +70,7 @@ class RAS(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
         page.wait_for_load_state("load")
+        screenshot(page, "AfterRegisterUser")
         authorize_button = page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON)
         if authorize_button.count() > 0:
             expect(authorize_button).to_be_enabled()
