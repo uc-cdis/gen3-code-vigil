@@ -100,7 +100,7 @@ class TestPFBExport(object):
         login_page.go_to(page)
         login_page.login(page)
 
-        exploration_page.go_to_and_check_button(page)
+        exploration_page.navigate_to_exploration_tab_with_pfb_export_button(page)
         download_pfb_link = exploration_page.check_pfb_status(page)
         logger.debug(f"Downloadable PFB File Link : {download_pfb_link}")
         # Sending API request to 'download_pfb_link' to get the content of the file

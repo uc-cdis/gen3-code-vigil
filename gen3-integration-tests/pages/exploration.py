@@ -39,7 +39,7 @@ class ExplorationPage(object):
         )
         self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
 
-    def go_to_and_check_button(self, page: Page):
+    def navigate_to_exploration_tab_with_pfb_export_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
         screenshot(page, "NavigationBar")
         navbar_element = page.locator(self.NAV_BAR)
@@ -75,6 +75,7 @@ class ExplorationPage(object):
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            expect(pfb_button).to_be_enabled()
             pfb_button.click()
             screenshot(page, "ExportToPFBMessage")
         except TimeoutError:
