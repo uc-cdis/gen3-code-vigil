@@ -26,7 +26,6 @@ class RAS(object):
             creds_dict[cred] = os.getenv(cred)
         return creds_dict
 
-    @retry(times=3, delay=30, exceptions=(AssertionError))
     def get_tokens(
         self,
         client_id: str,
@@ -49,6 +48,7 @@ class RAS(object):
         token_data = get_ras_token.json()
         return token_data
 
+    @retry(times=3, delay=30, exceptions=(AssertionError))
     def get_auth_code(
         self,
         scope: str,

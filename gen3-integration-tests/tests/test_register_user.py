@@ -11,6 +11,7 @@ from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import gen3_admin_tasks as gat
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -55,6 +56,7 @@ class TestRegisterUser:
         # Verify page got redirected to /login page
         page.wait_for_load_state("load")
         current_url = page.url
+        screenshot(page, "AfterLoginToDownloadRedirect")
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
     def test_redirect_to_register_page_after_login(self, page: Page):
