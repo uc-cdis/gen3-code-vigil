@@ -31,32 +31,31 @@ def validate_json_for_export_to_pfb_button(data):
     return False
 
 
-# @pytest.mark.skipif(
-#     "portal" not in pytest.deployed_services,
-#     reason="portal service is not running on this environment",
-# )
-# @pytest.mark.skipif(
-#     not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
-#     reason="Export to PFB button not present in gitops.json",
-# )
-# @pytest.mark.skipif(
-#     "sheepdog" not in pytest.deployed_services,
-#     reason="sheepdog service is not running on this environment",
-# )
-# @pytest.mark.skipif(
-#     "tube" not in pytest.deployed_services
-#     and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
-#     reason="tube service is not running on this environment",
-# )
-# @pytest.mark.skipif(
-#     os.getenv("ETL_ENABLED") != "true"
-#     and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
-#     reason="etl is not enabled on this environment",
-# )
-# @pytest.mark.skipif(
-#     "pelican-export" not in pytest.enabled_sower_jobs,
-#     reason="pelican-export is not part of sower in manifest",
-# )
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services,
+    reason="portal service is not running on this environment",
+)
+@pytest.mark.skipif(
+    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    reason="Export to PFB button not present in gitops.json",
+)
+@pytest.mark.skipif(
+    "sheepdog" not in pytest.deployed_services,
+    reason="sheepdog service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "tube" not in pytest.deployed_services
+    and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
+    reason="tube service is not running on this environment",
+)
+@pytest.mark.skipif(
+    os.getenv("ETL_ENABLED") == "false",
+    reason="etl is not enabled on this environment",
+)
+@pytest.mark.skipif(
+    "pelican-export" not in pytest.enabled_sower_jobs,
+    reason="pelican-export is not part of sower in manifest",
+)
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
@@ -99,6 +98,9 @@ class TestPFBExport(object):
                 or os.getenv("REPO") == "gen3-gitops"
             ):
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
+        # Skip ETL tests if PFB Export is successful
+        with open(os.getenv("GITHUB_ENV"), "a") as f:
+            f.write("ETL_ENABLED=false")
 
     @pytest.mark.order(1)
     def test_pfb_export(self, page: Page):

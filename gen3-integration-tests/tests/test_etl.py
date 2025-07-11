@@ -17,8 +17,7 @@ from utils import logger
     reason="tube service is not running on this environment",
 )
 @pytest.mark.skipif(
-    os.getenv("ETL_ENABLED") != "true"
-    and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+    os.getenv("ETL_ENABLED") == "false",
     reason="etl is not enabled on this environment",
 )
 @pytest.mark.tube
