@@ -36,6 +36,9 @@ on:
         required: false
         type: string
         default: gen3-integration-tests
+      NAMESPACE:
+        required: false
+        type: string
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -106,15 +109,17 @@ jobs:
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
-            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
+            if: ${{ github.repository_owner != 'uc-cdis' }}
+            working-directory: ${{ github.workspace }}
             run:  |
+              echo "github.repository_owner - ${{ github.repository_owner }}"
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
           - name: Skip integration tests for specific PR labels
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && inputs.NAMESPACE != 'nightly-build' }}
             working-directory: ${{ github.workspace }}
             run: |
               if gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(.name) | .[] | select(. == "not-ready-for-ci" or . == "release-notes" or . == "decommission-environment")' | grep -q .; then
@@ -249,8 +254,10 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=${REPO}-pr-${PR_NUM}
-              HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
+              if [[ -z $NAMESPACE ]]; then
+                NAMESPACE=${REPO}-pr-${PR_NUM}
+              fi
+              HOSTNAME=${NAMESPACE}.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
@@ -273,7 +280,7 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
               fi
 
-          # Ensure we do not cross the threshold of maximum number of CI envs allowed
+           # Ensure we do not cross the threshold of maximum number of CI envs allowed
           # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
           - name: Wait for CI environment
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
@@ -348,11 +355,16 @@ jobs:
             working-directory: ${{ github.workspace }}
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
             run: |
-              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
-              echo "$nightly_label"
-              if [[ -n $nightly_label ]]; then
-                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
+              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
+                nightly_label=$(gh api repos/"$REPO_FN"/pulls/"$PR_NUM" --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
+                echo "Detected label: $nightly_label"
+                if [[ -n "$nightly_label" ]]; then
+                  echo "IS_NIGHTLY_RUN=true" >> "$GITHUB_ENV"
+                fi
+              elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" && "$NAMESPACE" == "nightly-build" ]]; then
+                echo "IS_NIGHTLY_RUN=true" >> "$GITHUB_ENV"
               fi
+
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
@@ -363,6 +375,7 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
+              poetry run python -m gen3_ci.scripts.teardown_helm_env
 
           - name: Run tests
             id: run_tests
