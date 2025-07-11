@@ -50,11 +50,7 @@ class CustomScheduling(LoadScopeScheduling):
             return "__ras__"
 
         # Group all tests that affect ES indices and run them on the same worker serially
-        if (
-            node.get_closest_marker("guppy")
-            or node.get_closest_marker("etl")
-            or node.get_closest_marker("pfb")
-        ):
+        if node.get_closest_marker("guppy") or node.get_closest_marker("pfb"):
             return "__indices__"
 
         # otherwise, each test is in its own scope

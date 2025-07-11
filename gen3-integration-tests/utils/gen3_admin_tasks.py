@@ -162,8 +162,10 @@ def run_gen3_job(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # job_pod = f"{job_name}-{uuid.uuid4()}"
-        if job_name == "etl":
-            job_name = "etl-cronjob"
+        if "etl" in job_name:
+            cron_job_name = "etl-cronjob"
+        else:
+            cron_job_name = job_name
 
         cmd = ["kubectl", "-n", test_env_namespace, "delete", "job", job_name]
         result = subprocess.run(
@@ -179,7 +181,7 @@ def run_gen3_job(
             test_env_namespace,
             "create",
             "job",
-            f"--from=cronjob/{job_name}",
+            f"--from=cronjob/{cron_job_name}",
             job_name,
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
