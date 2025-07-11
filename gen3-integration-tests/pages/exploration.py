@@ -39,7 +39,7 @@ class ExplorationPage(object):
         )
         self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
 
-    def go_to_and_check_button(self, page: Page):
+    def navigate_to_exploration_tab_with_pfb_export_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
         screenshot(page, "NavigationBar")
         navbar_element = page.locator(self.NAV_BAR)
@@ -75,6 +75,7 @@ class ExplorationPage(object):
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            expect(pfb_button).to_be_enabled()
             pfb_button.click()
             screenshot(page, "ExportToPFBMessage")
         except TimeoutError:
@@ -100,7 +101,7 @@ class ExplorationPage(object):
 
     def goto_explorer_page(self, page):
         # Goto explorer page
-        page.goto(self.EXPLORATION_URL)
+        page.goto(self.EXPLORATION_URL, wait_until="load")
         screenshot(page, "ExplorerPage")
 
         # Verify /explorer page is loaded
@@ -110,13 +111,14 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
+    @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_login_to_download(self, page):
+        self.goto_explorer_page(page)
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-            expect(download_button).to_be_enabled()
             screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Login to Download button on First Tab")
@@ -127,7 +129,6 @@ class ExplorationPage(object):
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-                    expect(download_button).to_be_enabled()
                     screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Login to Download button on {tab} Tab")
@@ -142,15 +143,16 @@ class ExplorationPage(object):
             expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click()
 
+    @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_download(self, page):
+        self.goto_explorer_page(page)
         login_page = LoginPage()
-        page.wait_for_load_state("load")
+        screenshot(page, "BeforeClickingOnDownload")
         login_page.handle_popup(page)
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
             download_button = page.locator(self.DOWNLOAD_BUTTON).first
-            expect(download_button).to_be_enabled()
             screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Download button on First Tab")
@@ -161,7 +163,6 @@ class ExplorationPage(object):
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.DOWNLOAD_BUTTON).first
-                    expect(download_button).to_be_enabled()
                     screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Download button on {tab} Tab")

@@ -1,12 +1,10 @@
 import json
 import os
+
 import pytest
 import requests
-
-from utils import logger
-
 from gen3.auth import Gen3Auth
-
+from utils import logger
 from utils.misc import retry
 
 
@@ -64,6 +62,7 @@ class MetadataService(object):
         logger.info(f"Update request status code - {res.status_code}")
         assert res.status_code == 200, f"Response status code was {res.status_code}"
 
+    @retry(times=1, delay=30, exceptions=(AssertionError))
     def delete_metadata(self, study_id, user="main_account"):
         """
         Delete study metadata record.

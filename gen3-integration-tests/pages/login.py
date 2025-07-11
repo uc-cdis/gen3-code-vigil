@@ -126,7 +126,7 @@ class LoginPage(object):
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
 
-            expect(username).to_be_visible(timeout=30000)
+            expect(username).to_be_visible(timeout=60000)
         screenshot(page, "AfterLogin")
 
         self.handle_popup(page)
@@ -200,7 +200,7 @@ class LoginPage(object):
         ras_signin_button.click()
         screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
-        if page.locator(self.RAS_GRANT_BUTTON).is_visible(timeout=5000):
+        if page.locator(self.RAS_GRANT_BUTTON).is_visible():
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 

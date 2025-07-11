@@ -49,6 +49,11 @@ def validate_json_for_export_to_pfb_button(data):
     reason="tube service is not running on this environment",
 )
 @pytest.mark.skipif(
+    os.getenv("ETL_ENABLED") != "true"
+    and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+    reason="etl is not enabled on this environment",
+)
+@pytest.mark.skipif(
     "pelican-export" not in pytest.enabled_sower_jobs,
     reason="pelican-export is not part of sower in manifest",
 )
@@ -100,7 +105,7 @@ class TestPFBExport(object):
         login_page.go_to(page)
         login_page.login(page)
 
-        exploration_page.go_to_and_check_button(page)
+        exploration_page.navigate_to_exploration_tab_with_pfb_export_button(page)
         download_pfb_link = exploration_page.check_pfb_status(page)
         logger.debug(f"Downloadable PFB File Link : {download_pfb_link}")
         # Sending API request to 'download_pfb_link' to get the content of the file

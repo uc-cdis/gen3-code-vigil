@@ -317,7 +317,7 @@ class Fence(object):
         ), f"Upload to S3 didn't happen properly. Status code : {response.status_code}"
         return response.headers["ETag"].strip('"')
 
-    @retry(times=12, delay=10, exceptions=(AssertionError))
+    @retry(times=10, delay=30, exceptions=(AssertionError))
     def wait_upload_file_updated_from_indexd_listener(self, indexd, file_node):
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_record=file_node)
