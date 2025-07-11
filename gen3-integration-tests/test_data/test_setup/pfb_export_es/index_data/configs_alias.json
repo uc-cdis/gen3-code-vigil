@@ -1,6 +1,0 @@
-{
-    "actions" : [
-        { "remove" : { "index" : "pfbexport_configs_1", "alias" : "pfbexport_configs" } },
-        { "add" : { "index" : "pfbexport_configs_1", "alias" : "pfbexport_configs" } }
-    ]
-}

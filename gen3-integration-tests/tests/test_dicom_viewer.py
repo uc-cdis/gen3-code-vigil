@@ -1,7 +1,6 @@
 import json
 
 import pytest
-from gen3.auth import Gen3Auth
 from pages.dicom import DicomPage
 from pages.login import LoginPage
 from playwright.sync_api import Page
@@ -43,7 +42,7 @@ class TestDicomViewer(object):
         cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
 
     # TODO: Enable this test once orthanc changes are deployed on midrc prod
-    @pytest.mark.skip(reason="Temporarily Disabled")
+    # @pytest.mark.skip(reason="Temporarily Disabled")
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file

@@ -20,7 +20,7 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 
 # audit deployment name is "audit-service" in adminvm and "audit-deployment" in gen3 helm
 @pytest.mark.skipif(
-    not any("audit" in key for key in pytest.deployed_services),
+    "audit" not in pytest.deployed_services,
     reason="audit service is not running on this environment",
 )
 @pytest.mark.audit
@@ -150,6 +150,7 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             "start={}".format(timestamp),
+            "username={}".format(os.environ["CI_TEST_ORCID_USERID"]),
         ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access

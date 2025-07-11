@@ -126,7 +126,7 @@ class LoginPage(object):
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
 
-            expect(username).to_be_visible(timeout=30000)
+            expect(username).to_be_visible(timeout=120000)
         screenshot(page, "AfterLogin")
 
         self.handle_popup(page)

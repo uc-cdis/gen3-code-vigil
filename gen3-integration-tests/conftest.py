@@ -50,11 +50,7 @@ class CustomScheduling(LoadScopeScheduling):
             return "__ras__"
 
         # Group all tests that affect ES indices and run them on the same worker serially
-        if (
-            node.get_closest_marker("guppy")
-            or node.get_closest_marker("etl")
-            or node.get_closest_marker("pfb")
-        ):
+        if node.get_closest_marker("guppy") or node.get_closest_marker("pfb"):
             return "__indices__"
 
         # otherwise, each test is in its own scope
@@ -109,10 +105,6 @@ def pytest_configure(config):
     pytest.namespace = os.getenv("NAMESPACE")
     pytest.tested_env = os.getenv("TESTED_ENV")
     assert pytest.hostname or pytest.namespace, "Hostname and namespace undefined"
-    if pytest.namespace and not pytest.hostname:
-        pytest.hostname = f"{pytest.namespace}.planx-pla.net"
-    if pytest.hostname and not pytest.namespace:
-        pytest.namespace = gat.get_kube_namespace(pytest.hostname)
     # TODO: tested_env will differ from namespace for manifest PRs
     if not pytest.tested_env:
         pytest.tested_env = pytest.namespace
@@ -154,12 +146,15 @@ def pytest_configure(config):
     pytest.deployed_services = gat.get_list_of_services_deployed()
     # List of sower jobs enabled
     pytest.enabled_sower_jobs = gat.get_enabled_sower_jobs()
-    # Is Flag enabled for USE_AGG_MDS
+    # # Is Flag enabled for USE_AGG_MDS
     pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
+    pytest.google_enabled = gat.is_google_enabled()
     # Skip portal tests based on portal version
     config.skip_portal_tests = gat.skip_portal_tests()
+    # Is REGISTER_USERS_ON enabled
+    pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 

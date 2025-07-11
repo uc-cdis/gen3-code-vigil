@@ -8,12 +8,12 @@ from utils import logger
 
 
 @pytest.mark.skipif(
-    "sheepdog" not in pytest.deployed_services,
-    reason="sheepdog service is not running on this environment",
+    os.getenv("ETL_ENABLED") == "false",
+    reason="ETL is not enabled on this environment",
 )
 @pytest.mark.skipif(
-    "tube" not in pytest.deployed_services,
-    reason="tube service is not running on this environment",
+    gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    reason="ETL Validation is performed in the PFB Export test",
 )
 @pytest.mark.tube
 @pytest.mark.etl
@@ -24,14 +24,12 @@ class TestETL:
         cls.sd_tools = GraphDataTools(
             auth=cls.auth, program_name="jnkns", project_code="jenkins2"
         )
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         logger.info("Submitting test records")
         cls.sd_tools.submit_all_test_records()
 
     @classmethod
     def teardown_class(cls):
         cls.sd_tools.delete_all_records()
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
 
     def test_etl(self):
         """
@@ -43,10 +41,23 @@ class TestETL:
             4. Check if the index version has increased
             5. Clean-up indices after the test run
         """
-        logger.info("Running etl for the first time")
+        before_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
+        logger.info("Running etl")
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
-        logger.info("Running etl for the second time")
-        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
+        after_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
 
-        gat.check_indices_after_etl(test_env_namespace=pytest.namespace)
+        logger.info(f"Indices before ETL: {before_indices_versions}")
+        logger.info(f"Indices after ETL: {after_indices_versions}")
+
+        for index in after_indices_versions.keys():
+            version_diff = (
+                after_indices_versions[index] - before_indices_versions[index]
+            )
+            assert (
+                version_diff == 1
+            ), f"Version expected to increase by 1, but increased by {version_diff} for index {index}"

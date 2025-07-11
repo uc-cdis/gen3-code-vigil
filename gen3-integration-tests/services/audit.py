@@ -1,6 +1,7 @@
 import datetime
 import math
 import time
+from json import JSONDecodeError
 
 import pytest
 from gen3.auth import Gen3Auth
@@ -38,26 +39,29 @@ class Audit(object):
 
         while counter < 40:
             time.sleep(30)
-            response = auth.curl(path=url)
-            # Get the first record from api json data
-            data = response.json()
-            logger.info(data)
-            # Counter to check response is recieved within 10 mins
-            if len(data["data"]) != 0:
-                logger.info(data["data"])
-                for key, val in expected_results.items():
-                    # Get the first entry of json data
-                    data_returned = data["data"][0][key]
-                    expected_data = expected_results[key]
-                    if isinstance(expected_data, str):
-                        assert (
-                            data_returned.lower() == expected_data.lower()
-                        ), f"Expected {expected_data.lower()} but got {data_returned.lower()}"
-                    else:
-                        assert (
-                            data_returned == expected_data
-                        ), f"Expected {expected_data} but got {data_returned}"
-                return True
+            try:
+                response = auth.curl(path=url)
+                # Get the first record from api json data
+                data = response.json()
+                logger.info(data)
+                # Counter to check response is recieved within 10 mins
+                if len(data["data"]) != 0:
+                    logger.info(data["data"])
+                    for key, val in expected_results.items():
+                        # Get the first entry of json data
+                        data_returned = data["data"][0][key]
+                        expected_data = expected_results[key]
+                        if isinstance(expected_data, str):
+                            assert (
+                                data_returned.lower() == expected_data.lower()
+                            ), f"Expected {expected_data.lower()} but got {data_returned.lower()}"
+                        else:
+                            assert (
+                                data_returned == expected_data
+                            ), f"Expected {expected_data} but got {data_returned}"
+                    return True
+            except JSONDecodeError:
+                pass
             counter += 1
         logger.error("Waited for 20 minutes but data was not recieved")
         return False

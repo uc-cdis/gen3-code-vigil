@@ -69,7 +69,7 @@ class TestRasDrs:
             "SECRET_ID",
         ]
         cls.scope = "openid profile email ga4gh_passport_v1"
-        cls.ga4gh_url = f"{pytest.namespace}.planx-pla.net/ga4gh/drs/v1/objects"
+        cls.ga4gh_url = f"{pytest.hostname}/ga4gh/drs/v1/objects"
         # Upload new Indexd records
         # Adding indexd files
         for key, val in indexd_files.items():
