@@ -8,17 +8,12 @@ from utils import logger
 
 
 @pytest.mark.skipif(
-    "sheepdog" not in pytest.deployed_services,
-    reason="sheepdog service is not running on this environment",
-)
-@pytest.mark.skipif(
-    "tube" not in pytest.deployed_services
-    and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
-    reason="tube service is not running on this environment",
-)
-@pytest.mark.skipif(
     os.getenv("ETL_ENABLED") == "false",
-    reason="etl is not enabled on this environment",
+    reason="ETL is not enabled on this environment",
+)
+@pytest.mark.skipif(
+    gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    reason="ETL Validation is performed in the PFB Export test",
 )
 @pytest.mark.tube
 @pytest.mark.etl
@@ -36,7 +31,6 @@ class TestETL:
     def teardown_class(cls):
         cls.sd_tools.delete_all_records()
 
-    @pytest.mark.order(2)
     def test_etl(self):
         """
         Scenario: Test ETL
@@ -50,10 +44,7 @@ class TestETL:
         before_indices_versions = gat.check_indices_etl_version(
             test_env_namespace=pytest.namespace
         )
-        logger.info("Running etl for the first time")
-        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
-
-        logger.info("Running etl for the second time")
+        logger.info("Running etl")
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
         after_indices_versions = gat.check_indices_etl_version(
@@ -63,8 +54,10 @@ class TestETL:
         logger.info(f"Indices before ETL: {before_indices_versions}")
         logger.info(f"Indices after ETL: {after_indices_versions}")
 
-        for indices_name in after_indices_versions.keys():
+        for index in after_indices_versions.keys():
+            version_diff = (
+                after_indices_versions[index] - before_indices_versions[index]
+            )
             assert (
-                after_indices_versions[indices_name]
-                == before_indices_versions[indices_name] + 2
-            ), f"Version didnt increase by 1 for {indices_name}"
+                version_diff == 1
+            ), f"Version expected to increase by 1, but increased by {version_diff} for index {index}"

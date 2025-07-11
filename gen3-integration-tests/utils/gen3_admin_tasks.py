@@ -25,6 +25,23 @@ def get_portal_config():
         )
 
 
+def check_export_to_pfb_button(data):
+    for button in data:
+        if button.get("type") == "export-to-pfb":
+            return True
+    return False
+
+
+def validate_json_for_export_to_pfb_button(data):
+    if isinstance(data, dict):
+        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
+            return True
+        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
+    if isinstance(data, list):
+        return any(validate_json_for_export_to_pfb_button(item) for item in data)
+    return False
+
+
 def get_env_configurations(test_env_namespace: str = ""):
     """
     Fetch configs that require adminvm interaction using jenkins.

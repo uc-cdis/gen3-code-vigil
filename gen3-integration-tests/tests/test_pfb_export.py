@@ -14,48 +14,14 @@ from services.graph import GraphDataTools
 from utils import logger
 
 
-def check_export_to_pfb_button(data):
-    for button in data:
-        if button.get("type") == "export-to-pfb":
-            return True
-    return False
-
-
-def validate_json_for_export_to_pfb_button(data):
-    if isinstance(data, dict):
-        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
-            return True
-        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
-    if isinstance(data, list):
-        return any(validate_json_for_export_to_pfb_button(item) for item in data)
-    return False
-
-
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
-@pytest.mark.skipif(
-    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    not gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()),
     reason="Export to PFB button not present in gitops.json",
 )
-@pytest.mark.skipif(
-    "sheepdog" not in pytest.deployed_services,
-    reason="sheepdog service is not running on this environment",
-)
-@pytest.mark.skipif(
-    "tube" not in pytest.deployed_services
-    and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
-    reason="tube service is not running on this environment",
-)
-@pytest.mark.skipif(
-    os.getenv("ETL_ENABLED") == "false",
-    reason="etl is not enabled on this environment",
-)
-@pytest.mark.skipif(
-    "pelican-export" not in pytest.enabled_sower_jobs,
-    reason="pelican-export is not part of sower in manifest",
-)
+# @pytest.mark.skipif(
+#     "pelican-export" not in pytest.enabled_sower_jobs,
+#     reason="pelican-export is not part of sower in manifest",
+# )
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
@@ -74,7 +40,7 @@ class TestPFBExport(object):
             test_env_namespace=pytest.namespace
         )
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
-        if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
+        if gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()):
             if (
                 os.getenv("REPO") == "cdis-manifest"
                 or os.getenv("REPO") == "gitops-qa"
@@ -91,18 +57,14 @@ class TestPFBExport(object):
     @classmethod
     def teardown_class(cls):
         cls.sd_tools.delete_all_records()
-        if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
+        if gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()):
             if (
                 os.getenv("REPO") == "cdis-manifest"
                 or os.getenv("REPO") == "gitops-qa"
                 or os.getenv("REPO") == "gen3-gitops"
             ):
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
-        # Skip ETL tests if PFB Export is successful
-        with open(os.getenv("GITHUB_ENV"), "a") as f:
-            f.write("ETL_ENABLED=false")
 
-    @pytest.mark.order(1)
     def test_pfb_export(self, page: Page):
         """
         Scenario: Test PFB Export
@@ -117,11 +79,13 @@ class TestPFBExport(object):
         logger.info(f"Indices before ETL: {self.before_indices_versions}")
         logger.info(f"Indices after ETL: {self.after_indices_versions}")
 
-        for indices_name in self.after_indices_versions.keys():
+        for index in self.after_indices_versions.keys():
+            version_diff = (
+                self.after_indices_versions[index] - self.before_indices_versions[index]
+            )
             assert (
-                self.after_indices_versions[indices_name]
-                == self.before_indices_versions[indices_name] + 1
-            ), f"Version didnt increase by 1 for {indices_name}"
+                version_diff == 1
+            ), f"Version expected to increase by 1, but increased by {version_diff} for index {index}"
 
         login_page = LoginPage()
         exploration_page = ExplorationPage()
