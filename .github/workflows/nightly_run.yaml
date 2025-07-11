@@ -1,5 +1,5 @@
 # Uses the shared workflow from this repo for ease of maintenance
-name: Integration Tests
+name: Integration Tests - Nightly Run
 
 on:
   push
