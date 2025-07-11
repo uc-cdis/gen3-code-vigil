@@ -348,6 +348,10 @@ fi
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
 kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 
+# Set env variable for ETL enabled or not
+ETL_ENABLED=$(yq '.etl.enabled // "false"' "$ci_default_manifest_values_yaml")
+echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
+
 echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
