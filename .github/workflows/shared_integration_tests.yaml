@@ -112,6 +112,8 @@ jobs:
             if: github.repository_owner != github.event.pull_request.head.repo.owner.login
             working-directory: ${{ github.workspace }}
             run:  |
+              echo "github.repository_owner - ${{ github.repository_owner }}"
+              echo "github.event.pull_request.head.repo.owner.login - ${{ github.event.pull_request.head.repo.owner.login }}"
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
