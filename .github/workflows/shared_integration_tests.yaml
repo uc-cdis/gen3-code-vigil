@@ -36,6 +36,9 @@ on:
         required: false
         type: string
         default: gen3-integration-tests
+      NAMESPACE:
+        required: false
+        type: string
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
@@ -248,8 +251,10 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=${REPO}-pr-${PR_NUM}
-              HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
+              if [[ -z $NAMESPACE ]]; then
+                NAMESPACE=${REPO}-pr-${PR_NUM}
+              fi
+              HOSTNAME=${NAMESPACE}.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
@@ -318,11 +323,16 @@ jobs:
             working-directory: ${{ github.workspace }}
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
             run: |
-              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
-              echo "$nightly_label"
-              if [[ -n $nightly_label ]]; then
-                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
+              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
+                nightly_label=$(gh api repos/"$REPO_FN"/pulls/"$PR_NUM" --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
+                echo "Detected label: $nightly_label"
+                if [[ -n "$nightly_label" ]]; then
+                  echo "IS_NIGHTLY_RUN=true" >> "$GITHUB_ENV"
+                fi
+              elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" && "$NAMESPACE" == "nightly-build" ]]; then
+                echo "IS_NIGHTLY_RUN=true" >> "$GITHUB_ENV"
               fi
+
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
