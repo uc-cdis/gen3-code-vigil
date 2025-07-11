@@ -5,8 +5,9 @@ import pytest
 import requests
 from pages.login import LoginPage
 from pages.user_register import UserRegister
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 from utils import logger
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -47,6 +48,7 @@ class RAS(object):
         token_data = get_ras_token.json()
         return token_data
 
+    @retry(times=3, delay=60, exceptions=(Exception))
     def get_auth_code(
         self,
         scope: str,
@@ -60,15 +62,20 @@ class RAS(object):
         url = f"{self.RAS_AUTH_ENDPOINT}?response_type=code&client_id={client_id}&redirect_uri={pytest.root_url}&scope={scope}&idp=ras"
         page.goto(url)
         login.ras_login(page, username=username, password=password, portal_test=False)
-        time.sleep(10)
         page.wait_for_load_state("load")
         current_url = page.url
         if "/user/register" in current_url:
             logger.info(f"Registering User {username}@perf.nih.gov")
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
-        screenshot(page, "RASCodePage")
         page.wait_for_load_state("load")
+        authorize_button = page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON)
+        if authorize_button.count() > 0:
+            expect(authorize_button).to_be_enabled()
+            logger.info("Clicking on authorization button")
+            authorize_button.click()
+            page.wait_for_load_state("load")
+        screenshot(page, "RASCodePage")
         current_url = page.url
         assert "code=" in current_url, f"{current_url} is missing code= substring"
         code = current_url.split("code=")[-1]

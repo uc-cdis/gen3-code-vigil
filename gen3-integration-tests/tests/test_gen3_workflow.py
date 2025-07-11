@@ -1,44 +1,37 @@
 import json
+import os
 import re
 import time
 
 import pytest
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
-from utils import TEST_DATA_PATH_OBJECT, logger
-
-
-def is_service_missing(service_name: str):
-    manifest_path = f"{TEST_DATA_PATH_OBJECT}/configuration/manifest.json"
-    with open(manifest_path, "r") as manifest_file:
-        manifest_data = json.load(manifest_file)
-
-    logger.info(
-        f"Checking if {service_name} is missing in the manifest file: {manifest_path}"
-    )
-    return service_name not in manifest_data["versions"]
+from utils import logger
 
 
 @pytest.mark.skip(
     reason="Jenkins environments are not yet ready to run funnel tests. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
 )
 @pytest.mark.skipif(
-    is_service_missing("funnel"),
+    "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
 )
 @pytest.mark.skipif(
-    is_service_missing("gen3-workflow"),
-    reason="gen3-workflow is not running on this environment",
+    "gen3-workflow" not in pytest.deployed_services,
+    reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
+@pytest.mark.skipif(
+    os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+    reason="gen3 workflow doesnt support HELM_LOCAL yet",
+)
 class TestGen3Workflow(object):
-    gen3_workflow = Gen3Workflow()
-    valid_user = "main_account"
-    invalid_user = "dummy_one"
-    s3_folder_name = "integration-tests"
-    s3_file_name = "test-input.txt"
-
     @classmethod
     def setup_class(cls):
+        cls.gen3_workflow = Gen3Workflow()
+        cls.valid_user = "main_account"
+        cls.invalid_user = "dummy_one"
+        cls.s3_folder_name = "integration-tests"
+        cls.s3_file_name = "test-input.txt"
         # Ensure the bucket is wiped before running the tests
         cls.gen3_workflow.delete_user_bucket()
 

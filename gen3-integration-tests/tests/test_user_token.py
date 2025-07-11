@@ -2,6 +2,8 @@
 USER TOKEN
 """
 
+import time
+
 import pytest
 from gen3.auth import Gen3Auth
 from playwright.sync_api import Page
@@ -63,6 +65,7 @@ class TestUserToken:
             test_env_namespace=pytest.namespace,
         )
         access_token = res.splitlines()[-1].strip()
+        time.sleep(5)
 
         # Create the api key using the access_token
         api_key_res, access_token = self.fence.create_api_key(

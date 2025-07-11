@@ -14,43 +14,14 @@ from services.graph import GraphDataTools
 from utils import logger
 
 
-def check_export_to_pfb_button(data):
-    for button in data:
-        if button.get("type") == "export-to-pfb":
-            return True
-    return False
-
-
-def validate_json_for_export_to_pfb_button(data):
-    if isinstance(data, dict):
-        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
-            return True
-        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
-    if isinstance(data, list):
-        return any(validate_json_for_export_to_pfb_button(item) for item in data)
-    return False
-
-
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
-@pytest.mark.skipif(
-    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    not gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()),
     reason="Export to PFB button not present in gitops.json",
 )
-@pytest.mark.skipif(
-    "sheepdog" not in pytest.deployed_services,
-    reason="sheepdog service is not running on this environment",
-)
-@pytest.mark.skipif(
-    "tube" not in pytest.deployed_services,
-    reason="tube service is not running on this environment",
-)
-@pytest.mark.skipif(
-    "pelican-export" not in pytest.enabled_sower_jobs,
-    reason="pelican-export is not part of sower in manifest",
-)
+# @pytest.mark.skipif(
+#     "pelican-export" not in pytest.enabled_sower_jobs,
+#     reason="pelican-export is not part of sower in manifest",
+# )
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
@@ -63,23 +34,35 @@ class TestPFBExport(object):
         cls.sd_tools = GraphDataTools(
             auth=cls.auth, program_name="jnkns", project_code="jenkins2"
         )
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         logger.info("Submitting test records")
         cls.sd_tools.submit_all_test_records()
+        cls.before_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
-        if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("REPO") == "cdis-manifest" or os.getenv("REPO") == "gitops-qa":
+        if gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()):
+            if (
+                os.getenv("REPO") == "cdis-manifest"
+                or os.getenv("REPO") == "gitops-qa"
+                or os.getenv("REPO") == "gen3-gitops"
+            ):
                 # Guppy config is changed to use index names from etlMapping.yaml from the manifest's folder
                 gat.mutate_manifest_for_guppy_test(
                     test_env_namespace=pytest.namespace, indexname="manifest"
                 )
+        cls.after_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
 
     @classmethod
     def teardown_class(cls):
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         cls.sd_tools.delete_all_records()
-        if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("REPO") == "cdis-manifest" or os.getenv("REPO") == "gitops-qa":
+        if gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()):
+            if (
+                os.getenv("REPO") == "cdis-manifest"
+                or os.getenv("REPO") == "gitops-qa"
+                or os.getenv("REPO") == "gen3-gitops"
+            ):
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
 
     def test_pfb_export(self, page: Page):
@@ -93,13 +76,24 @@ class TestPFBExport(object):
             5. Send request to PFB link and save the content to avro file to local avro file
             6. Verify the node names from local avro file
         """
+        logger.info(f"Indices before ETL: {self.before_indices_versions}")
+        logger.info(f"Indices after ETL: {self.after_indices_versions}")
+
+        for index in self.after_indices_versions.keys():
+            version_diff = (
+                self.after_indices_versions[index] - self.before_indices_versions[index]
+            )
+            assert (
+                version_diff == 1
+            ), f"Version expected to increase by 1, but increased by {version_diff} for index {index}"
+
         login_page = LoginPage()
         exploration_page = ExplorationPage()
         # Go to login page and log in with main_account user
         login_page.go_to(page)
         login_page.login(page)
 
-        exploration_page.go_to_and_check_button(page)
+        exploration_page.navigate_to_exploration_tab_with_pfb_export_button(page)
         download_pfb_link = exploration_page.check_pfb_status(page)
         logger.debug(f"Downloadable PFB File Link : {download_pfb_link}")
         # Sending API request to 'download_pfb_link' to get the content of the file

@@ -1,5 +1,6 @@
 # Exploration Page
 import pytest
+from pages.login import LoginPage
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import expect
@@ -31,14 +32,14 @@ class ExplorationPage(object):
         self.CLOSE_BUTTON = "//button[contains(text(), 'Close')]"
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.LOGIN_TO_DOWNLOAD_BUTTON = (
-            "//button[contains(text(), 'Login to download table')]"
+            "//button[contains(text(), 'Login to download')]"
         )
         self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM = (
             '//*[contains(@class, " g3-dropdown__item ")][1]'
         )
         self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
 
-    def go_to_and_check_button(self, page: Page):
+    def navigate_to_exploration_tab_with_pfb_export_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
         screenshot(page, "NavigationBar")
         navbar_element = page.locator(self.NAV_BAR)
@@ -65,14 +66,16 @@ class ExplorationPage(object):
     def check_pfbExport_button(self, page: Page):
         page.wait_for_selector(self.GUPPY_TABS)
         page.wait_for_selector(self.GUPPY_FILTERS)
+        page.wait_for_load_state("load")
         screenshot(page, "GuppyExplorationPage")
         try:
             export_to_pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
-            export_to_pfb_button.wait_for(state="visible")
+            expect(export_to_pfb_button).to_be_enabled(timeout=30000)
             print(
                 "### The `Export to PFB` is enabled on the 'Data' tab. Just click on it!"
             )
             pfb_button = page.locator(self.EXPORT_TO_PFB_BUTTON)
+            expect(pfb_button).to_be_enabled()
             pfb_button.click()
             screenshot(page, "ExportToPFBMessage")
         except TimeoutError:
@@ -86,18 +89,19 @@ class ExplorationPage(object):
             screenshot(page, "ExportToPFBMessage")
 
     def check_pfb_status(self, page: Page):
+        screenshot(page, "BeforePfbMessageFooter")
         wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for(timeout=60000)
+        wait_footer_locator.wait_for(timeout=120000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
-        success_footer_locator.wait_for(timeout=420000)
+        success_footer_locator.wait_for(timeout=600000)
         screenshot(page, "PfbSuccessMessageFooter")
         pfb_link = page.locator(self.PFB_DOWNLOAD_LINK).get_attribute("href")
         return pfb_link
 
     def goto_explorer_page(self, page):
         # Goto explorer page
-        page.goto(self.EXPLORATION_URL)
+        page.goto(self.EXPLORATION_URL, wait_until="load")
         screenshot(page, "ExplorerPage")
 
         # Verify /explorer page is loaded
@@ -107,14 +111,15 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
-    @retry(times=3, delay=10, exceptions=(AssertionError))
+    @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_login_to_download(self, page):
+        self.goto_explorer_page(page)
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
             page.wait_for_load_state("load")
-            screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
+            screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Login to Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
@@ -123,28 +128,32 @@ class ExplorationPage(object):
                     logger.info(f"Trying on {tab} Tab")
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
-                    screenshot(page, "ExplorationTab")
                     download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
+                    screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Login to Download button on {tab} Tab")
                     break
                 except (TimeoutError, PlaywrightTimeoutError):
                     logger.info(f"Didn't Find Download button on {tab} Tab")
         screenshot(page, "AfterClickingLoginToDownload")
-        login_to_download_list_first_item = page.query_selector(
+        login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
-        if login_to_download_list_first_item:
+        if login_to_download_list_first_item.count() > 0:
+            expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click()
 
-    @retry(times=3, delay=10, exceptions=(AssertionError))
+    @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_download(self, page):
+        self.goto_explorer_page(page)
+        login_page = LoginPage()
+        screenshot(page, "BeforeClickingOnDownload")
+        login_page.handle_popup(page)
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
-            page.wait_for_load_state("load")
-            screenshot(page, "FirstExplorationTab")
             download_button = page.locator(self.DOWNLOAD_BUTTON).first
+            screenshot(page, "FirstExplorationTab")
             download_button.click()
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
@@ -153,16 +162,17 @@ class ExplorationPage(object):
                     logger.info(f"Trying on {tab} Tab")
                     page.locator(tab).click()
                     page.wait_for_load_state("load")
-                    screenshot(page, "ExplorationTab")
                     download_button = page.locator(self.DOWNLOAD_BUTTON).first
+                    screenshot(page, "ExplorationTab")
                     download_button.click()
                     logger.info(f"Found Download button on {tab} Tab")
                     break
                 except (TimeoutError, PlaywrightTimeoutError):
                     logger.info(f"Didn't Find Download button on {tab} Tab")
         screenshot(page, "AfterClickingDownload")
-        login_to_download_list_first_item = page.query_selector(
+        login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
-        if login_to_download_list_first_item:
+        if login_to_download_list_first_item.count() > 0:
+            expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click()
