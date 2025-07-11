@@ -30,15 +30,14 @@ class TestETL:
         cls.sd_tools = GraphDataTools(
             auth=cls.auth, program_name="jnkns", project_code="jenkins2"
         )
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         logger.info("Submitting test records")
         cls.sd_tools.submit_all_test_records()
 
     @classmethod
     def teardown_class(cls):
         cls.sd_tools.delete_all_records()
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
 
+    @pytest.mark.order(2)
     def test_etl(self):
         """
         Scenario: Test ETL
@@ -49,10 +48,24 @@ class TestETL:
             4. Check if the index version has increased
             5. Clean-up indices after the test run
         """
+        before_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
         logger.info("Running etl for the first time")
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
         logger.info("Running etl for the second time")
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
 
-        gat.check_indices_after_etl(test_env_namespace=pytest.namespace)
+        after_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
+
+        logger.info(f"Indices before ETL: {before_indices_versions}")
+        logger.info(f"Indices after ETL: {after_indices_versions}")
+
+        for indices_name in after_indices_versions.keys():
+            assert (
+                after_indices_versions[indices_name]
+                == before_indices_versions[indices_name] + 2
+            ), f"Version didnt increase by 1 for {indices_name}"

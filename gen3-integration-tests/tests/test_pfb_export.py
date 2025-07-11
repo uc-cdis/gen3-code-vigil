@@ -31,32 +31,32 @@ def validate_json_for_export_to_pfb_button(data):
     return False
 
 
-@pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
-@pytest.mark.skipif(
-    not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
-    reason="Export to PFB button not present in gitops.json",
-)
-@pytest.mark.skipif(
-    "sheepdog" not in pytest.deployed_services,
-    reason="sheepdog service is not running on this environment",
-)
-@pytest.mark.skipif(
-    "tube" not in pytest.deployed_services
-    and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
-    reason="tube service is not running on this environment",
-)
-@pytest.mark.skipif(
-    os.getenv("ETL_ENABLED") != "true"
-    and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
-    reason="etl is not enabled on this environment",
-)
-@pytest.mark.skipif(
-    "pelican-export" not in pytest.enabled_sower_jobs,
-    reason="pelican-export is not part of sower in manifest",
-)
+# @pytest.mark.skipif(
+#     "portal" not in pytest.deployed_services,
+#     reason="portal service is not running on this environment",
+# )
+# @pytest.mark.skipif(
+#     not validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+#     reason="Export to PFB button not present in gitops.json",
+# )
+# @pytest.mark.skipif(
+#     "sheepdog" not in pytest.deployed_services,
+#     reason="sheepdog service is not running on this environment",
+# )
+# @pytest.mark.skipif(
+#     "tube" not in pytest.deployed_services
+#     and os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE",
+#     reason="tube service is not running on this environment",
+# )
+# @pytest.mark.skipif(
+#     os.getenv("ETL_ENABLED") != "true"
+#     and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+#     reason="etl is not enabled on this environment",
+# )
+# @pytest.mark.skipif(
+#     "pelican-export" not in pytest.enabled_sower_jobs,
+#     reason="pelican-export is not part of sower in manifest",
+# )
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
@@ -69,25 +69,38 @@ class TestPFBExport(object):
         cls.sd_tools = GraphDataTools(
             auth=cls.auth, program_name="jnkns", project_code="jenkins2"
         )
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         logger.info("Submitting test records")
         cls.sd_tools.submit_all_test_records()
-        gat.run_gen3_job("etl_for_pfb", test_env_namespace=pytest.namespace)
+        cls.before_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
+        gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("REPO") == "cdis-manifest" or os.getenv("REPO") == "gitops-qa":
+            if (
+                os.getenv("REPO") == "cdis-manifest"
+                or os.getenv("REPO") == "gitops-qa"
+                or os.getenv("REPO") == "gen3-gitops"
+            ):
                 # Guppy config is changed to use index names from etlMapping.yaml from the manifest's folder
                 gat.mutate_manifest_for_guppy_test(
                     test_env_namespace=pytest.namespace, indexname="manifest"
                 )
+        cls.after_indices_versions = gat.check_indices_etl_version(
+            test_env_namespace=pytest.namespace
+        )
 
     @classmethod
     def teardown_class(cls):
-        gat.clean_up_indices(test_env_namespace=pytest.namespace)
         cls.sd_tools.delete_all_records()
         if validate_json_for_export_to_pfb_button(gat.get_portal_config()):
-            if os.getenv("REPO") == "cdis-manifest" or os.getenv("REPO") == "gitops-qa":
+            if (
+                os.getenv("REPO") == "cdis-manifest"
+                or os.getenv("REPO") == "gitops-qa"
+                or os.getenv("REPO") == "gen3-gitops"
+            ):
                 gat.mutate_manifest_for_guppy_test(test_env_namespace=pytest.namespace)
 
+    @pytest.mark.order(1)
     def test_pfb_export(self, page: Page):
         """
         Scenario: Test PFB Export
@@ -99,6 +112,15 @@ class TestPFBExport(object):
             5. Send request to PFB link and save the content to avro file to local avro file
             6. Verify the node names from local avro file
         """
+        logger.info(f"Indices before ETL: {self.before_indices_versions}")
+        logger.info(f"Indices after ETL: {self.after_indices_versions}")
+
+        for indices_name in self.after_indices_versions.keys():
+            assert (
+                self.after_indices_versions[indices_name]
+                == self.before_indices_versions[indices_name] + 1
+            ), f"Version didnt increase by 1 for {indices_name}"
+
         login_page = LoginPage()
         exploration_page = ExplorationPage()
         # Go to login page and log in with main_account user

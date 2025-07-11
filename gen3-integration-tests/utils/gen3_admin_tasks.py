@@ -162,10 +162,8 @@ def run_gen3_job(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # job_pod = f"{job_name}-{uuid.uuid4()}"
-        if "etl" in job_name:
-            cron_job_name = "etl-cronjob"
-        else:
-            cron_job_name = job_name
+        if job_name == "etl":
+            job_name = "etl-cronjob"
 
         cmd = ["kubectl", "-n", test_env_namespace, "delete", "job", job_name]
         result = subprocess.run(
@@ -181,9 +179,10 @@ def run_gen3_job(
             test_env_namespace,
             "create",
             "job",
-            f"--from=cronjob/{cron_job_name}",
+            f"--from=cronjob/{job_name}",
             job_name,
         ]
+        logger.info(cmd)
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
@@ -980,6 +979,104 @@ def check_indices_after_etl(test_env_namespace: str):
                 raise Exception(f"Index version has not increased for {alias_name}")
         os.kill(kubectl_port_forward_process.pid, 9)  # Send SIGKILL to the process
         kubectl_port_forward_process.wait()
+
+
+def check_indices_etl_version(test_env_namespace: str):
+    """
+    Runs jenkins job to clean up indices before running the ETL tests
+    """
+    # Admin VM Deployments
+    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
+        pass
+    # Local Helm Deployments
+    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
+        kubectl_port_forward_process = subprocess.Popen(
+            [
+                "kubectl",
+                "port-forward",
+                "service/gen3-elasticsearch-master",
+                "9200:9200",
+                "-n",
+                test_env_namespace,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        for i in range(6):
+            line = (
+                kubectl_port_forward_process.stdout.readline().decode("utf-8").strip()
+            )
+            if "Forwarding from" in line:
+                break
+            time.sleep(5)
+        get_alias_cmd = (
+            "kubectl -n "
+            + test_env_namespace
+            + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        )
+        get_alias_result = subprocess.run(
+            get_alias_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True,
+            text=True,
+        )
+        if not get_alias_result.returncode == 0:
+            raise Exception(
+                f"Unable to get alias. Error: {get_alias_result.stderr.strip()}"
+            )
+        logger.info(f"Stderr: {get_alias_result.stderr.strip()}")
+        logger.info(f"List of aliases: {get_alias_result.stdout.strip()}")
+        indices_versions = {}
+        for alias_name in get_alias_result.stdout.strip().split(" "):
+            get_alias_status_cmd = [
+                "curl",
+                "-I",
+                "-s",
+                f"localhost:9200/_alias/{alias_name}",
+            ]
+            get_alias_status_result = subprocess.run(
+                get_alias_status_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+            logger.info(get_alias_status_result.stdout.strip())
+            if "404 Not Found" in get_alias_status_result.stdout.strip():
+                logger.info(
+                    f"Unable to get status code for {alias_name}. Error: {get_alias_status_result.stdout.strip()}"
+                )
+                indices_versions[alias_name] = -1
+            else:
+                assert (
+                    "200 OK" in get_alias_status_result.stdout.strip()
+                ), f"Expected 200 OK but got {get_alias_status_result.stdout.strip()} for {alias_name}"
+                logger.info(f"{alias_name} is present")
+
+                get_indices_name_cmd = [
+                    "curl",
+                    "-X",
+                    "GET",
+                    "-s",
+                    f"localhost:9200/_alias/{alias_name}",
+                ]
+                get_indices_name_result = subprocess.run(
+                    get_indices_name_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                if not get_indices_name_result.returncode == 0:
+                    raise Exception(
+                        f"Unable to get status code for {alias_name}. Error: {get_indices_name_result.stderr.strip()}"
+                    )
+                data = json.loads(get_indices_name_result.stdout.strip())
+                indices_name = list(data.keys())[0]
+                version = indices_name.split("_")[-1]
+                indices_versions[alias_name] = int(version)
+        os.kill(kubectl_port_forward_process.pid, 9)  # Send SIGKILL to the process
+        kubectl_port_forward_process.wait()
+        return indices_versions
 
 
 def create_access_token(service, expired, username, test_env_namespace: str = ""):
