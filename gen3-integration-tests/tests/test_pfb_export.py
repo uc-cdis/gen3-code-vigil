@@ -49,6 +49,11 @@ def validate_json_for_export_to_pfb_button(data):
     reason="tube service is not running on this environment",
 )
 @pytest.mark.skipif(
+    os.getenv("ETL_ENABLED") != "true"
+    and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+    reason="etl is not enabled on this environment",
+)
+@pytest.mark.skipif(
     "pelican-export" not in pytest.enabled_sower_jobs,
     reason="pelican-export is not part of sower in manifest",
 )
