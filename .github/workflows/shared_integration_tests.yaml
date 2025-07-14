@@ -272,6 +272,9 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
               fi
+              HOSTNAME=${NAMESPACE}.planx-pla.net
+              echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+
 
           # Ensure we do not cross the threshold of maximum number of CI envs allowed
           # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
