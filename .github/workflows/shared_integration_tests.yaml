@@ -467,6 +467,7 @@ jobs:
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./gen3-integration-tests/slack_report.json"
               payload-templated: true
+              errors: true
 
           - name: Release CI environment
             id: release_ci_env
