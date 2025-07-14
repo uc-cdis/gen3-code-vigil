@@ -35,7 +35,7 @@ on:
       WORKING_DIR:
         required: false
         type: string
-        default: gen3-integration-tests
+        default: gen3-code-vigil/gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: true
