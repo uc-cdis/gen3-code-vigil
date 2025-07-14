@@ -20,6 +20,7 @@ jobs:
     uses: ./.github/workflows/shared_integration_tests.yaml
     with:
       GEN3_INSTANCE_TYPE: HELM_LOCAL
+      HELM_BRANCH: feat/pod-restart
       WORKING_DIR: gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}

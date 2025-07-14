@@ -339,10 +339,10 @@ if [ "$sheepdog_fence_url" != "key not found" ]; then
 fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
-manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest_values_yaml")
+manifest_global_extra_values_fence_url=$(yq eval ".global.fenceURL // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
-    echo "Key global.manifestGlobalExtraValues.fence_url found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".global.manifestGlobalExtraValues.fence_url = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+    echo "Key global.fenceURL found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".global.fenceURL = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.

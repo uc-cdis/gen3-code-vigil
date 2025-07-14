@@ -20,9 +20,9 @@ global:
   externalSecrets:
     deploy: true
     dbCreate: true
+  # This will be dynamically replaced by env_setup.sh script.
+  fenceURL: https://hostname/user
   manifestGlobalExtraValues:
-    # This will be dynamically replaced by env_setup.sh script.
-    fence_url: https://hostname/user
     google_enabled: true
   tierAccessLevel: libre
 
