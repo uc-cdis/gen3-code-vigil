@@ -42,7 +42,7 @@ on:
       CI_AWS_SECRET_ACCESS_KEY:
         required: false
       JENKINS_API_TOKEN:
-        required: true
+        required: false
       QA_DASHBOARD_S3_PATH:
         required: true
       CI_TEST_ORCID_USERID:
@@ -63,6 +63,12 @@ on:
         required: true
       EKS_CLUSTER_NAME:
         required: false
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
@@ -404,7 +410,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              # Set AWS credentials only if secrets exist (not empty or null)
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               else
