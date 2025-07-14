@@ -441,6 +441,7 @@ jobs:
                 fi
                 echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
               fi
+              cat ./gen3-integration-tests/slack_report.json
 
           - name: Render report to the PR
             id: publish_md_report
