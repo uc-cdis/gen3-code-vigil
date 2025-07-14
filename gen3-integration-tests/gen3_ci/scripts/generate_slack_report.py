@@ -144,6 +144,8 @@ def generate_slack_report():
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
 
+    logger.info(slack_report_json)
+
     json.dump(slack_report_json, open("slack_report.json", "w"))
 
 
