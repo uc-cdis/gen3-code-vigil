@@ -38,9 +38,9 @@ on:
         default: gen3-code-vigil/gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
-        required: true
+        required: false
       CI_AWS_SECRET_ACCESS_KEY:
-        required: true
+        required: false
       JENKINS_API_TOKEN:
         required: true
       QA_DASHBOARD_S3_PATH:
@@ -101,6 +101,8 @@ jobs:
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
+          CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
+          CI_AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -406,6 +408,12 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
+              # Set AWS credentials only if secrets exist (not empty or null)
+              if [ -n "${{ secrets.CI_AWS_ACCESS_KEY_ID }}" ] && [ -n "${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" ]; then
+                export AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}"
+                export AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}"
+                export AWS_DEFAULT_REGION="us-east-1"
+              fi
               aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
