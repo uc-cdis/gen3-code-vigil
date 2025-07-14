@@ -371,7 +371,6 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
-              poetry run python -m gen3_ci.scripts.teardown_helm_env
 
           - name: Run tests
             id: run_tests
@@ -383,7 +382,6 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
-              poetry run python -m gen3_ci.scripts.teardown_helm_env
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -485,4 +483,8 @@ jobs:
           - name: Cleanup
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
             run: |
+              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
+              elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]]; then
+                poetry run python -m gen3_ci.scripts.teardown_helm_env
+              fi
