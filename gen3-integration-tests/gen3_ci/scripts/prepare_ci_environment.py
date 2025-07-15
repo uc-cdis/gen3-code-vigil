@@ -116,6 +116,7 @@ def modify_env_for_service_pr(namespace, service, tag):
             "audit-service": "audit",
             "tube": "etl",
             "data-portal": "portal",
+            "metadata-service": "metadata",
         }
         arguments = [
             namespace,
