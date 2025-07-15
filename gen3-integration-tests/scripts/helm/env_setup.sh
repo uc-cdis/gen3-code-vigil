@@ -42,7 +42,10 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
-        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        if [[ "$service" == "etl" ]]; then
+          yq eval ".etl.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        else
+          yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
     elif [ "$service_yaml_block" != "key not found" ]; then
         echo "Key '$service_name' not found.\""
         exit 1
