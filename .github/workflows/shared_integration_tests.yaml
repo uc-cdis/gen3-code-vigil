@@ -290,7 +290,7 @@ jobs:
                 count=$(kubectl get ns --no-headers -o custom-columns=":metadata.name" | grep '\-pr\-' | grep -v 'jupyter' | wc -l)
 
                 if [ "$count" -lt "$MAX_ENVS" ]; then
-                  echo "✅ Active CI env count is $count (less than 10). Proceeding with the run."
+                  echo "✅ Active CI env count is $count (less than $MAX_ENVS). Proceeding with the run."
                   break
                 fi
 
