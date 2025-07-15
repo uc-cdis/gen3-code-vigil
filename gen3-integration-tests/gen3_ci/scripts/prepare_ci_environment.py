@@ -118,7 +118,7 @@ def modify_env_for_service_pr(namespace, service, tag):
             "service-env-setup",
             helm_branch,
             ci_default_manifest,
-            helm_service_names[service],
+            helm_service_names.get(service, service),
             tag,
         ]
         return setup_env_for_helm(arguments)
