@@ -369,7 +369,7 @@ cedar:
     cedarAPIKey: ci-cedar-directory-id
     cedarDirectoryId: ci-cedar-api-key
   image:
-    repository: "quay.io/datawire/ambassador"
+    repository: "quay.io/cdis/cedar-wrapper-service"
     tag: "master"
 
 ambassador:
