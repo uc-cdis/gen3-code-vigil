@@ -1,8 +1,9 @@
 import json
 import os
+import random
+import string
 import subprocess
 import time
-import uuid
 
 import pytest
 import requests
@@ -179,24 +180,19 @@ def run_gen3_job(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # job_pod = f"{job_name}-{uuid.uuid4()}"
+        cronjob_name = job_name
         if job_name == "etl":
-            job_name = "etl-cronjob"
-
-        cmd = ["kubectl", "-n", test_env_namespace, "delete", "job", job_name]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=40
+            cronjob_name = "etl-cronjob"
+        job_name += "-" + "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=4)
         )
-        if not result.returncode == 0:
-            logger.info(
-                f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
-            )
         cmd = [
             "kubectl",
             "-n",
             test_env_namespace,
             "create",
             "job",
-            f"--from=cronjob/{job_name}",
+            f"--from=cronjob/{cronjob_name}",
             job_name,
         ]
         logger.info(cmd)
