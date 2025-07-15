@@ -183,7 +183,7 @@ def run_gen3_job(
         cronjob_name = job_name
         if job_name == "etl":
             cronjob_name = "etl-cronjob"
-        job_name += "_" + "".join(
+        job_name += "-" + "".join(
             random.choices(string.ascii_lowercase + string.digits, k=4)
         )
         cmd = [
