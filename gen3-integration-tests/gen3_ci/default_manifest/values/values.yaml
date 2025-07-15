@@ -362,6 +362,12 @@ audit:
       url:  https://sqs.us-east-1.amazonaws.com/707767160287/audit-service-sqs
   enabled: true
 
+cedar:
+  externalSecrets:
+    cedarG3auto: ci-cedar-g3auto
+    cedarAPIKey: ci-cedar-directory-id
+    cedarDirectoryId: ci-cedar-api-key
+
 ambassador:
   replicaCount: 2
   enabled: true
