@@ -112,7 +112,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
         ci_default_manifest = "gen3_ci/default_manifest/values"
-        helm_service_names = {"audit-service": "audit", "tube": "etl"}
+        helm_service_names = {"audit-service": "audit"}
         arguments = [
             namespace,
             "service-env-setup",
