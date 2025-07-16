@@ -54,7 +54,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         for ITEM in "${skip_service_list[@]}"; do
             if [[ "$ITEM" == "$service_name" ]]; then
                 raise_exception=false
-                echo "Key '$ITEM' found, but skipping service update as this service doesnt exist"
+                echo "Key '$ITEM' found, but skipping service update as this service isnt a kubectl deployment"
                 break
             fi
         done
