@@ -733,9 +733,7 @@ def mutate_manifest_for_guppy_test(
         # If indexname is not set to jenkins set guppy config to manifest based changes
         else:
             cmd_list = [
-                "kubectl -n "
-                + test_env_namespace
-                + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' > etlMapping.yaml",
+                f"kubectl -n {test_env_namespace} get cm etl-mapping -o jsonpath='{{.data.etlMapping\\.yaml}}' > etlMapping.yaml",
                 'sed -i "s/"index":"[^"]*_subject_alias"/"index":"\$(yq \'.mappings[].name\' etlMapping.yaml | grep subject)"/" original_guppy_config.yaml',
                 'sed -i "s/"index":"[^"]*_file_alias"/"index":"\$(yq \'.mappings[].name\' etlMapping.yaml | grep file)"/" original_guppy_config.yaml',
             ]
