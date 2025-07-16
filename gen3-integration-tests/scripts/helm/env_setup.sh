@@ -49,7 +49,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         fi
     elif [ "$service_yaml_block" != "key not found" ]; then
         echo "Key '$service_name' not found."
-        skip_service_list=("gen3-client" "pelican" "sower")
+        skip_service_list=("gen3-client")
         raise_exception=true
         for ITEM in "${skip_service_list[@]}"; do
             if [[ "$ITEM" == "$service_name" ]]; then
