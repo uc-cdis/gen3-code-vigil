@@ -48,8 +48,19 @@ elif [ "$setup_type" == "service-env-setup" ]; then
           yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         fi
     elif [ "$service_yaml_block" != "key not found" ]; then
-        echo "Key '$service_name' not found.\""
-        exit 1
+        echo "Key '$service_name' not found."
+        skip_service_list=("gen3-client")
+        raise_exception=true
+        for ITEM in "${skip_service_list[@]}"; do
+            if [[ "$ITEM" == "$service_name" ]]; then
+                raise_exception=false
+                echo "Key '$ITEM' found, but skipping service update as this service isnt a kubectl deployment"
+                break
+            fi
+        done
+        if [[ "$raise_exception" == "true" ]]; then
+            exit 1
+        fi
     fi
 elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
