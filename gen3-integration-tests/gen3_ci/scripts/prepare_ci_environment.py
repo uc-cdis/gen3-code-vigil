@@ -117,6 +117,7 @@ def modify_env_for_service_pr(namespace, service, tag):
             "tube": "etl",
             "data-portal": "portal",
             "metadata-service": "metadata",
+            "workspace-token-service": "wts",
         }
         arguments = [
             namespace,
