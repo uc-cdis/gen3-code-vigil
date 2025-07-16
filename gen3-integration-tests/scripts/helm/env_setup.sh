@@ -42,7 +42,11 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
-        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        if [[ "$service" == "etl" ]]; then
+          yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        else
+          yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        fi
     elif [ "$service_yaml_block" != "key not found" ]; then
         echo "Key '$service_name' not found.\""
         exit 1
@@ -456,6 +460,7 @@ wait_for_pods_ready() {
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
   ci_es_indices_setup
+  kubectl rollout restart guppy-deployment
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"

@@ -1,6 +1,10 @@
 etl:
   enabled: true
   image:
+    tube:
+      repository: quay.io/cdis/tube
+      pullPolicy: IfNotPresent
+      tag: "master"
     spark:
       repository: "quay.io/cdis/gen3-spark"
       tag: "master"
