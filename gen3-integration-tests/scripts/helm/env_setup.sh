@@ -259,7 +259,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         else .
         end
       )
-    ' input.yaml
+    ' "$ci_default_manifest_values_yaml"
 fi
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
