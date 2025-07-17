@@ -49,6 +49,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         fi
     elif [ "$service_yaml_block" != "key not found" ]; then
         echo "Key '$service_name' not found."
+        # Skip image update for repos which dont need it
         skip_service_list=("gen3-client")
         raise_exception=true
         for ITEM in "${skip_service_list[@]}"; do
@@ -58,6 +59,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
                 break
             fi
         done
+        # Handle sowerConfig image updates
         mapfile -t sower_job_names < <(yq '.sower.sowerConfig[].name' "$ci_default_manifest_values_yaml")
         for ITEM in "${sower_job_names[@]}"; do
             if [[ "$ITEM" == *"$service_name"* ]]; then
@@ -65,8 +67,15 @@ elif [ "$setup_type" == "service-env-setup" ]; then
                 raise_exception=false
                 echo "Key '$ITEM' found, updated the image with '$image_name'"
                 break
-              fi
-            done
+            fi
+        done
+        # Handle indexs3client image update
+        if [[ "$service_name" == "indexs3client" ]]; then
+            sed -i "s|\(indexing: .*/indexs3client:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
+            raise_exception=false
+            echo "Key indexs3client found, updated the image with '$image_name'"
+            break
+        fi
         if [[ "$raise_exception" == "true" ]]; then
             exit 1
         fi
