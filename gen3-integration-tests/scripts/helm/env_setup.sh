@@ -197,7 +197,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
-     #"sower.sowerConfig"
+     "sower.sowerConfig"
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
