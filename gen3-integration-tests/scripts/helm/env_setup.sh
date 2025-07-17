@@ -61,9 +61,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         mapfile -t sower_job_names < <(yq '.sower.sowerConfig[].name' "$ci_default_manifest_values_yaml")
         for ITEM in "${sower_job_names[@]}"; do
             if [[ "$ITEM" == *"$service_name"* ]]; then
-                image=$(yq -r ".sower.sowerConfig[] | select(.name == \"$ITEM\") | .container.image" "$ci_default_manifest_values_yaml")
-                updated_image=$(sed -E "s|:[^:]+$|:$image_name|" <<< "$image")
-                yq "(.sower.sowerConfig[] | select(.name == \"$ITEM\").container.image) = $updated_image" -i "$ci_default_manifest_values_yaml"
+                sed -i "s|\(image: .*/$ITEM:\).*|\1$image_name|" yourfile.yaml
                 raise_exception=false
                 echo "Key '$ITEM' found, updated the image with '$image_name'"
                 break
