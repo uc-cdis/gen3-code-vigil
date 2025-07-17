@@ -77,6 +77,8 @@ class FileRecordWithCCs:
 @pytest.mark.indexd
 @pytest.mark.graph_submission
 @pytest.mark.data_upload
+@pytest.mark.ssjdispatcher
+@pytest.mark.sower
 class TestDataUpload:
     @classmethod
     def setup_class(cls):
