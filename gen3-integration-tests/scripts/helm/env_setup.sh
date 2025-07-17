@@ -126,6 +126,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
         sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
+        sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -244,12 +245,21 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     fi
 
-    # TODO : Update the SA names for sower jobs in SowerConfig section
+    # Update the SA names for sower
     current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$current_sower_service_account" != "key not found" ]; then
         echo "Key sower.serviceAccount.name found in \"$ci_default_manifest_values_yaml.\""
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
+    # Update the SA names for sower jobs in SowerConfig section
+    yq eval -i '
+      .sower.sowerConfig[] |= (
+        if has("serviceAccountName")
+        then .serviceAccountName = "sower-service-account"
+        else .
+        end
+      )
+    ' input.yaml
 fi
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
