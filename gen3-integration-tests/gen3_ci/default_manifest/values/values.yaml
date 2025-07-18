@@ -489,7 +489,7 @@ cohort-middleware:
   enabled: true
   image:
     repository: "quay.io/cdis/cohort-middleware"
-    tag: "master"
+    tag: "0.4.9"
   resources:
     requests:
       memory: 128Mi
