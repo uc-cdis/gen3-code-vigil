@@ -231,9 +231,10 @@ jobs:
               tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
               python -m pip install --upgrade pip
               if [[ "$REPO" == "data-simulator" ]]; then
-                sed -i "s|rev = .*|rev = \"$BRANCH_NAME\"|" pyproject.toml
+                sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
               fi
               pip install poetry
+              poetry lock
               poetry install
               poetry show
               sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
