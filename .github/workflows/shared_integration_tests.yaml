@@ -31,7 +31,7 @@ on:
       GEN3_INSTANCE_TYPE:
         required: false
         type: string
-        default: ADMINVM_REMOTE
+        default: HELM_LOCAL
       WORKING_DIR:
         required: false
         type: string
@@ -63,6 +63,12 @@ on:
         required: true
       EKS_CLUSTER_NAME:
         required: false
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
@@ -224,7 +230,11 @@ jobs:
               sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
               tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
               python -m pip install --upgrade pip
+              if [[ "$REPO" == "data-simulator" ]]; then
+                sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
+              fi
               pip install poetry
+              poetry lock
               poetry install
               poetry show
               sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
@@ -330,7 +340,7 @@ jobs:
               echo $GEN3_INSTANCE_TYPE
               mkdir $HOME/.gen3
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
-                HOSTNAME="${NAMESPACE}.planx-pla.net"
+                HOSTNAME=${NAMESPACE}.planx-pla.net
                 echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               fi
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
@@ -404,7 +414,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              # Set AWS credentials only if secrets exist (not empty or null)
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               else
@@ -464,7 +473,7 @@ jobs:
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./gen3-integration-tests/slack_report.json"
+              payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
               payload-templated: true
 
           - name: Release CI environment
