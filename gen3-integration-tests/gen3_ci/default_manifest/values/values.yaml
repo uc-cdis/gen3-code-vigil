@@ -490,6 +490,11 @@ cohort-middleware:
   image:
     repository: "quay.io/cdis/cohort-middleware"
     tag: "master"
+  resources:
+    requests:
+      memory: 128Mi
+    limits:
+      memory: 512Mi
 
 argo-wrapper:
   replicaCount: 2
