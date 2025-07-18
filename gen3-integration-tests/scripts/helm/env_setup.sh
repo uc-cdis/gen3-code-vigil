@@ -260,6 +260,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Key sower.serviceAccount.name found in \"$ci_default_manifest_values_yaml.\""
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
+
+    # Check if REGISTER_USERS_ON is set to true in manifest env. Delete from default ci manifest if set to false or not set
+    register_users_on=$(yq eval '.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON == true' "$new_manifest_values_file_path")
+    if [[ "$register_users_on" != "true" ]]; then
+      yq -i 'del(.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON)' $ci_default_manifest_values_yaml
+    fi
     # Update the SA names for sower jobs in SowerConfig section
     yq eval -i '
       .sower.sowerConfig[] |= (
