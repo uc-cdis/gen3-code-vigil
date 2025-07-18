@@ -495,6 +495,8 @@ cohort-middleware:
       memory: 128Mi
     limits:
       memory: 512Mi
+  externalSecrets:
+    createK8sCohortMiddlewareSecret: true
 
 argo-wrapper:
   replicaCount: 2
