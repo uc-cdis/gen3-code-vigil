@@ -489,12 +489,7 @@ cohort-middleware:
   enabled: true
   image:
     repository: "quay.io/cdis/cohort-middleware"
-    tag: "0.4.9"
-  resources:
-    requests:
-      memory: 128Mi
-    limits:
-      memory: 512Mi
+    tag: "master"
   externalSecrets:
     createK8sCohortMiddlewareSecret: true
 
