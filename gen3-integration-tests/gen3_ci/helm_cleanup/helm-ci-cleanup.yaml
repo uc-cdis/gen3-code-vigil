@@ -119,11 +119,13 @@ spec:
                         else
                             echo "CI environment is not older than 90 minutes. Skipping..."
                         fi
-                    else
-                        echo "No Helm installation found... Deleting namespace."
+                    elif (( $(date +%s) - $(date -d "$(kubectl get ns "$env" -o jsonpath='{.metadata.creationTimestamp}')" +%s) > 10800 )); then
+                        echo "No Helm installation found... Deleting namespace $env."
                         delete_pvcs $env
                         kubectl delete ns $env
                         kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
                         delete_queue_and_subscription $env
+                    else
+                        echo "No Helm installation found in namespace $env... But not older than 3 hours. PR in progress."
                     fi
                 done
