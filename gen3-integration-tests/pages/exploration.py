@@ -90,8 +90,15 @@ class ExplorationPage(object):
 
     def check_pfb_status(self, page: Page):
         screenshot(page, "BeforePfbMessageFooter")
-        wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
-        wait_footer_locator.wait_for(timeout=120000)
+        try:
+            logger.info("First Attempt to check PFB Message footer")
+            wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
+            wait_footer_locator.wait_for(timeout=60000)
+        except Exception:
+            logger.info("Second Attempt to check PFB Message footer")
+            self.navigate_to_exploration_tab_with_pfb_export_button(page)
+            wait_footer_locator = page.locator(self.PFB_WAIT_FOOTER)
+            wait_footer_locator.wait_for(timeout=60000)
         screenshot(page, "PfbWaitMessageFooter")
         success_footer_locator = page.locator(self.PFB_SUCCESS_FOOTER)
         success_footer_locator.wait_for(timeout=600000)
