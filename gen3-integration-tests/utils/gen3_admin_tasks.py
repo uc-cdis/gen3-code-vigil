@@ -1,8 +1,9 @@
 import json
 import os
+import random
+import string
 import subprocess
 import time
-import uuid
 
 import pytest
 import requests
@@ -179,24 +180,19 @@ def run_gen3_job(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # job_pod = f"{job_name}-{uuid.uuid4()}"
+        cronjob_name = job_name
         if job_name == "etl":
-            job_name = "etl-cronjob"
-
-        cmd = ["kubectl", "-n", test_env_namespace, "delete", "job", job_name]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=40
+            cronjob_name = "etl-cronjob"
+        job_name += "-" + "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=4)
         )
-        if not result.returncode == 0:
-            logger.info(
-                f"Unable to delete {job_name} - {result.stderr.decode('utf-8')}"
-            )
         cmd = [
             "kubectl",
             "-n",
             test_env_namespace,
             "create",
             "job",
-            f"--from=cronjob/{job_name}",
+            f"--from=cronjob/{cronjob_name}",
             job_name,
         ]
         logger.info(cmd)
@@ -721,7 +717,7 @@ def mutate_manifest_for_guppy_test(
         if indexname == "jenkins":
             cmd_list = [
                 'sed -i \'s/"index":"[^"]*_subject"/"index":"\'ci_subject_alias\'"/\' original_guppy_config.yaml',
-                'sed -i \'s/"index":"[^"]*_file"/"index":"\'ci_file_alias\'"/\' original_guppy_config.yaml'
+                'sed -i \'s/"index":"[^"]*_file"/"index":"\'ci_file_alias\'"/\' original_guppy_config.yaml',
                 'sed -i \'s/"config_index": "[^"]*config"/"config_index": "\'ci_configs_alias\'"/\' original_guppy_config.yaml',
             ]
             for cmd in cmd_list:
@@ -737,13 +733,12 @@ def mutate_manifest_for_guppy_test(
         # If indexname is not set to jenkins set guppy config to manifest based changes
         else:
             cmd_list = [
-                "kubectl -n "
-                + {test_env_namespace}
-                + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' > etlMapping.yaml",
-                'sed -i "s/"index":"[^"]*_subject_alias"/"index":"\$(yq \'.mappings[].name\' etlMapping.yaml | grep subject)"/" original_guppy_config.yaml',
-                'sed -i "s/"index":"[^"]*_file_alias"/"index":"\$(yq \'.mappings[].name\' etlMapping.yaml | grep file)"/" original_guppy_config.yaml',
+                f"kubectl -n {test_env_namespace} get cm etl-mapping -o jsonpath='{{.data.etlMapping\\.yaml}}' > etlMapping.yaml",
+                'sed -i \'s/"index":"[^"]*_subject_alias"/"index":"\'$(yq \'.mappings[].name\' etlMapping.yaml | grep subject)\'"/\' original_guppy_config.yaml',
+                'sed -i \'s/"index":"[^"]*_file_alias"/"index":"\'$(yq \'.mappings[].name\' etlMapping.yaml | grep -v index_file |grep file)\'"/\' original_guppy_config.yaml',
             ]
             for cmd in cmd_list:
+                logger.info(f"Executing command: {cmd}")
                 cmd_result = subprocess.run(
                     cmd,
                     stdout=subprocess.PIPE,

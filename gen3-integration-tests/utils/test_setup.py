@@ -105,9 +105,6 @@ def run_usersync():
         "usersync",
         test_env_namespace=pytest.namespace,
     )
-    gen3_admin_tasks.check_job_pod(
-        "usersync", "gen3job", test_env_namespace=pytest.namespace
-    )
 
 
 def setup_google_buckets():
