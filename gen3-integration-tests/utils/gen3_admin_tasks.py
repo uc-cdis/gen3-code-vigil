@@ -718,6 +718,7 @@ def mutate_manifest_for_guppy_test(
             cmd_list = [
                 'sed -i \'s/"index":"[^"]*_subject"/"index":"\'ci_subject_alias\'"/\' original_guppy_config.yaml',
                 'sed -i \'s/"index":"[^"]*_file"/"index":"\'ci_file_alias\'"/\' original_guppy_config.yaml',
+                'sed -i \'s/"config_index": "[^"]*config"/"config_index": "\'ci_configs_alias\'"/\' original_guppy_config.yaml',
             ]
             for cmd in cmd_list:
                 cmd_result = subprocess.run(
