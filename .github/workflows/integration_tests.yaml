@@ -16,6 +16,7 @@ jobs:
     with:
       GEN3_INSTANCE_TYPE: HELM_LOCAL
       WORKING_DIR: gen3-integration-tests
+      HELM_BRANCH: feat/small-tweaks
     secrets:
       CI_AWS_ACCESS_KEY_ID: ${{ secrets.CI_AWS_ACCESS_KEY_ID }}
       CI_AWS_SECRET_ACCESS_KEY: ${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}
