@@ -200,7 +200,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
-     #"google.enabled"
      "ssjdispatcher.indexing"
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
@@ -265,6 +264,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     register_users_on=$(yq eval '.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON == true' "$new_manifest_values_file_path")
     if [[ "$register_users_on" != "true" ]]; then
       yq -i 'del(.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON)' $ci_default_manifest_values_yaml
+    fi
+
+    # Check if google_enabled is set to true in manifest env. Delete from default ci manifest if set to false or not set
+    google_enabled=$(yq eval '.global.manifestGlobalExtraValues.google_enabled == true' "$new_manifest_values_file_path")
+    if [[ "$google_enabled" != "true" ]]; then
+      yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
     # Update the SA names for sower jobs in SowerConfig section
     yq eval -i '
