@@ -272,7 +272,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
     # Update the SA names for sower jobs in SowerConfig section
-    yq eval -i '.sower.sowerConfig[] |= (if has("serviceAccountName") then .serviceAccountName = "sower-service-account" else . end)' "$ci_default_manifest_values_yaml"
+    sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
 
 fi
 
