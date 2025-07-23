@@ -34,12 +34,11 @@ def modify_env_for_test_repo_pr(namespace):
     Roll the environment
     Run usersync
     """
-    helm_branch = os.getenv("HELM_BRANCH")
     perf_default_manifest = "gen3-gitops/ci/perf/values"
     arguments = [
         namespace,
         "test-env-setup",
-        helm_branch,
+        "master",
         perf_default_manifest,
     ]
     return setup_env_for_helm(arguments)
