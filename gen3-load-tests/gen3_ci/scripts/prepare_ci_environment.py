@@ -36,7 +36,7 @@ def modify_env_for_test_repo_pr(namespace):
     """
     perf_default_manifest = "gen3-gitops/gen3-gitops/ci/perf/values"
     arguments = [
-        namespace,
+        os.getenv("NAMESPACE"),
         "test-env-setup",
         "master",
         perf_default_manifest,
