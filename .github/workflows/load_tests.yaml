@@ -111,12 +111,24 @@ jobs:
               ref: 'master'
               path: gen3-gitops
 
-          # gen3-load-tests run with python 3.9
+          - name: Get commit time
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
+              echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
+
+          # gen3-integration-tests run with python 3.9
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/setup-python@v5
             with:
               python-version: '3.9'
+
+          - name: Set up Go
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/setup-go@v5
+            with:
+              go-version: '1.17'
 
           # allure report generation needs node
           - name: Set up node
@@ -125,8 +137,20 @@ jobs:
             with:
               node-version: 20
 
-          # Install gen3-load-tests dependencies
-          # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
+          # Setup kubectl
+          - name: Set Up kubectl
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: azure/setup-kubectl@v3
+            with:
+              version: latest
+
+          # Setup helm
+          - name: Set Up Helm
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: azure/setup-helm@v4.3.0
+            with:
+              version: latest
+
           - name: Install dependencies
             if: ${{ env.SKIP_TESTS != 'true' }}
             env:
@@ -139,11 +163,42 @@ jobs:
               sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
               tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
               python -m pip install --upgrade pip
+              if [[ "$REPO" == "data-simulator" ]]; then
+                sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
+              fi
               pip install poetry
+              poetry lock
               poetry install
               poetry show
               sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
               sudo apt install openjdk-11-jre -y
+
+          # Configure credentials to access cluster.
+          - name: Configure AWS Credentials
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: aws-actions/configure-aws-credentials@v3
+            with:
+                role-to-assume: arn:aws:iam::707767160287:role/github-action-role
+                role-session-name: GitHub_to_AWS_via_FederatedOIDC
+                aws-region: "us-east-1"
+                role-duration-seconds: 7200
+
+          # Create kubeconfig to point at cluster.
+          - name: Update kube config
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
+
+          # Create PR namespace and PR hostname env var
+          - name: Create namespace and env vars
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            # Change the HOSTNAME with full domain name
+            run: |
+              NAMESPACE=${REPO}-pr-${PR_NUM}
+              HOSTNAME=${REPO}-pr${PR_NUM}.ci.planx-pla.net
+              echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+              echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              kubectl create namespace $NAMESPACE || true
 
           - name: Prepare CI environment
             id: prep_ci_env
