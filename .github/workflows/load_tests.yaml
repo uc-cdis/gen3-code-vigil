@@ -104,7 +104,7 @@ jobs:
 
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
-            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
@@ -129,17 +129,21 @@ jobs:
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
           - name: Install dependencies
             if: ${{ env.SKIP_TESTS != 'true' }}
+            env:
+              YQ_VERSION: v4.45.2
+              YQ_BINARY: yq_linux_amd64
             run: |
-              sudo apt-get install -y --reinstall wamerican
+              sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+              sudo apt update && sudo apt install wget -y
+              sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
+              sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
+              tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
               python -m pip install --upgrade pip
               pip install poetry
               poetry install
               poetry show
-              sudo gpg -k
-              sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-              echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-              sudo apt-get update
-              sudo apt-get install k6
+              sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
+              sudo apt install openjdk-11-jre -y
 
           - name: Prepare CI environment
             id: prep_ci_env
