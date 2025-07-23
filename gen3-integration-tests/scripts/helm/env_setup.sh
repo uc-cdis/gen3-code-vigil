@@ -112,7 +112,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     etl_block=$(yq eval ".etl // \"key not found\"" $new_manifest_values_file_path)
     if [ "$etl_block" != "key not found" ]; then
         echo "Updating ETL Block"
-        yq eval ". |= . + {\"etl\": $(yq eval .etl $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"etl": select(fileIndex == 1).etl}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq eval ".etl.esEndpoint = \"gen3-elasticsearch-master\"" -i $ci_default_manifest_values_yaml
     fi
 
@@ -122,7 +122,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     hatchery_block=$(yq eval ".hatchery // \"key not found\"" $new_manifest_values_file_path)
     if [ "$hatchery_block" != "key not found" ]; then
         echo "Updating HATCHERY Block"
-        yq eval ". |= . + {\"hatchery\": $(yq eval .hatchery $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"hatchery": select(fileIndex == 1).hatchery}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     fi
 
     ####################################################################################
@@ -132,7 +132,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$portal_block" != "key not found" ]; then
         echo "Updating PORTAL Block"
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
-        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
         sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
         sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
