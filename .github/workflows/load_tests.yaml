@@ -194,6 +194,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
+            env:
+              EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
 
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
