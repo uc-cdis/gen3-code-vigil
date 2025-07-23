@@ -65,7 +65,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: gen3-load-tests
+            working-directory: gen3-code-vigil/gen3-load-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -98,6 +98,18 @@ jobs:
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
+            with:
+              repository: uc-cdis/gen3-gitops
+              ref: 'master'
+
+          # Checkout master branch of gen3-code-vigil when another repo is under test
+          - name: Checkout integration test code
+            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
+            uses: actions/checkout@v4
+            with:
+              repository: uc-cdis/gen3-code-vigil
+              ref: ${{ inputs.TEST_REPO_BRANCH }}
+              path: gen3-code-vigil
 
           # gen3-load-tests run with python 3.9
           - name: Set up Python
@@ -129,12 +141,6 @@ jobs:
               sudo apt-get update
               sudo apt-get install k6
 
-          - name: CPU & RAM Info
-            run: |
-              echo "CPU cores: $(nproc)"
-              echo "Memory:"
-              free -h
-
           - name: Prepare CI environment
             id: prep_ci_env
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -157,10 +163,10 @@ jobs:
               mkdir output
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+                GEN3_INSTANCE_TYPE="HELM_LOCAL" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                GEN3_INSTANCE_TYPE="ADMINVM_REMOTE" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                GEN3_INSTANCE_TYPE="HELM_LOCAL" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
               fi
 
               if [ $? -ne 0 ]; then
