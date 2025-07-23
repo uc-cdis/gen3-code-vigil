@@ -5,6 +5,7 @@ import string
 import subprocess
 import time
 
+
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -1482,18 +1483,15 @@ def is_google_enabled():
             pytest.namespace,
             "get",
             "cm",
-            "manifest-metadata",
-            "-o=jsonpath='{.data.json}'",
+            "manifest-global",
+            "-o=jsonpath='{.data}'",
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
         if result.returncode == 0:
             metadata_output = json.loads(result.stdout.strip().replace("'", ""))
-            if (
-                "google_enabled" in metadata_output.keys()
-                and metadata_output["google_enabled"]
-            ):
+            if metadata_output.get("google_enabled", "").lower() == "true":
                 return True
             else:
                 return False
