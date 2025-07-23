@@ -35,7 +35,7 @@ def modify_env_for_test_repo_pr(namespace):
     Run usersync
     """
     helm_branch = os.getenv("HELM_BRANCH")
-    perf_default_manifest = f"{os.getenv('GH_WORKSPACE')}/ci/perf/values"
+    perf_default_manifest = "gen3-gitops/ci/perf/values"
     arguments = [
         namespace,
         "test-env-setup",
