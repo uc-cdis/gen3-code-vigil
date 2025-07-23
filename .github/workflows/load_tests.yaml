@@ -202,8 +202,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=${TEST_ENV}
-              HOSTNAME=${TEST_ENV}.ci.planx-pla.net
+              NAMESPACE=gen3-perf
+              HOSTNAME=gen3-perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
@@ -213,6 +213,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
+              pwd
+              ls -a
               echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
