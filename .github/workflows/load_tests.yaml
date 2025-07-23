@@ -65,7 +65,7 @@ jobs:
         defaults:
           run:
             # the test directory in gen3-code-vigil
-            working-directory: gen3-code-vigil/gen3-load-tests
+            working-directory: gen3-load-tests
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -95,7 +95,7 @@ jobs:
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Checkout current repo
-          - name: Checkout current repo
+          - name: Checkout gen3-gitops repo
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
             with:

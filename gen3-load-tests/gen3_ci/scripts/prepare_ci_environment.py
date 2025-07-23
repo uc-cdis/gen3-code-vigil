@@ -34,105 +34,33 @@ def modify_env_for_test_repo_pr(namespace):
     Roll the environment
     Run usersync
     """
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-modify-env-for-test-repo-pr",
-        )
-        params = {
-            "NAMESPACE": namespace,
-        }
-        build_num = job.build_job(params)
-        if build_num:
-            env_file = os.getenv("GITHUB_ENV")
-            with open(env_file, "a") as myfile:
-                myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-            status = job.wait_for_build_completion(build_num, max_duration=5400)
-            if status == "Completed":
-                res = job.get_build_result(build_num)
-                logger.info(
-                    f"ci-only-modify-env-for-test-repo-pr job's build {build_num} completed \
-                    with status {res}"
-                )
-                return res
-            else:
-                logger.error("Build timed out. Consider increasing max_duration")
-                job.terminate_build(build_num)
-                return "failure"
-        else:
-            logger.error("Build number not found")
-            return "failure"
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        helm_branch = os.getenv("HELM_BRANCH")
-        perf_default_manifest = f"{os.getenv('GH_WORKSPACE')}/ci/perf/values"
-        arguments = [
-            namespace,
-            "test-env-setup",
-            helm_branch,
-            perf_default_manifest,
-        ]
-        return setup_env_for_helm(arguments)
+    helm_branch = os.getenv("HELM_BRANCH")
+    perf_default_manifest = f"{os.getenv('GH_WORKSPACE')}/ci/perf/values"
+    arguments = [
+        namespace,
+        "test-env-setup",
+        helm_branch,
+        perf_default_manifest,
+    ]
+    return setup_env_for_helm(arguments)
 
 
 def generate_api_keys_for_test_users(namespace):
-    # Admin VM Deployments
-    if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-        # Accounts used for testing
-        test_users = test_setup.get_users()
-        job = JenkinsJob(
-            os.getenv("JENKINS_URL"),
-            os.getenv("JENKINS_USERNAME"),
-            os.getenv("JENKINS_PASSWORD"),
-            "ci-only-generate-api-keys",
-        )
-        params = {
-            "NAMESPACE": namespace,
-        }
-        build_num = job.build_job(params)
-        if build_num:
-            status = job.wait_for_build_completion(build_num)
-            if status == "Completed":
-                res = job.get_build_result(build_num)
-                if res.lower() == "success":
-                    for user in test_users:
-                        api_key = json.loads(
-                            job.get_artifact_content(
-                                build_num, f"{namespace}_{user}.json"
-                            )
-                        )
-                        with open(
-                            Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
-                        ) as key_file:
-                            json.dump(api_key, key_file)
-                else:
-                    raise Exception(
-                        "Generation of API keys failed, please check job logs for details"
-                    )
-            else:
-                raise Exception("Build timed out. Consider increasing max_duration")
-        else:
-            raise Exception("Build number not found")
+    cmd = [
+        (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
+        (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
+        os.getenv("HOSTNAME"),
+        os.getenv("NAMESPACE"),
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        logger.info(result.stdout.strip().replace("'", ""))
         return "SUCCESS"
-    # Local Helm Deployments
-    elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        cmd = [
-            (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
-            (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
-            os.getenv("HOSTNAME"),
-            os.getenv("NAMESPACE"),
-        ]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            logger.info(result.stdout.strip().replace("'", ""))
-            return "SUCCESS"
-        else:
-            logger.info(result.stdout)
-            raise Exception(f"Got error: {result.stderr}")
+    else:
+        logger.info(result.stdout)
+        raise Exception(f"Got error: {result.stderr}")
 
 
 def prepare_ci_environment(namespace):
