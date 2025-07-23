@@ -117,6 +117,7 @@ def modify_env_for_service_pr(namespace, service, tag):
             "tube": "etl",
             "data-portal": "portal",
             "metadata-service": "metadata",
+            "workspace-token-service": "wts",
         }
         arguments = [
             namespace,
@@ -303,6 +304,10 @@ def prepare_ci_environment(namespace):
     else:
         quay_repo = repo
     if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
+        result = modify_env_for_test_repo_pr(namespace)
+        assert result.lower() == "success"
+    elif repo in ("data-simulator", "gen3sdk-python"):
+        # For these repos we deploy the default configuration and change the dependencies
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa", "gen3-gitops"):  # Manifest repos

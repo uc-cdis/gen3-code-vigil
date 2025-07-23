@@ -20,9 +20,9 @@ global:
   externalSecrets:
     deploy: true
     dbCreate: true
+  # This will be dynamically replaced by env_setup.sh script.
+  fenceURL: https://hostname/user
   manifestGlobalExtraValues:
-    # This will be dynamically replaced by env_setup.sh script.
-    fence_url: https://hostname/user
     google_enabled: true
   tierAccessLevel: libre
 
@@ -371,6 +371,8 @@ cedar:
   image:
     repository: "quay.io/cdis/cedar-wrapper-service"
     tag: "master"
+  cedarIngestion:
+    enabled: false
 
 ambassador:
   replicaCount: 2
@@ -483,3 +485,19 @@ orthanc:
   externalSecrets:
     # -- (string) Will override the name of the aws secrets manager secret. Default is "orthanc-s3-g3auto"
     orthancS3G3Auto: ci-orthanc-s3-g3auto
+
+cohort-middleware:
+  replicaCount: 2
+  enabled: true
+  image:
+    repository: "quay.io/cdis/cohort-middleware"
+    tag: "master"
+  externalSecrets:
+    createK8sCohortMiddlewareSecret: true
+
+argo-wrapper:
+  replicaCount: 2
+  enabled: true
+  image:
+    repository: "quay.io/cdis/argo-wrapper"
+    tag: "master"
