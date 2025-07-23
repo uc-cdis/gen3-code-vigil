@@ -94,14 +94,6 @@ jobs:
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
-          # Checkout current repo
-          - name: Checkout gen3-gitops repo
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
-            with:
-              repository: uc-cdis/gen3-gitops
-              ref: 'master'
-
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -109,7 +101,15 @@ jobs:
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
-              path: gen3-code-vigil
+
+          # Checkout gen3-gitops repo
+          - name: Checkout gen3-gitops repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/checkout@v4
+            with:
+              repository: uc-cdis/gen3-gitops
+              ref: 'master'
+              path: gen3-gitops
 
           # gen3-load-tests run with python 3.9
           - name: Set up Python
