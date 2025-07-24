@@ -203,8 +203,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=gen3-perf
-              HOSTNAME=gen3-perf.ci.planx-pla.net
+              NAMESPACE=jenkins-perf
+              HOSTNAME=jenkins-perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
