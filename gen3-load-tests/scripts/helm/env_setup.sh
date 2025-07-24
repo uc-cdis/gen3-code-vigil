@@ -140,11 +140,11 @@ sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAM
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
-# sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
-# if [ "$sheepdog_fence_url" != "key not found" ]; then
-#     echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
-#     yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
-# fi
+sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
+if [ "$sheepdog_fence_url" != "key not found" ]; then
+    echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
 manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest_values_yaml")
