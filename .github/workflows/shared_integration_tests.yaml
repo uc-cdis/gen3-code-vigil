@@ -31,21 +31,18 @@ on:
       GEN3_INSTANCE_TYPE:
         required: false
         type: string
-        default: ADMINVM_REMOTE
+        default: HELM_LOCAL
       WORKING_DIR:
         required: false
         type: string
-        default: gen3-integration-tests
-      NAMESPACE:
-        required: false
-        type: string
+        default: gen3-code-vigil/gen3-integration-tests
     secrets:
       CI_AWS_ACCESS_KEY_ID:
-        required: true
+        required: false
       CI_AWS_SECRET_ACCESS_KEY:
-        required: true
+        required: false
       JENKINS_API_TOKEN:
-        required: true
+        required: false
       QA_DASHBOARD_S3_PATH:
         required: true
       CI_TEST_ORCID_USERID:
@@ -65,7 +62,13 @@ on:
       CI_SLACK_CHANNEL_ID:
         required: true
       EKS_CLUSTER_NAME:
-        required: true
+        required: false
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
@@ -227,7 +230,11 @@ jobs:
               sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
               tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
               python -m pip install --upgrade pip
+              if [[ "$REPO" == "data-simulator" ]]; then
+                sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
+              fi
               pip install poetry
+              poetry lock
               poetry install
               poetry show
               sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
@@ -235,7 +242,7 @@ jobs:
 
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             uses: aws-actions/configure-aws-credentials@v3
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
@@ -254,10 +261,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              if [[ -z $NAMESPACE ]]; then
-                NAMESPACE=${REPO}-pr-${PR_NUM}
-              fi
-              HOSTNAME=${NAMESPACE}.ci.planx-pla.net
+              NAMESPACE=${REPO}-pr-${PR_NUM}
+              HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
@@ -286,7 +291,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             id: wait_for_ci_env
             run: |
-              MAX_ENVS=10
+              MAX_ENVS=20
               MAX_WAIT_SECONDS=3600
               WAIT_INTERVAL=30
               WAITED=0
@@ -295,7 +300,7 @@ jobs:
                 count=$(kubectl get ns --no-headers -o custom-columns=":metadata.name" | grep '\-pr\-' | grep -v 'jupyter' | wc -l)
 
                 if [ "$count" -lt "$MAX_ENVS" ]; then
-                  echo "✅ Active CI env count is $count (less than 10). Proceeding with the run."
+                  echo "✅ Active CI env count is $count (less than $MAX_ENVS). Proceeding with the run."
                   break
                 fi
 
@@ -334,6 +339,10 @@ jobs:
               echo "Instance Type"
               echo $GEN3_INSTANCE_TYPE
               mkdir $HOME/.gen3
+              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
+                HOSTNAME=${NAMESPACE}.planx-pla.net
+                echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              fi
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
@@ -387,7 +396,6 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
-              poetry run python -m gen3_ci.scripts.teardown_helm_env
 
           - name: Debug logging
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -412,7 +420,11 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
+                AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              else
+                aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
@@ -467,7 +479,7 @@ jobs:
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./gen3-integration-tests/slack_report.json"
+              payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
               payload-templated: true
 
           - name: Release CI environment
@@ -483,4 +495,8 @@ jobs:
           - name: Cleanup
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
             run: |
+              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
+              elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]]; then
+                poetry run python -m gen3_ci.scripts.teardown_helm_env
+              fi

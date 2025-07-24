@@ -42,10 +42,43 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
-        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        if [[ "$service" == "etl" ]]; then
+          yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        else
+          yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        fi
     elif [ "$service_yaml_block" != "key not found" ]; then
-        echo "Key '$service_name' not found.\""
-        exit 1
+        echo "Key '$service_name' not found."
+        # Skip image update for repos which dont need it
+        skip_service_list=("gen3-client")
+        raise_exception=true
+        for ITEM in "${skip_service_list[@]}"; do
+            if [[ "$ITEM" == "$service_name" ]]; then
+                raise_exception=false
+                echo "Key '$ITEM' found, but skipping service update as this service isnt a kubectl deployment"
+                break
+            fi
+        done
+        # Handle sowerConfig image updates
+        mapfile -t sower_job_names < <(yq '.sower.sowerConfig[].name' "$ci_default_manifest_values_yaml")
+        for ITEM in "${sower_job_names[@]}"; do
+            if [[ "$ITEM" == *"$service_name"* ]]; then
+                sed -i "s|\(image: .*/$ITEM:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
+                raise_exception=false
+                echo "Key '$ITEM' found, updated the image with '$image_name'"
+                break
+            fi
+        done
+        # Handle indexs3client image update
+        if [[ "$service_name" == "indexs3client" ]]; then
+            sed -i "s|\(indexing: .*/indexs3client:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
+            raise_exception=false
+            echo "Key indexs3client found, updated the image with '$image_name'"
+            break
+        fi
+        if [[ "$raise_exception" == "true" ]]; then
+            exit 1
+        fi
     fi
 elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
@@ -79,7 +112,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     etl_block=$(yq eval ".etl // \"key not found\"" $new_manifest_values_file_path)
     if [ "$etl_block" != "key not found" ]; then
         echo "Updating ETL Block"
-        yq eval ". |= . + {\"etl\": $(yq eval .etl $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"etl": select(fileIndex == 1).etl}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq eval ".etl.esEndpoint = \"gen3-elasticsearch-master\"" -i $ci_default_manifest_values_yaml
     fi
 
@@ -89,7 +122,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     hatchery_block=$(yq eval ".hatchery // \"key not found\"" $new_manifest_values_file_path)
     if [ "$hatchery_block" != "key not found" ]; then
         echo "Updating HATCHERY Block"
-        yq eval ". |= . + {\"hatchery\": $(yq eval .hatchery $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"hatchery": select(fileIndex == 1).hatchery}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     fi
 
     ####################################################################################
@@ -99,9 +132,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$portal_block" != "key not found" ]; then
         echo "Updating PORTAL Block"
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
-        yq eval ". |= . + {\"portal\": $(yq eval .portal $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
         sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
+        sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -166,12 +200,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
-     #"google.enabled"
      "ssjdispatcher.indexing"
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
-     #"sower.sowerConfig"
+     "sower.sowerConfig"
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
@@ -220,12 +253,27 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     fi
 
-    # TODO : Update the SA names for sower jobs in SowerConfig section
+    # Update the SA names for sower
     current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$current_sower_service_account" != "key not found" ]; then
         echo "Key sower.serviceAccount.name found in \"$ci_default_manifest_values_yaml.\""
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
+
+    # Check if REGISTER_USERS_ON is set to true in manifest env. Delete from default ci manifest if set to false or not set
+    register_users_on=$(yq eval '.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON == true' "$new_manifest_values_file_path")
+    if [[ "$register_users_on" != "true" ]]; then
+      yq -i 'del(.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON)' $ci_default_manifest_values_yaml
+    fi
+
+    # Check if google_enabled is set to true in manifest env. Delete from default ci manifest if set to false or not set
+    google_enabled=$(yq eval '.global.manifestGlobalExtraValues.google_enabled == true' "$new_manifest_values_file_path")
+    if [[ "$google_enabled" != "true" ]]; then
+      yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
+    fi
+    # Update the SA names for sower jobs in SowerConfig section
+    sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
+
 fi
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
@@ -339,10 +387,10 @@ if [ "$sheepdog_fence_url" != "key not found" ]; then
 fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
-manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest_values_yaml")
+manifest_global_extra_values_fence_url=$(yq eval ".global.fenceURL // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
-    echo "Key global.manifestGlobalExtraValues.fence_url found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".global.manifestGlobalExtraValues.fence_url = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+    echo "Key global.fenceURL found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".global.fenceURL = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
@@ -456,6 +504,7 @@ wait_for_pods_ready() {
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
   ci_es_indices_setup
+  kubectl rollout restart guppy-deployment
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"

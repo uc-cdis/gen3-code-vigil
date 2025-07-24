@@ -112,12 +112,19 @@ def modify_env_for_service_pr(namespace, service, tag):
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
         ci_default_manifest = "gen3_ci/default_manifest/values"
+        helm_service_names = {
+            "audit-service": "audit",
+            "tube": "etl",
+            "data-portal": "portal",
+            "metadata-service": "metadata",
+            "workspace-token-service": "wts",
+        }
         arguments = [
             namespace,
             "service-env-setup",
             helm_branch,
             ci_default_manifest,
-            service,
+            helm_service_names.get(service, service),
             tag,
         ]
         return setup_env_for_helm(arguments)
@@ -297,6 +304,10 @@ def prepare_ci_environment(namespace):
     else:
         quay_repo = repo
     if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
+        result = modify_env_for_test_repo_pr(namespace)
+        assert result.lower() == "success"
+    elif repo in ("data-simulator", "gen3sdk-python"):
+        # For these repos we deploy the default configuration and change the dependencies
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa", "gen3-gitops"):  # Manifest repos
