@@ -37,7 +37,8 @@ fi
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 commit_sha="${COMMIT_SHA}"
-ENV_PREFIX="${commit_sha: -6}"
+#ENV_PREFIX="${commit_sha: -6}"
+ENV_PREFIX="000000"
 echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
@@ -139,11 +140,11 @@ sed -i "s|FRAME_ANCESTORS: https://<hostname>|FRAME_ANCESTORS: https://${HOSTNAM
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
 
 # Check if sheepdog's fenceUrl key is present and update it
-sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
-if [ "$sheepdog_fence_url" != "key not found" ]; then
-    echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
-fi
+# sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
+# if [ "$sheepdog_fence_url" != "key not found" ]; then
+#     echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
+#     yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+# fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
 manifest_global_extra_values_fence_url=$(yq eval ".global.manifestGlobalExtraValues.fence_url // \"key not found\"" "$ci_default_manifest_values_yaml")
