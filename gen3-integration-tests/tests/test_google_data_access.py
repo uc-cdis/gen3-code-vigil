@@ -11,7 +11,7 @@ from utils import logger
     reason="fence service is not running on this environment",
 )
 @pytest.mark.skipif(
-    pytest.google_enabled,
+    not pytest.google_enabled,
     reason="google setup is not enabled",
 )
 @pytest.mark.fence
