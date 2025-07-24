@@ -89,6 +89,7 @@ jobs:
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           NAMESPACE: ${{ needs.setup.outputs.TEST_ENV }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
+          EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
 
 
         steps:
