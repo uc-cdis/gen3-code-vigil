@@ -34,7 +34,9 @@ def modify_env_for_test_repo_pr(namespace):
     Roll the environment
     Run usersync
     """
-    perf_default_manifest = f"{os.getenv('GH_WORKSPACE')}/gen3-gitops/ci/perf/values"
+    perf_default_manifest = (
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/perf/values"
+    )
     arguments = [
         os.getenv("NAMESPACE"),
         "test-env-setup",
