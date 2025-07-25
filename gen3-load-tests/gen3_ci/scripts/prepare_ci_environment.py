@@ -39,7 +39,6 @@ def modify_env_for_test_repo_pr(namespace):
     )
     arguments = [
         os.getenv("NAMESPACE"),
-        "test-env-setup",
         "master",
         perf_default_manifest,
     ]
