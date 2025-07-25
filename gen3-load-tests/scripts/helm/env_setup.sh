@@ -24,7 +24,7 @@ for file in "$manifest_dir"/*.yaml; do
 done
 
 # Move the combined file to values.yaml
-mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
+mv "$master_values_yaml" "$manifest_values_yaml"
 
 # Update indexd values to set a dynamic prefix for each env and set a pw for ssj/gateway in the indexd database.
 yq eval ".indexd.secrets.userdb.fence = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
