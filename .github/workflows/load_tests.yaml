@@ -204,7 +204,7 @@ jobs:
             # Change the HOSTNAME with full domain name
             run: |
               NAMESPACE=ci-perf
-              HOSTNAME=perf.ci.planx-pla.net
+              HOSTNAME=ci-perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
