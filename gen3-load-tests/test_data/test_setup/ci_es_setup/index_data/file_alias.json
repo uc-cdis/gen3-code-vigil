@@ -1,0 +1,6 @@
+{
+    "actions" : [
+        { "remove" : { "index" : "ci_file_1", "alias" : "ci_file_alias" } },
+        { "add" : { "index" : "ci_file_1", "alias" : "ci_file_alias" } }
+    ]
+}
