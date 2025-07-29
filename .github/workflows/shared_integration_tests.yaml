@@ -233,6 +233,10 @@ jobs:
               if [[ "$REPO" == "data-simulator" ]]; then
                 sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
               fi
+              if [[ "$REPO" == "gen3sdk-python" ]]; then
+                GEN3_VERSION=$(more $GH_WORKSPACE/pyproject.toml | sed -n 's/^version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p')
+                sed -i "s|^gen3 = \".*\"|gen3 = \"$GEN3_VERSION\"|" pyproject.toml
+              fi
               pip install poetry
               poetry lock
               poetry install
