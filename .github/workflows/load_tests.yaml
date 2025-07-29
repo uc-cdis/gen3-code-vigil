@@ -57,7 +57,7 @@ jobs:
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
               TEST_ENV="jenkins-perf"
-              TEST_SUITE="TestMetadataFilterLargeDatabase"
+              TEST_SUITE="TestMetadataCreateAndQuery"
               RELEASE_VERSION="master"
             fi
 
