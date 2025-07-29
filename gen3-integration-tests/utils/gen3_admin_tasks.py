@@ -5,7 +5,6 @@ import string
 import subprocess
 import time
 
-
 import pytest
 import requests
 from dotenv import load_dotenv
@@ -754,7 +753,7 @@ def mutate_manifest_for_guppy_test(
             f"kubectl -n {test_env_namespace} delete configmap manifest-guppy",
             f"kubectl -n {test_env_namespace} apply -f original_guppy_config.yaml",
             f"kubectl -n {test_env_namespace} rollout restart deployment/guppy-deployment",
-            f"kubectl -n {test_env_namespace} wait --for=condition=Ready pod -l app=guppy --timeout=5m",
+            f"kubectl -n {test_env_namespace} rollout status deployment/guppy-deployment --timeout=5m",
             "cat original_guppy_config.yaml",
             "rm -rf original_guppy_config.yaml",
         ]
