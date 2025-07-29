@@ -4,12 +4,14 @@ import pytest
 import requests
 from gen3.auth import Gen3Auth
 from utils import TEST_DATA_PATH_OBJECT, logger
+from utils.misc import retry
 
 
 class Guppy(object):
     def __init__(self):
         self.BASE_ENDPOINT = "/guppy"
 
+    @retry(times=3, delay=30, exceptions=(Exception))
     def validate_guppy_status(self, user, expected_status):
         """
         Validate the status of Guppy
