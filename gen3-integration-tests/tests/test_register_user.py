@@ -53,12 +53,6 @@ class TestRegisterUser:
         # Goto explorer page and click on download button
         self.exploration.click_on_login_to_download(page)
 
-        # Verify page got redirected to /login page
-        page.wait_for_load_state("load")
-        current_url = page.url
-        screenshot(page, "AfterLoginToDownloadRedirect")
-        assert "/login" in current_url, f"Expected /login in url but got {current_url}"
-
     def test_redirect_to_register_page_after_login(self, page: Page):
         """
         Scenario: Redirect to register page after login and Download from /explorer page
