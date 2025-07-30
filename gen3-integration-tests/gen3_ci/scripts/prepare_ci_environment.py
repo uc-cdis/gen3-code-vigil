@@ -111,7 +111,9 @@ def modify_env_for_service_pr(namespace, service, tag):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        ci_default_manifest = "gen3_ci/default_manifest/values"
+        ci_default_manifest = (
+            f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        )
         helm_service_names = {
             "audit-service": "audit",
             "tube": "etl",
@@ -170,7 +172,9 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        ci_default_manifest = "gen3_ci/default_manifest/values"
+        ci_default_manifest = (
+            f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        )
         target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/{updated_folder}/values"
 
         arguments = [
@@ -225,7 +229,9 @@ def modify_env_for_test_repo_pr(namespace):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        ci_default_manifest = "gen3_ci/default_manifest/values"
+        ci_default_manifest = (
+            f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        )
         arguments = [
             namespace,
             "test-env-setup",

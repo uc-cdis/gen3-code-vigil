@@ -160,6 +160,15 @@ jobs:
               ref: ${{ inputs.TEST_REPO_BRANCH }}
               path: gen3-code-vigil
 
+          # Checkout gen3-gitops repo
+          - name: Checkout gen3-gitops repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/checkout@v4
+            with:
+              repository: uc-cdis/gen3-gitops
+              ref: 'master'
+              path: gen3-gitops-ci
+
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
