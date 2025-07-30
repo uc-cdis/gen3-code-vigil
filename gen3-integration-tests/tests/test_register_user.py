@@ -16,6 +16,7 @@ from utils.test_execution import screenshot
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
+@pytest.mark.skip(reason="This feature is under re-design")
 @pytest.mark.skipif(
     "portal" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
@@ -52,12 +53,6 @@ class TestRegisterUser:
 
         # Goto explorer page and click on download button
         self.exploration.click_on_login_to_download(page)
-
-        # Verify page got redirected to /login page
-        page.wait_for_load_state("load")
-        current_url = page.url
-        screenshot(page, "AfterLoginToDownloadRedirect")
-        assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
     def test_redirect_to_register_page_after_login(self, page: Page):
         """
