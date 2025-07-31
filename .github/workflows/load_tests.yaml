@@ -11,7 +11,7 @@ on:
       TEST_ENV:
         description: 'Test environment'
         required: false
-        default: jenkins-perf
+        default: ci-perf
       TEST_SUITE:
         description: 'Load test to execute, use all to run all tests'
         required: false
