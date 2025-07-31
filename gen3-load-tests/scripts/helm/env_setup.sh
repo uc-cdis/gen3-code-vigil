@@ -26,6 +26,23 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$manifest_values_yaml"
 
+####################################################################################
+# Update images for each service from $new_manifest_values_file_path
+####################################################################################
+echo "###################################################################################"
+keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
+for key in $keys_ci; do
+if [ "$key" != "global" ]; then
+  image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
+  if [ ! -z "$image_tag_value" ]; then
+      echo "Updating ${key} service with ${image_tag_value}"
+      yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
+  fi
+else
+  echo "Skipping image update for global section"
+fi
+done
+
 # Update indexd values to set a dynamic prefix for each env and set a pw for ssj/gateway in the indexd database.
 yq eval ".indexd.secrets.userdb.fence = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
 yq eval ".indexd.secrets.userdb.sheepdog = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml

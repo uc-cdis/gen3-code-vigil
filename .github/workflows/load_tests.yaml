@@ -117,7 +117,7 @@ jobs:
             with:
               repository: uc-cdis/gen3-gitops
               ref: 'chore/update_perf_replicas'
-              path: gen3-gitops
+              path: gen3-gitops-ci
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' }}

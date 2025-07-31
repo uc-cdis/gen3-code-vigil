@@ -68,7 +68,7 @@ export default function () {
   const MDS_BASIC_AUTH = BASIC_AUTH.slice(1, -1);
 
   // console.log(`MDS_BASIC_AUTH.lenght: ${MDS_BASIC_AUTH.length}`);
-  const mdsEndpoint = MDS_BASIC_AUTH.length > 0 ? 'mds' : 'mds-admin';
+  const mdsEndpoint = 'mds';
   const baseUrl = `https://${GEN3_HOST}/${mdsEndpoint}/metadata`;
 
   const guid1 = generateUUID();
