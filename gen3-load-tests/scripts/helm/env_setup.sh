@@ -32,14 +32,17 @@ mv "$master_values_yaml" "$manifest_values_yaml"
 echo "###################################################################################"
 keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
 for key in $keys_ci; do
-if [ "$key" != "global" ]; then
+if [ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch"]; then
+  service_enabled_value=$(yq eval ".${key}.enabled" $manifest_values_yaml)
   image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
-  if [ ! -z "$image_tag_value" ]; then
+  if [ "$(echo -n $service_enabled_value)" = "false" ]; then
+      echo "Skipping image update for ${key} as service enabled is set to false"
+  elif [ ! -z "$image_tag_value" ]; then
       echo "Updating ${key} service with ${image_tag_value}"
       yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
   fi
 else
-  echo "Skipping image update for global section"
+  echo "Skipping image update for ${key}"
 fi
 done
 
