@@ -32,7 +32,7 @@ mv "$master_values_yaml" "$manifest_values_yaml"
 echo "###################################################################################"
 keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
 for key in $keys_ci; do
-if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" ]]; then
+if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" && "$key" != "ambassador" && "$key" != "gen3-user-data-library" ]]; then
   service_enabled_value=$(yq eval ".${key}.enabled" $manifest_values_yaml)
   image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
   if [ "$(echo -n $service_enabled_value)" = "false" ]; then
@@ -47,7 +47,7 @@ fi
 done
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
-ENV_PREFIX="ci-perf"
+ENV_PREFIX=$NAMESPACE
 echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$ENV_PREFIX\"" -i $manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$ENV_PREFIX\"" -i $manifest_values_yaml
