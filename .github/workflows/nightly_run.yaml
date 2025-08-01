@@ -1,0 +1,30 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Integration Tests
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/integration_tests.yaml
+      - .github/workflows/shared_integration_tests.yaml
+      - gen3-integration-tests/**
+  schedule:
+    - cron: '0 2 * * *' # Nightly at 8pm or 9pm Central (depending of daylight savings)
+
+jobs:
+  integration_tests:
+    name: Integration tests
+    uses: ./.github/workflows/shared_integration_tests.yaml
+    with:
+      WORKING_DIR: gen3-integration-tests
+      IS_NIGHTLY_RUN: "true"
+    secrets:
+      QA_DASHBOARD_S3_PATH: ${{ secrets.QA_DASHBOARD_S3_PATH }}
+      CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+      CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+      CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
+      CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
+      CI_TEST_RAS_2_EMAIL: ${{ secrets.CI_TEST_RAS_2_EMAIL }}
+      CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+      CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+      CI_SLACK_CHANNEL_ID: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+      EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}

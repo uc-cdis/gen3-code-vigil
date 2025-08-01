@@ -36,6 +36,10 @@ on:
         required: false
         type: string
         default: gen3-code-vigil/gen3-integration-tests
+      IS_NIGHTLY_RUN:
+        required: false
+        type: string
+        default: "false"
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: false
@@ -107,6 +111,7 @@ jobs:
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
+          IS_NIGHTLY_RUN: ${{ inputs.IS_NIGHTLY_RUN }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -270,8 +275,13 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=${REPO}-pr-${PR_NUM}
-              HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
+              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                NAMESPACE=nightly-build
+                HOSTNAME=nightly-build.ci.planx-pla.net
+              else
+                NAMESPACE=${REPO}-pr-${PR_NUM}
+                HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
+              fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
@@ -378,6 +388,7 @@ jobs:
               if [[ -n $nightly_label ]]; then
                   echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
               fi
+
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
