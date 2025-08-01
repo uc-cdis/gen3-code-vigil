@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import pytest
 import requests
 from dotenv import load_dotenv
 from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
