@@ -35,7 +35,7 @@ def modify_env_for_test_repo_pr(namespace):
     Run usersync
     """
     perf_default_manifest = (
-        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/perf/values"
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
     arguments = [
         os.getenv("NAMESPACE"),

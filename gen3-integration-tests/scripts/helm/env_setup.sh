@@ -393,6 +393,10 @@ if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
     yq eval ".global.fenceURL = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
+# Update replicaCount for certain services
+yq eval ".fence.replicaCount = \"6"" -i "$ci_default_manifest_values_yaml"
+yq eval ".indexd.replicaCount = \"3"" -i "$ci_default_manifest_values_yaml"
+
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
 kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 
