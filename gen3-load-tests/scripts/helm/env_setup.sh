@@ -46,11 +46,18 @@ else
 fi
 done
 
+# Generate Google Prefix by using commit sha so it is unqiue for each env.
+ENV_PREFIX="ci-perf"
+echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+
 # Update indexd values to set a dynamic prefix for each env and set a pw for ssj/gateway in the indexd database.
-yq eval ".indexd.secrets.userdb.fence = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
-yq eval ".indexd.secrets.userdb.sheepdog = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
-yq eval ".indexd.secrets.userdb.ssj = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
-yq eval ".indexd.secrets.userdb.gateway = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
+yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.fence = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.sheepdog = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.ssj = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.secrets.userdb.gateway = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 
 # Create sqs queues and save to var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
@@ -83,9 +90,9 @@ fi
 
 
 # Update values.yaml to use sqs queues.
-yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $manifest_values_yaml
-yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $manifest_values_yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $manifest_values_yaml
+yq eval ".audit.server.sqs.url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.sqsUrl = \"$UPLOAD_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url = \"$AUDIT_QUEUE_URL\"" -i $ci_default_manifest_values_yaml
 
 # Subscribing the SQS queue to the SNS topic.
 aws sns subscribe \
@@ -127,8 +134,37 @@ if ! aws sqs set-queue-attributes \
 fi
 
 # Update ssjdispatcher configuration.
-yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
-yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
+
+# Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
+yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $ci_default_manifest_values_yaml
+yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $ci_default_manifest_values_yaml
+sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
+
+# Remove aws-es-proxy block
+yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
+
+# Check if sheepdog's fenceUrl key is present and update it
+sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
+if [ "$sheepdog_fence_url" != "key not found" ]; then
+    echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+fi
+
+# Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
+manifest_global_extra_values_fence_url=$(yq eval ".global.fenceURL // \"key not found\"" "$ci_default_manifest_values_yaml")
+if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
+    echo "Key global.fenceURL found in \"$ci_default_manifest_values_yaml\""
+    yq eval ".global.fenceURL = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+fi
+
+# Update replicaCount for certain services
+yq eval ".fence.replicaCount = \"6"" -i "$ci_default_manifest_values_yaml"
+yq eval ".indexd.replicaCount = \"3"" -i "$ci_default_manifest_values_yaml"
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
 kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
