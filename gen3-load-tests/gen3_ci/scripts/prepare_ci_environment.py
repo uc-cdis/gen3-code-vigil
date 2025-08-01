@@ -1,12 +1,31 @@
 import json
 import os
+import subprocess
 from pathlib import Path
 
 from dotenv import load_dotenv
-from utils import logger, test_setup
+from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
 from utils.jenkins import JenkinsJob
 
 load_dotenv()
+
+
+def setup_env_for_helm(arguments):
+    file_path = HELM_SCRIPTS_PATH_OBJECT / "env_setup.sh"
+    logger.info(f"File path: {file_path}")
+    logger.info(f"Argument: {arguments}")
+    result = subprocess.run(
+        [file_path] + arguments, capture_output=True, text=True, timeout=1200
+    )
+    if result.returncode == 0:
+        logger.info("Script executed successfully. Output:")
+        logger.info(result.stdout)
+        return "SUCCESS"
+    else:
+        logger.info("Script execution failed. Error:")
+        logger.info(result.stderr)
+        logger.info(result.stdout)
+        return "failure"
 
 
 def modify_env_for_test_repo_pr(namespace):
@@ -15,72 +34,33 @@ def modify_env_for_test_repo_pr(namespace):
     Roll the environment
     Run usersync
     """
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-modify-env-for-test-repo-pr",
+    perf_default_manifest = (
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
-    params = {
-        "NAMESPACE": namespace,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        env_file = os.getenv("GITHUB_ENV")
-        with open(env_file, "a") as myfile:
-            myfile.write(f"PREPARE_CI_ENV_JOB_INFO={job.job_name}|{build_num}\n")
-        status = job.wait_for_build_completion(build_num, max_duration=5400)
-        if status == "Completed":
-            res = job.get_build_result(build_num)
-            logger.info(
-                f"ci-only-modify-env-for-test-repo-pr job's build {build_num} completed \
-                with status {res}"
-            )
-            return res
-        else:
-            logger.error("Build timed out. Consider increasing max_duration")
-            job.terminate_build(build_num)
-            return "failure"
-    else:
-        logger.error("Build number not found")
-        return "failure"
+    arguments = [
+        os.getenv("NAMESPACE"),
+        "master",
+        perf_default_manifest,
+    ]
+    return setup_env_for_helm(arguments)
 
 
 def generate_api_keys_for_test_users(namespace):
-    # Accounts used for testing
-    test_users = test_setup.get_users()
-    job = JenkinsJob(
-        os.getenv("JENKINS_URL"),
-        os.getenv("JENKINS_USERNAME"),
-        os.getenv("JENKINS_PASSWORD"),
-        "ci-only-generate-api-keys",
+    cmd = [
+        (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
+        (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
+        os.getenv("HOSTNAME"),
+        os.getenv("NAMESPACE"),
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
-    params = {
-        "NAMESPACE": namespace,
-    }
-    build_num = job.build_job(params)
-    if build_num:
-        status = job.wait_for_build_completion(build_num)
-        if status == "Completed":
-            res = job.get_build_result(build_num)
-            if res.lower() == "success":
-                for user in test_users:
-                    api_key = json.loads(
-                        job.get_artifact_content(build_num, f"{namespace}_{user}.json")
-                    )
-                    with open(
-                        Path.home() / ".gen3" / f"{namespace}_{user}.json", "w+"
-                    ) as key_file:
-                        json.dump(api_key, key_file)
-            else:
-                raise Exception(
-                    "Generation of API keys failed, please check job logs for details"
-                )
-        else:
-            raise Exception("Build timed out. Consider increasing max_duration")
+    if result.returncode == 0:
+        logger.info(result.stdout.strip().replace("'", ""))
+        return "SUCCESS"
     else:
-        raise Exception("Build number not found")
-    return "SUCCESS"
+        logger.info(result.stdout)
+        raise Exception(f"Got error: {result.stderr}")
 
 
 def prepare_ci_environment(namespace):

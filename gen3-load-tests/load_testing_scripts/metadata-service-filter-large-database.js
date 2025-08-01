@@ -77,7 +77,7 @@ export default function () {
   const jsonIndex = __ITER % numOfJsons; // eslint-disable-line no-undef
   console.log(`jsonIndex: ${jsonIndex}`);
 
-  const baseUrl = `https://${GEN3_HOST}/mds-admin/metadata`;
+  const baseUrl = `https://${GEN3_HOST}/mds/metadata`;
 
   // obtain random guid
   const guid1 = generateUUID();
