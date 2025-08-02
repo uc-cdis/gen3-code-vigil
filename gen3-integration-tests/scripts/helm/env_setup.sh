@@ -278,13 +278,17 @@ fi
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 commit_sha="${COMMIT_SHA}"
-ENV_PREFIX="${commit_sha: -6}"
+if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+  ENV_PREFIX="nightly"
+else
+  ENV_PREFIX="ci${commit_sha: -6}"
+fi
 echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
-yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"ci$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
+yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 
 # Update indexd values to set a dynamic prefix for each env and set a pw for ssj/gateway in the indexd database.
-yq eval ".indexd.defaultPrefix = \"ci$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
+yq eval ".indexd.defaultPrefix = \"$ENV_PREFIX/\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.fence = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.sheepdog = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".indexd.secrets.userdb.ssj = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
@@ -365,7 +369,7 @@ if ! aws sqs set-queue-attributes \
 fi
 
 # Update ssjdispatcher configuration.
-yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/ci${ENV_PREFIX}/*\"" -i "$ci_default_manifest_values_yaml"
+yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucket/${ENV_PREFIX}/*\"" -i "$ci_default_manifest_values_yaml"
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$EKS_CLUSTER_NAME\"" -i $ci_default_manifest_values_yaml
 
