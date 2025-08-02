@@ -11,8 +11,8 @@ on:
     - cron: '0 2 * * *' # Nightly at 8pm or 9pm Central (depending of daylight savings)
 
 jobs:
-  integration_tests:
-    name: Integration tests
+  nightly_run:
+    name: Nightly run
     uses: ./.github/workflows/shared_integration_tests.yaml
     with:
       WORKING_DIR: gen3-integration-tests
