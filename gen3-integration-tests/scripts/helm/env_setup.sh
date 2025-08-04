@@ -278,8 +278,10 @@ fi
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 commit_sha="${COMMIT_SHA}"
+# Nightly builds
 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
   ENV_PREFIX="nightly"
+# Regular CI
 else
   ENV_PREFIX="ci${commit_sha: -6}"
 fi
