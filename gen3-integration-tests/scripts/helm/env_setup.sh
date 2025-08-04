@@ -280,7 +280,7 @@ fi
 commit_sha="${COMMIT_SHA}"
 # Nightly builds
 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
-  ENV_PREFIX="nightly"
+  ENV_PREFIX="cinight"
 # Regular CI
 else
   ENV_PREFIX="ci${commit_sha: -6}"
