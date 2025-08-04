@@ -1,6 +1,7 @@
 # Uses the shared workflow from this repo for ease of maintenance
 name: Integration Tests
 
+
 on:
   pull_request:
     paths:
@@ -15,6 +16,7 @@ jobs:
     with:
       GEN3_INSTANCE_TYPE: HELM_LOCAL
       WORKING_DIR: gen3-integration-tests
+      HELM_BRANCH: feat/GPE-2030
     secrets:
       QA_DASHBOARD_S3_PATH: ${{ secrets.QA_DASHBOARD_S3_PATH }}
       CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
