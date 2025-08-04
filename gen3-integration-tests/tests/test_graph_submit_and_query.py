@@ -19,6 +19,7 @@ from utils.gen3_admin_tasks import create_access_token
     "sheepdog" not in pytest.deployed_services,
     reason="sheepdog service is not running on this environment",
 )
+@pytest.mark.gen3sdk
 @pytest.mark.graph_submission
 class TestGraphSubmitAndQuery:
     @classmethod
