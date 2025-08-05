@@ -184,9 +184,7 @@ class LoginPage(object):
             screenshot(page, "RASAfterClickingGrantButton")
         else:
             self.ras_login_form(page, username, password)
-            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible(
-                timeout=30000
-            ):
+            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
                 logger.info("Clicking on Authorization button")
                 page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
                 time.sleep(5)
@@ -194,6 +192,12 @@ class LoginPage(object):
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")
+        authorize_button = page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON)
+        if authorize_button.count() > 0:
+            expect(authorize_button).to_be_enabled()
+            logger.info("Clicking on authorization button")
+            authorize_button.click()
+            page.wait_for_load_state("load")
         page.locator(self.RAS_USERNAME_INPUT).fill(username)
         page.locator(self.RAS_PASSWORD_INPUT).fill(password)
         ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
@@ -223,12 +227,12 @@ class LoginPage(object):
     # function to handle pop ups after login
     def handle_popup(self, page: Page):
         """Handling UA popups during login"""
-        popup_message = page.query_selector(self.POP_UP_BOX)
-        if popup_message:
+        popup_locator = page.locator(self.POP_UP_BOX)
+        page.wait_for_load_state("load")
+        if popup_locator.count() > 0:
             logger.info("Popup message found")
-            page.evaluate(
-                "(element) => {{element.scrollTop = element.scrollHeight;}}",
-                popup_message,
+            page.locator(self.POP_UP_BOX).evaluate(
+                "element => element.scrollTop = element.scrollHeight"
             )
             screenshot(page, "DataUsePopup")
             accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
