@@ -59,6 +59,7 @@ class RAS(object):
     ):
         login = LoginPage()
         url = f"{self.RAS_AUTH_ENDPOINT}?response_type=code&client_id={client_id}&redirect_uri={pytest.root_url}&scope={scope}&idp=ras"
+        logger.info(f"Navigating to url - {url}")
         page.goto(url)
         login.ras_login(page, username=username, password=password, portal_test=False)
         page.wait_for_load_state("load")
