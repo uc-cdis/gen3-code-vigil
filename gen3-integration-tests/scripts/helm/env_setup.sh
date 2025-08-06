@@ -277,7 +277,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
-random_suffix=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c6)
+random_suffix=$(LC_ALL=C tr -dc 'a-f0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
