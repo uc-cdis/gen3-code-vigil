@@ -377,6 +377,7 @@ class TestAuditService:
         params = [
             f"start={timestamp}",
             f"username={username}",
+            f"username={username.lower()}",
         ]
         token = ras.get_auth_code(
             scope=scope,
