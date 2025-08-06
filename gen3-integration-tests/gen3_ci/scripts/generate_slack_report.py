@@ -111,7 +111,7 @@ def generate_slack_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/index.html|click here>  _(login to https://qa.planx-pla.net first)_",
+                "text": f"*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html|click here>  _(login to https://qa.planx-pla.net first)_",
             },
         }
         slack_report_json["blocks"].append(report_link_block)
