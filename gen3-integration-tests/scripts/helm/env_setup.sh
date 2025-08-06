@@ -277,7 +277,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
-random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
+random_suffix=$(LC_ALL=C tr -dc 'a-z0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
@@ -373,6 +373,7 @@ for item in "${common_param_updates[@]}"; do
   IFS='|' read -r property_path value <<< "$item"
   serviceblock=$(echo "$property_path" | awk -F'.' '{print $2}' | cut -d'[' -f1)
   if yq eval ".$serviceblock" "$ci_default_manifest_values_yaml" | grep -qv 'null'; then
+    echo "Updating $property_path"
     yq eval "$property_path = \"$value\"" -i "$ci_default_manifest_values_yaml"
   else
     echo "Skipping update of $property_path as $serviceblock not found"
