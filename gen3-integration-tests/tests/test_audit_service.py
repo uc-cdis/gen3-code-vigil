@@ -6,6 +6,7 @@ import datetime
 import math
 import os
 import time
+from uuid import uuid4
 
 import pytest
 from pages.login import LoginPage
@@ -202,18 +203,14 @@ class TestAuditService:
                 "private": {
                     "file_name": "private_file",
                     "urls": ["s3://cdis-presigned-url-test/testdata"],
-                    "hashes": {
-                        "md5": "73d643ec3f4beb9020eef0beed440ad0"
-                    },  # pragma: allowlist secret
+                    "hashes": {"md5": str(uuid4())},  # pragma: allowlist secret
                     "authz": ["/programs/jnkns"],
                     "size": 9,
                 },
                 "public": {
                     "file_name": "public_file",
                     "urls": ["s3://cdis-presigned-url-test/testdata"],
-                    "hashes": {
-                        "md5": "73d643ec3f4beb9020eef0beed440ad1"
-                    },  # pragma: allowlist secret
+                    "hashes": {"md5": str(uuid4())},  # pragma: allowlist secret
                     "authz": ["/open"],
                     "size": 9,
                 },
