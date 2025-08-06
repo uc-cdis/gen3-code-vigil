@@ -277,7 +277,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
-random_suffix=$(LC_ALL=C tr -dc 'a-f0-9' </dev/urandom | head -c6)
+random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
@@ -352,7 +352,7 @@ fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
-  ".indexd.defaultPrefix|$ENV_PREFIX"
+  ".indexd.defaultPrefix|$ENV_PREFIX/"
   ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"
   ".indexd.secrets.userdb.sheepdog|$EKS_CLUSTER_NAME"
   ".indexd.secrets.userdb.ssj|$EKS_CLUSTER_NAME"
