@@ -276,16 +276,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
 fi
 
-# Generate Google Prefix by using commit sha so it is unqiue for each env.
-commit_sha="${COMMIT_SHA}"
-# Nightly builds
-if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
-  ENV_PREFIX="cinight"
-# Regular CI
-else
-  ENV_PREFIX="ci${commit_sha: -6}"
-fi
-echo "Last 6 characters of COMMIT_SHA: $ENV_PREFIX"
+# Generate Google Prefix by using a random suffix so it is unqiue for each env.
+random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
+ENV_PREFIX="ci$random_suffix"
+echo "ENV_PREFIX = $ENV_PREFIX"
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX = \"$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX = \"$ENV_PREFIX\"" -i $ci_default_manifest_values_yaml
 
