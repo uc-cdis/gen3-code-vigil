@@ -25,7 +25,9 @@ class LoginPage(object):
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
         self.RAS_GRANT_BUTTON = "//input[@value='Grant']"
         self.RAS_AUTHORIZATION_BOX = "//div[@class='auth-list']"
-        self.RAS_ACCEPT_AUTHORIZATION_BUTTON = "//button[contains(text(), 'authorize')]"
+        self.RAS_ACCEPT_AUTHORIZATION_BUTTON = (
+            "//button[contains(text(), 'I authorize.')]"
+        )
         self.RAS_DENY_AUTHORIZATION_BUTTON = "//button[contains(text(), 'Cancel')]"
         self.ORCID_REJECT_COOKIE_BUTTON = "//button[@id='onetrust-reject-all-handler']"
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
@@ -78,7 +80,7 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        cookies = page.context.cookies()
+        # cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=30000)
         self.handle_popup(page)
         if idp == "ORCID":
@@ -192,17 +194,18 @@ class LoginPage(object):
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")
+        page.locator(self.RAS_USERNAME_INPUT).fill(username)
+        page.locator(self.RAS_PASSWORD_INPUT).fill(password)
+        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
+        ras_signin_button.click()
+        screenshot(page, "RASAfterLogging")
+        # Handle "Yes, I authorize." button
         authorize_button = page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON)
         if authorize_button.count() > 0:
             expect(authorize_button).to_be_enabled()
             logger.info("Clicking on authorization button")
             authorize_button.click()
             page.wait_for_load_state("load")
-        page.locator(self.RAS_USERNAME_INPUT).fill(username)
-        page.locator(self.RAS_PASSWORD_INPUT).fill(password)
-        ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
-        ras_signin_button.click()
-        screenshot(page, "RASAfterLogging")
         # Handle the Grant access button
         if page.locator(self.RAS_GRANT_BUTTON).is_visible():
             logger.info("Clicking on Grant button")

@@ -55,7 +55,7 @@ def setup_fence_test_clients_info():
     # Create the client
     gen3_admin_tasks.setup_fence_test_clients(
         data,
-        test_env_namespace=pytest.namespace,
+        test_env_namespace=os.getenv("NAMESPACE"),
     )
 
 
@@ -118,3 +118,7 @@ def get_users():
     with open(user_list_path) as f:
         users = {row["USER_ID"]: row["EMAIL"] for row in csv.DictReader(f)}
     return users
+
+
+if __name__ == "__main__":
+    setup_fence_test_clients_info()
