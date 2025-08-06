@@ -281,38 +281,6 @@ random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
-common_param_updates=(
-  ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
-  ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
-  ".indexd.defaultPrefix|$ENV_PREFIX"
-  ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"
-  ".indexd.secrets.userdb.sheepdog|$EKS_CLUSTER_NAME"
-  ".indexd.secrets.userdb.ssj|$EKS_CLUSTER_NAME"
-  ".indexd.secrets.userdb.gateway|$EKS_CLUSTER_NAME"
-  ".audit.server.sqs.url|$AUDIT_QUEUE_URL"
-  ".ssjdispatcher.ssjcreds.sqsUrl|$UPLOAD_QUEUE_URL"
-  ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url|$AUDIT_QUEUE_URL"
-  ".ssjdispatcher.ssjcreds.jobPattern|s3://gen3-helm-data-upload-bucket/${ENV_PREFIX}/*"
-  ".ssjdispatcher.ssjcreds.jobPassword|$EKS_CLUSTER_NAME"
-  ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
-  ".revproxy.ingress.hosts[0].host|$HOSTNAME"
-  ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
-  ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
-  ".ssjdispatcher.gen3Namespace|${namespace}"
-)
-
-for item in "${common_param_updates[@]}"; do
-  IFS='|' read -r property_path value <<< "$item"
-  serviceblock=$(echo "$property_path" | awk -F'.' '{print $2}' | cut -d'[' -f1)
-  if yq eval ".$serviceblock" "$ci_default_manifest_values_yaml" | grep -qv 'null'; then
-    yq eval "$property_path = \"$value\"" -i "$ci_default_manifest_values_yaml"
-  else
-    echo "Skipping update of $property_path as $serviceblock not found"
-  fi
-done
-
-sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
-
 # Create sqs queues and save to var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
 AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
@@ -380,6 +348,38 @@ if ! aws sqs set-queue-attributes \
   echo "❌ Failed to set SQS queue attributes" >&2
   exit 1
 fi
+
+common_param_updates=(
+  ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
+  ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
+  ".indexd.defaultPrefix|$ENV_PREFIX"
+  ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"
+  ".indexd.secrets.userdb.sheepdog|$EKS_CLUSTER_NAME"
+  ".indexd.secrets.userdb.ssj|$EKS_CLUSTER_NAME"
+  ".indexd.secrets.userdb.gateway|$EKS_CLUSTER_NAME"
+  ".audit.server.sqs.url|$AUDIT_QUEUE_URL"
+  ".ssjdispatcher.ssjcreds.sqsUrl|$UPLOAD_QUEUE_URL"
+  ".fence.FENCE_CONFIG_PUBLIC.PUSH_AUDIT_LOGS_CONFIG.aws_sqs_config.sqs_url|$AUDIT_QUEUE_URL"
+  ".ssjdispatcher.ssjcreds.jobPattern|s3://gen3-helm-data-upload-bucket/${ENV_PREFIX}/*"
+  ".ssjdispatcher.ssjcreds.jobPassword|$EKS_CLUSTER_NAME"
+  ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
+  ".revproxy.ingress.hosts[0].host|$HOSTNAME"
+  ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
+  ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
+  ".ssjdispatcher.gen3Namespace|${namespace}"
+)
+
+for item in "${common_param_updates[@]}"; do
+  IFS='|' read -r property_path value <<< "$item"
+  serviceblock=$(echo "$property_path" | awk -F'.' '{print $2}' | cut -d'[' -f1)
+  if yq eval ".$serviceblock" "$ci_default_manifest_values_yaml" | grep -qv 'null'; then
+    yq eval "$property_path = \"$value\"" -i "$ci_default_manifest_values_yaml"
+  else
+    echo "Skipping update of $property_path as $serviceblock not found"
+  fi
+done
+
+sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
 # Remove aws-es-proxy block
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
