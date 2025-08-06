@@ -48,7 +48,6 @@ class RAS(object):
         token_data = get_ras_token.json()
         return token_data
 
-    @retry(times=3, delay=60, exceptions=(Exception))
     def get_auth_code(
         self,
         scope: str,
