@@ -409,7 +409,7 @@ echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
 # Move portal block out of values.yaml into portal.yaml
 touch $ci_default_manifest_portal_yaml
-yq eval '.portal' $ci_default_manifest_values_yaml > $ci_default_manifest_portal_yaml
+yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
 yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
 
 
