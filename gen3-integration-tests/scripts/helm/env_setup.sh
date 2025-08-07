@@ -13,6 +13,7 @@ setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
 ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
+ci_default_manifest_portal_yaml="${ci_default_manifest_dir}/portal.yaml"
 master_values_yaml="master_values.yaml"
 
 touch $master_values_yaml
@@ -406,6 +407,12 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$ci_default_manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
+# Move portal block out of values.yaml into portal.yaml
+touch $ci_default_manifest_portal_yaml
+yq eval '.portal' $ci_default_manifest_values_yaml > $ci_default_manifest_portal_yaml
+yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+
+
 echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
@@ -416,7 +423,7 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
@@ -424,7 +431,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
