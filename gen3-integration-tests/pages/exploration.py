@@ -118,7 +118,6 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
-    @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_login_to_download(self, page):
         self.goto_explorer_page(page)
         # Click on the Download Button
@@ -133,11 +132,11 @@ class ExplorationPage(object):
             for tab in [self.FILE_TAB, self.IMAGING_STUDIES_TAB]:
                 try:
                     logger.info(f"Trying on {tab} Tab")
-                    page.locator(tab).click()
+                    page.locator(tab).click(timeout=10000)
                     page.wait_for_load_state("load")
                     download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
                     screenshot(page, "ExplorationTab")
-                    download_button.click()
+                    download_button.click(timeout=10000)
                     logger.info(f"Found Login to Download button on {tab} Tab")
                     break
                 except (TimeoutError, PlaywrightTimeoutError):
@@ -148,14 +147,13 @@ class ExplorationPage(object):
         )
         if login_to_download_list_first_item.count() > 0:
             expect(login_to_download_list_first_item).to_be_enabled()
-            login_to_download_list_first_item.click()
+            login_to_download_list_first_item.click(timeout=10000)
         # Verify page got redirected to /login page
         page.wait_for_load_state("load")
         current_url = page.url
         screenshot(page, "AfterLoginToDownloadRedirect")
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
-    @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_download(self, page):
         self.goto_explorer_page(page)
         login_page = LoginPage()
