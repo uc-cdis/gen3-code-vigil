@@ -423,7 +423,7 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml --history-max 1 --storage configmaps -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml --history-max 1 -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
@@ -431,7 +431,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml --history-max 1 --storage configmaps -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml --history-max 1 -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
