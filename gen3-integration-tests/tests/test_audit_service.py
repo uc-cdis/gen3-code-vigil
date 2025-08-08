@@ -375,7 +375,9 @@ class TestAuditService:
         ras = RAS()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
-            "start={}".format(timestamp),
+            f"start={timestamp}",
+            f"username={username}",
+            f"username={username.lower()}",
         ]
         token = ras.get_auth_code(
             scope=scope,

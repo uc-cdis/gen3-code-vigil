@@ -9,7 +9,7 @@ Please refer to [gen3-helm](https://github.com/uc-cdis/gen3-helm) repo
 Switch to `gen3-integration-tests` directory and execute:
 
     ```
-    ./scripts/helm/generate_api_keys.sh test_data/test_setup/users.csv <hostname>
+    ./scripts/helm/generate_api_keys.sh test_data/test_setup/users.csv <hostname> <namespace>
     ```
 *Note: you might need to run `chmod +x ./scripts/helm/generate_api_keys.sh` once*
 
@@ -21,6 +21,7 @@ The API keys should be saved to `~/.gen3` directory
     ```
     GEN3_INSTANCE_TYPE="HELM_LOCAL"
     HOSTNAME="<hostname>"
+    NAMESPACE="<namespace>"
     ```
 1. Run tests with pytest
     ```

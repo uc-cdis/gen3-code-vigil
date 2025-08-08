@@ -19,7 +19,7 @@ def get_failed_suites():
                 if row["STATUS"] not in ("passed", "skipped"):
                     failed_suites.add(row["SUB SUITE"])
         if os.getenv("IS_NIGHTLY_RUN") == "true":
-            failed_suites.add("nightly-run")
+            return None
         failed_suites_block = {
             "type": "section",
             "text": {
