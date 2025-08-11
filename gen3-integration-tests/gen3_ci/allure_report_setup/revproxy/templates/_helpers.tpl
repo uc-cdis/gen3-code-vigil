@@ -107,7 +107,7 @@ release: "dev"
 {{- end }}
 
 {{- define "common.extraLabels" -}}
-hostname: {{ .Values.global.hostname }}
+hostname: {{ .Values.ingress.host }}
 {{- if .Values.extraLabels }}
     {{- with .Values.extraLabels }}
     {{- toYaml . }}

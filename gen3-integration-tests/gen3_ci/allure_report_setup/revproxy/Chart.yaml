@@ -1,6 +1,6 @@
 apiVersion: v2
 name: revproxy
-description: A Helm chart for gen3 revproxy
+description: A Helm chart for revproxy for alb to hit cloudfront.
 
 # A chart can be either an 'application' or a 'library' chart.
 #
