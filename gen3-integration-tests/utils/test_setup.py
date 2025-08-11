@@ -55,7 +55,7 @@ def setup_fence_test_clients_info():
     # Create the client
     gen3_admin_tasks.setup_fence_test_clients(
         data,
-        test_env_namespace=os.getenv("NAMESPACE"),
+        test_env_namespace=pytest.namespace,
     )
 
 
