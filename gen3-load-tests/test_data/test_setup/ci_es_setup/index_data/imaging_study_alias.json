@@ -1,0 +1,6 @@
+{
+    "actions" : [
+        { "remove" : { "index" : "ci_imaging_study_1", "alias" : "ci_imaging_study_alias" } },
+        { "add" : { "index" : "ci_imaging_study_1", "alias" : "ci_imaging_study_alias" } }
+    ]
+}

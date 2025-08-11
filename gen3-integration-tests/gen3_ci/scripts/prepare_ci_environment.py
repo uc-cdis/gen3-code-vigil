@@ -5,7 +5,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import pytest
 import requests
 from dotenv import load_dotenv
 from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
@@ -111,7 +110,9 @@ def modify_env_for_service_pr(namespace, service, tag):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        ci_default_manifest = "gen3_ci/default_manifest/values"
+        ci_default_manifest = (
+            f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        )
         helm_service_names = {
             "audit-service": "audit",
             "tube": "etl",
@@ -170,7 +171,9 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        ci_default_manifest = "gen3_ci/default_manifest/values"
+        ci_default_manifest = (
+            f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        )
         target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/{updated_folder}/values"
 
         arguments = [
@@ -225,7 +228,9 @@ def modify_env_for_test_repo_pr(namespace):
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         helm_branch = os.getenv("HELM_BRANCH")
-        ci_default_manifest = "gen3_ci/default_manifest/values"
+        ci_default_manifest = (
+            f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        )
         arguments = [
             namespace,
             "test-env-setup",
@@ -303,7 +308,10 @@ def prepare_ci_environment(namespace):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
         quay_repo = repo
-    if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
+    if repo in ("gen3-code-vigil"):  # Test repos
+        result = modify_env_for_test_repo_pr(namespace)
+        assert result.lower() == "success"
+    elif repo in ("gen3-helm"):  # Helm charts - test with master branch of all services
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("data-simulator", "gen3sdk-python"):

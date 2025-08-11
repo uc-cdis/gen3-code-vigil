@@ -149,6 +149,11 @@ class ExplorationPage(object):
         if login_to_download_list_first_item.count() > 0:
             expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click()
+        # Verify page got redirected to /login page
+        page.wait_for_load_state("load")
+        current_url = page.url
+        screenshot(page, "AfterLoginToDownloadRedirect")
+        assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
     @retry(times=3, delay=30, exceptions=(AssertionError))
     def click_on_download(self, page):

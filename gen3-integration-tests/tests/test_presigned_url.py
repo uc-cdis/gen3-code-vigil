@@ -60,6 +60,7 @@ indexd_files = {
 )
 @pytest.mark.indexd
 @pytest.mark.fence
+@pytest.mark.gen3sdk
 class TestPresignedURL:
     @classmethod
     def setup_class(cls):

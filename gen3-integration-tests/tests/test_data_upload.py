@@ -79,6 +79,7 @@ class FileRecordWithCCs:
 @pytest.mark.data_upload
 @pytest.mark.ssjdispatcher
 @pytest.mark.sower
+@pytest.mark.gen3sdk
 class TestDataUpload:
     @classmethod
     def setup_class(cls):
