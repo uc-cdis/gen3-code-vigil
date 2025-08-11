@@ -1,9 +1,9 @@
 # Home page
 import os
-import pytest
 
-from utils import logger
+import pytest
 from playwright.sync_api import Page
+from utils import logger
 
 
 class DiscoveryPage(object):
@@ -13,9 +13,7 @@ class DiscoveryPage(object):
         # LOCATORS
         self.READY_CUE = "css=.discovery-search"
         self.NEXT_PAGE_BUTTON = "css=.ant-pagination-next:has-text('Next Page')"
-        self.SEARCH_BAR = (
-            "css=div.discovery-search-container >> span >> input[type='text']"
-        )
+        self.SEARCH_BAR = '//input[contains(@placeholder, "Search studies by keyword")]'
         self.OPEN_IN_WORKSPACE_BUTTON = (
             "css=button:has(span:is(:text('Open In Workspace')))"
         )
