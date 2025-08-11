@@ -2,11 +2,11 @@
 name: Nightly run
 
 on:
-  pull_request:
-    paths:
-      - .github/workflows/integration_tests.yaml
-      - .github/workflows/shared_integration_tests.yaml
-      - gen3-integration-tests/**
+  workflow_dispatch:
+    inputs:
+      TEST_LABELS:
+        description: 'Test labels to determine which tests to run'
+        required: false
   schedule:
     - cron: '0 2 * * *' # Nightly at 8pm or 9pm Central (depending of daylight savings)
 
@@ -17,6 +17,7 @@ jobs:
     with:
       WORKING_DIR: gen3-integration-tests
       IS_NIGHTLY_RUN: "true"
+      TEST_LABELS: ${{ inputs.TEST_LABELS }}
     secrets:
       QA_DASHBOARD_S3_PATH: ${{ secrets.QA_DASHBOARD_S3_PATH }}
       CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}

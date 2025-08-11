@@ -40,6 +40,9 @@ on:
         required: false
         type: string
         default: "false"
+      TEST_LABELS:
+        required: false
+        type: string
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: false
@@ -375,7 +378,11 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              if [[ -n $TEST_LABELS ]]; then
+                test_label="-k \"${TEST_LABELS//,/ or }\""
+              else
+                test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              fi
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
