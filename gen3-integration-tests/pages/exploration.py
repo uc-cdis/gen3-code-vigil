@@ -1,10 +1,13 @@
 # Exploration Page
+import os
+import time
+
 import pytest
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import expect
-from utils import logger
+from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 from utils.test_execution import screenshot
 
@@ -38,6 +41,10 @@ class ExplorationPage(object):
             '//*[contains(@class, " g3-dropdown__item ")][1]'
         )
         self.DOWNLOAD_BUTTON = '//button[contains(text(),"Download")][position()=1]'
+        self.DATA_POPULATED_COUNT = (
+            "//*[contains(@class, 'count-box__number--align-center special-number')]"
+        )
+        self.download_path = TEST_DATA_PATH_OBJECT / "register_user_download_file.json"
 
     def navigate_to_exploration_tab_with_pfb_export_button(self, page: Page):
         page.wait_for_selector(self.NAV_BAR)
@@ -118,43 +125,48 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
-    def click_on_login_to_download(self, page):
-        self.goto_explorer_page(page)
-        # Click on the Download Button
-        try:
-            logger.info("Trying on First Tab")
-            page.wait_for_load_state("load")
-            download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-            screenshot(page, "FirstExplorationTab")
-            download_button.click()
-            logger.info("Found Login to Download button on First Tab")
-        except (TimeoutError, PlaywrightTimeoutError):
-            for tab in [self.FILE_TAB, self.IMAGING_STUDIES_TAB]:
-                try:
-                    logger.info(f"Trying on {tab} Tab")
-                    page.locator(tab).click(timeout=10000)
-                    page.wait_for_load_state("load")
-                    download_button = page.locator(self.LOGIN_TO_DOWNLOAD_BUTTON).first
-                    screenshot(page, "ExplorationTab")
-                    download_button.click(timeout=10000)
-                    logger.info(f"Found Login to Download button on {tab} Tab")
-                    break
-                except (TimeoutError, PlaywrightTimeoutError):
-                    logger.info(f"Didn't Find Download button on {tab} Tab")
-        screenshot(page, "AfterClickingLoginToDownload")
+    def __validate_data_is_populated(self, page):
+        attempt = 6
+        for i in range(attempt):
+            first_element = page.locator(self.DATA_POPULATED_COUNT).first
+            text = first_element.text_content()
+            if int(text) != 0:
+                screenshot(page, "DataPopulated")
+                return True
+            else:
+                time.sleep(5)
+        screenshot(page, "DataNotPopulated")
+        return False
+
+    def __click_on_download(self, page, locator_element, expect_download=False):
+        download_button = page.locator(locator_element).first
         login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
+        screenshot(page, "ExplorationTab")
         if login_to_download_list_first_item.count() > 0:
+            assert self.__validate_data_is_populated(page), "No Data found"
+            download_button.click(timeout=10000)
+            screenshot(page, "AfterClickingDownload")
             expect(login_to_download_list_first_item).to_be_enabled()
-            login_to_download_list_first_item.click(timeout=10000)
-        # Verify page got redirected to /login page
-        page.wait_for_load_state("load")
-        current_url = page.url
-        screenshot(page, "AfterLoginToDownloadRedirect")
-        assert "/login" in current_url, f"Expected /login in url but got {current_url}"
+            if expect_download:
+                with page.expect_download() as download_info:
+                    login_to_download_list_first_item.click(timeout=10000)
+            else:
+                login_to_download_list_first_item.click(timeout=10000)
+        else:
+            assert self.__validate_data_is_populated(page), "No Data found"
+            if expect_download:
+                with page.expect_download() as download_info:
+                    download_button.click(timeout=10000)
+            else:
+                download_button.click(timeout=10000)
+            screenshot(page, "AfterClickingDownload")
+        if expect_download:
+            download = download_info.value
+            download.save_as(self.download_path)
 
-    def click_on_download(self, page):
+    def click_on_download(self, page, locator_element, expect_download=False):
         self.goto_explorer_page(page)
         login_page = LoginPage()
         screenshot(page, "BeforeClickingOnDownload")
@@ -162,27 +174,16 @@ class ExplorationPage(object):
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
-            download_button = page.locator(self.DOWNLOAD_BUTTON).first
-            screenshot(page, "FirstExplorationTab")
-            download_button.click()
+            self.__click_on_download(page, locator_element, expect_download)
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
             for tab in [self.FILE_TAB, self.IMAGING_STUDIES_TAB]:
                 try:
                     logger.info(f"Trying on {tab} Tab")
-                    page.locator(tab).click()
+                    page.locator(tab).click(timeout=10000)
                     page.wait_for_load_state("load")
-                    download_button = page.locator(self.DOWNLOAD_BUTTON).first
-                    screenshot(page, "ExplorationTab")
-                    download_button.click()
+                    self.__click_on_download(page, locator_element, expect_download)
                     logger.info(f"Found Download button on {tab} Tab")
                     break
                 except (TimeoutError, PlaywrightTimeoutError):
                     logger.info(f"Didn't Find Download button on {tab} Tab")
-        screenshot(page, "AfterClickingDownload")
-        login_to_download_list_first_item = page.locator(
-            self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
-        )
-        if login_to_download_list_first_item.count() > 0:
-            expect(login_to_download_list_first_item).to_be_enabled()
-            login_to_download_list_first_item.click()

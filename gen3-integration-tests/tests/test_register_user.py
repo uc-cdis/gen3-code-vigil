@@ -10,8 +10,9 @@ from cdislogging import get_logger
 from pages.exploration import ExplorationPage
 from pages.login import LoginPage
 from pages.user_register import UserRegister
-from playwright.sync_api import Page, expect
+from playwright.sync_api import sync_playwright
 from utils import gen3_admin_tasks as gat
+from utils.test_execution import screenshot
 
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
@@ -38,7 +39,7 @@ class TestRegisterUser:
         pytest.users["register_user"] = "register-user@example.org"
         pytest.users["skip_register_user"] = "skip-register-user@example.org"
 
-    def test_user_login_failure_without_user_registration(self, page: Page):
+    def test_user_login_failure_without_user_registration(self):
         """
         Scenario: User login failure without user registration
         Steps:
@@ -49,21 +50,30 @@ class TestRegisterUser:
         """
         if not self.register_user_enabled:
             pytest.skip("RegisterUser is not enabled")
-        # Login with skip_register_user
-        self.login_page.go_to(page)
-        # Don't perform user registration
-        self.login_page.login(
-            page, user="skip_register_user", skip_user_registeration=True
-        )
-        # Goto explorer page without user registration
-        self.exploration.goto_explorer_page(page)
-        # Verify user is not logged in
-        username = page.locator("//*[text()]").filter(
-            has_text=re.compile(pytest.users["skip_register_user"], re.IGNORECASE)
-        )
-        expect(username).not_to_be_visible()
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            context = browser.new_context()
+            page = context.new_page()
+            # Login with skip_register_user
+            self.login_page.go_to(page)
+            # Don't perform user registration
+            self.login_page.login(
+                page, user="skip_register_user", skip_user_registeration=True
+            )
+            # Goto explorer page without user registration
+            self.exploration.click_on_download(
+                page, locator_element=self.exploration.LOGIN_TO_DOWNLOAD_BUTTON
+            )
+            # Verify page got redirected to /login page
+            page.wait_for_load_state("load")
+            current_url = page.url
+            screenshot(page, "AfterLoginToDownloadRedirect")
+            assert (
+                "/login" in current_url
+            ), f"Expected /login in url but got {current_url}"
+            browser.close()
 
-    def test_redirect_to_register_page_after_login(self, page: Page):
+    def test_redirect_to_register_page_after_login(self):
         """
         Scenario: Redirect to register page after login and Download from /explorer page
         Steps:
@@ -74,11 +84,24 @@ class TestRegisterUser:
         """
         if not self.register_user_enabled:
             pytest.skip("RegisterUser is not enabled")
-        # Login with register_user
-        self.login_page.go_to(page)
-        self.login_page.login(
-            page, user="register_user", validate_username_locator=False
-        )
-
-        # Goto explorer page and click on download button
-        self.exploration.click_on_download(page)
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            context = browser.new_context()
+            page = context.new_page()
+            # Login with register_user
+            self.login_page.go_to(page)
+            self.login_page.login(
+                page, user="register_user", validate_username_locator=False
+            )
+            # Goto explorer page and click on download button
+            self.exploration.click_on_download(
+                page,
+                locator_element=self.exploration.DOWNLOAD_BUTTON,
+                expect_download=True,
+            )
+            logger.info("Checking if file is downloaded")
+            assert os.path.isfile(
+                self.exploration.download_path
+            ), "File not found/downloaded"
+            os.remove(self.exploration.download_path)
+            browser.close()
