@@ -125,6 +125,7 @@ class TestRasAuthN:
         assert (
             "ga4gh_passport_v1" in user_permission
         ), "User does not have 'ga4gh_passport_v1' permission in /user/user"
+        self.login_page.logout(page=page)
 
     def test_ras_client_without_scope(self, page: Page):
         """
@@ -172,6 +173,7 @@ class TestRasAuthN:
         assert (
             "ga4gh_passport_v1" not in user_permission
         ), "User have 'ga4gh_passport_v1' permission in /user/user"
+        self.login_page.logout(page=page)
 
     def test_provide_invalid_credentials_NIH_login_page(self, page: Page):
         """

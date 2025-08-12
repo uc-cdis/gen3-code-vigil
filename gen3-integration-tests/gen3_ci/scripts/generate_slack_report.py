@@ -18,13 +18,16 @@ def get_failed_suites():
                 row = {k.upper(): v for k, v in row.items()}
                 if row["STATUS"] not in ("passed", "skipped"):
                     failed_suites.add(row["SUB SUITE"])
+        failed_test_labels = ",".join(failed_suites)
         if os.getenv("IS_NIGHTLY_RUN") == "true":
-            failed_suites.add("nightly-run")
+            replay_message = f"To label & retry, run the [nightly_run workflow](https://github.com/uc-cdis/gen3-code-vigil/actions/workflows/nightly_run.yaml) setting TEST_LABELS to {failed_test_labels}`"
+        else:
+            replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {failed_test_labels}`"
         failed_suites_block = {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {','.join(failed_suites)}`",
+                "text": replay_message,
             },
         }
         return failed_suites_block

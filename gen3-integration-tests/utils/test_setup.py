@@ -118,3 +118,7 @@ def get_users():
     with open(user_list_path) as f:
         users = {row["USER_ID"]: row["EMAIL"] for row in csv.DictReader(f)}
     return users
+
+
+if __name__ == "__main__":
+    setup_fence_test_clients_info()
