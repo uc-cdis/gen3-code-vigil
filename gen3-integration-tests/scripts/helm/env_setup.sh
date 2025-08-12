@@ -128,15 +128,15 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # ####################################################################################
     # # Update PORTAL Block
     # ####################################################################################
-    # portal_block=$(yq eval ".portal // \"key not found\"" $new_manifest_values_file_path)
-    # if [ "$portal_block" != "key not found" ]; then
-    #     echo "Updating PORTAL Block"
-    #     #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
-    #     yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+    portal_block=$(yq eval ".portal // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$portal_block" != "key not found" ]; then
+        echo "Updating PORTAL Block"
+        #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
+        yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     #     yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
     #     sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
     #     sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
-    # fi
+    fi
 
     ####################################################################################
     # Make sure the blocks of values.yaml in ci default are in reflection of the blocks
