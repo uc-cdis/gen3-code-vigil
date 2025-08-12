@@ -1,0 +1,80 @@
+# Default values for revproxy.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+secretStoreServiceAccount:
+  # -- (bool) Set true if deploying to AWS and want to use service account and IAM role.
+  enabled: true
+  # -- (string) Name of the service account to create
+  name: secret-store-sa
+  # -- (string) AWS Role ARN for Secret Store to use
+  roleArn: arn:aws:iam::707767160287:role/devplanetv2-external-secrets-sa
+externalSecrets:
+  secretName: ci-allure-nginx-conf
+
+# -- (int) Number of replicas for the deployment.
+replicaCount: 1
+
+# -- (map) Docker image information.
+image:
+  # -- (string) Docker repository.
+  repository: "nginx"
+  # -- (string) Docker pull policy.
+  pullPolicy: Always
+  # -- (string) Overrides the image tag whose default is the chart appVersion.
+  tag: "stable"
+
+# -- (list) Docker image pull secrets.
+imagePullSecrets: []
+
+# -- (map) Annotations to add to the pod.
+podAnnotations: {}
+
+# -- (map) Container-level security context.
+securityContext:
+  {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- (map) Kubernetes service information.
+service:
+  # -- (string) Type of service. Valid values are "ClusterIP", "NodePort", "LoadBalancer", "ExternalName".
+  type: NodePort
+  # -- (int) The port number that the service exposes.
+  port: 80
+
+# -- (map) Configuration for ingress.
+ingress:
+  scheme: internal
+  environment: "devplanetv2"
+  certArn: "arn:aws:acm:us-east-1:707767160287:certificate/f427a646-94fd-4b91-8bcd-80f5920c1e46"
+  group: "devplanetv2-allure"
+  sslPolicy: "ELBSecurityPolicy-TLS13-1-2-Res-FIPS-2023-04"
+  host: allure.ci.planx-pla.net
+
+# -- (map) Resource requests and limits for the containers in the pod
+resources:
+  # -- (map) The amount of resources that the container requests
+  requests:
+    # -- (string) The amount of memory requested
+    memory: 12Mi
+  # -- (map) The maximum amount of resources that the container is allowed to use
+  limits:
+    # -- (string) The maximum amount of memory the container can use
+    memory: 512Mi
+
+# -- (map) Node selector labels.
+nodeSelector: {}
+
+# -- (list) Tolerations to use for the deployment.
+tolerations: []
+
+# -- (map) Affinity to use for the deployment.
+affinity: {}
+
+# -- (int) Number of old revisions to retain
+revisionHistoryLimit: 2
