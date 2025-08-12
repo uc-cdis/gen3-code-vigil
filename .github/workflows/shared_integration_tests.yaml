@@ -36,6 +36,13 @@ on:
         required: false
         type: string
         default: gen3-code-vigil/gen3-integration-tests
+      IS_NIGHTLY_RUN:
+        required: false
+        type: string
+        default: "false"
+      TEST_LABELS:
+        required: false
+        type: string
     secrets:
       CI_AWS_ACCESS_KEY_ID:
         required: false
@@ -94,7 +101,6 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           RUN_NUM: ${{ github.run_number }}
-          ATTEMPT_NUM: ${{ github.run_attempt }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
           CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
@@ -108,6 +114,7 @@ jobs:
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
+          IS_NIGHTLY_RUN: ${{ inputs.IS_NIGHTLY_RUN }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -243,6 +250,9 @@ jobs:
               if [[ "$REPO" == "data-simulator" ]]; then
                 sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
               fi
+              if [[ "$REPO" == "gen3sdk-python" ]]; then
+                sed -i "s|^gen3 = \".*\"|gen3 = { git = \"https://github.com/uc-cdis/gen3sdk-python\", rev = \"$BRANCH\" }|" pyproject.toml
+              fi
               pip install poetry
               poetry lock
               poetry install
@@ -271,8 +281,13 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=${REPO}-pr-${PR_NUM}
-              HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
+              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                NAMESPACE=nightly-build
+                HOSTNAME=nightly-build.ci.planx-pla.net
+              else
+                NAMESPACE=${REPO}-pr-${PR_NUM}
+                HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
+              fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
@@ -301,7 +316,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             id: wait_for_ci_env
             run: |
-              MAX_ENVS=20
+              MAX_ENVS=10
               MAX_WAIT_SECONDS=3600
               WAIT_INTERVAL=30
               WAITED=0
@@ -365,20 +380,14 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              if [[ -n $TEST_LABELS ]]; then
+                test_label="-k \"${TEST_LABELS//,/ or }\""
+              else
+                test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+              fi
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
 
-          # Nightly builds have a label "nightly-run" and are reported on "nightly-builds channel"
-          - name: Handle nightly build reporting
-            working-directory: ${{ github.workspace }}
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
-            run: |
-              nightly_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("nightly"))) | .[0].name')
-              echo "$nightly_label"
-              if [[ -n $nightly_label ]]; then
-                  echo "IS_NIGHTLY_RUN=true" >> $GITHUB_ENV
-              fi
           - name: Run tests pertaining to specific service
             id: run_service_tests
             if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
@@ -425,9 +434,9 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
-                AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
+                AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               else
-                aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
+                aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
@@ -449,7 +458,7 @@ jobs:
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" && $GEN3_INSTANCE_TYPE == "ADMINVM_REMOTE" ]; then
                 if [ ! -d output ]; then
