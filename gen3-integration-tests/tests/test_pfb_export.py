@@ -15,7 +15,9 @@ from utils import logger
 
 
 @pytest.mark.skipif(
-    not gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    not gat.validate_button_in_portal_config(
+        data=gat.get_portal_config(), search_button="export-to-pfb"
+    ),
     reason="Export to PFB button not present in gitops.json",
 )
 # @pytest.mark.skipif(

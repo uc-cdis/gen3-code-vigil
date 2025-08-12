@@ -1,8 +1,8 @@
 # Exploration Page
-import os
-import time
+import re
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -21,8 +21,6 @@ class ExplorationPage(object):
         # Locators
         self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
         self.GUPPY_TABS = "//div[@id='guppy-explorer-main-tabs']"
-        self.FILE_TAB = "//h3[contains(text(), 'File')]"
-        self.IMAGING_STUDIES_TAB = "//h3[contains(text(), 'Imaging Studies')]"
         self.GUPPY_FILTERS = "//div[@class='guppy-data-explorer__filter']"
         self.EXPORT_TO_PFB_BUTTON = "//button[contains(text(), 'Export to PFB')]"
         self.PFB_WAIT_FOOTER = "//div[text()='Your export is in progress.']"
@@ -125,27 +123,19 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
-    def __validate_data_is_populated(self, page):
-        attempt = 6
-        for i in range(attempt):
-            first_element = page.locator(self.DATA_POPULATED_COUNT).first
-            text = first_element.text_content()
-            if int(text) != 0:
-                screenshot(page, "DataPopulated")
-                return True
-            else:
-                time.sleep(5)
+    def _validate_data_is_populated(self, page):
+        first_element = page.locator(self.DATA_POPULATED_COUNT).first
+        expect(first_element).not_to_have_text("0", timeout=30000)
         screenshot(page, "DataNotPopulated")
-        return False
 
-    def __click_on_download(self, page, locator_element, expect_download=False):
+    def _click_on_download(self, page, locator_element, expect_download=False):
         download_button = page.locator(locator_element).first
         login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         screenshot(page, "ExplorationTab")
         if login_to_download_list_first_item.count() > 0:
-            assert self.__validate_data_is_populated(page), "No Data found"
+            self._validate_data_is_populated(page)
             download_button.click(timeout=10000)
             screenshot(page, "AfterClickingDownload")
             expect(login_to_download_list_first_item).to_be_enabled()
@@ -155,7 +145,7 @@ class ExplorationPage(object):
             else:
                 login_to_download_list_first_item.click(timeout=10000)
         else:
-            assert self.__validate_data_is_populated(page), "No Data found"
+            self._validate_data_is_populated(page)
             if expect_download:
                 with page.expect_download() as download_info:
                     download_button.click(timeout=10000)
@@ -174,16 +164,19 @@ class ExplorationPage(object):
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
-            self.__click_on_download(page, locator_element, expect_download)
+            self._click_on_download(page, locator_element, expect_download)
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
-            for tab in [self.FILE_TAB, self.IMAGING_STUDIES_TAB]:
-                try:
-                    logger.info(f"Trying on {tab} Tab")
-                    page.locator(tab).click(timeout=10000)
-                    page.wait_for_load_state("load")
-                    self.__click_on_download(page, locator_element, expect_download)
-                    logger.info(f"Found Download button on {tab} Tab")
-                    break
-                except (TimeoutError, PlaywrightTimeoutError):
-                    logger.info(f"Didn't Find Download button on {tab} Tab")
+            tab = gat.validate_button_in_portal_config(
+                data=gat.get_portal_config(), search_button="manifest"
+            )
+            if not tab:
+                raise Exception("No other tab has manifest download button")
+            try:
+                logger.info(f"Trying on {tab} Tab")
+                page.locator(f"//h3[contains(text(), '{tab}')]").click(timeout=10000)
+                page.wait_for_load_state("load")
+                self._click_on_download(page, locator_element, expect_download)
+                logger.info(f"Found Download button on {tab} Tab")
+            except (TimeoutError, PlaywrightTimeoutError):
+                logger.info(f"Didn't Find Download button on {tab} Tab")
