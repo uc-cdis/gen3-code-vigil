@@ -13,7 +13,6 @@ setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
 ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
-ci_default_manifest_portal_yaml="${ci_default_manifest_dir}/portal.yaml"
 master_values_yaml="master_values.yaml"
 
 touch $master_values_yaml
@@ -126,17 +125,17 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq eval-all 'select(fileIndex == 0) * {"hatchery": select(fileIndex == 1).hatchery}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     fi
 
-    ####################################################################################
-    # Update PORTAL Block
-    ####################################################################################
+    # ####################################################################################
+    # # Update PORTAL Block
+    # ####################################################################################
     portal_block=$(yq eval ".portal // \"key not found\"" $new_manifest_values_file_path)
     if [ "$portal_block" != "key not found" ]; then
         echo "Updating PORTAL Block"
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
-        yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
-        sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
-        sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
+    #     yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
+    #     sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
+    #     sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -407,11 +406,6 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$ci_default_manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# Move portal block out of values.yaml into portal.yaml
-touch $ci_default_manifest_portal_yaml
-yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
-yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
-
 
 echo $HOSTNAME
 install_helm_chart() {
@@ -423,7 +417,7 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml --history-max 1 -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
@@ -431,7 +425,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml --history-max 1 -n "${NAMESPACE}"; then
       echo "Helm chart installed!"
     else
       return 1
