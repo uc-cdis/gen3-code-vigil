@@ -124,6 +124,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$hatchery_block" != "key not found" ]; then
         echo "Updating HATCHERY Block"
         yq eval-all 'select(fileIndex == 0) * {"hatchery": select(fileIndex == 1).hatchery}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+        sed -i '/user-namespace/d' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
