@@ -81,7 +81,7 @@ jobs:
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
-          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_NUM: 000
           RUN_NUM: ${{ github.run_number }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           MTLS_CRT: ${{ secrets.MTLS_CRT }}
