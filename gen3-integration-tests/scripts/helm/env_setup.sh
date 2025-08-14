@@ -413,6 +413,10 @@ touch $ci_default_manifest_portal_yaml
 yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
 yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
 
+if [ "$namespace" == "nightly-build" ]; then
+  kubectl delete job indexd-userdb -n $namespace
+fi
+
 
 echo $HOSTNAME
 install_helm_chart() {
