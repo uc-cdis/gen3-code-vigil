@@ -438,7 +438,7 @@ jobs:
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               else
-                if [[ "$IS_NIGHTLY_RUN" == "true" ]]
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
                   aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/nightly-run/$DATE
                 else
@@ -465,7 +465,7 @@ jobs:
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                if [[ "$IS_NIGHTLY_RUN" == "true" ]]
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
                   echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/nightly-run/$DATE/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
                 else
