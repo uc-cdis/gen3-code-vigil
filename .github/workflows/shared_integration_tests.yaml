@@ -518,7 +518,7 @@ jobs:
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           - name: Cleanup
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
