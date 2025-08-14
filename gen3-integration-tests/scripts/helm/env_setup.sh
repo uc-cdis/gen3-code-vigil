@@ -414,6 +414,7 @@ yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}'
 yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
 
 if [ "$namespace" == "nightly-build" ]; then
+  echo "Deleting indexd-userdb for nightly-build"
   kubectl delete job indexd-userdb -n $namespace
 fi
 
