@@ -146,7 +146,7 @@ jobs:
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
             working-directory: ${{ github.workspace }}
             run: |
               git fetch -q
@@ -178,7 +178,7 @@ jobs:
               path: gen3-gitops-ci
 
           - name: Get commit time
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
             run: |
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
@@ -383,7 +383,9 @@ jobs:
               if [[ -n $TEST_LABELS ]]; then
                 test_label="-k \"${TEST_LABELS//,/ or }\""
               else
-                test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+                if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+                  test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+                fi
               fi
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
@@ -436,7 +438,12 @@ jobs:
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
               else
-                aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                  DATE=$(date +%Y%m%d)
+                  aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/nightly-run/$DATE
+                else
+                  aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+                fi
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
@@ -458,7 +465,12 @@ jobs:
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                  DATE=$(date +%Y%m%d)
+                  echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/nightly-run/$DATE/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                else
+                  echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                fi
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" && $GEN3_INSTANCE_TYPE == "ADMINVM_REMOTE" ]; then
                 if [ ! -d output ]; then
@@ -472,7 +484,7 @@ jobs:
 
           - name: Render report to the PR
             id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' && github.event_name == 'pull_request' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
@@ -506,7 +518,7 @@ jobs:
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           - name: Cleanup
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
