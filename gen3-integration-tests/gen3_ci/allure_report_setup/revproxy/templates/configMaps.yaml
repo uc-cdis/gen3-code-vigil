@@ -1,0 +1,17 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: revproxy-nginx-conf
+spec:
+  refreshInterval: 5m
+  secretStoreRef:
+    name: {{.Chart.Name}}-secret-store
+    kind: SecretStore
+  target:
+    name: revproxy-nginx-conf
+    creationPolicy: Owner
+  data:
+  - secretKey: nginx.conf
+    remoteRef:
+      #name of secret in secrets manager
+      key: {{ .Values.externalSecrets.secretName }}

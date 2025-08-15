@@ -124,6 +124,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [ "$hatchery_block" != "key not found" ]; then
         echo "Updating HATCHERY Block"
         yq eval-all 'select(fileIndex == 0) * {"hatchery": select(fileIndex == 1).hatchery}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+        sed -i "s/\"user-namespace\": *\"[^\"]*\"/\"user-namespace\": \"jupyter-pods-$namespace\"/g" "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -411,6 +412,12 @@ echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 touch $ci_default_manifest_portal_yaml
 yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
 yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+
+# TODO: Delete this after nightly-build teardown is working properly with helm-ci-cleanup
+if [ "$namespace" == "nightly-build" ]; then
+  echo "Deleting indexd-userdb for nightly-build"
+  kubectl delete job indexd-userdb -n $namespace
+fi
 
 
 echo $HOSTNAME
