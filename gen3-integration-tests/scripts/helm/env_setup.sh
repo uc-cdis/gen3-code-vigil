@@ -496,8 +496,7 @@ wait_for_pods_ready() {
             (.metadata.deletionTimestamp == null) and
             ((.status.phase != "Running") or
             (.status.containerStatuses[]?.ready != true)) and
-            (.status.phase != "Succeeded") and
-            (.status.phase != "Failed")
+            (.status.phase != "Succeeded")
         )
       ]')
 
