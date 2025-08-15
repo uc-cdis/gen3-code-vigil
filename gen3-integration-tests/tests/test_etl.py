@@ -12,7 +12,9 @@ from utils import logger
     reason="ETL is not enabled on this environment",
 )
 @pytest.mark.skipif(
-    gat.validate_json_for_export_to_pfb_button(gat.get_portal_config()),
+    gat.validate_button_in_portal_config(
+        gat.get_portal_config(), search_button="export-to-pfb"
+    ),
     reason="ETL Validation is performed in the PFB Export test",
 )
 @pytest.mark.tube

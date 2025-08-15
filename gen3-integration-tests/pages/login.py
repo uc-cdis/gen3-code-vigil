@@ -65,6 +65,7 @@ class LoginPage(object):
         idp="Google",
         validate_username_locator=True,
         capture_screenshot=True,
+        skip_user_registeration=False,
     ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
@@ -80,7 +81,6 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        # cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=30000)
         self.handle_popup(page)
         if idp == "ORCID":
@@ -109,6 +109,9 @@ class LoginPage(object):
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
             logger.info(f"Registering User {pytest.users[user]}")
+            if skip_user_registeration:
+                logger.info("Skipping user registration")
+                return
             user_register = UserRegister()
             user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:

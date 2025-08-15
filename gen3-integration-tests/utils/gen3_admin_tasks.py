@@ -26,20 +26,32 @@ def get_portal_config():
         )
 
 
-def check_export_to_pfb_button(data):
+def check_button_is_present(data, search_button):
+    # Checks manifest download button for Register User tests
     for button in data:
-        if button.get("type") == "export-to-pfb":
+        if search_button in button.get("type", "") and button.get("enabled"):
             return True
     return False
 
 
-def validate_json_for_export_to_pfb_button(data):
+def validate_button_in_portal_config(data, search_button):
     if isinstance(data, dict):
-        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
-            return True
-        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
-    if isinstance(data, list):
-        return any(validate_json_for_export_to_pfb_button(item) for item in data)
+        if "buttons" in data and check_button_is_present(
+            data["buttons"], search_button
+        ):
+            if search_button == "export-to-pfb":
+                return True
+            if search_button == "manifest":
+                return data["tabTitle"]
+        for val in data.values():
+            result = validate_button_in_portal_config(val, search_button)
+            if result:
+                return result
+    elif isinstance(data, list):
+        for item in data:
+            result = validate_button_in_portal_config(item, search_button)
+            if result:
+                return result
     return False
 
 
