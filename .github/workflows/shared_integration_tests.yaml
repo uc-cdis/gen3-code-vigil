@@ -277,6 +277,35 @@ jobs:
             run: |
               aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
 
+          # Ensure we do not cross the threshold of maximum number of CI envs allowed
+          # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
+          - name: Wait for CI environment
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            id: wait_for_ci_env
+            run: |
+              MAX_ENVS=10
+              MAX_WAIT_SECONDS=3600
+              WAIT_INTERVAL=30
+              WAITED=0
+
+              while true; do
+                count=$(kubectl get ns --no-headers -o custom-columns=":metadata.name" | grep '\-pr\-' | grep -v 'jupyter' | wc -l)
+
+                if [ "$count" -lt "$MAX_ENVS" ]; then
+                  echo "✅ Active CI env count is $count (less than $MAX_ENVS). Proceeding with the run."
+                  break
+                fi
+
+                if [ "$WAITED" -ge "$MAX_WAIT_SECONDS" ]; then
+                  echo "⏰ Timeout: Waited $WAITED seconds but still $count envs active."
+                  exit 1
+                fi
+
+                echo "⏳ $count envs found. Waiting..."
+                sleep $WAIT_INTERVAL
+                WAITED=$((WAITED + WAIT_INTERVAL))
+              done
+
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
@@ -310,35 +339,6 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
               fi
-
-          # Ensure we do not cross the threshold of maximum number of CI envs allowed
-          # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
-          - name: Wait for CI environment
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
-            id: wait_for_ci_env
-            run: |
-              MAX_ENVS=10
-              MAX_WAIT_SECONDS=3600
-              WAIT_INTERVAL=30
-              WAITED=0
-
-              while true; do
-                count=$(kubectl get ns --no-headers -o custom-columns=":metadata.name" | grep '\-pr\-' | grep -v 'jupyter' | wc -l)
-
-                if [ "$count" -lt "$MAX_ENVS" ]; then
-                  echo "✅ Active CI env count is $count (less than $MAX_ENVS). Proceeding with the run."
-                  break
-                fi
-
-                if [ "$WAITED" -ge "$MAX_WAIT_SECONDS" ]; then
-                  echo "⏰ Timeout: Waited $WAITED seconds but still $count envs active."
-                  exit 1
-                fi
-
-                echo "⏳ $count envs found. Waiting..."
-                sleep $WAIT_INTERVAL
-                WAITED=$((WAITED + WAIT_INTERVAL))
-              done
 
           - name: Get modified folders
             # This is applicable for Manifest PRs only
