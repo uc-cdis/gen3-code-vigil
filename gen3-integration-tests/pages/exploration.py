@@ -123,40 +123,28 @@ class ExplorationPage(object):
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
 
-    def _validate_data_is_populated(self, page):
-        first_element = page.locator(self.DATA_POPULATED_COUNT).first
-        expect(first_element).not_to_have_text("0", timeout=30000)
-        screenshot(page, "DataNotPopulated")
-
-    def _click_on_download(self, page, locator_element, expect_download=False):
+    def _perform_download_operation(self, page, locator_element):
         download_button = page.locator(locator_element).first
         login_to_download_list_first_item = page.locator(
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         screenshot(page, "ExplorationTab")
         if login_to_download_list_first_item.count() > 0:
-            self._validate_data_is_populated(page)
+            first_element = page.locator(self.DATA_POPULATED_COUNT).first
+            expect(first_element).not_to_have_text("0", timeout=30000)
+            screenshot(page, "DataPopulated")
             download_button.click(timeout=10000)
             screenshot(page, "AfterClickingDownload")
             expect(login_to_download_list_first_item).to_be_enabled()
-            if expect_download:
-                with page.expect_download() as download_info:
-                    login_to_download_list_first_item.click(timeout=10000)
-            else:
-                login_to_download_list_first_item.click(timeout=10000)
+            login_to_download_list_first_item.click(timeout=10000)
         else:
-            self._validate_data_is_populated(page)
-            if expect_download:
-                with page.expect_download() as download_info:
-                    download_button.click(timeout=10000)
-            else:
-                download_button.click(timeout=10000)
+            first_element = page.locator(self.DATA_POPULATED_COUNT).first
+            expect(first_element).not_to_have_text("0", timeout=30000)
+            screenshot(page, "DataPopulated")
+            download_button.click(timeout=10000)
             screenshot(page, "AfterClickingDownload")
-        if expect_download:
-            download = download_info.value
-            download.save_as(self.download_path)
 
-    def click_on_download(self, page, locator_element, expect_download=False):
+    def click_on_download(self, page, locator_element):
         self.goto_explorer_page(page)
         login_page = LoginPage()
         screenshot(page, "BeforeClickingOnDownload")
@@ -164,7 +152,7 @@ class ExplorationPage(object):
         # Click on the Download Button
         try:
             logger.info("Trying on First Tab")
-            self._click_on_download(page, locator_element, expect_download)
+            self._perform_download_operation(page, locator_element)
             logger.info("Found Download button on First Tab")
         except (TimeoutError, PlaywrightTimeoutError):
             tab = gat.validate_button_in_portal_config(
@@ -176,7 +164,7 @@ class ExplorationPage(object):
                 logger.info(f"Trying on {tab} Tab")
                 page.locator(f"//h3[contains(text(), '{tab}')]").click(timeout=10000)
                 page.wait_for_load_state("load")
-                self._click_on_download(page, locator_element, expect_download)
+                self._perform_download_operation(page, locator_element)
                 logger.info(f"Found Download button on {tab} Tab")
             except (TimeoutError, PlaywrightTimeoutError):
                 logger.info(f"Didn't Find Download button on {tab} Tab")
