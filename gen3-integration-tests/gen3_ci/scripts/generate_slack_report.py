@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from utils import logger
@@ -20,7 +21,7 @@ def get_failed_suites():
                     failed_suites.add(row["SUB SUITE"])
         failed_test_labels = ",".join(failed_suites)
         if os.getenv("IS_NIGHTLY_RUN") == "true":
-            replay_message = f"To label & retry, run the [nightly_run workflow](https://github.com/uc-cdis/gen3-code-vigil/actions/workflows/nightly_run.yaml) setting TEST_LABELS to {failed_test_labels}`"
+            replay_message = f"To label & retry, run the <https://github.com/uc-cdis/gen3-code-vigil/actions/workflows/nightly_run.yaml|nightly_run workflow> setting TEST_LABELS to `{failed_test_labels}`"
         else:
             replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {failed_test_labels}`"
         failed_suites_block = {
@@ -80,13 +81,19 @@ def get_test_result_and_metrics():
 
 
 def generate_slack_report():
+    if os.getenv("IS_NIGHTLY_RUN") == "true":
+        pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
+        report_link = f"https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
+    else:
+        pr_link = (
+            f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
+        )
+        report_link = f"https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
     test_result_icons = {"Successful": ":tada:", "Failed": ":fire:"}
-    slack_report_json["text"] = (
-        f"Integration Test Result: https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
-    )
+    slack_report_json["text"] = f"Integration Test Result: {pr_link}"
     slack_report_json["blocks"] = []
     # Header
     header_block = {
@@ -103,7 +110,7 @@ def generate_slack_report():
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result_icons[test_result]} {test_result} run for https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')} on :round_pushpin:*{os.getenv('NAMESPACE')}*",
+            "text": f"{test_result_icons[test_result]} {test_result} run for {pr_link} on :round_pushpin:*{os.getenv('NAMESPACE')}*",
         },
     }
     slack_report_json["blocks"].append(summary_block)
@@ -114,7 +121,7 @@ def generate_slack_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html|click here>  _(login to https://qa.planx-pla.net first)_",
+                "text": f"*Test Report*: <{report_link}|click here>  _(login to https://qa.planx-pla.net first)_",
             },
         }
         slack_report_json["blocks"].append(report_link_block)
@@ -146,6 +153,8 @@ def generate_slack_report():
         slack_report_json["channel"] = "#nightly-builds"
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
+    # DEBUG LOGS
+    print(slack_report_json)
 
     json.dump(slack_report_json, open("slack_report.json", "w"))
 
