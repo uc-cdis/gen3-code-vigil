@@ -142,17 +142,11 @@ class ExplorationPage(object):
             self.LOGIN_TO_DOWNLOAD_LIST_FIRST_ITEM
         )
         screenshot(page, "ExplorationTab")
+        first_element = page.locator(self.DATA_POPULATED_COUNT).first
+        expect(first_element).not_to_have_text("0", timeout=30000)
+        screenshot(page, "DataPopulated")
+        download_button.click(timeout=10000)
+        screenshot(page, "AfterClickingDownload")
         if login_to_download_list_first_item.count() > 0:
-            first_element = page.locator(self.DATA_POPULATED_COUNT).first
-            expect(first_element).not_to_have_text("0", timeout=30000)
-            screenshot(page, "DataPopulated")
-            download_button.click(timeout=10000)
-            screenshot(page, "AfterClickingDownload")
             expect(login_to_download_list_first_item).to_be_enabled()
             login_to_download_list_first_item.click(timeout=10000)
-        else:
-            first_element = page.locator(self.DATA_POPULATED_COUNT).first
-            expect(first_element).not_to_have_text("0", timeout=30000)
-            screenshot(page, "DataPopulated")
-            download_button.click(timeout=10000)
-            screenshot(page, "AfterClickingDownload")
