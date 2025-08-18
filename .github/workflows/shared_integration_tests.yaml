@@ -322,7 +322,13 @@ jobs:
               fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              kubectl create namespace $NAMESPACE || true
+              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              if [ -n "$namespace_exists" ]; then
+                echo "Namespace $NAMESPACE exists, performing force teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE
+                kubectl delete ns $NAMESPACE
+              fi
+              kubectl create namespace $NAMESPACE
 
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
@@ -527,5 +533,5 @@ jobs:
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
               elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]]; then
-                poetry run python -m gen3_ci.scripts.teardown_helm_env
+                poetry run python -m gen3_ci.scripts.teardown_ci_env
               fi
