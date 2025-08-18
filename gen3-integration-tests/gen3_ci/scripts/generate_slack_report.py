@@ -21,7 +21,7 @@ def get_failed_suites():
                     failed_suites.add(row["SUB SUITE"])
         failed_test_labels = ",".join(failed_suites)
         if os.getenv("IS_NIGHTLY_RUN") == "true":
-            replay_message = f"To label & retry, run the [nightly_run workflow](https://github.com/uc-cdis/gen3-code-vigil/actions/workflows/nightly_run.yaml) setting TEST_LABELS to {failed_test_labels}`"
+            replay_message = f"To label & retry, run the <https://github.com/uc-cdis/gen3-code-vigil/actions/workflows/nightly_run.yaml|nightly_run workflow> setting TEST_LABELS to `{failed_test_labels}`"
         else:
             replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {failed_test_labels}`"
         failed_suites_block = {
