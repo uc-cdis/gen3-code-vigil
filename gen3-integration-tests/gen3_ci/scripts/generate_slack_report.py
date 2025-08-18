@@ -155,6 +155,8 @@ def generate_slack_report():
         slack_report_json["channel"] = "#nightly-builds"
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
+    # DEBUG LOGS
+    print(slack_report_json)
 
     json.dump(slack_report_json, open("slack_report.json", "w"))
 
