@@ -117,6 +117,7 @@ jobs:
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
           IS_NIGHTLY_RUN: ${{ inputs.IS_NIGHTLY_RUN }}
+          TEST_LABELS: ${{ inputs.TEST_LABELS }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
