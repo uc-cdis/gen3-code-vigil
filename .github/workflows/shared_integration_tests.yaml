@@ -101,6 +101,7 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           RUN_NUM: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
           ATTEMPT_NUM: ${{ github.run_attempt }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
@@ -485,7 +486,7 @@ jobs:
 
           - name: Render report to the PR
             id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' && github.event_name == 'pull_request' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:

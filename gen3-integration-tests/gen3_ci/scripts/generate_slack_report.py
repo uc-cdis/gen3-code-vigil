@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from utils import logger
@@ -80,6 +81,14 @@ def get_test_result_and_metrics():
 
 
 def generate_slack_report():
+    if os.getenv("IS_NIGHTLY_RUN") == "true":
+        pr_link = "nightly build"
+        report_link = f"https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
+    else:
+        pr_link = (
+            f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
+        )
+        report_link = f"https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
@@ -103,7 +112,7 @@ def generate_slack_report():
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result_icons[test_result]} {test_result} run for https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')} on :round_pushpin:*{os.getenv('NAMESPACE')}*",
+            "text": f"{test_result_icons[test_result]} {test_result} run for {pr_link} on :round_pushpin:*{os.getenv('NAMESPACE')}*",
         },
     }
     slack_report_json["blocks"].append(summary_block)
@@ -114,7 +123,7 @@ def generate_slack_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Report*: <https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html|click here>  _(login to https://qa.planx-pla.net first)_",
+                "text": f"*Test Report*: <{report_link}|click here>  _(login to https://qa.planx-pla.net first)_",
             },
         }
         slack_report_json["blocks"].append(report_link_block)
