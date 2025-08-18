@@ -15,8 +15,6 @@ if __name__ == "__main__":
         and "error" not in content
         and INSTANCE_TYPE == "HELM_LOCAL"
     ) or (os.getenv("NAMESPACE") == "nightly-build"):
-        # logger.info(f"Tearing down environment: {NAMESPACE}")
-        # teardown_helm_environment()
         logger.info(f"Setting label teardown for environment: {NAMESPACE}")
         cmd = ["kubectl", "label", "namespace", NAMESPACE, "teardown=true"]
         result = subprocess.run(
