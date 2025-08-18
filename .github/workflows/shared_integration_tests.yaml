@@ -328,7 +328,7 @@ jobs:
                 helm delete $NAMESPACE -n $NAMESPACE
                 kubectl delete ns $NAMESPACE
               fi
-              kubectl create namespace $NAMESPACE || true
+              kubectl create namespace $NAMESPACE
 
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
