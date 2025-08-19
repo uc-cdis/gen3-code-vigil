@@ -1,0 +1,16 @@
+name: Quarantine / unquarantine CI Environment
+
+on:
+    workflow_dispatch:
+        inputs:
+            NAMESPACE:
+                description: "CI environment to quarantine"
+                required: true
+            QURANTINED:
+                description: "Set `yes` to quarantine and `no` to unquarantine"
+                required: true
+                default: "yes"
+
+jobs:
+    quarantine_ci_env:
+        runs-on: ubuntu-latest
