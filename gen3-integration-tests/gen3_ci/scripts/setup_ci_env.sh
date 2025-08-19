@@ -144,6 +144,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
           yq eval ".portal.customConfig.dir = \"ci/default/values/portal/\"" -i $ci_default_manifest_values_yaml
           portal_gitops_path = "$ci_default_manifest_dir/portal/gitops.json"
         fi
+        echo "Portal path: ${portal_gitops_path}"
         sed -i '/requiredCerts/d' "$portal_gitops_path"
         sed -i '/gaTrackingId/d' "$portal_gitops_path"
     fi
