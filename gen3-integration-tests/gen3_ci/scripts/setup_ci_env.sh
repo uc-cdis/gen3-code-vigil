@@ -226,7 +226,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         else
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
-            yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
+            if [ "$key" == "sower.sowerConfig" ]; then
+              yq eval-all "select(fileIndex == 0) * {\"$key\": select(fileIndex == 1).$key}" "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
+            else
+              yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
+            fi
+
         fi
     done
 
