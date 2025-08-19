@@ -121,7 +121,7 @@ def generate_slack_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Report*: <{report_link}|click here>  _(login to https://qa.planx-pla.net first)_",
+                "text": f"*Test Report*: <{report_link}|click here>",
             },
         }
         slack_report_json["blocks"].append(report_link_block)
