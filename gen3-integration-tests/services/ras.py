@@ -1,5 +1,5 @@
 import os
-import time
+import re
 
 import pytest
 import requests
@@ -71,7 +71,7 @@ class RAS(object):
             page.wait_for_load_state("load")
         screenshot(page, "RASCodePage")
         current_url = page.url
-        assert "code=" in current_url, f"{current_url} is missing code= substring"
+        expect(page).to_have_url(re.compile(r".*code=.*"), timeout=10000)
         code = current_url.split("code=")[-1]
         return code
 
