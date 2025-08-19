@@ -227,7 +227,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
             if [ $key == "sower.sowerConfig" ]; then
-              yq eval-all "select(fileIndex == 0) * {\"$key\": select(fileIndex == 1).$key}" "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
+              yq eval-all 'select(fileIndex == 0) * { "'"$key"'": select(fileIndex == 1)."'"$key"'" }' "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
               updated_sower_val=$(yq eval ".${key} // \"key not found\"" "$ci_default_manifest_values_yaml")
               echo "New Updated sower configuration is: $updated_sower_val"
             else
