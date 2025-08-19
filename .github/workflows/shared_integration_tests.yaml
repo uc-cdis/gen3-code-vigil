@@ -391,7 +391,7 @@ jobs:
             run: |
               if [[ -n $TEST_LABELS ]]; then
                 test_label_expr="${TEST_LABELS//,/ or }"
-                test_label="-k $test_label_expr"
+                test_label="-k \"$test_label_expr\""
               else
                 if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
                   test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
