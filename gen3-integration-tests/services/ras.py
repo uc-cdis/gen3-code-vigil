@@ -71,7 +71,7 @@ class RAS(object):
             page.wait_for_load_state("load")
         screenshot(page, "RASCodePage")
         current_url = page.url
-        expect(page).to_have_url(re.compile("code="), timeout=10000)
+        expect(page).to_have_url(re.compile(r".*code=.*"), timeout=10000)
         code = current_url.split("code=")[-1]
         return code
 
