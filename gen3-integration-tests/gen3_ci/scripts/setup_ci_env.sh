@@ -228,7 +228,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             echo "Manifest value of the key '$key' is: $manifest_value"
             yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
             updated_val=$(yq eval ".${key} // \"key not found\"" "$ci_default_manifest_values_yaml")
-            echo "New Updated sower configuration is: $updated_val"
+            echo "New Updated value is: $updated_val"
         fi
     done
 
@@ -285,7 +285,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
     # Update the SA names for sower jobs in SowerConfig section
-    sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
+    # sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
 
 fi
 
