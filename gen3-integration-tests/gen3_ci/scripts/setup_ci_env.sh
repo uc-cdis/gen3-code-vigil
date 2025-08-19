@@ -150,6 +150,17 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 
     ####################################################################################
+    # Update Sower  Block
+    ####################################################################################
+    sower_block=$(yq eval ".sower // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$sower_block" != "key not found" ]; then
+        echo "Updating Sower Block"
+        yq eval-all 'select(fileIndex == 0) * {"sower": select(fileIndex == 1).sower}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+        # Update the SA names for sower jobs in SowerConfig section
+        sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
+    fi
+
+    ####################################################################################
     # Make sure the blocks of values.yaml in ci default are in reflection of the blocks
     # of values.yaml in new_manifest_values_file_path.
     ####################################################################################
@@ -215,7 +226,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
-     "sower.sowerConfig"
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
@@ -227,8 +237,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
             yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
-            updated_val=$(yq eval ".${key} // \"key not found\"" "$ci_default_manifest_values_yaml")
-            echo "New Updated value is: $updated_val"
         fi
     done
 
@@ -284,9 +292,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$google_enabled" != "true" ]]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
-    # Update the SA names for sower jobs in SowerConfig section
-    # sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
-
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
