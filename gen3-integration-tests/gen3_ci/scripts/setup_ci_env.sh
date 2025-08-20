@@ -162,6 +162,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
         yq eval ".sower.serviceAccount.create = true" -i "$ci_default_manifest_values_yaml"
         # yq eval-all --inplace 'select(fileIndex == 0) as $externalSecrets | select(fileIndex == 1) | .sower.externalSecrets = $externalSecrets' <(yq eval '.sower.externalSecrets' "$ci_default_manifest_dir/sower.yaml") "$ci_default_manifest_values_yaml"true
+        yq eval "del(.sower.externalSecrets.)" -i $ci_default_manifest_values_yaml
         yq eval '.sower.externalSecrets.createK8sPelicanServiceSecret = false' -i "$ci_default_manifest_values_yaml"
         yq eval '.sower.externalSecrets.pelicanserviceG3auto = ci-pelicanservice-g3auto' -i "$ci_default_manifest_values_yaml"
         yq eval '.sower.externalSecrets.createK8sSowerJobsSecret = true' -i "$ci_default_manifest_values_yaml"
