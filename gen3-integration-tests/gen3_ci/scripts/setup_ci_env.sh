@@ -154,19 +154,19 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     sower_block=$(yq eval ".sower // \"key not found\"" $new_manifest_values_file_path)
     if [ "$sower_block" != "key not found" ]; then
-        echo "Updating Sower Block"
-        yq eval-all 'select(fileIndex == 0) * {"sower": select(fileIndex == 1).sower}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+        echo "Updating sowerConfig Block"
+        yq eval-all 'select(fileIndex == 0) * {"sower": {"sowerConfig": select(fileIndex == 1).sower.sowerConfig}}' "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
         # Update the SA names for sower jobs in SowerConfig section
         yq '(.sower.sowerConfig[] | .serviceAccountName) = "sower-service-account"' "$ci_default_manifest_values_yaml"
         # Update SA name in sower block
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
         yq eval ".sower.serviceAccount.create = true" -i "$ci_default_manifest_values_yaml"
         # yq eval-all --inplace 'select(fileIndex == 0) as $externalSecrets | select(fileIndex == 1) | .sower.externalSecrets = $externalSecrets' <(yq eval '.sower.externalSecrets' "$ci_default_manifest_dir/sower.yaml") "$ci_default_manifest_values_yaml"true
-        yq eval "del(.sower.externalSecrets.)" -i $ci_default_manifest_values_yaml
-        yq eval '.sower.externalSecrets.createK8sPelicanServiceSecret = false' -i "$ci_default_manifest_values_yaml"
-        yq eval '.sower.externalSecrets.pelicanserviceG3auto = ci-pelicanservice-g3auto' -i "$ci_default_manifest_values_yaml"
-        yq eval '.sower.externalSecrets.createK8sSowerJobsSecret = true' -i "$ci_default_manifest_values_yaml"
-        yq eval '.sower' "$ci_default_manifest_values_yaml"
+        # yq eval "del(.sower.externalSecrets.  )" -i $ci_default_manifest_values_yaml
+        # yq eval '.sower.externalSecrets.createK8sPelicanServiceSecret = false' -i "$ci_default_manifest_values_yaml"
+        # yq eval '.sower.externalSecrets.pelicanserviceG3auto = ci-pelicanservice-g3auto' -i "$ci_default_manifest_values_yaml"
+        # yq eval '.sower.externalSecrets.createK8sSowerJobsSecret = true' -i "$ci_default_manifest_values_yaml"
+        # yq eval '.sower' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
