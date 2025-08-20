@@ -137,8 +137,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
         portal_gitops_path = $ci_default_manifest_values_yaml
-        portal_custom_config_enabled=$(yq eval ".portal.customConfig.enabled" $ci_default_manifest_values_yaml)
-        if [ "$(echo -n $service_enabled_value)" = "true" ]; then
+        portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
+        if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Portal folder exists, copying it..."
           mkdir -p "$ci_default_manifest_dir/portal/"
           cp -r "$target_manifest_path/portal/"* "$ci_default_manifest_dir/portal/"
