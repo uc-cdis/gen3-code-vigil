@@ -324,8 +324,8 @@ jobs:
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
-                echo "Namespace $NAMESPACE exists, performing force teardown..."
-                helm delete $NAMESPACE -n $NAMESPACE
+                echo "Namespace $NAMESPACE exists, performing teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE || true
                 kubectl delete ns $NAMESPACE
               fi
               kubectl create namespace $NAMESPACE
@@ -391,7 +391,7 @@ jobs:
             run: |
               if [[ -n $TEST_LABELS ]]; then
                 test_label_expr="${TEST_LABELS//,/ or }"
-                test_label="-k $test_label_expr"
+                test_label="-k \"$test_label_expr\""
               else
                 if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
                   test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
@@ -450,9 +450,9 @@ jobs:
               else
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
-                  aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/nightly-run/$DATE
+                  aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE
                 else
-                  aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
+                  aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
                 fi
               fi
               if [ $? -ne 0 ]; then
@@ -477,9 +477,9 @@ jobs:
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
-                  echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/nightly-run/$DATE/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run/$DATE/index.html)" >> output/report.md
                 else
-                  echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
                 fi
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" && $GEN3_INSTANCE_TYPE == "ADMINVM_REMOTE" ]; then

@@ -83,12 +83,12 @@ def get_test_result_and_metrics():
 def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
-        report_link = f"https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
+        report_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
         )
-        report_link = f"https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
@@ -121,7 +121,7 @@ def generate_slack_report():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Report*: <{report_link}|click here>  _(login to https://qa.planx-pla.net first)_",
+                "text": f"*Test Report*: <{report_link}|click here>",
             },
         }
         slack_report_json["blocks"].append(report_link_block)
