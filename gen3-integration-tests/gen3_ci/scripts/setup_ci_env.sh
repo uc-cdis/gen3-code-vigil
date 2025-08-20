@@ -157,7 +157,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Updating sowerConfig Block"
         yq eval-all 'select(fileIndex == 0) * {"sower": {"sowerConfig": select(fileIndex == 1).sower.sowerConfig}}' "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
         # Update the SA names for sower jobs in SowerConfig section
-        yq '(.sower.sowerConfig[] | .serviceAccountName) = "sower-service-account"' "$ci_default_manifest_values_yaml"
+        sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
         # Update SA name in sower block
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
