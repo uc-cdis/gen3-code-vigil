@@ -165,6 +165,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq eval '.sower.externalSecrets.createK8sPelicanServiceSecret = false' -i "$ci_default_manifest_values_yaml"
         yq eval '.sower.externalSecrets.pelicanserviceG3auto = ci-pelicanservice-g3auto' -i "$ci_default_manifest_values_yaml"
         yq eval '.sower.externalSecrets.createK8sSowerJobsSecret = true' -i "$ci_default_manifest_values_yaml"
+        yq eval '.sower' "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
