@@ -136,8 +136,30 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
-        sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
-        sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
+        portal_gitops_path = $ci_default_manifest_values_yaml
+        portal_custom_config_enabled=$(yq eval ".portal.customConfig.enabled" $ci_default_manifest_values_yaml)
+        if [ "$(echo -n $service_enabled_value)" = "true" ]; then
+          echo "Portal folder exists, copying it..."
+          mkdir -p "$ci_default_manifest_dir/portal/"
+          cp -r "$target_manifest_path/portal/"* "$ci_default_manifest_dir/portal/"
+          yq eval ".portal.customConfig.dir = \"ci/default/values/portal/\"" -i $ci_default_manifest_values_yaml
+          portal_gitops_path = "$ci_default_manifest_dir/portal/gitops.json"
+        fi
+        sed -i '/requiredCerts/d' "$portal_gitops_path"
+        sed -i '/gaTrackingId/d' "$portal_gitops_path"
+    fi
+
+    ####################################################################################
+    # Update Sower  Block
+    ####################################################################################
+    sower_block=$(yq eval ".sower // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$sower_block" != "key not found" ]; then
+        echo "Updating sowerConfig Block"
+        yq eval-all 'select(fileIndex == 0) * {"sower": {"sowerConfig": select(fileIndex == 1).sower.sowerConfig}}' "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
+        # Update the SA names for sower jobs in SowerConfig section
+        sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
+        # Update SA name in sower block
+        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -206,7 +228,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
-     "sower.sowerConfig"
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
@@ -255,13 +276,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     fi
 
-    # Update the SA names for sower
-    current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest_values_yaml")
-    if [ "$current_sower_service_account" != "key not found" ]; then
-        echo "Key sower.serviceAccount.name found in \"$ci_default_manifest_values_yaml.\""
-        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
-    fi
-
     # Check if REGISTER_USERS_ON is set to true in manifest env. Delete from default ci manifest if set to false or not set
     register_users_on=$(yq eval '.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON == true' "$new_manifest_values_file_path")
     if [[ "$register_users_on" != "true" ]]; then
@@ -273,9 +287,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$google_enabled" != "true" ]]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
-    # Update the SA names for sower jobs in SowerConfig section
-    sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
-
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
