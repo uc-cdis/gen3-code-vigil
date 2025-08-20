@@ -160,7 +160,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         yq '(.sower.sowerConfig[] | .serviceAccountName) = "sower-service-account"' "$ci_default_manifest_values_yaml"
         # Update SA name in sower block
         yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
-        yq eval-all --inplace 'select(fileIndex == 0) as $externalSecrets | select(fileIndex == 1) | .sower.externalSecrets = $externalSecrets' <(yq eval '.sower.externalSecrets' "$ci_default_manifest_dir/sower.yaml") "$ci_default_manifest_values_yaml"
+        # yq eval-all --inplace 'select(fileIndex == 0) as $externalSecrets | select(fileIndex == 1) | .sower.externalSecrets = $externalSecrets' <(yq eval '.sower.externalSecrets' "$ci_default_manifest_dir/sower.yaml") "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
