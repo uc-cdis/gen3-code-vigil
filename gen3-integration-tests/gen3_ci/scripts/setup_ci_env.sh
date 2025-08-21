@@ -142,7 +142,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
           echo "Portal folder exists, copying it..."
           mkdir -p "$ci_default_manifest_dir/portal/"
           cp -r "$target_manifest_path/portal/"* "$ci_default_manifest_dir/portal/"
-          yq eval ".portal.customConfig.dir = \"ci/default/values/portal/\"" -i $ci_default_manifest_values_yaml
+          # yq eval ".portal.customConfig.dir = \"ci/default/values/portal/\"" -i $ci_default_manifest_values_yaml
           portal_gitops_path = "$ci_default_manifest_dir/portal/gitops.json"
         fi
         sed -i '/requiredCerts/d' "$portal_gitops_path"
