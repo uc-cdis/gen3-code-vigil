@@ -1,7 +1,6 @@
 # Login Page
 import os
 import re
-import time
 
 import pytest
 from pages.user_register import UserRegister
@@ -189,11 +188,6 @@ class LoginPage(object):
             screenshot(page, "RASAfterClickingGrantButton")
         else:
             self.ras_login_form(page, username, password)
-            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
-                logger.info("Clicking on Authorization button")
-                page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
-                time.sleep(5)
-                screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")
