@@ -383,8 +383,6 @@ for item in "${common_param_updates[@]}"; do
   fi
 done
 
-sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
-
 # Remove aws-es-proxy block
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
 
