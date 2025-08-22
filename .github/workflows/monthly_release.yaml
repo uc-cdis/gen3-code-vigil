@@ -93,7 +93,6 @@ jobs:
 
               for folder in $FOLDERS; do
                 echo "Processing folder: $folder"
-                export TARGET_ENV=$folder
 
                 # Clone the target repo
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
@@ -101,6 +100,8 @@ jobs:
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/gen3-helm"
                 cd "$GEN3_GITOPS_PATH"
 
+                export TARGET_ENV=$folder
+                TIMESTAMP=$(date +%s)
                 PR_NAME="Gen3 Monthly Release ${RELEASE_VERSION} ${ENV} ${TIMESTAMP}"
                 SANITIZED_ENV="${TARGET_ENV//\//_}"
                 BRANCH_NAME="chore/apply_${RELEASE_VERSION}_to_${SANITIZED_ENV}_${TIMESTAMP}"
@@ -127,7 +128,7 @@ jobs:
                 -X POST \
                 -H "Accept: application/vnd.github+json" \
                 -H "Content-Type: application/json" \
-                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls" \
+                "https://api.github.com/repos/$REPO_OWNER/$TARGET_REPO_NAME/pulls" \
                 -d "$(jq -n \
                     --arg title "$PR_NAME" \
                     --arg head "$BRANCH_NAME" \
