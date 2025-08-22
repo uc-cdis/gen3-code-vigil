@@ -10,20 +10,18 @@ import requests
 from dotenv import load_dotenv
 from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.jenkins import JenkinsJob
+from utils.misc import retry
 
 load_dotenv()
 CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
+@retry(times=5, delay=60, exceptions=(AssertionError))
 def get_portal_config():
     """Fetch portal config from the GUI"""
     res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
-    if res.status_code == 200:
-        return res.json()
-    else:
-        raise Exception(
-            f"Unable to get portal config: status code {res.status_code} - response {res.text}"
-        )
+    assert res.status_code == 200
+    return res.json()
 
 
 def check_button_is_present(data, search_button):
