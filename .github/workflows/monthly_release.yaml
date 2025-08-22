@@ -90,6 +90,7 @@ jobs:
               git config --global user.name "$GITHUB_USERNAME"
               git config --global user.email "cdis@uchicago.edu"
               GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
+              TEST_REPO_PATH="$(pwd)"
 
               # Clean up if already cloned
               rm -rf "$GEN3_GITOPS_PATH"
@@ -118,7 +119,7 @@ jobs:
                 cd "${TARGET_ENV}/values/"
 
                 # Update the yaml files
-                poetry run python -m gen3_ci.scripts.monthly_release.py
+                poetry run python $TEST_REPO_PATH/gen3_ci/scripts/monthly_release.py
 
                 # PUSH in the branch and create a PR
                 git add .
