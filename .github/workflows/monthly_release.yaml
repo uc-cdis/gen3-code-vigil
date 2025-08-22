@@ -1,4 +1,4 @@
-name: Integration Tests
+name: Monthly Release
 
 on:
   workflow_call:
