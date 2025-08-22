@@ -86,7 +86,6 @@ jobs:
               export GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
               export GEN3_HELM_PATH="$(pwd)/gen3-helm"
               export TEST_REPO_PATH="$(pwd)"
-              export TARGET_ENV=$folder
               export REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
 
               # Clean up if already cloned
@@ -94,6 +93,7 @@ jobs:
 
               for folder in $FOLDERS; do
                 echo "Processing folder: $folder"
+                export TARGET_ENV=$folder
 
                 # Clone the target repo
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
