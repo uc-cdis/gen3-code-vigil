@@ -66,12 +66,9 @@ jobs:
               ref: 'master'
               path: thor
 
-          - name: Checkout integration test code
+          - name: Checkout current repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
-            with:
-              repository: uc-cdis/gen3-code-vigil
-              ref: master
-              path: gen3-code-vigil
 
           - name: Split List of envs into folders
             run: |
