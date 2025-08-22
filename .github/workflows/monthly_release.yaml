@@ -1,0 +1,128 @@
+name: Integration Tests
+
+on:
+  workflow_call:
+    inputs:
+      RELEASE_VERSION:
+        required: true
+        type: string
+      LIST_OF_ENVIRONMENTS:
+        required: true
+        type: string
+      TARGET_REPO_NAME:
+        required: false
+        type: string
+        default: gen3-gitops
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+    integration_tests:
+        runs-on: ubuntu-latest
+
+        defaults:
+          run:
+            working-directory: ${{ inputs.WORKING_DIR }}
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USERNAME: "PlanXCyborg"
+          REPO: ${{ github.event.repository.name }}
+          REPO_FN: ${{ github.event.repository.full_name }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_NUM: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          ATTEMPT_NUM: ${{ github.run_attempt }}
+          GH_WORKSPACE: ${{ github.workspace }}
+          RELEASE_VERSION: ${{ inputs.RELEASE_VERSION }}
+          LIST_OF_ENVIRONMENTS: ${{ inputs.LIST_OF_ENVIRONMENTS }}
+          TARGET_REPO_NAME: ${{ inputs.TARGET_REPO_NAME }}
+
+        steps:
+          # Ensure the PR is run under the same org as an Internal PR
+          # and not by external forks/PRs
+          - name: Check if PR is from the same organization
+            if: ${{ github.repository_owner != 'uc-cdis' }}
+            working-directory: ${{ github.workspace }}
+            run:  |
+              echo "github.repository_owner - ${{ github.repository_owner }}"
+              echo "Skip pull requests from repositories not within the same organization"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+
+          # Checkout gen3-gitops repo
+          - name: Checkout target repo
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            uses: actions/checkout@v4
+            with:
+              repository: uc-cdis/thor
+              ref: 'master'
+              path: thor
+
+          - name: Split List of envs into folders
+            run: |
+              echo "FOLDERS=$(echo '${{ env.LIST_OF_ENVIRONMENTS }}' | tr ',' ' ')" >> $GITHUB_ENV
+
+          - name: Loop through folders and create PRs
+            run: |
+              for folder in $FOLDERS; do
+                echo "Processing folder: $folder"
+
+                git config --global user.name "$GITHUB_USERNAME"
+                git config --global user.email "cdis@uchicago.edu"
+                GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
+
+                # Clean up if already cloned
+                rm -rf "$GEN3_GITOPS_PATH"
+
+                # Clone the target repo
+                git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
+                cd "$GEN3_GITOPS_PATH"
+
+                PR_NAME="Gen3 Monthly Release ${IMAGE_TAG_VERSION} ${ENV} ${TIMESTAMP}"
+                TARGET_ENV = $folder
+                SANITIZED_ENV="${TARGET_ENV//\//_}"
+                BRANCH_NAME="chore/apply_${IMAGE_TAG_VERSION}_to_${SANITIZED_ENV}_${TIMESTAMP}"
+                COMMIT_MSG="Updating $TARGET_ENV with $IMAGE_TAG_VERSION"
+                REPO_OWNER="uc-cdis"
+                BASE_BRANCH="master"
+                REPO_LIST_PATH="$GH_WORKSPACE/thor/repo_list.txt"
+
+                # PERFORM GIT OPERATIONS TO SWITCH TO NEW BRANCH and navigate to target env folder
+                cd $GEN3_GITOPS_PATH
+                pwd
+                git switch master
+                git fetch origin
+                git checkout -b "$BRANCH_NAME"
+                cd "${TARGET_ENV}/values/"
+
+                # Update the yaml files
+                poetry run python -m gen3_ci.scripts.monthly_release.py
+
+                # PUSH in the branch and create a PR
+                git add .
+                git commit -m "${COMMIT_MSG}"
+                git push origin "$BRANCH_NAME"
+
+                curl -u "$GITHUB_USERNAME:$GITHUB_TOKEN" \
+                -X POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "Content-Type: application/json" \
+                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls" \
+                -d "$(jq -n \
+                    --arg title "$PR_NAME" \
+                    --arg head "$BRANCH_NAME" \
+                    --arg base "$BASE_BRANCH" \
+                    '{title: $title, head: $head, base: $base}')"
+                done
+            env:
+              GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
