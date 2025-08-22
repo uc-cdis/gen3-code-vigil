@@ -1,0 +1,16 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Monthly Release
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/monthly_release.yaml
+      - .github/workflows/monthly_release.yaml
+
+jobs:
+  integration_tests:
+    name: Integration tests
+    uses: ./.github/workflows/monthly_release.yaml
+    with:
+      RELEASE_VERSION: 2025.09
+      LIST_OF_ENVIRONMENTS: ci/default

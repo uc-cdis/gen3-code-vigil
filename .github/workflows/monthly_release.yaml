@@ -1,7 +1,7 @@
 name: Monthly Release
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       RELEASE_VERSION:
         description: ""
