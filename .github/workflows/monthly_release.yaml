@@ -84,7 +84,7 @@ jobs:
 
               THOR_PATH="$(pwd)/thor"
               export GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
-              export GEN3_HELM_PATH="$(pwd)/gen3-helm
+              export GEN3_HELM_PATH="$(pwd)/gen3-helm"
               export TEST_REPO_PATH="$(pwd)"
               export TARGET_ENV=$folder
               export REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
