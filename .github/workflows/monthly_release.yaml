@@ -87,6 +87,7 @@ jobs:
               export GEN3_HELM_PATH="$(pwd)/gen3-helm"
               export TEST_REPO_PATH="$(pwd)"
               export REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
+              export GITHUB_TOKEN=${GITHUB_TOKEN//$'\n'/}
 
               # Clean up if already cloned
               rm -rf "$GEN3_GITOPS_PATH"
