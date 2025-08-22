@@ -64,14 +64,6 @@ jobs:
               echo "Skip pull requests from repositories not within the same organization"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
-          # Checkout gen3-gitops repo
-          - name: Checkout target repo
-            uses: actions/checkout@v4
-            with:
-              repository: uc-cdis/thor
-              ref: 'master'
-              path: thor
-
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
@@ -89,6 +81,7 @@ jobs:
 
               git config --global user.name "$GITHUB_USERNAME"
               git config --global user.email "cdis@uchicago.edu"
+              THOR_PATH="$(pwd)/thor"
               GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
               TEST_REPO_PATH="$(pwd)"
 
@@ -100,6 +93,7 @@ jobs:
 
                 # Clone the target repo
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
+                git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/thor"
                 cd "$GEN3_GITOPS_PATH"
 
                 PR_NAME="Gen3 Monthly Release ${IMAGE_TAG_VERSION} ${ENV} ${TIMESTAMP}"
@@ -109,7 +103,7 @@ jobs:
                 COMMIT_MSG="Updating $TARGET_ENV with $IMAGE_TAG_VERSION"
                 REPO_OWNER="uc-cdis"
                 BASE_BRANCH="master"
-                REPO_LIST_PATH="$GH_WORKSPACE/thor/repo_list.txt"
+                REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
 
                 # PERFORM GIT OPERATIONS TO SWITCH TO NEW BRANCH and navigate to target env folder
                 cd $GEN3_GITOPS_PATH
