@@ -81,9 +81,13 @@ jobs:
 
               git config --global user.name "$GITHUB_USERNAME"
               git config --global user.email "cdis@uchicago.edu"
+
               THOR_PATH="$(pwd)/thor"
-              GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
-              TEST_REPO_PATH="$(pwd)"
+              export GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
+              export GEN3_HELM_PATH="$(pwd)/gen3-helm
+              export TEST_REPO_PATH="$(pwd)"
+              export TARGET_ENV=$folder
+              export REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
 
               # Clean up if already cloned
               rm -rf "$GEN3_GITOPS_PATH"
@@ -94,10 +98,9 @@ jobs:
                 # Clone the target repo
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/thor"
+                git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/gen3-helm"
                 cd "$GEN3_GITOPS_PATH"
 
-                export TARGET_ENV=$folder
-                export REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
                 PR_NAME="Gen3 Monthly Release ${RELEASE_VERSION} ${ENV} ${TIMESTAMP}"
                 SANITIZED_ENV="${TARGET_ENV//\//_}"
                 BRANCH_NAME="chore/apply_${RELEASE_VERSION}_to_${SANITIZED_ENV}_${TIMESTAMP}"
