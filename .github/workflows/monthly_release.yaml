@@ -73,15 +73,20 @@ jobs:
 
           - name: Loop through folders and create PRs
             run: |
+              # install dependencies
+              pip install -U pip
+              pip install poetry
+              poetry install
+
+              git config --global user.name "$GITHUB_USERNAME"
+              git config --global user.email "cdis@uchicago.edu"
+              GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
+
+              # Clean up if already cloned
+              rm -rf "$GEN3_GITOPS_PATH"
+
               for folder in $FOLDERS; do
                 echo "Processing folder: $folder"
-
-                git config --global user.name "$GITHUB_USERNAME"
-                git config --global user.email "cdis@uchicago.edu"
-                GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
-
-                # Clean up if already cloned
-                rm -rf "$GEN3_GITOPS_PATH"
 
                 # Clone the target repo
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
@@ -98,7 +103,6 @@ jobs:
 
                 # PERFORM GIT OPERATIONS TO SWITCH TO NEW BRANCH and navigate to target env folder
                 cd $GEN3_GITOPS_PATH
-                pwd
                 git switch master
                 git fetch origin
                 git checkout -b "$BRANCH_NAME"

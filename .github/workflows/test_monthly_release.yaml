@@ -9,7 +9,7 @@ on:
 
 jobs:
   integration_tests:
-    name: Integration tests
+    name: Monthly Release
     uses: ./.github/workflows/monthly_release.yaml
     with:
       RELEASE_VERSION: 2025.09
