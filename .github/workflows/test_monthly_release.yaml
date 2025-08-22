@@ -8,7 +8,7 @@ on:
       - .github/workflows/monthly_release.yaml
 
 jobs:
-  integration_tests:
+  monthly_release:
     name: Monthly Release
     uses: ./.github/workflows/monthly_release.yaml
     with:

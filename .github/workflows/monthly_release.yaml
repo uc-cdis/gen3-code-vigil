@@ -96,14 +96,16 @@ jobs:
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/thor"
                 cd "$GEN3_GITOPS_PATH"
 
-                PR_NAME="Gen3 Monthly Release ${IMAGE_TAG_VERSION} ${ENV} ${TIMESTAMP}"
+                PR_NAME="Gen3 Monthly Release ${RELEASE_VERSION} ${ENV} ${TIMESTAMP}"
                 TARGET_ENV=$folder
                 SANITIZED_ENV="${TARGET_ENV//\//_}"
-                BRANCH_NAME="chore/apply_${IMAGE_TAG_VERSION}_to_${SANITIZED_ENV}_${TIMESTAMP}"
-                COMMIT_MSG="Updating $TARGET_ENV with $IMAGE_TAG_VERSION"
+                BRANCH_NAME="chore/apply_${RELEASE_VERSION}_to_${SANITIZED_ENV}_${TIMESTAMP}"
+                COMMIT_MSG="Updating $TARGET_ENV with $RELEASE_VERSION"
                 REPO_OWNER="uc-cdis"
                 BASE_BRANCH="master"
                 REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
+                ls -ltr $THOR_PATH
+                ls -ltr $REPO_LIST_PATH
 
                 # PERFORM GIT OPERATIONS TO SWITCH TO NEW BRANCH and navigate to target env folder
                 cd $GEN3_GITOPS_PATH
