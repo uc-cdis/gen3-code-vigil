@@ -88,7 +88,7 @@ jobs:
                 cd "$GEN3_GITOPS_PATH"
 
                 PR_NAME="Gen3 Monthly Release ${IMAGE_TAG_VERSION} ${ENV} ${TIMESTAMP}"
-                TARGET_ENV = $folder
+                TARGET_ENV=$folder
                 SANITIZED_ENV="${TARGET_ENV//\//_}"
                 BRANCH_NAME="chore/apply_${IMAGE_TAG_VERSION}_to_${SANITIZED_ENV}_${TIMESTAMP}"
                 COMMIT_MSG="Updating $TARGET_ENV with $IMAGE_TAG_VERSION"
