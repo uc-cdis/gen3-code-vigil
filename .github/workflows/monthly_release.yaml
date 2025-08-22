@@ -1,15 +1,18 @@
 name: Monthly Release
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       RELEASE_VERSION:
+        description: ""
         required: true
         type: string
       LIST_OF_ENVIRONMENTS:
+        description: ""
         required: true
         type: string
       TARGET_REPO_NAME:
+        description: ""
         required: false
         type: string
         default: gen3-gitops
