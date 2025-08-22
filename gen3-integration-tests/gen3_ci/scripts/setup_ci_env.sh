@@ -126,17 +126,16 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
-        portal_gitops_path = $ci_default_manifest_values_yaml
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
-          echo "Portal folder exists, copying it..."
-          mkdir -p "$ci_default_manifest_dir/portal/"
-          cp -r "$target_manifest_path/portal/"* "$ci_default_manifest_dir/portal/"
-          yq eval ".portal.customConfig.dir = \"ci/default/values/portal/\"" -i $ci_default_manifest_values_yaml
-          portal_gitops_path = "$ci_default_manifest_dir/portal/gitops.json"
+          echo "Found customConfig enabled for Portal. Updating repo and branch..."
+          yq eval '.portal.customConfig.dir = strenv(UPDATED_FOLDERS) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.repo = "https://github.com/" + strenv(REPO_FN) + ".git"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.branch = strenv(BRANCH)' -i "$ci_default_manifest_values_yaml"
+        else
+          sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
+          sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
         fi
-        sed -i '/requiredCerts/d' "$portal_gitops_path"
-        sed -i '/gaTrackingId/d' "$portal_gitops_path"
     fi
 
     ####################################################################################
