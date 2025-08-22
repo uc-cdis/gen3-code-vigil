@@ -4,18 +4,19 @@ on:
   workflow_call:
     inputs:
       RELEASE_VERSION:
-        description: ""
         required: true
         type: string
       LIST_OF_ENVIRONMENTS:
-        description: ""
         required: true
         type: string
       TARGET_REPO_NAME:
-        description: ""
         required: false
         type: string
         default: gen3-gitops
+      WORKING_DIR:
+        required: false
+        type: string
+        default: gen3-code-vigil/gen3-integration-tests
 
 permissions:
   id-token: write
@@ -30,6 +31,11 @@ concurrency:
 jobs:
     integration_tests:
         runs-on: ubuntu-latest
+
+        defaults:
+          run:
+            # the test directory in gen3-code-vigil
+            working-directory: ${{ inputs.WORKING_DIR }}
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
