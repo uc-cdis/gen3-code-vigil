@@ -4,7 +4,7 @@ name: Monthly Release
 on:
   pull_request:
     paths:
-      - .github/workflows/monthly_release.yaml
+      - .github/workflows/test_monthly_release.yaml
       - .github/workflows/monthly_release.yaml
 
 jobs:
