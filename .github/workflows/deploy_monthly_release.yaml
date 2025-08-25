@@ -99,6 +99,11 @@ jobs:
               for folder in $FOLDERS; do
                 echo "Processing folder: $folder"
 
+                # Needed for committing or pushing changes
+                git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/uc-cdis/gen3-gitops.git
+                git config --global user.name "PlanXCyborg"
+                git config --global user.email "cdis@uchicago.edu"
+
                 # Set variables needed by $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
                 export TARGET_ENV=$folder
                 TIMESTAMP=$(date +%s)
@@ -119,14 +124,11 @@ jobs:
                 # Update the yaml files
                 poetry run python $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
 
-                # Needed for committing or pushing changes
-                git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/uc-cdis/gen3-gitops.git
-                git config user.name $GITHUB_USERNAME
-                git config user.email "cdis@uchicago.edu"
-
                 # PUSH in the branch and create a PR
                 git add .
                 git commit -m "${COMMIT_MSG}"
+                git config --global --list
+
                 git push --set-upstream origin "$BRANCH_NAME"
 
                 # Create a PR on $TARGET_REPO_NAME
