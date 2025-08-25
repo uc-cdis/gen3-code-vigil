@@ -127,6 +127,7 @@ jobs:
                 echo "Adding commit message"
                 git commit -m "${COMMIT_MSG}"
                 echo "Perform push modified files"
+                git remote set-url origin https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/gen3-gitops.git
                 git config --list --show-origin
                 git push origin "$BRANCH_NAME"
                 echo "Perform PR creation"
