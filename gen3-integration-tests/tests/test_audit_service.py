@@ -328,7 +328,10 @@ class TestAuditService:
         login_page = LoginPage()
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         # RAS username is very flaky, so we use only start time as param and avoid username
-        params = ["start={}".format(timestamp)]
+        params = [
+            f"start={timestamp}",
+            "idp=ras",
+        ]
 
         # Perform login and logout operations using main_account to create a login record for audit service to access
         logger.info("# Logging in with RAS USER")
@@ -376,8 +379,7 @@ class TestAuditService:
         timestamp = math.floor(time.mktime(datetime.datetime.now().timetuple()))
         params = [
             f"start={timestamp}",
-            f"username={username}",
-            f"username={username.lower()}",
+            "idp=ras",
         ]
         token = ras.get_auth_code(
             scope=scope,

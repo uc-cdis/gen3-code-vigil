@@ -1,4 +1,5 @@
 import os
+import re
 import time
 
 import pytest
@@ -69,9 +70,13 @@ class RAS(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
             page.wait_for_load_state("load")
+        if page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
+            logger.info("Clicking on Authorization button")
+            page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
+            screenshot(page, "RASAfterClickingAuthorizationButton")
+        expect(page).to_have_url(re.compile(r".*code=.*"), timeout=20000)
         screenshot(page, "RASCodePage")
         current_url = page.url
-        assert "code=" in current_url, f"{current_url} is missing code= substring"
         code = current_url.split("code=")[-1]
         return code
 
