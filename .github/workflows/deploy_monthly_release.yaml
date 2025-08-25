@@ -134,5 +134,5 @@ jobs:
 
                 # Create a PR on $TARGET_REPO_NAME
                 echo "Perform PR creation"
-                gh pr create --title "$PR_NAME" --base "$BASE_BRANCH" --head "$BRANCH_NAME"
+                gh pr create --title "$PR_NAME" --body "$PR_NAME" --base "$BASE_BRANCH" --head "$BRANCH_NAME"
               done
