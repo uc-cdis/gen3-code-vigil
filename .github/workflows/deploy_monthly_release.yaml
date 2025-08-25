@@ -79,29 +79,30 @@ jobs:
               pip install poetry
               poetry install
 
-              git config --global user.name "$GITHUB_USERNAME"
-              git config --global user.email "cdis@uchicago.edu"
-
+              # Export needed variables
               export GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
               export GEN3_HELM_PATH="$(pwd)/gen3-helm"
               export TEST_REPO_PATH="$(pwd)"
               export THOR_REPO_LIST_PATH="$(pwd)/repo_list.txt"
               export GITHUB_TOKEN=${GITHUB_TOKEN//$'\n'/}
 
-              git config --list --show-origin
-
               # Clean up if already cloned
               rm -rf "$GEN3_GITOPS_PATH"
+
+              # GH Auth login
+              gh auth login --with-token <<< "$GITHUB_TOKEN"
+              gh repo clone uc-cdis/gen3-gitops
+              gh repo clone uc-cdis/gen3-helm
+              gh api -H "Accept: application/vnd.github.v3.raw" /repos/uc-cdis/thor/contents/repo_list.txt > repo_list.txt
+
+              # Needed for committing or pushing changes
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
 
               for folder in $FOLDERS; do
                 echo "Processing folder: $folder"
 
-                # Clone the target repo
-                git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
-                git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/gen3-helm"
-                curl -O https://raw.githubusercontent.com/uc-cdis/thor/master/repo_list.txt
-                cd "$GEN3_GITOPS_PATH"
-
+                # Set variables needed by $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
                 export TARGET_ENV=$folder
                 TIMESTAMP=$(date +%s)
                 PR_NAME="Gen3 Monthly Release ${RELEASE_VERSION} ${ENV} ${TIMESTAMP}"
@@ -122,23 +123,11 @@ jobs:
                 poetry run python $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
 
                 # PUSH in the branch and create a PR
-                echo "Adding modified files"
                 git add .
-                echo "Adding commit message"
                 git commit -m "${COMMIT_MSG}"
-                echo "Perform push modified files"
-                git remote set-url origin https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/gen3-gitops.git
-                git config --list --show-origin
-                git push origin "$BRANCH_NAME"
+                git push --set-upstream origin "$BRANCH_NAME"
+
+                # Create a PR on $TARGET_REPO_NAME
                 echo "Perform PR creation"
-                curl -i -v -u "$GITHUB_USERNAME:$GITHUB_TOKEN" \
-                -X POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "Content-Type: application/json" \
-                "https://api.github.com/repos/$REPO_OWNER/$TARGET_REPO_NAME/pulls" \
-                -d "$(jq -n \
-                    --arg title "$PR_NAME" \
-                    --arg head "$BRANCH_NAME" \
-                    --arg base "$BASE_BRANCH" \
-                    '{title: $title, head: $head, base: $base}')"
-                done
+                gh pr create --title "$PR_NAME" --base "$BASE_BRANCH" --head "$BRANCH_NAME"
+              done
