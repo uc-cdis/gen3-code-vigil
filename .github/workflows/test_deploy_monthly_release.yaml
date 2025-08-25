@@ -4,13 +4,13 @@ name: Monthly Release
 on:
   pull_request:
     paths:
-      - .github/workflows/test_monthly_release.yaml
-      - .github/workflows/monthly_release.yaml
+      - .github/workflows/test_deploy_monthly_release.yaml
+      - .github/workflows/deploy_monthly_release.yaml
 
 jobs:
   monthly_release:
     name: Monthly Release
-    uses: ./.github/workflows/monthly_release.yaml
+    uses: ./.github/workflows/deploy_monthly_release.yaml
     with:
       RELEASE_VERSION: 2025.09
       LIST_OF_ENVIRONMENTS: ci/default

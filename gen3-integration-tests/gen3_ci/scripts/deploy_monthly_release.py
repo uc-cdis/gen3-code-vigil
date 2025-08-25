@@ -7,7 +7,7 @@ TARGET_ENV = os.getenv("TARGET_ENV")
 RELEASE_VERSION = os.getenv("IMAGE_TAG_VERSION")
 GEN3_GITOPS_PATH = os.getenv("GEN3_GITOPS_PATH")
 GEN3_HELM_PATH = os.getenv("GEN3_HELM_PATH")
-REPO_LIST_PATH = os.getenv("REPO_LIST_PATH")
+THOR_REPO_LIST_PATH = os.getenv("THOR_REPO_LIST_PATH")
 TARGET_ENV_PATH = f"{GEN3_GITOPS_PATH}/{TARGET_ENV}"
 GEN3_DEFAULT_VALUES_PATH = f"{GEN3_HELM_PATH}/helm/gen3/values.yaml"
 REPO_LIST = []
@@ -75,8 +75,8 @@ def update_version_for_service(service_name, target_file):
             yaml.dump(target_file_config, f, default_flow_style=False)
 
 
-# Read the REPO_LIST_PATH and add it to a list
-with open(REPO_LIST_PATH, "r") as f:
+# Read the THOR_REPO_LIST_PATH and add it to a list
+with open(THOR_REPO_LIST_PATH, "r") as f:
     for line in f:
         stripped = line.strip()
         if stripped:

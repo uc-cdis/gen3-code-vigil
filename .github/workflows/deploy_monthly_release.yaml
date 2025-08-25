@@ -82,11 +82,10 @@ jobs:
               git config --global user.name "$GITHUB_USERNAME"
               git config --global user.email "cdis@uchicago.edu"
 
-              THOR_PATH="$(pwd)/thor"
               export GEN3_GITOPS_PATH="$(pwd)/$TARGET_REPO_NAME"
               export GEN3_HELM_PATH="$(pwd)/gen3-helm"
               export TEST_REPO_PATH="$(pwd)"
-              export REPO_LIST_PATH="$THOR_PATH/repo_list.txt"
+              export THOR_REPO_LIST_PATH="$(pwd)/repo_list.txt"
               export GITHUB_TOKEN=${GITHUB_TOKEN//$'\n'/}
 
               # Clean up if already cloned
@@ -97,8 +96,8 @@ jobs:
 
                 # Clone the target repo
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/$TARGET_REPO_NAME"
-                git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/thor"
                 git clone "https://$GITHUB_USERNAME:$GITHUB_TOKEN@github.com/uc-cdis/gen3-helm"
+                curl -O https://raw.githubusercontent.com/uc-cdis/thor/master/repo_list.txt
                 cd "$GEN3_GITOPS_PATH"
 
                 export TARGET_ENV=$folder
@@ -118,14 +117,14 @@ jobs:
                 cd "${TARGET_ENV}/values/"
 
                 # Update the yaml files
-                poetry run python $TEST_REPO_PATH/gen3_ci/scripts/monthly_release.py
+                poetry run python $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
 
                 # PUSH in the branch and create a PR
                 git add .
                 git commit -m "${COMMIT_MSG}"
                 git push origin "$BRANCH_NAME"
 
-                curl -u "$GITHUB_USERNAME:$GITHUB_TOKEN" \
+                curl -i -v -u "$GITHUB_USERNAME:$GITHUB_TOKEN" \
                 -X POST \
                 -H "Accept: application/vnd.github+json" \
                 -H "Content-Type: application/json" \
