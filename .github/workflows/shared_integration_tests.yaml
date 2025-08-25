@@ -285,7 +285,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             id: wait_for_ci_env
             run: |
-              MAX_ENVS=10
+              MAX_ENVS=20
               MAX_WAIT_SECONDS=3600
               WAIT_INTERVAL=30
               WAITED=0
