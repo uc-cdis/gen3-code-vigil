@@ -1,0 +1,19 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Monthly Release
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test_deploy_monthly_release.yaml
+      - .github/workflows/deploy_monthly_release.yaml
+
+jobs:
+  monthly_release:
+    name: Monthly Release
+    uses: ./.github/workflows/deploy_monthly_release.yaml
+    with:
+      RELEASE_VERSION: 2025.09
+      LIST_OF_ENVIRONMENTS: ci/default
+      WORKING_DIR: gen3-integration-tests
+    secrets:
+      PLANXCYBORG_PAT: ${{ secrets.PLANXCYBORG_PAT }}
