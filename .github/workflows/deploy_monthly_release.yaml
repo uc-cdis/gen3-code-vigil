@@ -108,6 +108,7 @@ jobs:
 
                 # Set variables needed by $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
                 export TARGET_ENV=$folder
+                export RELEASE_VERSION=$RELEASE_VERSION
                 TIMESTAMP=$(date +%s)
                 PR_NAME="Gen3 Monthly Release ${RELEASE_VERSION} ${ENV} ${TIMESTAMP}"
                 SANITIZED_ENV="${TARGET_ENV//\//_}"
