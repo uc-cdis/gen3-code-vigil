@@ -38,7 +38,7 @@ jobs:
             working-directory: ${{ inputs.WORKING_DIR }}
 
         env:
-          GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_USERNAME: "PlanXCyborg"
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
@@ -73,6 +73,8 @@ jobs:
               echo "FOLDERS=$(echo '${{ env.LIST_OF_ENVIRONMENTS }}' | tr ',' ' ')" >> $GITHUB_ENV
 
           - name: Loop through folders and create PRs
+            env:
+              GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
             run: |
               # Install dependencies
               pip install -U pip
