@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
         inputs:
             NAMESPACE:
-                description: "CI environment to quarantine"
+                description: "CI environment to quarantine / unquarantine"
                 required: true
             QURANTINED:
                 description: "Set `yes` to quarantine and `no` to unquarantine"
