@@ -120,8 +120,8 @@ jobs:
                 poetry run python $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
 
                 # Needed for committing or pushing changes
-                git config user.name "github-actions[bot]"
-                git config user.email "github-actions[bot]@users.noreply.github.com"
+                git config user.name $GITHUB_USERNAME
+                git config user.email "cdis@uchicago.edu"
 
                 # PUSH in the branch and create a PR
                 git add .
