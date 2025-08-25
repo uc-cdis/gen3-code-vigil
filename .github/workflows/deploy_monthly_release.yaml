@@ -74,7 +74,7 @@ jobs:
 
           - name: Loop through folders and create PRs
             run: |
-              # install dependencies
+              # Install dependencies
               pip install -U pip
               pip install poetry
               poetry install
@@ -89,8 +89,7 @@ jobs:
               # Clean up if already cloned
               rm -rf "$GEN3_GITOPS_PATH"
 
-              # GH Auth login
-              gh auth login --with-token <<< "$GITHUB_TOKEN"
+              # GH clone repositories and repo_list.txt file from Thor repo
               gh repo clone uc-cdis/gen3-gitops
               gh repo clone uc-cdis/gen3-helm
               gh api -H "Accept: application/vnd.github.v3.raw" /repos/uc-cdis/thor/contents/repo_list.txt > repo_list.txt
