@@ -127,6 +127,7 @@ jobs:
                 echo "Adding commit message"
                 git commit -m "${COMMIT_MSG}"
                 echo "Perform push modified files"
+                git config --list --show-origin
                 git push origin "$BRANCH_NAME"
                 echo "Perform PR creation"
                 curl -i -v -u "$GITHUB_USERNAME:$GITHUB_TOKEN" \
