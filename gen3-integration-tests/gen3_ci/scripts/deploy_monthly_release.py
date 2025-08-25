@@ -29,6 +29,11 @@ REPO_DICT = {
 CURRENT_REPO_DICT_KEY = ""
 
 
+class MyDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super(MyDumper, self).increase_indent(flow, False)
+
+
 def update_version_for_service(service_name, target_file):
     with open(target_file, "r") as f:
         target_file_config = yaml.safe_load(f)
@@ -72,7 +77,13 @@ def update_version_for_service(service_name, target_file):
                     container["image"] = f"{quay_link}:{RELEASE_VERSION}"
         # write the updates back to yaml file
         with open(target_file, "w") as f:
-            yaml.dump(target_file_config, f, default_flow_style=False)
+            yaml.dump(
+                target_file_config,
+                f,
+                Dumper=MyDumper,
+                default_flow_style=False,
+                sort_keys=False,
+            )
 
 
 # Read the THOR_REPO_LIST_PATH and add it to a list
