@@ -15,3 +15,5 @@ jobs:
       RELEASE_VERSION: 2025.09
       LIST_OF_ENVIRONMENTS: ci/default
       WORKING_DIR: gen3-integration-tests
+    secrets:
+      PLANXCYBORG_PAT: ${{ secrets.PLANXCYBORG_PAT }}
