@@ -120,10 +120,13 @@ jobs:
                 poetry run python $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
 
                 # PUSH in the branch and create a PR
+                echo "Adding modified files"
                 git add .
+                echo "Adding commit message"
                 git commit -m "${COMMIT_MSG}"
+                echo "Perform push modified files"
                 git push origin "$BRANCH_NAME"
-
+                echo "Perform PR creation"
                 curl -i -v -u "$GITHUB_USERNAME:$GITHUB_TOKEN" \
                 -X POST \
                 -H "Accept: application/vnd.github+json" \
