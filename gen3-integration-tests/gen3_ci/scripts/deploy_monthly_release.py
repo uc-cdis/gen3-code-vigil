@@ -4,7 +4,7 @@ import yaml
 
 # Get all environment variables
 TARGET_ENV = os.getenv("TARGET_ENV")
-RELEASE_VERSION = os.getenv("IMAGE_TAG_VERSION")
+RELEASE_VERSION = os.getenv("RELEASE_VERSION")
 GEN3_GITOPS_PATH = os.getenv("GEN3_GITOPS_PATH")
 GEN3_HELM_PATH = os.getenv("GEN3_HELM_PATH")
 THOR_REPO_LIST_PATH = os.getenv("THOR_REPO_LIST_PATH")
