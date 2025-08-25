@@ -16,6 +16,7 @@ jobs:
         runs-on: ubuntu-latest
         env:
             NAMESPACE: ${{ inputs.NAMESPACE }}
+            QUARANTINED: ${{ inputs.QURANTINED }}
             EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
         steps:
           - name: Set up Python
@@ -42,4 +43,8 @@ jobs:
               aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
           - name: Quarantine namespace
             run: |
-                kubectl label namespace ${{ env.NAMESPACE }} quarantine=true --overwrite
+                if [[ "$QUARANTINED" == "yes" ]]; then
+                  kubectl label namespace ${{ env.NAMESPACE }} quarantine=true --overwrite
+                else
+                  kubectl label namespace ${{ env.NAMESPACE }} quarantine=false --overwrite
+                fi
