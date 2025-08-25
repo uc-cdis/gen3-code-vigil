@@ -136,5 +136,3 @@ jobs:
                     --arg base "$BASE_BRANCH" \
                     '{title: $title, head: $head, base: $base}')"
                 done
-            env:
-              GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
