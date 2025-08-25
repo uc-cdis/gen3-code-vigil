@@ -94,10 +94,6 @@ jobs:
               gh repo clone uc-cdis/gen3-helm
               gh api -H "Accept: application/vnd.github.v3.raw" /repos/uc-cdis/thor/contents/repo_list.txt > repo_list.txt
 
-              # Needed for committing or pushing changes
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-
               for folder in $FOLDERS; do
                 echo "Processing folder: $folder"
 
@@ -120,6 +116,10 @@ jobs:
 
                 # Update the yaml files
                 poetry run python $TEST_REPO_PATH/gen3_ci/scripts/deploy_monthly_release.py
+
+                # Needed for committing or pushing changes
+                git config user.name "github-actions[bot]"
+                git config user.email "github-actions[bot]@users.noreply.github.com"
 
                 # PUSH in the branch and create a PR
                 git add .
