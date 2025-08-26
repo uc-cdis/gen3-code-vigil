@@ -270,7 +270,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               DATE=$(date +%Y%m%d)
-              aws s3 sync ./allure-report s3://ci-allure-reports/perf-run/$DATE
+              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
@@ -287,7 +287,7 @@ jobs:
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 DATE=$(date +%Y%m%d)
-                echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/perf-run/$DATE/index.html)" >> output/report.md
+                echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/load-tests/$DATE/index.html)" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
                 if [ ! -d output ]; then
