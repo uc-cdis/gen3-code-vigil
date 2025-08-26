@@ -24,7 +24,7 @@ on:
           - TestMetadataCreateAndQuery
           - TestSheepdogImportClinicalMetadata
           - ALL
-        default: ALL
+        default: TestGa4ghDrsPerformance
       RELEASE_VERSION:
         description: 'Release version'
         required: true
