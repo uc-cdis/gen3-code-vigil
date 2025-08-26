@@ -118,15 +118,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 
     ####################################################################################
-    # Update HATCHERY  Block
-    ####################################################################################
-    hatchery_block=$(yq eval ".hatchery // \"key not found\"" $new_manifest_values_file_path)
-    if [ "$hatchery_block" != "key not found" ]; then
-        echo "Updating HATCHERY Block"
-        yq eval-all 'select(fileIndex == 0) * {"hatchery": select(fileIndex == 1).hatchery}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
-    fi
-
-    ####################################################################################
     # Update PORTAL Block
     ####################################################################################
     portal_block=$(yq eval ".portal // \"key not found\"" $new_manifest_values_file_path)
@@ -135,8 +126,29 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
-        sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
-        sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
+        portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
+        if [[ "$portal_custom_config_enabled" == "true" ]]; then
+          echo "Found customConfig enabled for Portal. Updating repo and branch..."
+          yq eval '.portal.customConfig.dir = strenv(UPDATED_FOLDERS) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.repo = "https://github.com/" + strenv(REPO_FN) + ".git"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.branch = strenv(BRANCH)' -i "$ci_default_manifest_values_yaml"
+        else
+          sed -i '/requiredCerts/d' "$ci_default_manifest_values_yaml"
+          sed -i '/gaTrackingId/d' "$ci_default_manifest_values_yaml"
+        fi
+    fi
+
+    ####################################################################################
+    # Update Sower  Block
+    ####################################################################################
+    sower_block=$(yq eval ".sower // \"key not found\"" $new_manifest_values_file_path)
+    if [ "$sower_block" != "key not found" ]; then
+        echo "Updating sowerConfig Block"
+        yq eval-all 'select(fileIndex == 0) * {"sower": {"sowerConfig": select(fileIndex == 1).sower.sowerConfig}}' "$ci_default_manifest_values_yaml" "$new_manifest_values_file_path" -i
+        # Update the SA names for sower jobs in SowerConfig section
+        sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
+        # Update SA name in sower block
+        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
     fi
 
     ####################################################################################
@@ -205,7 +217,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      # "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
-     "sower.sowerConfig"
      )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
@@ -254,13 +265,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     fi
 
-    # Update the SA names for sower
-    current_sower_service_account=$(yq eval ".sower.serviceAccount.name // \"key not found\"" "$ci_default_manifest_values_yaml")
-    if [ "$current_sower_service_account" != "key not found" ]; then
-        echo "Key sower.serviceAccount.name found in \"$ci_default_manifest_values_yaml.\""
-        yq eval ".sower.serviceAccount.name = \"sower-service-account\"" -i "$ci_default_manifest_values_yaml"
-    fi
-
     # Check if REGISTER_USERS_ON is set to true in manifest env. Delete from default ci manifest if set to false or not set
     register_users_on=$(yq eval '.fence.FENCE_CONFIG_PUBLIC.REGISTER_USERS_ON == true' "$new_manifest_values_file_path")
     if [[ "$register_users_on" != "true" ]]; then
@@ -272,9 +276,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$google_enabled" != "true" ]]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
-    # Update the SA names for sower jobs in SowerConfig section
-    sed -i 's/^\([[:space:]]*\)serviceAccountName: .*/\1serviceAccountName: sower-service-account/' "$ci_default_manifest_values_yaml"
-
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
@@ -411,6 +412,12 @@ echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 touch $ci_default_manifest_portal_yaml
 yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
 yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+
+# TODO: Delete this after nightly-build teardown is working properly with helm-ci-cleanup
+if [ "$namespace" == "nightly-build" ]; then
+  echo "Deleting indexd-userdb for nightly-build"
+  kubectl delete job indexd-userdb -n $namespace
+fi
 
 
 echo $HOSTNAME

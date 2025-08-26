@@ -11,7 +11,7 @@ load_dotenv()
 
 
 def setup_env_for_helm(arguments):
-    file_path = HELM_SCRIPTS_PATH_OBJECT / "env_setup.sh"
+    file_path = HELM_SCRIPTS_PATH_OBJECT / "setup_ci_env.sh"
     logger.info(f"File path: {file_path}")
     logger.info(f"Argument: {arguments}")
     result = subprocess.run(

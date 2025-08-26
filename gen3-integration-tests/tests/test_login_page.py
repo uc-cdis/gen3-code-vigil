@@ -71,9 +71,7 @@ class TestLoginPage:
         self.login_page.go_to(page=page, url=self.QUERY_PARAM_URL)
 
         # Should be redirected to login page
-        expect(page.locator(self.login_page.LOGIN_BUTTON_LIST)).to_be_visible(
-            timeout=10000
-        )
+        expect(page.locator(self.login_page.LOGIN_BUTTON_LIST)).to_be_visible()
         screenshot(page, "RedirectPage")
         current_url = page.url
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"

@@ -1,7 +1,6 @@
 # Login Page
 import os
 import re
-import time
 
 import pytest
 from pages.user_register import UserRegister
@@ -65,6 +64,7 @@ class LoginPage(object):
         idp="Google",
         validate_username_locator=True,
         capture_screenshot=True,
+        skip_user_registeration=False,
     ):
         """
         Sets up Dev Cookie for main Account and logs in with Google
@@ -80,7 +80,6 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        # cookies = page.context.cookies()
         expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=30000)
         self.handle_popup(page)
         if idp == "ORCID":
@@ -109,6 +108,9 @@ class LoginPage(object):
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
             logger.info(f"Registering User {pytest.users[user]}")
+            if skip_user_registeration:
+                logger.info("Skipping user registration")
+                return
             user_register = UserRegister()
             user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:
@@ -186,11 +188,6 @@ class LoginPage(object):
             screenshot(page, "RASAfterClickingGrantButton")
         else:
             self.ras_login_form(page, username, password)
-            if page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
-                logger.info("Clicking on Authorization button")
-                page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
-                time.sleep(5)
-                screenshot(page, "RASAfterClickingAuthorizationButton")
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")

@@ -10,36 +10,46 @@ import requests
 from dotenv import load_dotenv
 from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.jenkins import JenkinsJob
+from utils.misc import retry
 
 load_dotenv()
 CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
+@retry(times=5, delay=60, exceptions=(AssertionError))
 def get_portal_config():
     """Fetch portal config from the GUI"""
     res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
-    if res.status_code == 200:
-        return res.json()
-    else:
-        raise Exception(
-            f"Unable to get portal config: status code {res.status_code} - response {res.text}"
-        )
+    assert res.status_code == 200
+    return res.json()
 
 
-def check_export_to_pfb_button(data):
+def check_button_is_present(data, search_button):
+    # Checks manifest download button for Register User tests
     for button in data:
-        if button.get("type") == "export-to-pfb":
+        if search_button in button.get("type", "") and button.get("enabled"):
             return True
     return False
 
 
-def validate_json_for_export_to_pfb_button(data):
+def validate_button_in_portal_config(data, search_button):
     if isinstance(data, dict):
-        if "buttons" in data and check_export_to_pfb_button(data["buttons"]):
-            return True
-        return any(validate_json_for_export_to_pfb_button(val) for val in data.values())
-    if isinstance(data, list):
-        return any(validate_json_for_export_to_pfb_button(item) for item in data)
+        if "buttons" in data and check_button_is_present(
+            data["buttons"], search_button
+        ):
+            if search_button == "export-to-pfb":
+                return True
+            if search_button == "manifest":
+                return data["tabTitle"]
+        for val in data.values():
+            result = validate_button_in_portal_config(val, search_button)
+            if result:
+                return result
+    elif isinstance(data, list):
+        for item in data:
+            result = validate_button_in_portal_config(item, search_button)
+            if result:
+                return result
     return False
 
 

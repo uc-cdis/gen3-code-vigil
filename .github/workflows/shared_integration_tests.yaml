@@ -101,6 +101,8 @@ jobs:
           PR_NUM: ${{ github.event.pull_request.number }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           RUN_NUM: ${{ github.run_number }}
+          RUN_ID: ${{ github.run_id }}
+          ATTEMPT_NUM: ${{ github.run_attempt }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
           CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
@@ -115,6 +117,7 @@ jobs:
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
           IS_NIGHTLY_RUN: ${{ inputs.IS_NIGHTLY_RUN }}
+          TEST_LABELS: ${{ inputs.TEST_LABELS }}
 
         steps:
           # Ensure the PR is run under the same org as an Internal PR
@@ -146,7 +149,7 @@ jobs:
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
             working-directory: ${{ github.workspace }}
             run: |
               git fetch -q
@@ -178,7 +181,7 @@ jobs:
               path: gen3-gitops-ci
 
           - name: Get commit time
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
             run: |
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
@@ -276,47 +279,13 @@ jobs:
             run: |
               aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
 
-          # Create PR namespace and PR hostname env var
-          - name: Create namespace and env vars
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
-            # Change the HOSTNAME with full domain name
-            run: |
-              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
-                NAMESPACE=nightly-build
-                HOSTNAME=nightly-build.ci.planx-pla.net
-              else
-                NAMESPACE=${REPO}-pr-${PR_NUM}
-                HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
-              fi
-              echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
-              echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              kubectl create namespace $NAMESPACE || true
-
-          # Select an unlocked environment
-          # If an env is specified in a PR label use it, else pick one from the pool
-          - name: Select CI environment
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
-            id: select_ci_env
-            run: |
-              env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
-              echo "$env_label"
-              if [[ $env_label != "" && $env_label != null ]]; then
-                echo "Found PR label $env_label"
-                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
-              else
-                poetry run python -m gen3_ci.scripts.select_ci_environment
-              fi
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
-              fi
-
           # Ensure we do not cross the threshold of maximum number of CI envs allowed
           # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
           - name: Wait for CI environment
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             id: wait_for_ci_env
             run: |
-              MAX_ENVS=10
+              MAX_ENVS=20
               MAX_WAIT_SECONDS=3600
               WAIT_INTERVAL=30
               WAITED=0
@@ -338,6 +307,46 @@ jobs:
                 sleep $WAIT_INTERVAL
                 WAITED=$((WAITED + WAIT_INTERVAL))
               done
+
+          # Create PR namespace and PR hostname env var
+          - name: Create namespace and env vars
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            # Change the HOSTNAME with full domain name
+            run: |
+              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                NAMESPACE=nightly-build
+                HOSTNAME=nightly-build.ci.planx-pla.net
+              else
+                NAMESPACE=${REPO}-pr-${PR_NUM}
+                HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
+              fi
+              echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+              echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              if [ -n "$namespace_exists" ]; then
+                echo "Namespace $NAMESPACE exists, performing teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE || true
+                kubectl delete ns $NAMESPACE
+              fi
+              kubectl create namespace $NAMESPACE
+
+          # Select an unlocked environment
+          # If an env is specified in a PR label use it, else pick one from the pool
+          - name: Select CI environment
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
+            id: select_ci_env
+            run: |
+              env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
+              echo "$env_label"
+              if [[ $env_label != "" && $env_label != null ]]; then
+                echo "Found PR label $env_label"
+                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
+              else
+                poetry run python -m gen3_ci.scripts.select_ci_environment
+              fi
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
+              fi
 
           - name: Get modified folders
             # This is applicable for Manifest PRs only
@@ -381,9 +390,12 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               if [[ -n $TEST_LABELS ]]; then
-                test_label="-k \"${TEST_LABELS//,/ or }\""
+                test_label_expr="${TEST_LABELS//,/ or }"
+                test_label="-k \"$test_label_expr\""
               else
-                test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+                if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+                  test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
+                fi
               fi
               echo $test_label
               echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
@@ -434,9 +446,14 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
-                AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+                AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
               else
-                aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                  DATE=$(date +%Y%m%d)
+                  aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE
+                else
+                  aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
+                fi
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
@@ -458,7 +475,12 @@ jobs:
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://qa.planx-pla.net/dashboard/Secure/gen3-ci-reports/$REPO/$PR_NUM/$RUN_NUM/index.html) _(login [here](https://qa.planx-pla.net) first)_" >> output/report.md
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                  DATE=$(date +%Y%m%d)
+                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run/$DATE/index.html)" >> output/report.md
+                else
+                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
+                fi
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" && $GEN3_INSTANCE_TYPE == "ADMINVM_REMOTE" ]; then
                 if [ ! -d output ]; then
@@ -472,7 +494,7 @@ jobs:
 
           - name: Render report to the PR
             id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
@@ -486,7 +508,7 @@ jobs:
 
           - name: Publish report to Slack
             id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.publish_md_report.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             uses: slackapi/slack-github-action@v2.0.0
             with:
@@ -506,10 +528,10 @@ jobs:
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           - name: Cleanup
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
                 poetry run python -m gen3_ci.scripts.clean_up_jenkins
               elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]]; then
-                poetry run python -m gen3_ci.scripts.teardown_helm_env
+                poetry run python -m gen3_ci.scripts.teardown_ci_env
               fi
