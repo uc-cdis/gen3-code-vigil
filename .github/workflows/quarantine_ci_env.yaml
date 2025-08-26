@@ -6,17 +6,23 @@ on:
             NAMESPACE:
                 description: "CI environment to quarantine / unquarantine"
                 required: true
-            QURANTINED:
+            QUARANTINE:
                 description: "Set `yes` to quarantine and `no` to unquarantine"
                 required: true
                 default: "yes"
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
     quarantine_ci_env:
         runs-on: ubuntu-latest
         env:
             NAMESPACE: ${{ inputs.NAMESPACE }}
-            QUARANTINED: ${{ inputs.QURANTINED }}
+            QUARANTINE: ${{ inputs.QURANTINED }}
             EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
         steps:
           - name: Set up Python
@@ -43,7 +49,7 @@ jobs:
               aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
           - name: Quarantine namespace
             run: |
-                if [[ "$QUARANTINED" == "yes" ]]; then
+                if [[ "$QUARANTINE" == "yes" ]]; then
                   kubectl label namespace ${{ env.NAMESPACE }} quarantine=true --overwrite
                 else
                   kubectl label namespace ${{ env.NAMESPACE }} quarantine=false --overwrite
