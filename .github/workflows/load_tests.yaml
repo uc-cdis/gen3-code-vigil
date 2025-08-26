@@ -57,8 +57,8 @@ jobs:
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
               TEST_ENV="jenkins-perf"
-              TEST_SUITE="TestGa4ghDrsPerformance"
-              RELEASE_VERSION="2025.09"
+              TEST_SUITE="ALL"
+              RELEASE_VERSION="master"
             fi
 
             echo "TEST_ENV=$TEST_ENV" >> $GITHUB_OUTPUT
