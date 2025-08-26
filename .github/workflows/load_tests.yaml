@@ -24,7 +24,7 @@ on:
           - TestMetadataCreateAndQuery
           - TestSheepdogImportClinicalMetadata
           - ALL
-        default: TestGa4ghDrsPerformance
+        default: ALL
       RELEASE_VERSION:
         description: 'Release version'
         required: true
@@ -57,7 +57,7 @@ jobs:
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
               TEST_ENV="jenkins-perf"
-              TEST_SUITE="ALL"
+              TEST_SUITE="TestGa4ghDrsPerformance"
               RELEASE_VERSION="master"
             fi
 
@@ -213,6 +213,13 @@ jobs:
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
+
+          - name: Download Thor repo_list.txt file
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              gh api -H "Accept: application/vnd.github.v3.raw" /repos/uc-cdis/thor/contents/repo_list.txt > repo_list.txt
+              THOR_REPO_LIST_PATH="$(pwd)/repo_list.txt"
+              echo "THOR_REPO_LIST_PATH=$THOR_REPO_LIST_PATH" >> $GITHUB_ENV
 
           - name: Prepare CI environment
             id: prep_ci_env
