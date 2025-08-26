@@ -90,18 +90,9 @@ jobs:
           NAMESPACE: ${{ needs.setup.outputs.TEST_ENV }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          QA_DASHBOARD_S3_PATH: ${{ secrets.QA_DASHBOARD_S3_PATH }}
 
 
         steps:
-          # Ensure the PR is run under the same org as an Internal PR
-          # and not by external forks/PRs
-          - name: Check if PR is from the same organization
-            if: github.repository_owner != github.event.pull_request.head.repo.owner.login
-            run:  |
-              echo "Skip pull requests from repositories not within the same organization"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
-
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -109,6 +100,14 @@ jobs:
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
+
+          # Ensure the PR is run under the same org as an Internal PR
+          # and not by external forks/PRs
+          - name: Check if PR is from the same organization
+            if: ${{ github.repository_owner != 'uc-cdis' }}
+            run:  |
+              echo "Skip pull requests from repositories not within the same organization"
+              echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Checkout gen3-gitops repo
           - name: Checkout gen3-gitops repo
@@ -215,6 +214,13 @@ jobs:
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               kubectl create namespace $NAMESPACE || true
 
+          - name: Download Thor repo_list.txt file
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              gh api -H "Accept: application/vnd.github.v3.raw" /repos/uc-cdis/thor/contents/repo_list.txt > repo_list.txt
+              THOR_REPO_LIST_PATH="$(pwd)/repo_list.txt"
+              echo "THOR_REPO_LIST_PATH=$THOR_REPO_LIST_PATH" >> $GITHUB_ENV
+
           - name: Prepare CI environment
             id: prep_ci_env
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -263,7 +269,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM
+              DATE=$(date +%Y%m%d)
+              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
@@ -279,7 +286,8 @@ jobs:
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/index.html)" >> output/report.md
+                DATE=$(date +%Y%m%d)
+                echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/load-tests/$DATE/index.html)" >> output/report.md
               fi
               if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
                 if [ ! -d output ]; then
