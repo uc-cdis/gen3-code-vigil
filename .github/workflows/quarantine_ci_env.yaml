@@ -22,7 +22,7 @@ jobs:
         runs-on: ubuntu-latest
         env:
             NAMESPACE: ${{ inputs.NAMESPACE }}
-            QUARANTINE: ${{ inputs.QURANTINE }}
+            QUARANTINE: ${{ inputs.QUARANTINE }}
             EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
         steps:
           - name: Set up Python
