@@ -6,6 +6,17 @@ import pytest
 from pages.login import LoginPage
 from pages.workspace import WorkspacePage
 from utils import logger
+from utils.test_execution import screenshot
+
+
+@pytest.fixture()
+def page_setup(page):
+    yield page
+    workspace = WorkspacePage()
+    if page.locator(workspace.TERMINATE_BUTTON).is_visible():
+        workspace.terminate_workspace(page)
+        screenshot(page, "WorkspaceTerminatedInTearDown")
+    page.close()
 
 
 @pytest.mark.skipif(
@@ -22,7 +33,7 @@ from utils import logger
 )
 @pytest.mark.workspace
 class TestWorkspacePage:
-    def test_workspace_drs_pull(self, page):
+    def test_workspace_drs_pull(self, page_setup):
         """
         Scenario: Workspace DRS Pull
         Steps:
@@ -37,22 +48,22 @@ class TestWorkspacePage:
         workspace_page = WorkspacePage()
         login_page = LoginPage()
         logger.info("# Logging in with mainAcct")
-        login_page.go_to(page)
+        login_page.go_to(page_setup)
         """login with mainAcct user"""
-        login_page.login(page)
+        login_page.login(page_setup)
         """navigates to workspace page and sees workspace_options"""
-        workspace_page.go_to(page)
+        workspace_page.go_to(page_setup)
         """launches the workspace jupyter notebook"""
-        workspace_page.launch_workspace(page)
+        workspace_page.launch_workspace(page_setup)
         """opens python kernel in notebook"""
-        workspace_page.open_python_notebook(page)
+        workspace_page.open_python_notebook(page_setup)
         command = "!pip install -U gen3==4.24.1"
         logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page, command)
+        result = workspace_page.run_command_in_notebook(page_setup, command)
         logger.info(
             "Running command in jupyter notebook: !gen3 --help"
         )  # default command
-        result = workspace_page.run_command_in_notebook(page)
+        result = workspace_page.run_command_in_notebook(page_setup)
         logger.info(f"Result: {result}")
         """terminates the workspace after executing the command"""
-        workspace_page.terminate_workspace(page)
+        workspace_page.terminate_workspace(page_setup)
