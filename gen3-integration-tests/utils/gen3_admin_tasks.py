@@ -318,6 +318,108 @@ def check_job_pod(
             )
 
 
+@retry(times=2, delay=30)
+def _get_fence_pod_name(test_env_namespace):
+    # Get the pod name for fence app
+    cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    assert result.returncode == 0
+    fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+    return fence_pod_name
+
+
+def _get_delete_cmd(test_env_namespace, client_name):
+    fence_pod_name = _get_fence_pod_name(test_env_namespace)
+    return [
+        "kubectl",
+        "-n",
+        test_env_namespace,
+        "exec",
+        "-i",
+        fence_pod_name,
+        "--",
+        "fence-create",
+        "client-delete",
+        "--client",
+        client_name,
+    ]
+
+
+def _get_create_cmd(
+    test_env_namespace,
+    arborist_policies,
+    client_type,
+    client_name,
+    username,
+    expires_in,
+    scopes,
+):
+    hostname = os.getenv("HOSTNAME")
+    fence_pod_name = _get_fence_pod_name(test_env_namespace)
+    create_cmd = [
+        "kubectl",
+        "-n",
+        test_env_namespace,
+        "exec",
+        "-i",
+        fence_pod_name,
+        "--",
+        "fence-create",
+    ]
+
+    if arborist_policies:
+        create_cmd = create_cmd + ["client-create", "--policies", arborist_policies]
+    else:
+        create_cmd = create_cmd + ["client-create"]
+
+    if client_type == "client_credentials":
+        create_cmd = create_cmd + [
+            "--client",
+            client_name,
+            "--grant-types",
+            "client_credentials",
+        ]
+    elif client_type == "implicit":
+        create_cmd = create_cmd + [
+            "--client",
+            client_name,
+            "--user",
+            username,
+            "--urls",
+            f"https://{hostname}",
+            "--grant-types",
+            "implicit",
+            "--public",
+        ]
+    elif client_type == "auth_code":
+        create_cmd = create_cmd + [
+            "--client",
+            client_name,
+            "--user",
+            username,
+            "--urls",
+            f"https://{hostname}",
+            "--grant-types",
+            "authorization_code",
+        ]
+    else:
+        create_cmd = create_cmd + [
+            "--client",
+            client_name,
+            "--user",
+            username,
+            "--urls",
+            f"https://{hostname}",
+        ]
+
+    if expires_in:
+        create_cmd = create_cmd + ["--expires-in", expires_in]
+    if scopes:
+        create_cmd = create_cmd + ["--allowed-scopes"] + scopes.split(" ")
+
+
 def setup_fence_test_clients(
     clients_data: str,
     test_env_namespace: str = "",
@@ -359,18 +461,6 @@ def setup_fence_test_clients(
                 raise Exception("Build number not found")
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-        hostname = os.getenv("HOSTNAME")
-
-        # Get the pod name for fence app
-        cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        if result.returncode == 0:
-            fence_pod_name = result.stdout.splitlines()[-1].split()[0]
-        else:
-            raise Exception("Unable to retrieve fence-deployment pod")
-
         # Create clients
         for line in clients_data.split("\n")[1:]:
             (
@@ -383,94 +473,23 @@ def setup_fence_test_clients(
             ) = line.split(",")
             logger.info(f"Creating Client: {client_name}")
 
-            # Delete existing client if it exists
-            delete_cmd = [
-                "kubectl",
-                "-n",
-                test_env_namespace,
-                "exec",
-                "-i",
-                fence_pod_name,
-                "--",
-                "fence-create",
-                "client-delete",
-                "--client",
-                client_name,
-            ]
             subprocess.run(
-                delete_cmd,
+                _get_delete_cmd(test_env_namespace, client_name),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
             )
 
-            create_cmd = [
-                "kubectl",
-                "-n",
-                test_env_namespace,
-                "exec",
-                "-i",
-                fence_pod_name,
-                "--",
-                "fence-create",
-            ]
-
-            if arborist_policies:
-                create_cmd = create_cmd + [
-                    "client-create",
-                    "--policies",
-                    arborist_policies,
-                ]
-            else:
-                create_cmd = create_cmd + ["client-create"]
-
-            if client_type == "client_credentials":
-                create_cmd = create_cmd + [
-                    "--client",
-                    client_name,
-                    "--grant-types",
-                    "client_credentials",
-                ]
-            elif client_type == "implicit":
-                create_cmd = create_cmd + [
-                    "--client",
-                    client_name,
-                    "--user",
-                    username,
-                    "--urls",
-                    f"https://{hostname}",
-                    "--grant-types",
-                    "implicit",
-                    "--public",
-                ]
-            elif client_type == "auth_code":
-                create_cmd = create_cmd + [
-                    "--client",
-                    client_name,
-                    "--user",
-                    username,
-                    "--urls",
-                    f"https://{hostname}",
-                    "--grant-types",
-                    "authorization_code",
-                ]
-            else:
-                create_cmd = create_cmd + [
-                    "--client",
-                    client_name,
-                    "--user",
-                    username,
-                    "--urls",
-                    f"https://{hostname}",
-                ]
-
-            if expires_in:
-                create_cmd = create_cmd + ["--expires-in", expires_in]
-            if scopes:
-                create_cmd = create_cmd + ["--allowed-scopes"] + scopes.split(" ")
-
             create_result = subprocess.run(
-                create_cmd,
+                _get_create_cmd(
+                    test_env_namespace,
+                    arborist_policies,
+                    client_type,
+                    client_name,
+                    username,
+                    expires_in,
+                    scopes,
+                ),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -494,7 +513,7 @@ def setup_fence_test_clients(
                 test_env_namespace,
                 "exec",
                 "-i",
-                fence_pod_name,
+                _get_fence_pod_name(test_env_namespace),
                 "--",
                 "fence-create",
                 "client-rotate",
