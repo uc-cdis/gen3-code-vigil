@@ -418,6 +418,7 @@ def _get_create_cmd(
         create_cmd = create_cmd + ["--expires-in", expires_in]
     if scopes:
         create_cmd = create_cmd + ["--allowed-scopes"] + scopes.split(" ")
+    return create_cmd
 
 
 def setup_fence_test_clients(
