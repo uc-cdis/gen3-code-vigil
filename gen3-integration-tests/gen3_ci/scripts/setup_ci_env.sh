@@ -215,7 +215,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.netpolicy"
      "global.frontendRoot"
      "ssjdispatcher.indexing"
-     # "metadata.useAggMds"
+     "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
      )
