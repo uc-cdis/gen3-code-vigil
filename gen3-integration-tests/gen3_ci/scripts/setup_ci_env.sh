@@ -115,6 +115,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Updating ETL Block"
         yq eval-all 'select(fileIndex == 0) * {"etl": select(fileIndex == 1).etl}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq eval ".etl.esEndpoint = \"gen3-elasticsearch-master\"" -i $ci_default_manifest_values_yaml
+        yq eval-all 'select(fileIndex == 0) * {"etl": {"resources": select(fileIndex == 1).etl.resources}}' "$ci_default_manifest_values_yaml" "${ci_default_manifest_dir}/etl.yaml" -i
     fi
 
     ####################################################################################
@@ -214,7 +215,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.netpolicy"
      "global.frontendRoot"
      "ssjdispatcher.indexing"
-     # "metadata.useAggMds"
+     "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
      # "metadata.aggMdsDefaultDataDictField"
      )
