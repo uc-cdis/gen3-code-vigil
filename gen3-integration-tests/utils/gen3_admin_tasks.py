@@ -426,8 +426,8 @@ def setup_fence_test_client(test_env_namespace, client_data):
     """
     Create fence test client
     """
-    (client_name, username, client_type, arborist_policies, expires_in, scopes) = (
-        client_data.split(",")
+    client_name, username, client_type, arborist_policies, expires_in, scopes = (
+        client_data
     )
 
     logger.info(f"Creating fence client: {client_name}")
