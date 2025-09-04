@@ -52,5 +52,6 @@ jobs:
                 if [[ "$QUARANTINE" == "yes" ]]; then
                   kubectl label namespace ${{ env.NAMESPACE }} quarantine=true --overwrite
                 else
-                  kubectl label namespace ${{ env.NAMESPACE }} quarantine=false --overwrite
+                  kubectl label namespace ${{ env.NAMESPACE }} quarantine-
+                  kubectl label namespace ${{ env.NAMESPACE }} teardown=true --overwrite
                 fi
