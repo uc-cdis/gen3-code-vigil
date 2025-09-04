@@ -50,8 +50,8 @@ def setup_fence_test_clients_info():
     # Read CSV data into a python variable
     with open(clients_data_file_path, newline="") as csvfile:
         reader = csv.reader(csvfile)
-        # Join rows with newlines to preserve the format
-        data = "\n".join(",".join(row) for row in reader)
+        next(reader)  # skip header
+        data = list(reader)
     # Create the client
     gen3_admin_tasks.setup_fence_test_clients(
         data,

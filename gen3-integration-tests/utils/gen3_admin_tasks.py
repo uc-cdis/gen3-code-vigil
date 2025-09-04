@@ -4,6 +4,7 @@ import random
 import string
 import subprocess
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import pytest
 import requests
@@ -421,6 +422,49 @@ def _get_create_cmd(
     return create_cmd
 
 
+def setup_fence_test_client(test_env_namespace, client_data):
+    """
+    Create fence test client
+    """
+    (client_name, username, client_type, arborist_policies, expires_in, scopes) = (
+        client_data.split(",")
+    )
+
+    logger.info(f"Creating fence client: {client_name}")
+
+    # Delete existing client
+    subprocess.run(
+        _get_delete_cmd(test_env_namespace, client_name),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+
+    # Create the client
+    create_result = subprocess.run(
+        _get_create_cmd(
+            test_env_namespace,
+            arborist_policies,
+            client_type,
+            client_name,
+            username,
+            expires_in,
+            scopes,
+        ),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=30,
+    )
+    if create_result.returncode == 0:
+        client_info = create_result.stdout.strip().split("\n")[-1]
+    else:
+        raise Exception(
+            f"Unable to create client '{client_name}'. Response: {create_result.stderr.strip()}"
+        )
+    return (client_name, client_info)
+
+
 def setup_fence_test_clients(
     clients_data: str,
     test_env_namespace: str = "",
@@ -463,47 +507,19 @@ def setup_fence_test_clients(
     # Local Helm Deployments
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Create clients
-        for line in clients_data.split("\n")[1:]:
-            (
-                client_name,
-                username,
-                client_type,
-                arborist_policies,
-                expires_in,
-                scopes,
-            ) = line.split(",")
-            logger.info(f"Creating Client: {client_name}")
-
-            subprocess.run(
-                _get_delete_cmd(test_env_namespace, client_name),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-
-            create_result = subprocess.run(
-                _get_create_cmd(
-                    test_env_namespace,
-                    arborist_policies,
-                    client_type,
-                    client_name,
-                    username,
-                    expires_in,
-                    scopes,
-                ),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=30,
-            )
-            if create_result.returncode == 0:
-                client_info = create_result.stdout.strip().split("\n")[-1]
-            else:
-                raise Exception(
-                    f"Unable to create client '{client_name}'. Response: {create_result.stderr.strip()}"
+        results = []
+        with ProcessPoolExecutor(max_workers=4) as executor:
+            future_to_task = {
+                executor.submit(
+                    setup_fence_test_client, test_env_namespace, client_data
                 )
-            with open(clients_file_path, "+a") as outfile:
-                outfile.write(f"{client_name}:{client_info}\n")
+                for client_data in clients_data
+            }
+            for future in as_completed(future_to_task):
+                results.append(future.result())
+        with open(clients_file_path, "+a") as outfile:
+            for result in results:
+                outfile.write(f"{result[0]}:{result[0]}\n")
 
         # Rotate Client
         rotate_client_list = ["jenkins-client-tester"]
