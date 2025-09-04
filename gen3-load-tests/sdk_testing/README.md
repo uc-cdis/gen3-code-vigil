@@ -16,7 +16,7 @@ A comprehensive Python script that compares CDIS Data Client and Gen3 SDK downlo
 
 - Python 3.9+
 - Poetry for dependency management
-- Local `gen3sdk-python` directory for Gen3 SDK testing
+- Gen3 SDK installed via pyproject.toml (see Configuration section)
 - `gen3-client` executable for CDIS testing
 
 ## Installation
@@ -41,11 +41,28 @@ poetry shell
 
 ## Configuration
 
-Before running the tests, update the following paths in the script or use command line arguments:
+### Testing a Specific Gen3 SDK Branch
 
-1. **Gen3 SDK Path**: Update `gen3sdk_path` in the script or use `--gen3sdk-path ~/path/to/gen3sdk-python`
-2. **Credentials**: Update `credentials_path` or use `--credentials ~/path/to/credentials.json`
-3. **Gen3 Client**: Ensure `gen3-client` is in your PATH or specify with `--gen3-client-path`
+To test a specific branch of the Gen3 SDK (e.g., a development branch with new features), update your `pyproject.toml` file to install from the desired branch:
+
+```toml
+[tool.poetry.dependencies]
+gen3 = {git = "https://github.com/Dhiren-Mhatre/gen3sdk-python", branch = "feat/multiple-download-performance-testing"}
+```
+
+Then update your dependencies:
+
+```bash
+poetry lock
+poetry install
+```
+
+### Other Configuration
+
+Before running the tests, configure the following:
+
+1. **Credentials**: Specify credentials file with `--credentials path/to/credentials.json`
+2. **Gen3 Client**: Ensure `gen3-client` is in your PATH or specify with `--gen3-client-path`
 
 ## Usage
 
@@ -65,9 +82,8 @@ python download_performance_test.py \
   --num-workers-cdis 4 \
   --test-methods "async,cdis" \
   --endpoint "https://data.midrc.org" \
-  --credentials "~/path/to/credentials.json" \
+  --credentials "credentials.json" \
   --gen3-client-path "gen3-client" \
-  --gen3sdk-path "~/path/to/gen3sdk-python" \
   --download-dir "downloads" \
   --results-dir "download_performance_results" \
   --disable-profiling \
@@ -85,9 +101,8 @@ python download_performance_test.py \
 | `--num-workers-cdis`        | `4` (configurable)               | Number of CDIS workers              |
 | `--test-methods`            | `"async,cdis"`                   | Comma-separated test methods        |
 | `--endpoint`                | `https://data.midrc.org`         | Gen3 endpoint URL                   |
-| `--credentials`             | `~/path/to/credentials.json`     | Path to credentials file            |
+| `--credentials`             | `credentials.json`               | Path to credentials file            |
 | `--gen3-client-path`        | `gen3-client`                    | Path to gen3-client executable      |
-| `--gen3sdk-path`            | `~/path/to/gen3sdk-python`       | Path to local gen3sdk-python        |
 | `--download-dir`            | `downloads`                      | Directory to store downloaded files |
 | `--results-dir`             | `download_performance_results`   | Directory to store results          |
 | `--disable-profiling`       | `False`                          | Disable performance profiling       |

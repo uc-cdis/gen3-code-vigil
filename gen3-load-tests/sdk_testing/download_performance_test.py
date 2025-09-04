@@ -37,33 +37,12 @@ except ImportError:
     print("Warning: psutil not available. Install with: pip install psutil")
 
 try:
-    import sys
-    import subprocess
-    import os
-
-    gen3sdk_path = os.path.expanduser(
-        "~/path/to/gen3sdk-python"
-    )  # TODO: Update this path
-    venv_path = os.path.join(gen3sdk_path, "venv", "lib", "python3.12", "site-packages")
-
-    modules_to_remove = [key for key in sys.modules.keys() if key.startswith("gen3")]
-    for module in modules_to_remove:
-        del sys.modules[module]
-
-    if gen3sdk_path in sys.path:
-        sys.path.remove(gen3sdk_path)
-    if venv_path in sys.path:
-        sys.path.remove(venv_path)
-
-    sys.path.insert(0, venv_path)
-    sys.path.insert(0, gen3sdk_path)
-
     from gen3.auth import Gen3Auth
     from gen3.file import Gen3File
 
     if hasattr(Gen3File, "async_download_multiple"):
         GEN3_SDK_AVAILABLE = True
-        print("✅ Gen3 SDK successfully imported from local gen3sdk-python")
+        print("✅ Gen3 SDK successfully imported")
         print("✅ Gen3File.async_download_multiple method available")
     else:
         GEN3_SDK_AVAILABLE = False
@@ -75,6 +54,9 @@ except ImportError as e:
     GEN3_SDK_AVAILABLE = False
     print(f"Warning: Gen3 SDK not available: {e}")
     print("Will skip Gen3 SDK async testing")
+    print("To test a specific branch of gen3sdk, update pyproject.toml with:")
+    print('gen3 = {git = "https://github.com/Dhiren-Mhatre/gen3sdk-python", branch = "feat/multiple-download-performance-testing"}')
+    print("Then run: poetry lock && poetry install")
 except Exception as e:
     GEN3_SDK_AVAILABLE = False
     print(f"Error importing Gen3 SDK: {e}")
@@ -154,8 +136,7 @@ class TestConfiguration:
     )
 
     gen3_client_path: str = "gen3-client"
-    gen3sdk_path: str = "~/path/to/gen3sdk-python"  # TODO: Update this path
-    credentials_path: str = "~/path/to/credentials.json"  # TODO: Update this path
+    credentials_path: str = "credentials.json"
     endpoint: str = "https://data.midrc.org"
     download_dir: str = "downloads"
     results_dir: str = "download_performance_results"
@@ -1924,8 +1905,6 @@ class Gen3SDKTester:
             self.config,
             run_number,
             logger,
-            working_dir=self.config.gen3sdk_path,
-            env={"PYTHONPATH": self.config.gen3sdk_path},
         )
 
     def _create_error_metrics(
@@ -1983,18 +1962,13 @@ async def main():
     )
     parser.add_argument(
         "--credentials",
-        default="~/path/to/credentials.json",
+        default="credentials.json",
         help="Path to credentials file",
     )
     parser.add_argument(
         "--gen3-client-path",
         default="gen3-client",
         help="Path to gen3-client executable",
-    )
-    parser.add_argument(
-        "--gen3sdk-path",
-        default="~/path/to/gen3sdk-python",
-        help="Path to local gen3sdk-python directory",
     )
     parser.add_argument(
         "--download-dir",
@@ -2024,6 +1998,9 @@ async def main():
 
     args = parser.parse_args()
 
+    # Ensure results directory exists before setting up logging
+    os.makedirs(f"{args.results_dir}", exist_ok=True)
+
     # Set up logging
     logging.basicConfig(
         level=logging.INFO,
@@ -2047,7 +2024,6 @@ async def main():
         endpoint=args.endpoint,
         credentials_path=args.credentials,
         gen3_client_path=args.gen3_client_path,
-        gen3sdk_path=args.gen3sdk_path,
         download_dir=args.download_dir,
         results_dir=args.results_dir,
     )
@@ -2071,7 +2047,6 @@ async def main():
     logger.info(f"🌐 Endpoint: {config.endpoint}")
     logger.info(f"🔑 Credentials: {config.credentials_path}")
     logger.info(f"🛠️ Gen3 Client: {config.gen3_client_path}")
-    logger.info(f"🐍 Gen3 SDK Path: {config.gen3sdk_path}")
     logger.info(f"📁 Download directory: {config.download_dir}")
     logger.info(f"📂 Results directory: {config.results_dir}")
 
