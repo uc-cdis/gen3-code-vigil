@@ -228,6 +228,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             if [[ "$ci_value" != "key not found" ]]; then
                 echo "Removing key '$key' from CI env configuration"
                 yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
+            fi
         else
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
