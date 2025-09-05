@@ -4,7 +4,7 @@ import random
 import string
 import subprocess
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pytest
 import requests
@@ -508,7 +508,7 @@ def setup_fence_test_clients(
     elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
         # Create clients
         results = []
-        with ProcessPoolExecutor(max_workers=4) as executor:
+        with ThreadPoolExecutor(max_workers=8) as executor:
             future_to_task = {
                 executor.submit(
                     setup_fence_test_client, test_env_namespace, client_data
@@ -519,7 +519,7 @@ def setup_fence_test_clients(
                 results.append(future.result())
         with open(clients_file_path, "+a") as outfile:
             for result in results:
-                outfile.write(f"{result[0]}:{result[0]}\n")
+                outfile.write(f"{result[0]}:{result[1]}\n")
 
         # Rotate Client
         rotate_client_list = ["jenkins-client-tester"]
