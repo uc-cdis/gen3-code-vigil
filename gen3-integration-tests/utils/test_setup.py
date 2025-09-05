@@ -50,12 +50,12 @@ def setup_fence_test_clients_info():
     # Read CSV data into a python variable
     with open(clients_data_file_path, newline="") as csvfile:
         reader = csv.reader(csvfile)
-        # Join rows with newlines to preserve the format
-        data = "\n".join(",".join(row) for row in reader)
+        next(reader)  # skip header
+        data = list(reader)
     # Create the client
     gen3_admin_tasks.setup_fence_test_clients(
         data,
-        test_env_namespace=pytest.namespace,
+        test_env_namespace=os.getenv("NAMESPACE"),
     )
 
 
@@ -97,7 +97,7 @@ def get_client_id_secret():
                 "client_secret": client_secret,
             }
         except Exception:
-            logger.error(f"Error getting client id and secret for f{client_name}.")
+            logger.error(f"Error getting client id and secret for {client_name}.")
 
 
 def run_usersync():
