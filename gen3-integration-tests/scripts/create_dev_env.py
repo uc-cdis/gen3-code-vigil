@@ -5,9 +5,7 @@ from utils import logger
 
 
 def setup_env_for_helm(arguments):
-    file_path = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-code-vigil/gen3_ci/scripts/setup_ci_env.sh"
-    )
+    file_path = f"{os.getcwd()}/gen3_ci/scripts/setup_ci_env.sh"
     logger.info(f"File path: {file_path}")
     logger.info(f"Argument: {arguments}")
     result = subprocess.run(
@@ -31,10 +29,10 @@ def prep_dev_env(namespace):
     Run usersync
     """
     helm_branch = "master"
-    ci_default_manifest = f"{os.getenv('GH_WORKSPACE')}/gen3-gitops/ci/default/values"
-    target_manifest_path = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops/{os.getenv('SOURCE_CONFIG')}/values"
+    ci_default_manifest = (
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/default/values"
     )
+    target_manifest_path = f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/{os.getenv('SOURCE_CONFIG')}/values"
 
     arguments = [
         namespace,
