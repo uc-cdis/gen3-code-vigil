@@ -528,8 +528,12 @@ wait_for_pods_ready() {
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
-  ci_es_indices_setup
-  kubectl rollout restart guppy-deployment
+  if kubectl get deployment guppy-deployment >/dev/null 2>&1; then
+    ci_es_indices_setup
+    kubectl rollout restart guppy-deployment
+  else
+    echo "Guppy is not running in this env, skipping ES index setup"
+  fi
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"
