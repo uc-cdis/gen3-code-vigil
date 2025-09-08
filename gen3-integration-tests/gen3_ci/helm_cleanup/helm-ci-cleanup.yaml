@@ -51,7 +51,7 @@ spec:
                 UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
                 SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
 
-                    if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_ARN" &>/dev/null; then
+                    if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" &>/dev/null; then
 
                         # List subscriptions to the topic and filter by the queue ARN
                         SUBSCRIPTION_ARN=$(aws sns list-subscriptions-by-topic --topic-arn "$SNS_TOPIC_ARN" \
@@ -64,7 +64,7 @@ spec:
                         fi
 
                         # Delete the queue
-                        aws sqs delete-queue --queue-url "$UPLOAD_QUEUE_ARN"
+                        aws sqs delete-queue --queue-url "$UPLOAD_QUEUE_URL"
                         echo "Deleted: $UPLOAD_QUEUE_ARN"
                     else
                         echo "Upload queue not found, skipping."
