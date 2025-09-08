@@ -98,5 +98,7 @@ jobs:
       - name: Prepare dev env
         run: |
           echo $SOURCE_CONFIG
+          echo $GITHUB_WORKSPACE
+          ls -l $GITHUB_WORKSPACE
           mkdir $HOME/.gen3
           poetry run python -m gen3-code-vigil.gen3-integration-tests.scripts.create_dev_env
