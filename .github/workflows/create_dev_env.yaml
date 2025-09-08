@@ -101,4 +101,5 @@ jobs:
           echo $GITHUB_WORKSPACE
           ls -l $GITHUB_WORKSPACE
           mkdir $HOME/.gen3
-          poetry run python -m gen3-code-vigil.gen3-integration-tests.scripts.create_dev_env
+          cd ./gen3-code-vigil/gen3-integration-tests
+          poetry run python -m scripts.create_dev_env
