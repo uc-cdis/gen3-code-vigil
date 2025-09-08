@@ -61,7 +61,6 @@ jobs:
           version: latest
 
       - name: Install dependencies
-        working-directory: gen3-code-vigil/gen3-integration-tests
         env:
           YQ_VERSION: v4.45.2
           YQ_BINARY: yq_linux_amd64
@@ -70,6 +69,7 @@ jobs:
           sudo apt update && sudo apt install wget -y
           sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
           tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
+          cd gen3-code-vigil/gen3-integration-tests
           python -m pip install --upgrade pip
           pip install poetry
           poetry lock
@@ -96,8 +96,8 @@ jobs:
           kubectl create namespace $NAMESPACE || true
 
       - name: Prepare dev env
-        working-directory: gen3-code-vigil/gen3-integration-tests
         run: |
           echo $SOURCE_CONFIG
           mkdir $HOME/.gen3
+          cd gen3-code-vigil/gen3-integration-tests
           poetry run python -m scripts.create_dev_env
