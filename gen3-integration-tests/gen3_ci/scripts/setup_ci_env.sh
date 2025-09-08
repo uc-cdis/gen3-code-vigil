@@ -531,7 +531,7 @@ if install_helm_chart; then
   if kubectl get deployment guppy-deployment -n "${namespace}" >/dev/null 2>&1; then
     echo "Guppy is running in this env, setting up ES indices"
     ci_es_indices_setup
-    kubectl rollout restart guppy-deployment -n "${namespace}"
+    kubectl rollout restart deployment guppy-deployment -n "${namespace}"
   else
     echo "Guppy is not running in this env, skipping ES index setup"
   fi
