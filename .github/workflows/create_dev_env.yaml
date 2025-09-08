@@ -25,7 +25,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-      NAMESPACE: ${{ inputs.NAMESPACE || 'hara' }}
+      NAMESPACE: ${{ inputs.NAMESPACE || 'dev0' }}
       SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG || 'heal/healdata.org' }}
     steps:
       - name: Checkout integration test code
@@ -99,5 +99,4 @@ jobs:
         run: |
           echo $SOURCE_CONFIG
           mkdir $HOME/.gen3
-          cd gen3-code-vigil/gen3-integration-tests
-          poetry run python -m scripts.create_dev_env
+          poetry run python -m gen3-code-vigil.gen3-integration-tests.scripts.create_dev_env
