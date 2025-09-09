@@ -25,7 +25,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-      NAMESPACE: ${{ inputs.NAMESPACE || 'dev0' }}
+      NAMESPACE: ${{ inputs.NAMESPACE || 'krishna-helm' }}
       SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG || 'bdcatprod/gen3.biodatacatalyst.nhlbi.nih.gov' }}
       REVPROXY_ARN: ${{ secrets.REVPROXY_ARN }}
     steps:
