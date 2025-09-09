@@ -98,7 +98,11 @@ jobs:
             echo "Namespace $NAMESPACE exists, performing teardown..."
             helm delete $NAMESPACE -n $NAMESPACE || true
             kubectl delete ns $NAMESPACE
-            kubectl delete ns "jupyter-pods-$NAMESPACE" --wait=false
+            jupyter_namespace_exists=$(kubectl get namespace "jupyter-pods-$NAMESPACE" --no-headers --ignore-not-found)
+            if [ -n "$jupyter_namespace_exists" ]; then
+              echo "Namespace jupyter-pods-$NAMESPACE exists, performing teardown..."
+              kubectl delete ns "jupyter-pods-$NAMESPACE" --wait=false
+            fi
           fi
           kubectl create namespace $NAMESPACE
 
