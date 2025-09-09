@@ -30,7 +30,7 @@ def prep_dev_env(namespace):
     """
     helm_branch = "master"
     ci_default_manifest = (
-        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/dev_env/values"
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/test_env/values"
     )
     target_manifest_path = f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/{os.getenv('SOURCE_CONFIG')}/values"
 
