@@ -225,6 +225,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         manifest_value=$(yq eval ".$key // \"key not found\"" $new_manifest_values_file_path)
         if [ "$manifest_value" = "key not found" ]; then
             echo "The key '$key' is not present in target manifest."
+            if [[ "$ci_value" != "key not found" ]]; then
+                echo "Removing key '$key' from CI env configuration"
+                yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
+            fi
         else
             echo "CI default value of the key '$key' is: $ci_value"
             echo "Manifest value of the key '$key' is: $manifest_value"
@@ -431,7 +435,7 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}"; then
       echo "Helm chart installed!"
     else
       return 1
@@ -439,7 +443,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${NAMESPACE}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}"; then
       echo "Helm chart installed!"
     else
       return 1
@@ -491,7 +495,7 @@ wait_for_pods_ready() {
   end=$((SECONDS + timeout))
   while [ $SECONDS -lt $end ]; do
     # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${NAMESPACE}" -o json | \
+    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]
         | select(
             (.metadata.deletionTimestamp == null) and
@@ -518,14 +522,19 @@ wait_for_pods_ready() {
     | select(.ready != true)
     | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
 
-  kubectl get pods -n "${NAMESPACE}"
+  kubectl get pods -n "${namespace}"
   return 1
 }
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
-  ci_es_indices_setup
-  kubectl rollout restart guppy-deployment
+  if kubectl get deployment guppy-deployment -n "${namespace}" >/dev/null 2>&1; then
+    echo "Guppy is running in this env, setting up ES indices"
+    ci_es_indices_setup
+    kubectl rollout restart deployment guppy-deployment -n "${namespace}"
+  else
+    echo "Guppy is not running in this env, skipping ES index setup"
+  fi
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"
