@@ -425,6 +425,7 @@ if [ "$namespace" == "nightly-build" ]; then
 fi
 
 yq eval ".revproxy.ingress.annotations['alb.ingress.kubernetes.io/certificate-arn'] = $REVPROXY_ARN" -i "$ci_default_manifest_values_yaml"
+yq eval ".revproxy.ingress.aws.group = devplanetv2-internal" -i "$ci_default_manifest_values_yaml"
 
 echo $HOSTNAME
 install_helm_chart() {
