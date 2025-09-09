@@ -93,7 +93,14 @@ jobs:
           HOSTNAME=${NAMESPACE}.dev.planx-pla.net
           echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
           echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-          kubectl create namespace $NAMESPACE || true
+          namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+          if [ -n "$namespace_exists" ]; then
+            echo "Namespace $NAMESPACE exists, performing teardown..."
+            helm delete $NAMESPACE -n $NAMESPACE || true
+            kubectl delete ns $NAMESPACE
+            kubectl delete ns "jupyter-pods-$NAMESPACE" --wait=false
+          fi
+          kubectl create namespace $NAMESPACE
 
       - name: Prepare dev env
         run: |
