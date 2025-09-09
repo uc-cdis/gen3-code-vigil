@@ -25,7 +25,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-      NAMESPACE: ${{ inputs.NAMESPACE || 'krishna' }}
+      NAMESPACE: ${{ inputs.NAMESPACE || 'dev0' }}
       SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG || 'bdcatprod/gen3.biodatacatalyst.nhlbi.nih.gov' }}
     steps:
       - name: Checkout integration test code
@@ -90,7 +90,7 @@ jobs:
 
       - name: Create namespace and env vars
         run: |
-          HOSTNAME=${NAMESPACE}.ci.planx-pla.net
+          HOSTNAME=${NAMESPACE}.dev.planx-pla.net
           echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
           echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
           namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
