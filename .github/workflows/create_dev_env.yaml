@@ -26,7 +26,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
       NAMESPACE: ${{ inputs.NAMESPACE || 'dev0' }}
-      SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG || 'healprod/healdata.org' }}
+      SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG || 'bdcatprod/gen3.biodatacatalyst.nhlbi.nih.gov' }}
     steps:
       - name: Checkout integration test code
         uses: actions/checkout@v4
