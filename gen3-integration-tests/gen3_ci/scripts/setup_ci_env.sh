@@ -424,6 +424,7 @@ if [ "$namespace" == "nightly-build" ]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
+yq eval ".revproxy.ingress.annotations['alb.ingress.kubernetes.io/certificate-arn'] = $REVPROXY_ARN" -i "$ci_default_manifest_values_yaml"
 
 echo $HOSTNAME
 install_helm_chart() {
