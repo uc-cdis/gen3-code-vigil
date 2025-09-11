@@ -4,7 +4,6 @@ import os
 import random
 import string
 import uuid
-from pathlib import Path
 
 import psutil
 import pytest
@@ -610,11 +609,3 @@ class GraphDataTools:
         assert (
             record.props["data_format"] == metadata["data_format"]
         ), f"data_format not matched/found.\n{record}\n{metadata}"
-
-
-if __name__ == "__main__":
-    namespace = os.getenv("NAMESPACE")
-    file_path = Path.home() / ".gen3" / f"{namespace}_main_account.json"
-    api_key_json = json.loads(file_path.read_text())
-    auth = Gen3Auth(refresh_token=api_key_json)
-    GraphRecord().submit_all_test_records()
