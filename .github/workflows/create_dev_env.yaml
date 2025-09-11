@@ -10,7 +10,7 @@ on:
       SOURCE_CONFIG:
         description: 'Folder path in gen3-gitops repo to use as baseline'
         required: false
-        default: 'ci/default'
+        default: 'ci/dev_env'
 
 permissions:
   id-token: write
