@@ -22,6 +22,24 @@ def setup_env_for_helm(arguments):
         return "FAILURE"
 
 
+def generate_api_keys_for_test_users():
+    cmd = [
+        f"{os.getcwd()}/gen3_ci/scripts/generate_api_keys.sh",
+        f"{os.getcwd()}/test_data/test_setup/users.csv",
+        os.getenv("HOSTNAME"),
+        os.getenv("NAMESPACE"),
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        logger.info(result.stdout.strip().replace("'", ""))
+        return "SUCCESS"
+    else:
+        logger.info(result.stdout)
+        raise Exception(f"Got error: {result.stderr}")
+
+
 def prep_dev_env(namespace):
     """
     We can use the CI env's manifest as-is (all services point to master branch)
@@ -47,3 +65,5 @@ def prep_dev_env(namespace):
 if __name__ == "__main__":
     result = prep_dev_env(os.getenv("NAMESPACE"))
     logger.info(f"Result: {result}")
+    result = generate_api_keys_for_test_users()
+    assert result.lower() == "success"
