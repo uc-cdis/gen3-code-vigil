@@ -26,7 +26,6 @@ jobs:
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
       NAMESPACE: ${{ inputs.NAMESPACE }}
       SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG }}
-      REVPROXY_ARN: ${{ secrets.REVPROXY_ARN }}
     steps:
       - name: Checkout integration test code
         uses: actions/checkout@v4
