@@ -2,7 +2,6 @@
 name: Create dev env
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       NAMESPACE:
@@ -25,8 +24,8 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-      NAMESPACE: ${{ inputs.NAMESPACE || 'krishna-helm' }}
-      SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG || 'bdcatprod/gen3.biodatacatalyst.nhlbi.nih.gov' }}
+      NAMESPACE: ${{ inputs.NAMESPACE }}
+      SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG }}
       REVPROXY_ARN: ${{ secrets.REVPROXY_ARN }}
     steps:
       - name: Checkout integration test code
