@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compares CDIS Data Client and Gen3 SDK download-multiple-async functionality
+Compares CDIS Data Client and Gen3 SDK download-multiple functionality
 Performs REAL downloads using provided GUIDs and shows detailed performance metrics
 """
 
@@ -13,7 +13,6 @@ import threading
 import asyncio
 import sys
 import argparse
-import html
 import shutil
 import webbrowser
 import math
@@ -27,6 +26,7 @@ from dataclasses import dataclass, field
 from statistics import mean, stdev
 
 from contextlib import contextmanager
+from jinja2 import Environment, FileSystemLoader
 
 try:
     import psutil
@@ -37,7 +37,6 @@ except ImportError:
     print("Warning: psutil not available. Install with: pip install psutil")
 
 try:
-    from gen3.auth import Gen3Auth
     from gen3.file import Gen3File
 
     if hasattr(Gen3File, "async_download_multiple"):
@@ -137,7 +136,7 @@ class TestConfiguration:
 
     gen3_client_path: str = "gen3-client"
     credentials_path: str = "credentials.json"
-    endpoint: str = "https://data.midrc.org"
+    endpoint: str = "https://data.example.org"
     download_dir: str = "downloads"
     results_dir: str = "download_performance_results"
 
@@ -454,7 +453,17 @@ def find_matching_files_improved(
     logger: logging.Logger,
     config: TestConfiguration = None,
 ) -> Tuple[List[str], List[Dict]]:
-    """Improved file matching that handles CDIS client's nested directory structure and Gen3 SDK GUID-based files."""
+    """
+    File matching that handles different naming conventions between tools.
+
+    This function is necessary because:
+    1. Gen3 SDK can use GUID-based filenames when --filename-format=guid is specified
+    2. CDIS client uses original filenames and nested directory structures
+    3. Both tools may handle compressed files differently
+
+    The matching strategy prioritizes exact GUID matches first, then GUID in filename,
+    then exact filename matches to ensure accurate file verification across both tools.
+    """
     if not os.path.exists(download_dir):
         logger.warning(f"Download directory does not exist: {download_dir}")
         return [], []
@@ -487,84 +496,40 @@ def find_matching_files_improved(
             f"Looking for file with GUID: {guid}, expected filename: {expected_filename}"
         )
 
-        # Look for the best match using improved GUID-based scoring
+        # Simple file matching assuming consistent naming convention
+        # Priority order: exact GUID match -> GUID in filename -> expected filename
         best_match = None
         best_score = 0
+        match_type = "no_match"
 
         for file_path in all_files:
             file_basename = os.path.basename(file_path)
-            score = 0
 
-            # Strategy 1: Exact GUID match (highest priority for verification)
+            # Check for exact GUID match first (highest priority)
             if guid and guid.lower() == file_basename.lower():
-                score += 1000  # Very high priority for exact GUID match
-                logger.debug(f"Exact GUID match found: {file_basename}")
-            elif guid and guid.lower() in file_basename.lower():
-                score += 800  # GUID appears in filename
-                logger.debug(f"GUID in filename: {file_basename}")
-
-            # Strategy 2: Exact filename match
-            if expected_filename and expected_filename.lower() == file_basename.lower():
-                score += 500
-                logger.debug(f"Exact filename match: {file_basename}")
-            elif (
-                expected_filename and expected_filename.lower() in file_basename.lower()
-            ):
-                score += 300
-            elif (
-                expected_filename and file_basename.lower() in expected_filename.lower()
-            ):
-                score += 200
-
-            # Strategy 3: GUID in path (for Gen3 SDK directory structure)
-            if guid and guid.lower() in file_path.lower():
-                score += 100
-                logger.debug(f"GUID in path: {file_path}")
-
-            # Strategy 4: Object ID matching (for Gen3 SDK directory structure)
-            if object_id and object_id.lower() in file_path.lower():
-                score += 80
-
-            # Strategy 5: Size match (exact or close)
-            try:
-                file_size = os.path.getsize(file_path)
-                if file_size == expected_size:
-                    score += 50
-                    logger.debug(f"Exact size match: {file_size} bytes")
-                elif abs(file_size - expected_size) < max(
-                    1024 * 1024, expected_size * 0.1
-                ):
-                    score += 20  # Within 1MB or 10% of expected size
-                    logger.debug(
-                        f"Close size match: {file_size} vs {expected_size} bytes"
-                    )
-            except (OSError, IOError):
-                pass
-
-            # Strategy 6: Prefer extracted files over zip files for fair comparison
-            if "_extracted" in file_path and not file_path.endswith(".zip"):
-                score += 10
-
-            # Strategy 7: Handle Gen3 SDK directory structure (dg.MD1R/)
-            if "dg.MD1R" in file_path and guid:
-                if guid.lower() in file_path.lower():
-                    score += 30
-
-            # Strategy 8: Check for common MIDRC file patterns
-            if expected_filename and any(
-                ext in expected_filename.lower() for ext in [".nii.gz", ".nii", ".dcm"]
-            ):
-                if any(
-                    ext in file_basename.lower() for ext in [".nii.gz", ".nii", ".dcm"]
-                ):
-                    score += 15
-
-            if score > best_score:
-                best_score = score
                 best_match = file_path
+                best_score = 100
+                match_type = "exact_guid_match"
+                logger.debug(f"Exact GUID match found: {file_basename}")
+                break
 
-        # Accept matches with score >= 50 (increased threshold for better matching)
-        if best_match and best_score >= 50:
+            # Check if GUID appears in filename
+            if guid and guid.lower() in file_basename.lower():
+                best_match = file_path
+                best_score = 80
+                match_type = "guid_in_filename"
+                logger.debug(f"GUID in filename: {file_basename}")
+                break
+
+            # Check for expected filename match
+            if expected_filename and expected_filename.lower() == file_basename.lower():
+                best_match = file_path
+                best_score = 60
+                match_type = "exact_filename_match"
+                logger.debug(f"Exact filename match: {file_basename}")
+                break
+
+        if best_match:
             matched_files.append(best_match)
 
             try:
@@ -594,7 +559,7 @@ def find_matching_files_improved(
                     "actual_size": actual_size,
                     "size_match_percent": size_match_percent,
                     "match_score": best_score,
-                    "match_type": "improved_guid_scoring",
+                    "match_type": match_type,
                     "guid_verified": guid_verified,
                 }
             )
@@ -689,7 +654,7 @@ class PerformanceTestRunner:
     def _generate_html_report(
         self, all_metrics: List[PerformanceMetrics], manifest_path: str
     ) -> str:
-        """Generate comprehensive HTML report with enhanced performance metrics and interactive charts."""
+        """Generate comprehensive HTML report using Jinja2 template."""
 
         def safe_value(value, default=0, precision=2):
             """Safely format a value, handling NaN, inf, None, and missing values."""
@@ -705,898 +670,47 @@ class PerformanceTestRunner:
             except (ValueError, TypeError):
                 return default
 
+        # Load and validate manifest data
         try:
             with open(manifest_path, "r") as f:
                 manifest_data = json.load(f)
-        except Exception:
+                if isinstance(manifest_data, dict) and "files" in manifest_data:
+                    manifest_data = manifest_data["files"]
+        except (FileNotFoundError, json.JSONDecodeError, KeyError):
             manifest_data = []
 
-        tool_groups = {}
+        # Calculate aggregated data for each tool
+        tool_metrics = {}
         for metric in all_metrics:
-            if metric.tool_name not in tool_groups:
-                tool_groups[metric.tool_name] = []
-            tool_groups[metric.tool_name].append(metric)
+            tool_name = metric.tool_name
+            if tool_name not in tool_metrics:
+                tool_metrics[tool_name] = []
+            tool_metrics[tool_name].append(metric)
 
         tool_aggregates = {}
-        for tool_name, tool_metrics in tool_groups.items():
-            tool_aggregates[tool_name] = calculate_aggregated_metrics(tool_metrics)
+        for tool_name, metrics_list in tool_metrics.items():
+            tool_aggregates[tool_name] = calculate_aggregated_metrics(metrics_list)
 
-        best_throughput = 0
-        best_method = "None"
-        for tool_name, agg_data in tool_aggregates.items():
-            if agg_data.get("avg_throughput", 0) > best_throughput:
-                best_throughput = agg_data.get("avg_throughput", 0)
-                best_method = tool_name
-
-        tested_methods = list(set(m.tool_name for m in all_metrics))
-
+        tested_methods = list(tool_aggregates.keys())
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        html_content = f"""
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enhanced Download Performance Test Results</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f7fa;
-            color: #333;
-        }}
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }}
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }}
-        .header h1 {{
-            margin: 0;
-            font-size: 2.5rem;
-        }}
-        .header .subtitle {{
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }}
-        .summary-cards {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            padding: 30px;
-            background: #f8fafc;
-        }}
-        .card {{
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #667eea;
-        }}
-        .card h3 {{
-            margin: 0 0 10px 0;
-            color: #667eea;
-            font-size: 1.1rem;
-        }}
-        .metric {{
-            display: flex;
-            justify-content: space-between;
-            margin: 8px 0;
-        }}
-        .metric .label {{
-            color: #666;
-        }}
-        .metric .value {{
-            font-weight: bold;
-            color: #333;
-        }}
-        .charts-section {{
-            padding: 30px;
-        }}
-        .charts-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
-        }}
-        .chart-container {{
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            height: 400px;
-            position: relative;
-        }}
-        .chart-container h3 {{
-            margin: 0 0 20px 0;
-            color: #333;
-            text-align: center;
-            height: 40px;
-        }}
-        .chart-wrapper {{
-            position: relative;
-            height: 320px;
-            width: 100%;
-        }}
-        .tables-section {{
-            padding: 30px;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        th, td {{
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }}
-        th {{
-            background: #667eea;
-            color: white;
-            font-weight: 600;
-        }}
-        tr:hover {{
-            background-color: #f5f7fa;
-        }}
-        .success-high {{ color: #10b981; font-weight: bold; }}
-        .success-medium {{ color: #f59e0b; font-weight: bold; }}
-        .success-low {{ color: #ef4444; font-weight: bold; }}
-        .timing-section {{
-            background: #f8fafc;
-            padding: 30px;
-            margin: 20px 0;
-        }}
-        .timing-breakdown {{
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 10px 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }}
-        .winner-badge {{
-            background: #10b981;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }}
-        .file-details {{
-            max-height: 400px;
-            overflow-y: auto;
-        }}
-        .mb {{ color: #666; font-size: 0.9rem; }}
-        .config-note {{
-            background-color: #e8f5e8;
-            border-left: 4px solid #4caf50;
-            padding: 15px;
-            margin: 20px;
-            border-radius: 4px;
-        }}
-        .performance-note {{
-            background-color: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin: 20px;
-            border-radius: 4px;
-        }}
-        .profiling-section {{
-            padding: 30px;
-            background: #f8fafc;
-        }}
-        .profiling-method-card {{
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            margin: 20px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #667eea;
-        }}
-        .profiling-grid {{
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin: 20px 0;
-        }}
-        .profiling-summary, .profiling-breakdown {{
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-        }}
-        .metric-row {{
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-            padding: 8px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }}
-        .metric-row .label {{
-            color: #64748b;
-            font-weight: 500;
-        }}
-        .metric-row .value {{
-            color: #1e293b;
-            font-weight: 600;
-        }}
-        .profiling-output {{
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 20px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-            line-height: 1.4;
-            max-height: 400px;
-            overflow-y: auto;
-        }}
-        .recommendations-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }}
-        .recommendation-card {{
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            border-left: 4px solid #64748b;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }}
-        .recommendation-card.priority-high {{
-            border-left-color: #ef4444;
-            background: #fef2f2;
-        }}
-        .recommendation-card.priority-medium {{
-            border-left-color: #f59e0b;
-            background: #fffbeb;
-        }}
-        .recommendation-card.priority-low {{
-            border-left-color: #10b981;
-            background: #f0fdf4;
-        }}
-        .rec-icon {{
-            font-size: 1.5em;
-            flex-shrink: 0;
-        }}
-        .rec-content h5 {{
-            margin: 0 0 8px 0;
-            color: #1e293b;
-            font-size: 1em;
-        }}
-        .rec-content p {{
-            margin: 0 0 8px 0;
-            color: #64748b;
-            font-size: 0.9em;
-            line-height: 1.4;
-        }}
-        .priority-badge {{
-            font-size: 0.75em;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }}
-        .priority-badge.priority-high {{
-            background: #ef4444;
-            color: white;
-        }}
-        .priority-badge.priority-medium {{
-            background: #f59e0b;
-            color: white;
-        }}
-        .priority-badge.priority-low {{
-            background: #10b981;
-            color: white;
-        }}
-        .comparison-analysis {{
-            padding: 30px;
-            background: white;
-        }}
-        .comparison-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }}
-        .comparison-card {{
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            border: 2px solid #e2e8f0;
-        }}
-        .comparison-card.winner {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-        }}
-        .winner-method {{
-            font-size: 1.2em;
-            font-weight: 600;
-            margin: 10px 0;
-        }}
-        .winner-value {{
-            font-size: 1.5em;
-            font-weight: 700;
-        }}
-        .strategy-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 20px 0;
-        }}
-        .strategy-card {{
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 20px;
-            border-left: 4px solid #667eea;
-        }}
-        .strategy-card h5 {{
-            margin: 0 0 12px 0;
-            color: #1e293b;
-            font-size: 1.1em;
-        }}
-        .strategy-card p {{
-            margin: 0;
-            color: #64748b;
-            line-height: 1.5;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Enhanced Download Performance Test Results</h1>
-            <div class="subtitle">Testing Methods: {html.escape(", ".join(tested_methods))}</div>
-            <div class="subtitle">Generated on {timestamp}</div>
-            <div class="subtitle">Manifest: {html.escape(manifest_path)}</div>
-        </div>
-        
-        <div class="config-note">
-            <strong>⚡ Test Configuration:</strong>
-            <ul>
-                <li><strong>Runs per method:</strong> {self.config.num_runs}</li>
-                <li><strong>Async concurrency:</strong> {self.config.max_concurrent_requests_async}</li>
-                <li><strong>CDIS workers:</strong> {self.config.num_workers_cdis}</li>
-                <li><strong>Real-time monitoring:</strong> {"Enabled" if self.config.enable_real_time_monitoring else "Disabled"}</li>
-                <li><strong>Profiling:</strong> {"Enabled" if self.config.enable_profiling else "Disabled"}</li>
-                <li><strong>Results directory:</strong> {html.escape(self.config.results_dir)}</li>
-            </ul>
-        </div>
+        # Set up Jinja2 environment
+        template_dir = os.path.join(os.path.dirname(__file__), "templates")
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template("performance_report.html")
 
-        <div class="summary-cards">"""
+        # Prepare template context
+        context = {
+            "timestamp": timestamp,
+            "tested_methods": tested_methods,
+            "tool_aggregates": tool_aggregates,
+            "all_metrics": all_metrics,
+            "manifest_data": manifest_data,
+            "safe_value": safe_value,
+        }
 
-        for tool_name in tested_methods:
-            agg = tool_aggregates.get(tool_name, {})
-            throughput = safe_value(agg.get("avg_throughput", 0))
-            success = safe_value(agg.get("overall_success_rate", 0))
-
-            success_class = (
-                "success-high"
-                if success >= 80
-                else "success-medium"
-                if success >= 50
-                else "success-low"
-            )
-
-            html_content += f"""
-            <div class="card">
-                <h3>{html.escape(tool_name)}</h3>
-                <div class="metric">
-                    <span class="label">Avg Throughput:</span>
-                    <span class="value">{throughput:.2f} MB/s</span>
-                </div>
-                <div class="metric">
-                    <span class="label">Success Rate:</span>
-                    <span class="value {success_class}">{success:.1f}%</span>
-                </div>
-                <div class="metric">
-                    <span class="label">Runs:</span>
-                    <span class="value">{agg.get("total_runs", 0)}</span>
-                </div>
-                <div class="metric">
-                    <span class="label">Avg Time:</span>
-                    <span class="value">{safe_value(agg.get("avg_download_time", 0)):.1f}s</span>
-                </div>
-            </div>"""
-
-        html_content += f"""
-        </div>
-
-        <div style="text-align: center; padding: 20px; background: white; margin: 0 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-            <h2 style="margin: 0; color: #333;">🏆 Performance Winner</h2>
-            <p><strong>Best Performing Method:</strong> <span class="winner-badge">{best_method}</span> with {best_throughput:.2f} MB/s average throughput</p>
-        </div>
-
-        <div class="charts-section">
-            <h2>📈 Performance Charts</h2>
-            <div class="charts-grid">
-                <div class="chart-container">
-                    <h3>Throughput Comparison (MB/s)</h3>
-                    <div class="chart-wrapper">
-                    <canvas id="throughputChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <h3>Success Rate Comparison (%)</h3>
-                    <div class="chart-wrapper">
-                    <canvas id="successChart"></canvas>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <h3>Download Time Comparison (seconds)</h3>
-                    <div class="chart-wrapper">
-                    <canvas id="timeChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="timing-section">
-            <h2>⏱️ Detailed Performance Data</h2>"""
-
-        html_content += """
-        </div>
-        
-        <div class="profiling-section">
-            <h2>🔍 Detailed Performance Profiling & Optimization Insights</h2>"""
-
-        for metric in all_metrics:
-            if metric.profiling_analysis:
-                html_content += f"""
-                <div class="profiling-method-card">
-                    <h3>📊 {html.escape(metric.tool_name)} - Run {metric.run_number} Profiling Analysis</h3>
-                    
-                    <div class="profiling-grid">
-                        <div class="profiling-summary">
-                            <h4>⚡ Performance Summary</h4>
-                            <div class="metric-row">
-                                <span class="label">Total Runtime:</span>
-                                <span class="value">{metric.total_download_time:.2f}s</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="label">Throughput:</span>
-                                <span class="value">{metric.average_throughput_mbps:.2f} MB/s</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="label">Success Rate:</span>
-                                <span class="value">{metric.success_rate:.1f}%</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="label">Peak Memory:</span>
-                                <span class="value">{metric.peak_memory_mb:.1f} MB</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="label">Peak CPU:</span>
-                                <span class="value">{metric.peak_cpu_percent:.1f}%</span>
-                            </div>
-                        </div>
-                        
-                        <div class="profiling-breakdown">
-                            <h4>🎯 Time Breakdown</h4>
-                            <div class="metric-row">
-                                <span class="label">Setup Time:</span>
-                                <span class="value">{metric.setup_time:.2f}s ({metric.setup_time / metric.total_download_time * 100:.1f}%)</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="label">Download Time:</span>
-                                <span class="value">{metric.download_time:.2f}s ({metric.download_time / metric.total_download_time * 100:.1f}%)</span>
-                            </div>
-                            <div class="metric-row">
-                                <span class="label">Verification Time:</span>
-                                <span class="value">{metric.verification_time:.2f}s ({metric.verification_time / metric.total_download_time * 100:.1f}%)</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="profiling-details">
-                        <h4>🔧 Function-Level Performance Analysis</h4>
-                        <pre class="profiling-output">{html.escape(metric.profiling_analysis)}</pre>
-                    </div>
-                </div>"""
-
-        html_content += """
-        </div>
-        
-        <div class="comparison-analysis">
-            <h2>🏁 Performance Comparison & Optimization Analysis</h2>"""
-
-        if len(tested_methods) > 1:
-            best_throughput_method = max(
-                tested_methods,
-                key=lambda x: tool_aggregates.get(x, {}).get("avg_throughput", 0),
-            )
-            best_success_method = max(
-                tested_methods,
-                key=lambda x: tool_aggregates.get(x, {}).get("overall_success_rate", 0),
-            )
-            fastest_method = min(
-                tested_methods,
-                key=lambda x: tool_aggregates.get(x, {}).get(
-                    "avg_download_time", float("inf")
-                ),
-            )
-
-            html_content += f"""
-            <div class="comparison-grid">
-                <div class="comparison-card winner">
-                    <h4>🏆 Best Throughput</h4>
-                    <div class="winner-method">{html.escape(best_throughput_method)}</div>
-                    <div class="winner-value">{tool_aggregates.get(best_throughput_method, {}).get("avg_throughput", 0):.2f} MB/s</div>
-                </div>
-                <div class="comparison-card winner">
-                    <h4>🎯 Best Success Rate</h4>
-                    <div class="winner-method">{html.escape(best_success_method)}</div>
-                    <div class="winner-value">{tool_aggregates.get(best_success_method, {}).get("overall_success_rate", 0):.1f}%</div>
-                </div>
-                <div class="comparison-card winner">
-                    <h4>⚡ Fastest Method</h4>
-                    <div class="winner-method">{html.escape(fastest_method)}</div>
-                    <div class="winner-value">{tool_aggregates.get(fastest_method, {}).get("avg_download_time", 0):.1f}s</div>
-                </div>
-            </div>
-            
-"""
-
-        html_content += """
-        </div>
-
-        <div class="tables-section">
-            <h2>📊 Aggregated Performance Summary</h2>
-                    <table>
-                        <thead>
-                            <tr>
-                        <th>Method</th>
-                        <th>Runs</th>
-                        <th>Overall Success</th>
-                        <th>Avg Throughput</th>
-                        <th>Std Dev</th>
-                        <th>Min-Max Throughput</th>
-                        <th>Avg Download Time</th>
-                        <th>Total Files</th>
-                            </tr>
-                        </thead>
-                        <tbody>"""
-
-        for tool_name, agg_data in tool_aggregates.items():
-            if agg_data and agg_data.get("total_runs", 0) > 0:
-                success_class = (
-                    "success-high"
-                    if agg_data.get("overall_success_rate", 0) >= 90
-                    else "success-medium"
-                    if agg_data.get("overall_success_rate", 0) >= 70
-                    else "success-low"
-                )
-
-                min_max_throughput = f"{safe_value(agg_data.get('min_throughput', 0)):.2f} - {safe_value(agg_data.get('max_throughput', 0)):.2f}"
-
-                html_content += f"""
-                            <tr>
-                            <td><strong>{html.escape(tool_name)}</strong></td>
-                            <td>{safe_value(agg_data.get("total_runs", 0))}</td>
-                            <td class="{success_class}">{safe_value(agg_data.get("overall_success_rate", 0)):.1f}%</td>
-                            <td>{safe_value(agg_data.get("avg_throughput", 0)):.2f} MB/s</td>
-                            <td>±{safe_value(agg_data.get("std_throughput", 0)):.2f}</td>
-                            <td>{min_max_throughput} MB/s</td>
-                            <td>{safe_value(agg_data.get("avg_download_time", 0)):.1f}s</td>
-                            <td>{safe_value(agg_data.get("total_files_successful", 0))}/{safe_value(agg_data.get("total_files_attempted", 0))}</td>
-                            </tr>"""
-
-        html_content += """
-                        </tbody>
-                    </table>
-
-            <h2>📋 Detailed Performance Data</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Method</th>
-                        <th>Run</th>
-                        <th>Success Rate</th>
-                        <th>Throughput (MB/s)</th>
-                        <th>Download Time (s)</th>
-                        <th>Files</th>
-                        <th>Total Size (MB)</th>
-                        <th>Peak Memory (MB)</th>
-                        <th>Peak CPU (%)</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>"""
-
-        for metric in all_metrics:
-            success_class = (
-                "success-high"
-                if metric.success_rate >= 90
-                else "success-medium"
-                if metric.success_rate >= 70
-                else "success-low"
-            )
-            status = (
-                "✅ Success"
-                if metric.success_rate > 80
-                else "⚠️ Issues"
-                if metric.success_rate > 50
-                else "❌ Failed"
-            )
-
-            html_content += f"""
-                    <tr>
-                        <td><strong>{html.escape(metric.tool_name)}</strong></td>
-                        <td>{metric.run_number}</td>
-                        <td class="{success_class}">{metric.success_rate:.1f}%</td>
-                        <td>{metric.average_throughput_mbps:.2f}</td>
-                        <td>{metric.download_time:.1f}</td>
-                        <td>{metric.successful_downloads}/{metric.total_files}</td>
-                        <td>{metric.total_size_mb:.1f}</td>
-                        <td>{metric.peak_memory_mb:.1f}</td>
-                        <td>{metric.peak_cpu_percent:.1f}</td>
-                        <td class="{success_class}">{html.escape(status)}</td>
-                    </tr>"""
-
-        html_content += """
-                </tbody>
-            </table>
-
-            <h2>📁 File Details from Manifest</h2>
-            <div class="file-details">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>GUID</th>
-                            <th>Object ID</th>
-                            <th>File Name</th>
-                            <th>File Size (bytes)</th>
-                            <th>Size (MB)</th>
-                        </tr>
-                    </thead>
-                    <tbody>"""
-
-        for item in manifest_data:
-            guid = (
-                item.get("object_id", "").split("/")[-1]
-                if item.get("object_id")
-                else ""
-            )
-            file_size = item.get("file_size", 0)
-            size_mb = item.get("size_mb", file_size / (1024 * 1024) if file_size else 0)
-
-            safe_guid = html.escape(str(guid))
-            safe_object_id = html.escape(str(item.get("object_id", "")))
-            safe_file_name = html.escape(str(item.get("file_name", "N/A")))
-
-            html_content += f"""
-                        <tr>
-                            <td><code>{safe_guid}</code></td>
-                            <td><code>{safe_object_id}</code></td>
-                            <td>{safe_file_name}</td>
-                            <td>{file_size:,}</td>
-                            <td class="mb">{size_mb:.2f}</td>
-                        </tr>"""
-
-        html_content += """
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Prepare data for charts
-        const methods = ["""
-
-        chart_labels = list(tested_methods)
-        chart_throughputs = [
-            safe_value(tool_aggregates.get(tool, {}).get("avg_throughput", 0))
-            for tool in chart_labels
-        ]
-        chart_success = [
-            safe_value(tool_aggregates.get(tool, {}).get("overall_success_rate", 0))
-            for tool in chart_labels
-        ]
-        chart_times = [
-            safe_value(tool_aggregates.get(tool, {}).get("avg_download_time", 0))
-            for tool in chart_labels
-        ]
-
-        method_names = [f'"{method}"' for method in chart_labels]
-        throughput_data = [f"{t:.2f}" for t in chart_throughputs]
-        success_data = [f"{s:.1f}" for s in chart_success]
-        time_data = [f"{t:.2f}" for t in chart_times]
-
-        if not chart_labels:
-            method_names = ['"No Data"']
-            throughput_data = ["0"]
-            success_data = ["0"]
-            time_data = ["0"]
-
-        html_content += f"""
-        {", ".join(method_names)}];
-        const throughputData = [{", ".join(throughput_data)}];
-        const successData = [{", ".join(success_data)}];
-        const timeData = [{", ".join(time_data)}];
-
-        // Chart colors
-        const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
-
-        // Throughput Chart
-        new Chart(document.getElementById('throughputChart'), {{
-            type: 'bar',
-            data: {{
-                labels: methods,
-                datasets: [{{
-                    label: 'Throughput (MB/s)',
-                    data: throughputData,
-                    backgroundColor: colors.slice(0, methods.length),
-                    borderWidth: 1,
-                    borderColor: colors.slice(0, methods.length),
-                    borderRadius: 4,
-                }}]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {{
-                    intersect: false,
-                }},
-                plugins: {{
-                    legend: {{ 
-                        display: false 
-                    }},
-                    title: {{
-                        display: true,
-                        text: 'Higher is Better',
-                        font: {{ size: 12 }}
-                    }}
-                }},
-                scales: {{
-                    y: {{ 
-                        beginAtZero: true,
-                        title: {{
-                            display: true,
-                            text: 'MB/s'
-                        }}
-                    }},
-                    x: {{
-                        title: {{
-                            display: true,
-                            text: 'Download Method'
-                        }}
-                    }}
-                }}
-            }}
-        }});
-
-        // Success Rate Chart
-        new Chart(document.getElementById('successChart'), {{
-            type: 'doughnut',
-            data: {{
-                labels: methods,
-                datasets: [{{
-                    data: successData,
-                    backgroundColor: colors.slice(0, methods.length),
-                    borderWidth: 2,
-                    borderColor: '#ffffff',
-                    hoverOffset: 4
-                }}]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {{
-                    intersect: false,
-                }},
-                plugins: {{
-                    legend: {{ 
-                        position: 'bottom',
-                        labels: {{
-                            padding: 20,
-                            usePointStyle: true
-                        }}
-                    }},
-                    title: {{
-                        display: true,
-                        text: 'Success Rate Percentage',
-                        font: {{ size: 12 }}
-                    }}
-                }}
-            }}
-        }});
-
-        // Time Chart
-        new Chart(document.getElementById('timeChart'), {{
-            type: 'line',
-            data: {{
-                labels: methods,
-                datasets: [{{
-                    label: 'Download Time (s)',
-                    data: timeData,
-                    borderColor: '#667eea',
-                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.3,
-                    pointBackgroundColor: '#667eea',
-                    pointBorderColor: '#ffffff',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8
-                }}]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {{
-                    intersect: false,
-                }},
-                plugins: {{
-                    legend: {{ 
-                        display: false 
-                    }},
-                    title: {{
-                        display: true,
-                        text: 'Lower is Better',
-                        font: {{ size: 12 }}
-                    }}
-                }},
-                scales: {{
-                    y: {{ 
-                        beginAtZero: true,
-                        title: {{
-                            display: true,
-                            text: 'Seconds'
-                        }}
-                    }},
-                    x: {{
-                        title: {{
-                            display: true,
-                            text: 'Download Method'
-                        }}
-                    }}
-                }}
-            }}
-        }});
-
-        // Ensure charts render properly and handle resizing
-        window.addEventListener('DOMContentLoaded', function() {{
-            // Ensure chart containers maintain proper sizing
-            const chartContainers = document.querySelectorAll('.chart-wrapper');
-            chartContainers.forEach(container => {{
-                container.style.position = 'relative';
-                container.style.height = '320px';
-                container.style.width = '100%';
-            }});
-        }});
-        
-        // Handle window resize for responsive charts
-        window.addEventListener('resize', function() {{
-            Chart.helpers.each(Chart.instances, function(instance) {{
-                instance.resize();
-            }});
-        }});
-    </script>
-</body>
-</html>"""
+        # Render template
+        html_content = template.render(context)
 
         # Save HTML report
         os.makedirs(self.config.results_dir, exist_ok=True)
@@ -1609,10 +723,10 @@ class PerformanceTestRunner:
         # Open in browser
         try:
             webbrowser.open(f"file://{os.path.abspath(html_filename)}")
-            print("🌐 Report opened in browser automatically!")
         except Exception as e:
-            print(f"⚠️ Could not open browser: {e}")
+            print(f"Could not open browser: {e}")
 
+        print(f"📊 HTML report generated: {html_filename}")
         return html_filename
 
 
@@ -1652,7 +766,7 @@ def run_tool_with_profiling(
         configure_cmd = [
             config.gen3_client_path,
             "configure",
-            "--profile=midrc",
+            "--profile=default",
             f"--cred={config.credentials_path}",
             f"--apiendpoint={config.endpoint}",
         ]
@@ -1697,17 +811,13 @@ def run_tool_with_profiling(
             logger.warning(
                 f"⚠️ {tool_name} Run {run_number} had issues: "
                 f"return_code={result.returncode}, "
-                f"stderr='{result.stderr[:500]}...'"
-                if len(result.stderr) > 500
-                else f"stderr='{result.stderr}'"
+                f"stderr='{result.stderr}'"
             )
 
         if result.stdout and "Failed" in result.stdout:
             logger.warning(
                 f"⚠️ {tool_name} Run {run_number} stdout indicates failures: "
-                f"'{result.stdout[:500]}...'"
-                if len(result.stdout) > 500
-                else f"'{result.stdout}'"
+                f"'{result.stdout}'"
             )
 
         verification_start_time = time.time()
@@ -1838,7 +948,7 @@ class CDISDataClientTester:
             download_dir,
             "--no-prompt",
             "--profile",
-            "midrc",
+            "default",
         ]
 
         logger = logging.getLogger(__name__)
@@ -1863,7 +973,7 @@ class Gen3SDKTester:
     async def test_download_multiple_async(
         self, manifest_path: str, run_number: int = 1
     ) -> PerformanceMetrics:
-        """Test Gen3 SDK download-multiple-async functionality with enhanced monitoring."""
+        """Test Gen3 SDK download-multiple functionality with enhanced monitoring."""
         if not GEN3_SDK_AVAILABLE:
             print("  ⚠️  Gen3 SDK not available - skipping async test")
             return self._create_error_metrics(
@@ -1877,14 +987,14 @@ class Gen3SDKTester:
         )
 
         cmd = [
-            "python",
-            "-m",
-            "gen3.cli",
+            "poetry",
+            "run",
+            "gen3",
             "--auth",
             os.path.abspath(self.config.credentials_path),
             "--endpoint",
             self.config.endpoint,
-            "download-multiple-async",
+            "download-multiple",
             "--manifest",
             os.path.abspath(manifest_path),
             "--download-path",
@@ -1958,7 +1068,7 @@ async def main():
         help="Comma-separated test methods (async,cdis)",
     )
     parser.add_argument(
-        "--endpoint", default="https://data.midrc.org", help="Gen3 endpoint URL"
+        "--endpoint", default="https://data.example.org", help="Gen3 endpoint URL"
     )
     parser.add_argument(
         "--credentials",
@@ -2056,15 +1166,7 @@ async def main():
 
     test_configs = []
 
-    if "cdis" in config.test_methods:
-        test_configs.append(
-            {
-                "name": "CDIS Data Client",
-                "tester_class": CDISDataClientTester,
-                "method": "test_download_multiple",
-            }
-        )
-
+    # Test async first for faster failure detection when testing branches
     if "async" in config.test_methods and GEN3_SDK_AVAILABLE:
         test_configs.append(
             {
@@ -2075,6 +1177,15 @@ async def main():
         )
     elif "async" in config.test_methods:
         logger.warning("⚠️  Skipping Gen3 SDK Async test - not available")
+
+    if "cdis" in config.test_methods:
+        test_configs.append(
+            {
+                "name": "CDIS Data Client",
+                "tester_class": CDISDataClientTester,
+                "method": "test_download_multiple",
+            }
+        )
 
     total_tests = len(test_configs) * config.num_runs
     current_test = 0

@@ -4,7 +4,7 @@ A comprehensive Python script that compares CDIS Data Client and Gen3 SDK downlo
 
 ## Features
 
-- **Performance Testing**: Comprehensive async and CDIS performance comparison
+- **Performance Testing**: Comprehensive Gen3 Python SDK/CLI and Golang Client performance comparison
 - **Profiling**: Built-in cProfile integration with detailed bottleneck analysis
 - **Real-time Monitoring**: CPU, memory, and resource usage tracking during downloads
 - **HTML Reports**: Interactive HTML reports with charts and detailed metrics
@@ -69,7 +69,17 @@ Before running the tests, configure the following:
 ### Basic Usage
 
 ```bash
-python download_performance_test.py --manifest test_data/sample_manifest.json
+poetry run python download_performance_test.py \
+  --manifest ../test_data/sample_manifest.json \
+  --num-runs 3 \
+  --max-concurrent-async 32 \
+  --num-workers-cdis 4 \
+  --test-methods "async,cdis" \
+  --endpoint "https://data.midrc.org" \
+  --credentials "~/.gen3/MIDRC_prod.json" \
+  --gen3-client-path "gen3-client" \
+  --download-dir "downloads" \
+  --results-dir "download_performance_results"
 ```
 
 ### Command Line Options
