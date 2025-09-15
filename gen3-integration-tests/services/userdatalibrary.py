@@ -10,8 +10,6 @@ class UserDataLibrary(object):
         self.BASE_ENDPOINT = "/library"
         self.LISTS_ENDPOINT = f"{self.BASE_ENDPOINT}/lists"
 
-    # TODO: Remove retry after PPS-2020 is fixed
-    @retry(times=3, delay=10, exceptions=(AssertionError))
     def create_list(self, user, data, expected_status=201):
         """helper function to create list in data library"""
         logger.info("Creating Data Library List")
