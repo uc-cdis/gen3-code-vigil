@@ -20,77 +20,50 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Get external PR details
-        id: pr
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: "${{ inputs.repo }}",
-              pull_number: ${{ inputs.pr_number }}
-            });
+      - name: Mirror external PR into internal copy
 
-            const data = pr.data;
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            // Validate PR targets this repo
-            if (data.base.repo.full_name !== context.repo.owner + '/' + context.repo.repo) {
-              core.setFailed(`PR #${data.number} is not targeting this repository.`);
-              return;
-            }
-
-            core.setOutput("head_repo", data.head.repo.clone_url);
-            core.setOutput("head_ref", data.head.ref);
-            core.setOutput("head_user", data.head.user.login);
-            core.setOutput("base_ref", data.base.ref);
-            core.setOutput("title", data.title);
-            core.setOutput("body", data.body || "");
-            core.setOutput("internal_copy_branch", `copy-of-external-pr-${data.number}`);
-            core.setOutput("number", data.number);
-
-      - name: Checkout base branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.pr.outputs.base_ref }}
-
-      - name: Fetch fork PR branch locally
         run: |
-          git fetch ${{ steps.pr.outputs.head_repo }} \
-            ${{ steps.pr.outputs.head_ref }}:${{ steps.pr.outputs.internal_copy_branch }}
+          # Get PR metadata
+          pr_json=$(gh pr view ${{ inputs.pr_number }} --repo ${{ inputs.repo }} \
+            --json number,title,body,headRefName,headRepository,headRepositoryOwner,baseRefName,baseRepository)
 
-      - name: Push duplicate branch to base repo
-        run: |
-          git push origin ${{ steps.pr.outputs.internal_copy_branch }}
+          # Validate target repo
+          base_repo=$(echo "$pr_json" | jq -r '.baseRepository.name')
+          base_owner=$(echo "$pr_json" | jq -r '.baseRepository.owner.login')
+          if [[ "$base_repo" != "${{ github.event.repository.name }}" || "$base_owner" != "${{ github.repository_owner }}" ]]; then
+            echo "PR targets $base_owner/$base_repo, not this repo. Exiting."
+            exit 1
+          fi
 
-      - name: Create or update duplicate PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const title = `[Copy of external PR] ${{ steps.pr.outputs.title }}`;
-            const body = `Copy of external PR #${{ steps.pr.outputs.number }} from \`${{ steps.pr.outputs.head_user }}/${{ inputs.repo }}\`\n\nOriginal body:\n\n${{ steps.pr.outputs.body }}`;
-            const branch = "${{ steps.pr.outputs.fork_branch }}";
-            const base = "${{ steps.pr.outputs.base_ref }}";
+          # Extract data
+          head_ref=$(echo "$pr_json" | jq -r '.headRefName')
+          head_repo=$(echo "$pr_json" | jq -r '.headRepository.cloneUrl')
+          head_user=$(echo "$pr_json" | jq -r '.headRepositoryOwner.login')
+          base_ref=$(echo "$pr_json" | jq -r '.baseRefName')
+          title=$(echo "$pr_json" | jq -r '.title')
+          body=$(echo "$pr_json" | jq -r '.body')
+          branch="copy-of-external-pr-$pr_number"
 
-            // Check if a mirrored PR from this branch already exists
-            const existingPRs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: branch,
-              state: "open"
-            });
+          # Checkout base
+          git fetch origin $base_ref && git checkout $base_ref
 
-            if (existingPRs.data.length === 0) {
-              await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                head: `uc-cdis:${branch}`,
-                base,
-                title,
-                body
-              });
-              console.log("Duplicate PR created.");
-            } else {
-              console.log("Duplicate PR already exists. Branch updated to latest commits.");
-            }
+          # Fetch external PR branch and push to local
+          git fetch "$head_repo" "$head_ref:$branch"
+          git push origin "$branch"
+
+          # Check if PR already exists
+          existing_pr=$(gh pr list --head "$branch" --state open --json number -q '.[0].number')
+
+          # Compose new PR title/body
+          new_title="[Copy of external PR] $title"
+          new_body="Copy of external PR #$pr_number from \`$head_user/${{ inputs.repo }}\`\n\nOriginal body:\n\n$body"
+
+          if [[ -z "$existing_pr" ]]; then
+            gh pr create --head "uc-cdis:$branch" --base "$base_ref" --title "$new_title" --body "$new_body"
+            echo "✅ Created duplicate PR."
+          else
+            echo "ℹ️ Duplicate PR already exists (#$existing_pr)."
+          fi
