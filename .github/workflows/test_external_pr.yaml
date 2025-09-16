@@ -27,14 +27,8 @@ jobs:
 
         run: |
           # Get PR metadata
-          pr_json=$(gh pr view ${{ inputs.pr_number }} --repo ${{ inputs.repo }} \
+          pr_json=$(gh pr view ${{ inputs.pr_number }} --repo uc-cdis/${{ inputs.repo }} \
             --json number,title,body,headRefName,headRepository,headRepositoryOwner,baseRefName)
-
-          # Validate target repo
-          if [[ "uc-cdis" != "${{ github.repository_owner }}" ]]; then
-            echo "PR targets ${{ github.event.repository.full_name }}, not this repo. Exiting."
-            exit 1
-          fi
 
           # Extract data
           head_ref=$(echo "$pr_json" | jq -r '.headRefName')
