@@ -1,0 +1,115 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Create dev env
+
+on:
+  workflow_dispatch:
+    inputs:
+      NAMESPACE:
+        description: 'Namespace for the dev env'
+        required: true
+      SOURCE_CONFIG:
+        description: 'Folder path in gen3-gitops repo to use as baseline'
+        required: false
+        default: 'ci/default'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
+      NAMESPACE: ${{ inputs.NAMESPACE }}
+      SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG }}
+    steps:
+      - name: Checkout integration test code
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/gen3-code-vigil
+          path: gen3-code-vigil
+
+      - name: Checkout gen3-gitops repo
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/gen3-gitops
+          path: gen3-gitops
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.17'
+
+      - name: Set Up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+
+      - name: Set Up Helm
+        uses: azure/setup-helm@v4.3.0
+        with:
+          version: latest
+
+      - name: Install dependencies
+        env:
+          YQ_VERSION: v4.45.2
+          YQ_BINARY: yq_linux_amd64
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
+          sudo apt update && sudo apt install wget -y
+          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
+          tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
+          cd gen3-code-vigil/gen3-integration-tests
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry lock
+          poetry install
+          poetry show
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+            role-to-assume: arn:aws:iam::707767160287:role/github-action-role
+            role-session-name: GitHub_to_AWS_via_FederatedOIDC
+            aws-region: "us-east-1"
+            role-duration-seconds: 7200
+
+      - name: Update kube config
+        run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
+
+      - name: Create namespace and env vars
+        run: |
+          HOSTNAME=${NAMESPACE}.dev.planx-pla.net
+          echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+          echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+          namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+          if [ -n "$namespace_exists" ]; then
+            echo "Namespace $NAMESPACE exists, performing teardown..."
+            helm delete $NAMESPACE -n $NAMESPACE || true
+            kubectl delete ns $NAMESPACE
+            jupyter_namespace_exists=$(kubectl get namespace "jupyter-pods-$NAMESPACE" --no-headers --ignore-not-found)
+            if [ -n "$jupyter_namespace_exists" ]; then
+              echo "Namespace jupyter-pods-$NAMESPACE exists, performing teardown..."
+              kubectl delete ns "jupyter-pods-$NAMESPACE" --wait=false
+            fi
+          fi
+          kubectl create namespace $NAMESPACE
+
+      - name: Prepare dev env
+        run: |
+          echo $SOURCE_CONFIG
+          echo $GITHUB_WORKSPACE
+          ls -l $GITHUB_WORKSPACE
+          mkdir $HOME/.gen3
+          cd gen3-code-vigil/gen3-integration-tests
+          poetry run python -m scripts.create_dev_env
