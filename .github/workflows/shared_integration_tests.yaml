@@ -118,15 +118,15 @@ jobs:
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
           IS_NIGHTLY_RUN: ${{ inputs.IS_NIGHTLY_RUN }}
           TEST_LABELS: ${{ inputs.TEST_LABELS }}
+          SKIP_TESTS: 'false'
 
         steps:
-          # Ensure the PR is run under the same org as an Internal PR
-          # and not by external forks/PRs
-          - name: Check if PR is from the same organization
+          # External PRs will not have access to secrets, so tests cannot run
+          - name: Skip integration tests for external PRs
             if: ${{ github.event.pull_request.head.repo.full_name != github.event.repository.full_name }}
             working-directory: ${{ github.workspace }}
             run:  |
-              echo "Base repo: ${{ github.event.pull_request.base.repo.full_name }}"
+              echo "Current repo: ${{ github.event.repository.full_name }}"
               echo "Head Repo: ${{ github.event.pull_request.head.repo.full_name }}"
               echo "Skipping integration tests for external PRs"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
