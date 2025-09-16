@@ -46,7 +46,7 @@ jobs:
             core.setOutput("base_ref", data.base.ref);
             core.setOutput("title", data.title);
             core.setOutput("body", data.body || "");
-            core.setOutput("fork_branch", `copy-of-external-pr-${data.number}`);
+            core.setOutput("internal_copy_branch", `copy-of-external-pr-${data.number}`);
             core.setOutput("number", data.number);
 
       - name: Checkout base branch
@@ -57,11 +57,11 @@ jobs:
       - name: Fetch fork PR branch locally
         run: |
           git fetch ${{ steps.pr.outputs.head_repo }} \
-            ${{ steps.pr.outputs.head_ref }}:${{ steps.pr.outputs.fork_branch }}
+            ${{ steps.pr.outputs.head_ref }}:${{ steps.pr.outputs.internal_copy_branch }}
 
       - name: Push duplicate branch to base repo
         run: |
-          git push origin ${{ steps.pr.outputs.fork_branch }}
+          git push origin ${{ steps.pr.outputs.internal_copy_branch }}
 
       - name: Create or update duplicate PR
         uses: actions/github-script@v7
@@ -85,7 +85,7 @@ jobs:
               await github.rest.pulls.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                head: branch,
+                head: ${context.repo.owner}:${branch},
                 base,
                 title,
                 body
