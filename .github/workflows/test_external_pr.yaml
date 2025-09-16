@@ -12,6 +12,9 @@ on:
         required: true
         type: number
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   copy-external-pr:
     runs-on: ubuntu-latest
@@ -20,11 +23,12 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/${{ inputs.repo }}
+
       - name: Mirror external PR into internal copy
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
         run: |
           # Get PR metadata
           pr_json=$(gh pr view ${{ inputs.pr_number }} --repo uc-cdis/${{ inputs.repo }} \
