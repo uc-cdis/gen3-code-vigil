@@ -123,11 +123,12 @@ jobs:
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
-            if: ${{ github.repository_owner != 'uc-cdis' }}
+            if: ${{ github.event.pull_request.head.repo.full_name != github.event.repository.full_name }}
             working-directory: ${{ github.workspace }}
             run:  |
-              echo "github.repository_owner - ${{ github.repository_owner }}"
-              echo "Skip pull requests from repositories not within the same organization"
+              echo "Base Repo: ${{ github.event.repository.full_name }}"
+              echo "Head Repo: ${{ github.event.pull_request.head.repo.full_name }}"
+              echo "Skipping integration tests for external PRs"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Skip integration tests when the following PR labels are present:
@@ -208,7 +209,7 @@ jobs:
 
           # Setup kubectl
           - name: Set Up kubectl
-            if: ${{  env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
             uses: azure/setup-kubectl@v3
             with:
               version: latest
@@ -366,7 +367,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' || env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo $UPDATED_FOLDERS
