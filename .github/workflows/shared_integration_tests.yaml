@@ -312,6 +312,7 @@ jobs:
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            id: create_ns
             # Change the HOSTNAME with full domain name
             run: |
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
@@ -367,7 +368,7 @@ jobs:
           # Generate API keys for test users for the environment
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' && steps.select_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.create_ns.outcome == 'success' || steps.select_ci_env.outcome == 'success') }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo $UPDATED_FOLDERS
