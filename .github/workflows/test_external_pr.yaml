@@ -28,11 +28,11 @@ jobs:
         run: |
           # Get PR metadata
           pr_json=$(gh pr view ${{ inputs.pr_number }} --repo ${{ inputs.repo }} \
-            --json number,title,body,headRefName,headRepository,headRepositoryOwner,baseRefName,baseRepository)
+            --json number,title,body,headRefName,headRepository,headRepositoryOwner,baseRefName)
 
           # Validate target repo
-          base_repo=$(echo "$pr_json" | jq -r '.baseRepository.name')
-          base_owner=$(echo "$pr_json" | jq -r '.baseRepository.owner.login')
+          base_repo="${{ github.event.repository.name }}"
+          base_owner="${{ github.repository_owner }}"
           if [[ "$base_repo" != "${{ github.event.repository.name }}" || "$base_owner" != "${{ github.repository_owner }}" ]]; then
             echo "PR targets $base_owner/$base_repo, not this repo. Exiting."
             exit 1
