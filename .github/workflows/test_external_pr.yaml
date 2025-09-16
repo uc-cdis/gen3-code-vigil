@@ -31,10 +31,8 @@ jobs:
             --json number,title,body,headRefName,headRepository,headRepositoryOwner,baseRefName)
 
           # Validate target repo
-          base_repo="${{ github.event.repository.name }}"
-          base_owner="${{ github.repository_owner }}"
-          if [[ "$base_repo" != "${{ github.event.repository.name }}" || "$base_owner" != "${{ github.repository_owner }}" ]]; then
-            echo "PR targets $base_owner/$base_repo, not this repo. Exiting."
+          if [[ "uc-cdis" != "${{ github.repository_owner }}" ]]; then
+            echo "PR targets ${{ github.event.repository.full_name }}, not this repo. Exiting."
             exit 1
           fi
 
