@@ -123,11 +123,11 @@ jobs:
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
           - name: Check if PR is from the same organization
-            if: ${{ github.repository_owner != 'uc-cdis' }}
+            if: ${{ github.event.pull_request.head.repo.full_name != github.event.repository.full_name }}
             working-directory: ${{ github.workspace }}
             run:  |
-              echo "github.repository_owner - ${{ github.repository_owner }}"
-              echo "Skip pull requests from repositories not within the same organization"
+              echo "PR base repo: ${{ github.event.pull_request.base.repo.full_name }}"
+              echo "PR head repo: ${{ github.event.pull_request.head.repo.full_name }}"
               echo "SKIP_TESTS=true" >> $GITHUB_ENV
 
           # Skip integration tests when the following PR labels are present:
