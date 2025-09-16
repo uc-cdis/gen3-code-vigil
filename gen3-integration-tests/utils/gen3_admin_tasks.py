@@ -319,7 +319,7 @@ def check_job_pod(
             )
 
 
-@retry(times=2, delay=30, exceptions=(AssertionError))
+@retry(times=2, delay=30, exceptions=(AssertionError,))
 def _get_fence_pod_name(test_env_namespace):
     # Get the pod name for fence app
     cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
@@ -422,6 +422,7 @@ def _get_create_cmd(
     return create_cmd
 
 
+@retry(times=2, delay=30, exceptions=(subprocess.TimeoutExpired,))
 def setup_fence_test_client(test_env_namespace, client_data):
     """
     Create fence test client
