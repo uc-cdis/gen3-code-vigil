@@ -85,7 +85,7 @@ jobs:
               await github.rest.pulls.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                head: ${context.repo.owner}:${branch},
+                head: `${context.repo.owner}:${branch}`,
                 base,
                 title,
                 body
