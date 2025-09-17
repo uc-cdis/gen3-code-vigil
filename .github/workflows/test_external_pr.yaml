@@ -1,0 +1,96 @@
+name: Test external PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository name (e.g. fence)'
+        required: true
+        type: string
+      pr_number:
+        description: 'Pull request number'
+        required: true
+        type: number
+
+jobs:
+  copy-external-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Get external PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: "${{ inputs.repo }}",
+              pull_number: ${{ inputs.pr_number }}
+            });
+
+            const data = pr.data;
+
+            // Validate PR targets this repo
+            if (data.base.repo.full_name !== context.repo.owner + '/' + context.repo.repo) {
+              core.setFailed(`PR #${data.number} is not targeting this repository.`);
+              return;
+            }
+
+            core.setOutput("head_repo", data.head.repo.clone_url);
+            core.setOutput("head_ref", data.head.ref);
+            core.setOutput("head_user", data.head.user.login);
+            core.setOutput("base_ref", data.base.ref);
+            core.setOutput("title", data.title);
+            core.setOutput("body", data.body || "");
+            core.setOutput("fork_branch", `copy-of-external-pr-${data.number}`);
+            core.setOutput("number", data.number);
+
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.base_ref }}
+
+      - name: Fetch fork PR branch locally
+        run: |
+          git fetch ${{ steps.pr.outputs.head_repo }} \
+            ${{ steps.pr.outputs.head_ref }}:${{ steps.pr.outputs.fork_branch }}
+
+      - name: Push duplicate branch to base repo
+        run: |
+          git push origin ${{ steps.pr.outputs.fork_branch }}
+
+      - name: Create or update duplicate PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const title = `[Copy of external PR] ${{ steps.pr.outputs.title }}`;
+            const body = `Copy of external PR #${{ steps.pr.outputs.number }} from \`${{ steps.pr.outputs.head_user }}/${{ inputs.repo }}\`\n\nOriginal body:\n\n${{ steps.pr.outputs.body }}`;
+            const branch = "${{ steps.pr.outputs.fork_branch }}";
+            const base = "${{ steps.pr.outputs.base_ref }}";
+
+            // Check if a mirrored PR from this branch already exists
+            const existingPRs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`,
+              state: "open"
+            });
+
+            if (existingPRs.data.length === 0) {
+              await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: branch,
+                base,
+                title,
+                body
+              });
+              console.log("Duplicate PR created.");
+            } else {
+              console.log("Duplicate PR already exists. Branch updated to latest commits.");
+            }
