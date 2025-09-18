@@ -146,7 +146,6 @@ class TestDataUpload:
             pytest.skip(
                 "Skipping consent code tests since dictionary does not have them"
             )
-        logger.info(metadata)
         file_size = os.path.getsize(file_path)
         file_md5 = hashlib.md5(open(file_path, "rb").read()).hexdigest()
         fence_upload_res = self.fence.get_url_for_data_upload(
