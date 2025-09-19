@@ -35,7 +35,7 @@ jobs:
           testing_branch="copy-of-external-pr-${{ inputs.pr_number }}"
           git checkout -b "$testing_branch" || git checkout "$testing_branch"
           git reset --hard HEAD
-          git push --force-with-lease "$testing_branch"
+          git push --force-with-lease origin "$testing_branch"
 
           echo "✅ Testing branch $testing_branch created"
 
