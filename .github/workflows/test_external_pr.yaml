@@ -25,7 +25,6 @@ jobs:
           # Copy PR branch
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "github-actions[bot]"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uc-cdis/${{ inputs.repo }}
 
           gh repo clone uc-cdis/${{ inputs.repo }}
           cd ${{ inputs.repo }}
@@ -36,6 +35,7 @@ jobs:
           testing_branch="copy-of-external-pr-${{ inputs.pr_number }}"
           git checkout -b "$testing_branch" || git checkout "$testing_branch"
           git reset --hard HEAD
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uc-cdis/${{ inputs.repo }}
           git push --force-with-lease origin "$testing_branch"
 
           echo "✅ Testing branch $testing_branch created"
