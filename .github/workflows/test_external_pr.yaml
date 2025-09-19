@@ -24,7 +24,7 @@ jobs:
         run: |
           # Copy PR branch
           git config --global user.email "cdis@uchicago.edu"
-          git configl --global user.name "github-actions[bot]"
+          git config --global user.name "github-actions[bot]"
 
           gh repo clone uc-cdis/${{ inputs.repo }}
           cd ${{ inputs.repo }}
