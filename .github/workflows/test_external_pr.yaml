@@ -50,10 +50,15 @@ jobs:
             pr_title="Testing external contributor PR #${{ inputs.pr_number }}"
             new_pr=$(gh pr create \
               --title "$pr_title" \
-              --body "pr_title"
               --base "master" \
               --head "$testing_branch" \
-              --label "testing-external-pr")
+              --label "testing-external-pr"
+              --body - <<EOF
+            *** DO NOT MERGE ***
+            This PR was created automatically to test an external PR
+            Tested PR link [here](https://github.com/uc-cdis/${{ inputs.repo }}/pull/${{ inputs.pr_number }})
+            EOF
+            )
 
               echo "✅ Created new PR: $new_pr"
           fi
