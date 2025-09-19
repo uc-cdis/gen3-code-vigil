@@ -26,16 +26,16 @@ jobs:
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "github-actions[bot]"
 
-          gh repo clone uc-cdis/${{ inputs.repo }}
-          cd ${{ inputs.repo }}
+          gh repo clone uc-cdis/${REPO}
+          cd ${REPO}
 
-          gh pr checkout ${{ inputs.pr_number }}
+          gh pr checkout ${PR_NUM}
           git log -1
 
-          testing_branch="copy-of-external-pr-${{ inputs.pr_number }}"
+          testing_branch="copy-of-external-pr-${PR_NUM}"
           git checkout -b "$testing_branch" || git checkout "$testing_branch"
           git reset --hard HEAD
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uc-cdis/${{ inputs.repo }}
+          git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/uc-cdis/${REPO}
           git push --force-with-lease origin "$testing_branch"
 
           echo "✅ Testing branch $testing_branch created"
@@ -47,20 +47,23 @@ jobs:
             echo "✅ PR #$existing_pr already exists and has been updated with latest changes"
           else
             echo "🆕 Creating new PR from testing branch"
-            pr_title="Testing external contributor PR #${{ inputs.pr_number }}"
+            pr_title="Testing external contributor PR #${PR_NUM}"
+            pr_body="$(cat <<EOF
+          *** DO NOT MERGE ***
+          This PR was created automatically to test an external PR
+          Tested PR link [here](https://github.com/uc-cdis/${REPO}/pull/${PR_NUM})
+          EOF
+          )"
             new_pr=$(gh pr create \
               --title "$pr_title" \
               --base "master" \
               --head "$testing_branch" \
               --label "testing-external-pr"
-              --body - <<EOF
-            *** DO NOT MERGE ***
-            This PR was created automatically to test an external PR
-            Tested PR link [here](https://github.com/uc-cdis/${{ inputs.repo }}/pull/${{ inputs.pr_number }})
-            EOF
-            )
+              --body "$pr_body"
 
               echo "✅ Created new PR: $new_pr"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ inputs.repo }}
+          PR_NUM: ${{ inputs.pr_number }}
