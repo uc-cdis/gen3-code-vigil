@@ -64,6 +64,6 @@ jobs:
             echo "✅ Created new PR: $new_pr"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
           REPO: ${{ inputs.repo }}
           PR_NUM: ${{ inputs.pr_number }}
