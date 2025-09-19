@@ -51,7 +51,7 @@ jobs:
             new_pr=$(gh pr create \
               --title "$pr_title" \
               --body "pr_title"
-              --base master \
+              --base "master" \
               --head "$testing_branch" \
               --label "testing-external-pr")
 
