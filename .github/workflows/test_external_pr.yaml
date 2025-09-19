@@ -25,6 +25,7 @@ jobs:
           # Copy PR branch
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "github-actions[bot]"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/uc-cdis/${{ inputs.repo }}
 
           gh repo clone uc-cdis/${{ inputs.repo }}
           cd ${{ inputs.repo }}
