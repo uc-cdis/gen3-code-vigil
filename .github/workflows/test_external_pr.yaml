@@ -20,77 +20,40 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Get external PR details
-        id: pr
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: "${{ inputs.repo }}",
-              pull_number: ${{ inputs.pr_number }}
-            });
-
-            const data = pr.data;
-
-            // Validate PR targets this repo
-            if (data.base.repo.full_name !== context.repo.owner + '/' + context.repo.repo) {
-              core.setFailed(`PR #${data.number} is not targeting this repository.`);
-              return;
-            }
-
-            core.setOutput("head_repo", data.head.repo.clone_url);
-            core.setOutput("head_ref", data.head.ref);
-            core.setOutput("head_user", data.head.user.login);
-            core.setOutput("base_ref", data.base.ref);
-            core.setOutput("title", data.title);
-            core.setOutput("body", data.body || "");
-            core.setOutput("internal_copy_branch", `copy-of-external-pr-${data.number}`);
-            core.setOutput("number", data.number);
-
-      - name: Checkout base branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.pr.outputs.base_ref }}
-
-      - name: Fetch fork PR branch locally
+      - name: Clone repo and sync PR branch
         run: |
-          git fetch ${{ steps.pr.outputs.head_repo }} \
-            ${{ steps.pr.outputs.head_ref }}:${{ steps.pr.outputs.internal_copy_branch }}
+          # Copy PR branch
+          git config --global user.email "cdis@uchicago.edu"
+          git configl --global user.name "github-actions[bot]"
 
-      - name: Push duplicate branch to base repo
-        run: |
-          git push origin ${{ steps.pr.outputs.internal_copy_branch }}
+          gh repo clone uc-cdis/${{ inputs.repo }}
+          cd ${{ inputs.repo }}
 
-      - name: Create or update duplicate PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const title = `[Copy of external PR] ${{ steps.pr.outputs.title }}`;
-            const body = `Copy of external PR #${{ steps.pr.outputs.number }} from \`${{ steps.pr.outputs.head_user }}/${{ inputs.repo }}\`\n\nOriginal body:\n\n${{ steps.pr.outputs.body }}`;
-            const branch = "${{ steps.pr.outputs.fork_branch }}";
-            const base = "${{ steps.pr.outputs.base_ref }}";
+          gh pr checkout ${{ inputs.pr_number }}
+          git log -1
 
-            // Check if a mirrored PR from this branch already exists
-            const existingPRs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: branch,
-              state: "open"
-            });
+          testing_branch="copy-of-external-pr-${{ inputs.pr_number }}"
+          git checkout -b "$testing_branch" || git checkout "$testing_branch"
+          git reset --hard HEAD
+          git push --force-with-lease origin "$testing_branch"
 
-            if (existingPRs.data.length === 0) {
-              await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                head: `uc-cdis:${branch}`,
-                base,
-                title,
-                body
-              });
-              console.log("Duplicate PR created.");
-            } else {
-              console.log("Duplicate PR already exists. Branch updated to latest commits.");
-            }
+          echo "✅ Testing branch $testing_branch created"
+
+          # Create PR from the branch
+          existing_pr=$(gh pr list --head "$testing_branch" --state open --json number --jq '.[0].number // empty')
+
+          if [ -n "$existing_pr" ]; then
+            echo "✅ PR #$existing_pr already exists and has been updated with latest changes"
+          else
+            echo "🆕 Creating new PR from testing branch"
+            pr_title="Testing external contributor PR #${{ inputs.pr_number }}"
+            new_pr=$(gh pr create \
+              --title "$pr_title" \
+              --base master \
+              --head "$testing_branch" \
+              --label "testing-external-pr")
+
+              echo "✅ Created new PR: $new_pr"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
