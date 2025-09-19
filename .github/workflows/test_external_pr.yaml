@@ -58,7 +58,6 @@ jobs:
               --title "$pr_title" \
               --base "master" \
               --head "$testing_branch" \
-              --label "testing-external-pr" \
               --body "$pr_body")
 
             echo "✅ Created new PR: $new_pr"
