@@ -48,7 +48,8 @@ jobs:
           *** DO NOT MERGE ***
           This PR was created automatically to test an external PR
           Tested PR link [here](https://github.com/uc-cdis/${REPO}/pull/${PR_NUM})
-          EOF)"
+          EOF
+          )"
           if [ -n "$existing_pr" ]; then
             echo "✅ PR #$existing_pr already exists and has been updated with latest changes"
           else
