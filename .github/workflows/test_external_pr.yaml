@@ -50,6 +50,7 @@ jobs:
             pr_title="Testing external contributor PR #${{ inputs.pr_number }}"
             new_pr=$(gh pr create \
               --title "$pr_title" \
+              --body "pr_title"
               --base master \
               --head "$testing_branch" \
               --label "testing-external-pr")
