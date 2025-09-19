@@ -1,5 +1,7 @@
 FROM python:3.9-slim-bullseye AS base
 
+### TEST
+
 ENV appname=gen3-integration-tests \
     NODEJS_VERSION=20
 
