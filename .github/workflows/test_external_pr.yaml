@@ -48,8 +48,7 @@ jobs:
           *** DO NOT MERGE ***
           This PR was created automatically to test an external PR
           Tested PR link [here](https://github.com/uc-cdis/${REPO}/pull/${PR_NUM})
-          EOF
-          )"
+          EOF)"
           if [ -n "$existing_pr" ]; then
             echo "✅ PR #$existing_pr already exists and has been updated with latest changes"
           else
@@ -58,10 +57,10 @@ jobs:
               --title "$pr_title" \
               --base "master" \
               --head "$testing_branch" \
-              --label "testing-external-pr"
-              --body "$pr_body"
+              --label "testing-external-pr" \
+              --body "$pr_body")
 
-              echo "✅ Created new PR: $new_pr"
+            echo "✅ Created new PR: $new_pr"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
