@@ -47,8 +47,8 @@ spec:
 
                 delete_queue_and_subscription() {
                 AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
-                UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
                 UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
+                UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
                 SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
 
                     if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" &>/dev/null; then
@@ -58,7 +58,7 @@ spec:
                             --query "Subscriptions[?Endpoint=='$UPLOAD_QUEUE_ARN'].SubscriptionArn" --output text)
 
                         # Unsubscribe if subscription exists
-                        if [[ -n "$SUBSCRIPTION_ARN" && "$SUBSCRIPTION_ARN" != "PendingConfirmation" ]]; then
+                        if [[ -n "$SUBSCRIPTION_ARN" ]]; then
                             aws sns unsubscribe --subscription-arn "$SUBSCRIPTION_ARN"
                             echo "Unsubscribed: $SUBSCRIPTION_ARN"
                         fi
