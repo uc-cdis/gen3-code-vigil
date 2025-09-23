@@ -42,8 +42,8 @@ class CustomScheduling(LoadScopeScheduling):
     def _split_scope(self, nodeid):
         node = self._nodes[nodeid]
         # Run all tests with marker workspace to run serially (same worker)
-        if node.get_closest_marker("workspace"):
-            return "__workspace__"
+        if node.get_closest_marker("workspace") or node.get_closest_marker("mds"):
+            return "__workspace_mds__"
 
         # Run all tests with marker ras to run serially (same worker)
         if node.get_closest_marker("ras"):

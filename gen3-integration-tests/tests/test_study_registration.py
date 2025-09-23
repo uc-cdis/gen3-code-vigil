@@ -14,9 +14,9 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.test_execution import screenshot
 
 
-# @pytest.mark.requestor
-# @pytest.mark.mds
-# @pytest.mark.study_registration
+@pytest.mark.requestor
+@pytest.mark.mds
+@pytest.mark.study_registration
 @pytest.mark.skipif(
     "portal" not in pytest.deployed_services,
     reason="portal service is not running on this environment",
