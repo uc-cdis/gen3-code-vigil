@@ -1,0 +1,68 @@
+name: Test external PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository name (e.g. fence)'
+        required: true
+        type: string
+      pr_number:
+        description: 'Pull request number'
+        required: true
+        type: number
+
+jobs:
+  copy-external-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Clone repo and sync PR branch
+        run: |
+          # Copy PR branch
+          git config --global user.email "cdis@uchicago.edu"
+          git config --global user.name "github-actions[bot]"
+
+          gh repo clone uc-cdis/${REPO}
+          cd ${REPO}
+
+          gh pr checkout ${PR_NUM}
+          git log -1
+
+          testing_branch="copy-of-external-pr-${PR_NUM}"
+          git checkout -b "$testing_branch" || git checkout "$testing_branch"
+          git reset --hard HEAD
+          git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/uc-cdis/${REPO}
+          git push --force-with-lease origin "$testing_branch"
+
+          echo "✅ Testing branch $testing_branch created"
+
+          # Create PR from the branch
+          existing_pr=$(gh pr list --head "$testing_branch" --state open --json number --jq '.[0].number // empty')
+
+          pr_title="Testing external contributor PR #${PR_NUM}"
+          pr_body="$(cat <<EOF
+          *** DO NOT MERGE ***
+          This PR was created automatically to test an external PR
+          Tested PR link [here](https://github.com/uc-cdis/${REPO}/pull/${PR_NUM})
+          EOF
+          )"
+          if [ -n "$existing_pr" ]; then
+            echo "✅ PR #$existing_pr already exists and has been updated with latest changes"
+          else
+            echo "🆕 Creating new PR from testing branch"
+            new_pr=$(gh pr create \
+              --title "$pr_title" \
+              --base "master" \
+              --head "$testing_branch" \
+              --body "$pr_body")
+
+            echo "✅ Created new PR: $new_pr"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ inputs.repo }}
+          PR_NUM: ${{ inputs.pr_number }}

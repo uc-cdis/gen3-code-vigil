@@ -1,5 +1,6 @@
 import pytest
 from services.userdatalibrary import UserDataLibrary
+from utils import logger
 
 
 @pytest.mark.skipif(
@@ -97,6 +98,42 @@ class TestUserDataLibrary(object):
         gen3_udl.create_list(
             user="main_account", data=self.test_data_create, expected_status=409
         )
+
+        # Delete the data library list
+        gen3_udl.delete_list(user="main_account", list_id=list_id)
+
+    # KNOWN DEFECT - https://ctds-planx.atlassian.net/browse/PD-61
+    def test_list_created_by_main_user_not_accessible_by_another_user(self):
+        """
+        Scenario: Create multiple data library lists using same data and verify only list was created
+        Steps:
+            1. Create a data library list for user main_account
+            2. Read the data library list to verify it was created in step 1.
+            3. Read the data library list using user indexing_account.
+            4. Validate indexing_account user is not able to access list created by user main_account
+        """
+        gen3_udl = UserDataLibrary()
+
+        # Create the data library list
+        data_library_list = gen3_udl.create_list(
+            user="main_account", data=self.test_data_create
+        )
+        for key in data_library_list["lists"].keys():
+            list_id = key
+
+        # Retrieve the list
+        logger.info("Reading list by main_account user")
+        main_account_list = gen3_udl.read_list(user="main_account", list_id=list_id)
+        logger.info(main_account_list)
+
+        # Retrieve the list
+        logger.info("Reading list by indexing_account user")
+        indexing_account_list = gen3_udl.read_list(
+            user="indexing_account", list_id=list_id
+        )
+        assert (
+            indexing_account_list == "list_id not found!"
+        ), f"Expected no list but got {indexing_account_list}"
 
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
