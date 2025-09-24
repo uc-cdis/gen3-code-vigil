@@ -35,7 +35,14 @@ jobs:
           git clone ${OUR_REPO_URL}
           cd ${REPO}
           testing_branch="copy/${FORK}/${BRANCH}"
-          git checkout -b ${testing_branch} || git checkout ${testing_branch} && git reset --hard HEAD
+          ## Delete existing branch if it exists
+          branch_exists=$(git ls-remote --heads ${OUR_REPO_URL} ${testing_branch})
+          if [[ -n $branch_exists ]]; then
+            git branch -D ${testing_branch}
+            git push origin --delete ${testing_branch}
+          fi
+          ## Create the branch
+          git checkout -b ${testing_branch}
 
           # Fetch code from the fork
           git remote set-url origin ${FORK_URL}
