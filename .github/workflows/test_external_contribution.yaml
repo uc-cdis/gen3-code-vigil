@@ -47,26 +47,26 @@ jobs:
 
           echo "1️⃣ Testing branch ${testing_branch} created and pushed to our repo ✅"
 
-      - name: Submit a PR from the copied branch
-        run: |
-          # Create PR from the branch
-          existing_pr=$(gh pr list --head ${testing_branch} --json number --jq '.[0].number // empty')
+      # - name: Submit a PR from the copied branch
+      #   run: |
+      #     # Create PR from the branch
+      #     existing_pr=$(gh pr list --head ${testing_branch} --json number --jq '.[0].number // empty')
 
-          pr_title="Testing external contribution branch ${BRANCH}"
-          pr_body="$(cat <<EOF
-          *** DO NOT MERGE ***
-          This PR was created automatically to test an external contribution
-          EOF
-          )"
-          if [ -n "${existing_pr}" ]; then
-            echo "2️⃣ PR #${existing_pr} already exists and has been updated with latest changes ✅"
-          else
-            echo "🆕 Creating new PR from testing branch ..."
-            new_pr=$(gh pr create \
-              --title "$pr_title" \
-              --base "master" \
-              --head "$testing_branch" \
-              --body "$pr_body")
+      #     pr_title="Testing external contribution branch ${BRANCH}"
+      #     pr_body="$(cat <<EOF
+      #     *** DO NOT MERGE ***
+      #     This PR was created automatically to test an external contribution
+      #     EOF
+      #     )"
+      #     if [ -n "${existing_pr}" ]; then
+      #       echo "2️⃣ PR #${existing_pr} already exists and has been updated with latest changes ✅"
+      #     else
+      #       echo "🆕 Creating new PR from testing branch ..."
+      #       new_pr=$(gh pr create \
+      #         --title "$pr_title" \
+      #         --base "master" \
+      #         --head "$testing_branch" \
+      #         --body "$pr_body")
 
-            echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
-          fi
+      #       echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
+      #     fi
