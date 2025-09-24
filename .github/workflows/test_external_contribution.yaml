@@ -52,6 +52,8 @@ jobs:
 
       - name: Submit a PR from the copied branch
         run: |
+          cd ${REPO}
+
           # Get PR number of the fork branch
           fork_pr=$(gh pr list --head ${FORK_BRANCH} --json number --jq '.[0].number // empty')
           echo ${fork_pr}
