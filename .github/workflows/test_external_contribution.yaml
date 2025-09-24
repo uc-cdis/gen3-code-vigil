@@ -18,10 +18,10 @@ jobs:
     steps:
       - name: Create a copy of external branch
         run: |
-          IFS=':' read -r FORK BRANCH <<< "$FORK_BRANCH"
+          IFS=':' read -r FORK BRANCH <<< "${FORK_BRANCH}"
 
           OUR_REPO_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/uc-cdis/${REPO}.git
-          FORK_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${/${REPO}.git
+          FORK_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${FORK}/${REPO}.git
 
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "PlanXCyborg"
