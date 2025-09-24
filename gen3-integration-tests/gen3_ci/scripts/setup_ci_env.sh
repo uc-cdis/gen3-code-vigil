@@ -424,6 +424,9 @@ if [ "$namespace" == "nightly-build" ]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
+# Set addMdsNamespace to namespace
+yq eval ".metadata.aggMdsNamespace = $NAMESPACE" -i "$ci_default_manifest_values_yaml"
+
 
 echo $HOSTNAME
 install_helm_chart() {
