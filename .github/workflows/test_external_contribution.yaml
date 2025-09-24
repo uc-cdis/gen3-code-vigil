@@ -1,0 +1,72 @@
+name: Test external contributions
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Repository (e.g. fence)'
+        required: true
+        type: string
+      fork_branch:
+        description: 'Fork and branch from PR (e.g. ohsu-comp-bio:feat/alternate-data_upload_bucket)'
+        required: true
+        type: string
+
+jobs:
+  test-external-contrib:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_USERNAME: 'PlanXCyborg'
+      GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
+      REPO: ${{ inputs.repo }}
+      FORK_BRANCH: ${{ inputs.fork_branch }}
+    steps:
+      - name: Create a copy of external branch
+        run: |
+          IFS=':' read -r FORK BRANCH <<< "${FORK_BRANCH}"
+
+          OUR_REPO_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/uc-cdis/${REPO}.git
+          FORK_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${FORK}/${REPO}.git
+
+          git config --global user.email "cdis@uchicago.edu"
+          git config --global user.name "PlanXCyborg"
+
+          # Create testing branch in main repo
+          git clone ${OUR_REPO_URL}
+          cd ${REPO}
+          testing_branch="copy/${PR_NUM}"
+          git checkout -b ${testing_branch} || git checkout ${testing_branch} && git reset --hard HEAD
+
+          # Fetch code from the fork
+          git remote set-url origin ${FORK_URL}
+          git pull origin ${BRANCH} --no-rebase
+
+          # Push the branch to main repo
+          git remote set-url origin ${OUR_REPO_URL}
+          git push --set-upstream origin ${testing_branch}
+
+          echo "1️⃣ Testing branch ${testing_branch} created and pushed to our repo ✅"
+
+      - name: Submit a PR from the copied branch
+        run: |
+          # Create PR from the branch
+          existing_pr=$(gh pr list --head ${testing_branch} --json number --jq '.[0].number // empty')
+
+          pr_title="Testing external contribution branch ${BRANCH}"
+          pr_body="$(cat <<EOF
+          *** DO NOT MERGE ***
+          This PR was created automatically to test an external contribution
+          EOF
+          )"
+          if [ -n "${existing_pr}" ]; then
+            echo "2️⃣ PR #${existing_pr} already exists and has been updated with latest changes ✅"
+          else
+            echo "🆕 Creating new PR from testing branch ..."
+            new_pr=$(gh pr create \
+              --title "$pr_title" \
+              --base "master" \
+              --head "$testing_branch" \
+              --body "$pr_body")
+
+            echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
+          fi
