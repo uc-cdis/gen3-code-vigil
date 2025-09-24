@@ -31,11 +31,13 @@ jobs:
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "PlanXCyborg"
 
-          # Create testing branch in main repo
+          # Create testing branch in main repo (first delete existing branch)
           git clone ${OUR_REPO_URL}
           cd ${REPO}
           testing_branch="copy/${FORK}/${BRANCH}"
-          git branch -D ${testing_branch} &>/dev/null || true
+          git branch -D ${testing_branch} || true
+          git remote set-url origin ${OUR_REPO_URL}
+          git push -d origin ${testing_branch} || true
           git checkout -b ${testing_branch}
 
           # Fetch code from the fork
