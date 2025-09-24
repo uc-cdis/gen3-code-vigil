@@ -1,4 +1,4 @@
-name: Test external contributions
+name: Test external contribution
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  test-external-contrib:
+  test-external-contribution:
     runs-on: ubuntu-latest
     env:
       GITHUB_USERNAME: 'PlanXCyborg'
@@ -21,8 +21,10 @@ jobs:
       REPO: ${{ inputs.repo }}
       FORK_BRANCH: ${{ inputs.fork_branch }}
     steps:
-      - name: Create a copy of external branch
+      - name: Copy external branch and create PR to trigger CI
         run: |
+          # Create a copy of external branch
+
           IFS=':' read -r FORK BRANCH <<< "${FORK_BRANCH}"
 
           OUR_REPO_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/uc-cdis/${REPO}.git
@@ -31,31 +33,40 @@ jobs:
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "PlanXCyborg"
 
-          # Create testing branch in main repo
+          ## Create testing branch in main repo (first delete existing branch)
           git clone ${OUR_REPO_URL}
           cd ${REPO}
-          testing_branch="copy/${PR_NUM}"
-          git checkout -b ${testing_branch} || git checkout ${testing_branch} && git reset --hard HEAD
+          testing_branch="copy/${FORK}/${BRANCH}"
+          git branch -D ${testing_branch} || true
+          git remote set-url origin ${OUR_REPO_URL}
+          git push -d origin ${testing_branch} || true
+          git checkout -b ${testing_branch}
 
-          # Fetch code from the fork
+          ## Fetch code from the fork
           git remote set-url origin ${FORK_URL}
           git pull origin ${BRANCH} --no-rebase
 
-          # Push the branch to main repo
+          ## Push the branch to main repo
           git remote set-url origin ${OUR_REPO_URL}
           git push --set-upstream origin ${testing_branch}
 
           echo "1️⃣ Testing branch ${testing_branch} created and pushed to our repo ✅"
 
-      - name: Submit a PR from the copied branch
-        run: |
-          # Create PR from the branch
-          existing_pr=$(gh pr list --head ${testing_branch} --state open --json number --jq '.[0].number // empty')
+          # Submit a PR from the copied branch
 
-          pr_title="Testing external contribution branch ${BRANCH}"
+          ## Get PR number of the fork branch
+          fork_pr=$(gh pr list --repo uc-cdis/${REPO} --author ${FORK} --head ${BRANCH} --json number --jq '.[0].number')
+          echo "External PR number: ${fork_pr}"
+
+          # Create PR from the branch
+          existing_pr=$(gh pr list --repo uc-cdis/${REPO} --head ${testing_branch} --json number --jq '.[0].number')
+          echo "Existing PR number: ${existing_pr}"
+
+          pr_title="Testing external contribution PR #${fork_pr}"
           pr_body="$(cat <<EOF
           *** DO NOT MERGE ***
           This PR was created automatically to test an external contribution
+          Original PR can be found [here](https://github.com/uc-cdis/${REPO}/pull/${fork_pr})
           EOF
           )"
           if [ -n "${existing_pr}" ]; then
@@ -67,6 +78,5 @@ jobs:
               --base "master" \
               --head "$testing_branch" \
               --body "$pr_body")
-
-            echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
+            echo "2️⃣ Created new PR, link - ${new_pr} ✅"
           fi
