@@ -55,7 +55,7 @@ jobs:
           cd ${REPO}
 
           # Get PR number of the fork branch
-          fork_pr=$(gh pr list --head ${FORK_BRANCH} --json number --jq '.[0].number // empty')
+          fork_pr=$(gh pr list --author ${FORK} --head ${BRANCH} --json number --jq '.[0].number // empty')
           echo ${fork_pr}
 
           # # Create PR from the branch
