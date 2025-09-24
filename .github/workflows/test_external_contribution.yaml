@@ -15,6 +15,11 @@ on:
 jobs:
   test-external-contrib:
     runs-on: ubuntu-latest
+    env:
+      GITHUB_USERNAME: 'PlanXCyborg'
+      GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
+      REPO: ${{ inputs.repo }}
+      FORK_BRANCH: ${{ inputs.fork_branch }}
     steps:
       - name: Create a copy of external branch
         run: |
@@ -65,8 +70,3 @@ jobs:
 
             echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
           fi
-        env:
-          GITHUB_USERNAME: 'PlanXCyborg'
-          GITHUB_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
-          REPO: ${{ inputs.repo }}
-          FORK_BRANCH: ${{ inputs.fork_branch }}
