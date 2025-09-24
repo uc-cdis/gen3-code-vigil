@@ -60,6 +60,7 @@ jobs:
 
           # Create PR from the branch
           existing_pr=$(gh pr list --repo uc-cdis/${REPO} --head ${testing_branch} --json number --jq '.[0].number')
+          echo "Existing PR number: ${existing_pr}"
 
           pr_title="Testing external contribution PR #${fork_pr}"
           pr_body="$(cat <<EOF
@@ -77,6 +78,5 @@ jobs:
               --base "master" \
               --head "$testing_branch" \
               --body "$pr_body")
-            echo "New PR - ${new_pr}"
-            echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
+            echo "2️⃣ Created new PR, link - ${new_pr} ✅"
           fi
