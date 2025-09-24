@@ -1,4 +1,4 @@
-name: Test external contributions
+name: Test external contribution
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  test-external-contrib:
+  test-external-contribution:
     runs-on: ubuntu-latest
     env:
       GITHUB_USERNAME: 'PlanXCyborg'
@@ -21,8 +21,10 @@ jobs:
       REPO: ${{ inputs.repo }}
       FORK_BRANCH: ${{ inputs.fork_branch }}
     steps:
-      - name: Create a copy of external branch
+      - name: Copy external branch and create PR to trigger CI
         run: |
+          # Create a copy of external branch
+
           IFS=':' read -r FORK BRANCH <<< "${FORK_BRANCH}"
 
           OUR_REPO_URL=https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/uc-cdis/${REPO}.git
@@ -31,7 +33,7 @@ jobs:
           git config --global user.email "cdis@uchicago.edu"
           git config --global user.name "PlanXCyborg"
 
-          # Create testing branch in main repo (first delete existing branch)
+          ## Create testing branch in main repo (first delete existing branch)
           git clone ${OUR_REPO_URL}
           cd ${REPO}
           testing_branch="copy/${FORK}/${BRANCH}"
@@ -40,21 +42,19 @@ jobs:
           git push -d origin ${testing_branch} || true
           git checkout -b ${testing_branch}
 
-          # Fetch code from the fork
+          ## Fetch code from the fork
           git remote set-url origin ${FORK_URL}
           git pull origin ${BRANCH} --no-rebase
 
-          # Push the branch to main repo
+          ## Push the branch to main repo
           git remote set-url origin ${OUR_REPO_URL}
           git push --set-upstream origin ${testing_branch}
 
           echo "1️⃣ Testing branch ${testing_branch} created and pushed to our repo ✅"
 
-      - name: Submit a PR from the copied branch
-        run: |
-          cd ${REPO}
+          # Submit a PR from the copied branch
 
-          # Get PR number of the fork branch
+          ## Get PR number of the fork branch
           fork_pr=$(gh pr list --repo uc-cdis/${REPO} --author ${FORK} --head ${BRANCH} --json number --jq '.[0].number')
           echo ${fork_pr}
 
