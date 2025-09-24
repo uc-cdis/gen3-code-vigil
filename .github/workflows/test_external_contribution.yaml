@@ -34,7 +34,7 @@ jobs:
           # Create testing branch in main repo
           git clone ${OUR_REPO_URL}
           cd ${REPO}
-          testing_branch="copy/${PR_NUM}"
+          testing_branch="copy/${BRANCH}"
           git checkout -b ${testing_branch} || git checkout ${testing_branch} && git reset --hard HEAD
 
           # Fetch code from the fork
