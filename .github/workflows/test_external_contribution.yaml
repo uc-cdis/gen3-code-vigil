@@ -47,26 +47,32 @@ jobs:
 
           echo "1️⃣ Testing branch ${testing_branch} created and pushed to our repo ✅"
 
-      # - name: Submit a PR from the copied branch
-      #   run: |
-      #     # Create PR from the branch
-      #     existing_pr=$(gh pr list --head ${testing_branch} --json number --jq '.[0].number // empty')
+      - name: Submit a PR from the copied branch
+        run: |
+          # Get PR number of the fork branch
+          fork_pr=$(gh pr list --head ${FORK_BRANCH} --json number --jq '.[0].number // empty')
+          echo ${fork_pr}
 
-      #     pr_title="Testing external contribution branch ${BRANCH}"
-      #     pr_body="$(cat <<EOF
-      #     *** DO NOT MERGE ***
-      #     This PR was created automatically to test an external contribution
-      #     EOF
-      #     )"
-      #     if [ -n "${existing_pr}" ]; then
-      #       echo "2️⃣ PR #${existing_pr} already exists and has been updated with latest changes ✅"
-      #     else
-      #       echo "🆕 Creating new PR from testing branch ..."
-      #       new_pr=$(gh pr create \
-      #         --title "$pr_title" \
-      #         --base "master" \
-      #         --head "$testing_branch" \
-      #         --body "$pr_body")
+          # Create PR from the branch
+          existing_pr=$(gh pr list --head ${testing_branch} --json number --jq '.[0].number // empty')
 
-      #       echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
-      #     fi
+          pr_title="Testing external contribution branch ${BRANCH}"
+          pr_body="$(cat <<EOF
+          *** DO NOT MERGE ***
+          This PR was created automatically to test an external contribution
+          EOF
+          )"
+          if [ -n "${existing_pr}" ]; then
+            echo "2️⃣ PR #${existing_pr} already exists and has been updated with latest changes ✅"
+          else
+            echo "🆕 Creating new PR from testing branch ..."
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/OWNER/REPO/pulls \
+              -f 'title=Amazing new feature' -f 'head=octocat:new-feature' -f 'base=master' \
+              -f 'body=*** DO NOT MERGE ***\n\nThis PR was created automatically to test an external contribution via PR number #${fork_pr}'
+
+            echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
+          fi
