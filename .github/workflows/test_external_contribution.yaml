@@ -65,7 +65,7 @@ jobs:
           pr_body="$(cat <<EOF
           *** DO NOT MERGE ***
           This PR was created automatically to test an external contribution
-          Original PR can be found [here](https://uc-cdis/${REPO}/pull/${fork_pr})
+          Original PR can be found [here](https://github.com/uc-cdis/${REPO}/pull/${fork_pr})
           EOF
           )"
           if [ -n "${existing_pr}" ]; then
@@ -77,6 +77,6 @@ jobs:
               --base "master" \
               --head "$testing_branch" \
               --body "$pr_body")
-
+            echo "New PR - ${new_pr}"
             echo "2️⃣ Created new PR, link - https://github.com/uc-cdis/${REPO}/pull/${new_pr} ✅"
           fi
