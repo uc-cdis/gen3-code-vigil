@@ -36,8 +36,7 @@ jobs:
           cd ${REPO}
           testing_branch="copy/${FORK}/${BRANCH}"
           ## Delete existing branch if it exists
-          branch_exists=$(git ls-remote --heads ${OUR_REPO_URL} ${testing_branch})
-          if [[ -n $branch_exists ]]; then
+          if git ls-remote --exit-code --heads "$OUR_REPO_URL" "$testing_branch" > /dev/null; then
             git branch -D ${testing_branch}
             git push origin --delete ${testing_branch}
           fi
