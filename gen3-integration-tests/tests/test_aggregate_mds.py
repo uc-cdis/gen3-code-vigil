@@ -108,8 +108,8 @@ class TestAggregateMDS:
             )
 
         # Delete metadata record
-        # for i in range(len(study_ids)):
-        #     mds.delete_metadata(study_ids[i])
+        for i in range(len(study_ids)):
+            mds.delete_metadata(study_ids[i])
 
         # ###
         # metadata-aggregate-sync fails when there are 0 records in MDS
