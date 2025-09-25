@@ -102,7 +102,10 @@ class TestUserDataLibrary(object):
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
 
-    # KNOWN DEFECT - https://ctds-planx.atlassian.net/browse/PD-61
+    @pytest.mark.skipif(
+        True,
+        reason="# KNOWN DEFECT - https://ctds-planx.atlassian.net/browse/PD-61",
+    )
     def test_list_created_by_main_user_not_accessible_by_another_user(self):
         """
         Scenario: Create multiple data library lists using same data and verify only list was created
