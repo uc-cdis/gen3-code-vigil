@@ -324,13 +324,13 @@ jobs:
               fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-              if [ -n "$namespace_exists" ]; then
-                echo "Namespace $NAMESPACE exists, performing teardown..."
-                helm delete $NAMESPACE -n $NAMESPACE || true
-                kubectl delete ns $NAMESPACE
-              fi
-              kubectl create namespace $NAMESPACE
+              # namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              # if [ -n "$namespace_exists" ]; then
+              #   echo "Namespace $NAMESPACE exists, performing teardown..."
+              #   helm delete $NAMESPACE -n $NAMESPACE || true
+              #   kubectl delete ns $NAMESPACE
+              # fi
+              kubectl create namespace $NAMESPACE || true
 
           # Select an unlocked environment
           # If an env is specified in a PR label use it, else pick one from the pool
