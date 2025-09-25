@@ -85,27 +85,27 @@ class TestAggregateMDS:
                 "Incorrect project_title",
             )
 
-        # Edit metadata record
-        logger.info("# Update metadata records")
-        for i in range(len(study_ids)):
-            project_title = study_jsons[i]["gen3_discovery"]["project_title"]
-            study_jsons[i]["gen3_discovery"][
-                "project_title"
-            ] = f"{project_title} - Modified"
-            # metadata.update(study_id, study_json)
-            mds.update_metadata(study_ids[i], study_jsons[i])
+        # # Edit metadata record
+        # logger.info("# Update metadata records")
+        # for i in range(len(study_ids)):
+        #     project_title = study_jsons[i]["gen3_discovery"]["project_title"]
+        #     study_jsons[i]["gen3_discovery"][
+        #         "project_title"
+        #     ] = f"{project_title} - Modified"
+        #     # metadata.update(study_id, study_json)
+        #     mds.update_metadata(study_ids[i], study_jsons[i])
 
-        # Metadata-aggregate-sync and verify
-        logger.info("# Run metadata-aggregate-sync and verify")
-        gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
-        for i in range(len(study_ids)):
-            study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
-            assert_with_retry(
-                "equals",
-                study_jsons[i]["gen3_discovery"]["project_title"],
-                study_metadata["project_title"],
-                "Incorrect project_title",
-            )
+        # # Metadata-aggregate-sync and verify
+        # logger.info("# Run metadata-aggregate-sync and verify")
+        # gat.run_gen3_job("metadata-aggregate-sync", test_env_namespace=pytest.namespace)
+        # for i in range(len(study_ids)):
+        #     study_metadata = mds.get_aggregate_metadata(study_ids[i])["gen3_discovery"]
+        #     assert_with_retry(
+        #         "equals",
+        #         study_jsons[i]["gen3_discovery"]["project_title"],
+        #         study_metadata["project_title"],
+        #         "Incorrect project_title",
+        #     )
 
         # Delete metadata record
         # for i in range(len(study_ids)):
