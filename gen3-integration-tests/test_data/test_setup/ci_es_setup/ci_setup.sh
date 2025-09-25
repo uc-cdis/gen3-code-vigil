@@ -34,3 +34,5 @@ curl -iv -X PUT "localhost:9200/ci_configs_1" -H 'Content-Type: application/json
 curl -X POST localhost:9200/_aliases -H 'Content-Type: application/json' -H 'Accept: application/json' "-d@test_data/test_setup/ci_es_setup/index_data/configs_alias.json"
 
 kill $port_forward_pid
+
+#Testing
