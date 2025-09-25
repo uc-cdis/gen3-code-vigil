@@ -10,6 +10,7 @@ from utils.misc import retry
 
 
 class Audit(object):
+    # Test comment
     def __init__(self):
         self.BASE_ENDPOINT = "/audit"
         self.AUDIT_LOG_ENDPOINT = f"{self.BASE_ENDPOINT}/log"
