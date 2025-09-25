@@ -111,9 +111,9 @@ class TestAggregateMDS:
         for i in range(len(study_ids)):
             mds.delete_metadata(study_ids[i])
 
-        # ###
+        ####
         # metadata-aggregate-sync fails when there are 0 records in MDS
-        # ###
+        ####
         # # Metadata-aggregate-sync and verify
         # logger.info("# Run metadata-aggregate-sync and verify")
         # gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
