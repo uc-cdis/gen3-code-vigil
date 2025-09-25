@@ -65,7 +65,7 @@ jobs:
           pr_title="Testing external contribution PR #${fork_pr}"
           pr_body="$(cat <<EOF
           *** DO NOT MERGE ***
-          This PR was created automatically to test an external contribution #${fork_pr}
+          This PR was created automatically to test an external contribution
           EOF
           )"
           if [ -n "${existing_pr}" ]; then
