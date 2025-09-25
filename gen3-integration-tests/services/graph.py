@@ -99,7 +99,7 @@ class GraphDataTools:
             dictionary_url=dictionary_url,
             program=self.program_name,
             project=self.project_code,
-            consent_codes=False,
+            consent_codes=True,
         )
         run_simulation(
             graph=graph,
