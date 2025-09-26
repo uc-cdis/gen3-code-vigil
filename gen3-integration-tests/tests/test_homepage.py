@@ -1,5 +1,6 @@
 import pytest
 from pages import home, login
+from utils import logger
 
 
 @pytest.mark.skipif(
@@ -30,4 +31,6 @@ class TestHomePage:
         assert page.locator(home_page.CARDS) is not None
         # Logout
         login_page.logout(page)
+        logger.error("ERROR")
+        logger.warn("WARNING")
         assert False

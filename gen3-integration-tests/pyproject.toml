@@ -51,8 +51,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
-addopts = "--disable-warnings"
-log_cli = false
+addopts = "--disable-warnings --log-cli-level=CRITICAL"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
