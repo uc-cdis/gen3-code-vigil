@@ -88,20 +88,9 @@ def get_env_configurations(test_env_namespace: str = ""):
         logger.info(f"Error in kubectl command: {result.stderr}")
 
 
-def run_gen3_command(
-    command: str, test_env_namespace: str = "", roll_all: bool = False
-):
-    """
-    Run gen3 command (e.g., gen3 --help).
-    """
-    pass
-
-
 def run_gen3_job(
     job_name: str,
-    cmd_line_params: str = "",
     test_env_namespace: str = "",
-    roll_all: bool = False,
 ):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
@@ -128,9 +117,7 @@ def run_gen3_job(
         logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
     else:
         raise Exception(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
-    check_job_pod(
-        job_name=job_name, label_name="helmjob", test_env_namespace=pytest.namespace
-    )
+    check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
 
 
 def fence_delete_expired_clients():
@@ -169,9 +156,7 @@ def fence_delete_expired_clients():
 
 def check_job_pod(
     job_name: str,
-    label_name: str,
     test_env_namespace: str = "",
-    expect_failure: bool = False,
 ):
     cmd = [
         "kubectl",
@@ -816,12 +801,12 @@ def check_indices_etl_version(test_env_namespace: str):
     return indices_versions
 
 
-def create_access_token(service, expired, username, test_env_namespace: str = ""):
+def create_access_token(expired, username, test_env_namespace: str = ""):
     """
-    Roll a give service pod
+    Create access token
     """
     # Get the pod name for fence app
-    cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
+    cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", f"app=fence"]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
@@ -933,34 +918,6 @@ def create_link_google_test_buckets(test_env_namespace: str = ""):
             logger.info(f"Created link: {phs}")
         else:
             raise Exception(f"Unable to create google bucket for {bucket_name}")
-
-
-def fence_enable_register_users_redirect(test_env_namespace: str = ""):
-    """
-    Setup register user redirect on login
-    """
-    cmd = [
-        "kubectl",
-        "-n",
-        pytest.namespace,
-        "get",
-        "deployments",
-        "-o=jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'",
-    ]
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-    if result.returncode == 0:
-        return result.stdout.strip().replace("'", "")
-    else:
-        raise Exception("Unable to retrieve deployed services")
-
-
-def fence_disable_register_users_redirect(test_env_namespace: str = ""):
-    """
-    Disable register user redirect on login
-    """
-    pass
 
 
 def get_list_of_services_deployed():

@@ -18,7 +18,7 @@ from utils import logger
 )
 @pytest.mark.gen3_workflow
 @pytest.mark.skip(
-    reason="gen3 workflow doesnt support HELM_LOCAL yet. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
+    reason="gen3 workflow is not supported yet. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
 )
 class TestGen3Workflow(object):
     @classmethod

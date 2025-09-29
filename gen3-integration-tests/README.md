@@ -45,7 +45,7 @@ User permissions required for the tests to pass are documented [here](test_data/
 
 ### Set up test data
 #### Guppy
-We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use one of the setup scripts located [here](test_data/test_setup/guppy_es) depending on the type of Gen3 instance being tested.
+We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use the setup script located [here](test_data/test_setup/guppy_es).
 
 ## Run tests and review results
 Read these [docs](docs/howto/run_tests/) for specific information on how to run tests.

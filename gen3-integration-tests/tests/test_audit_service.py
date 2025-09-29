@@ -15,7 +15,6 @@ from services.fence import Fence
 from services.indexd import Indexd
 from services.ras import RAS
 from utils import logger
-from utils.gen3_admin_tasks import update_audit_service_logging
 
 
 # audit deployment name is "audit-service" in adminvm and "audit-deployment" in gen3 helm
