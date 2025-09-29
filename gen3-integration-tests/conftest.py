@@ -1,7 +1,9 @@
 import json
 import os
 import shutil
+from pathlib import Path
 
+import allure
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
@@ -169,3 +171,21 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+
+
+def pytest_sessionfinish(session, exitstatus):
+    logs_dir = Path("output")
+    combined_log_path = logs_dir / "test_logs.log"
+    worker_logs = sorted(logs_dir.glob("logs_*.log"))
+
+    with open(combined_log_path, "w") as outfile:
+        for log_file in worker_logs:
+            outfile.write(f"\n--- Logs from {log_file.name} ---\n")
+            with open(log_file) as infile:
+                outfile.write(infile.read())
+            outfile.write("\n")
+
+    with open(combined_log_path) as f:
+        allure.attach(
+            f.read(), name="Test Run Logs", attachment_type=allure.attachment_type.TEXT
+        )
