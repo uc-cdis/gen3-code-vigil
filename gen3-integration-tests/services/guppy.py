@@ -24,12 +24,8 @@ class Guppy(object):
         logger.info("Guppy status code : " + str(response.status_code))
         assert expected_status == response.status_code, f"Got status {expected_status}"
         data = response.json()
-        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-            subject_indices_name = "jenkins_subject_1"
-            file_indices_name = "jenkins_file_1"
-        elif os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL":
-            subject_indices_name = "ci_subject_1"
-            file_indices_name = "ci_file_1"
+        subject_indices_name = "ci_subject_1"
+        file_indices_name = "ci_file_1"
         assert (
             subject_indices_name in data["indices"]
         ), f"{subject_indices_name} not found in {data['indices']}"

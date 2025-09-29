@@ -28,20 +28,6 @@ from utils.gen3_admin_tasks import update_audit_service_logging
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
 class TestAuditService:
-    @classmethod
-    def setup_class(cls):
-        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-            assert update_audit_service_logging(
-                "true", test_env_namespace=pytest.namespace
-            )
-
-    @classmethod
-    def teardown_class(cls):
-        if os.getenv("GEN3_INSTANCE_TYPE") == "ADMINVM_REMOTE":
-            assert update_audit_service_logging(
-                "false", test_env_namespace=pytest.namespace
-            )
-
     def test_audit_unauthorized_log_query(self):
         """
         Scenario: Unauthorized log query
@@ -131,8 +117,7 @@ class TestAuditService:
         )
 
     @pytest.mark.skipif(
-        "nightly-build" not in pytest.hostname
-        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        "nightly-build" not in pytest.hostname,
         reason="Test is being run on Helm and would run only on nightly-build",
     )
     def test_audit_homepage_real_orcid_login_events(self, page: Page):
@@ -308,8 +293,7 @@ class TestAuditService:
         )
 
     @pytest.mark.skipif(
-        "nightly-build" not in pytest.hostname
-        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        "nightly-build" not in pytest.hostname,
         reason="Test is being run on Helm and would run only on nightly-build",
     )
     def test_audit_ras_login_events(self, page: Page):
@@ -355,8 +339,7 @@ class TestAuditService:
         )
 
     @pytest.mark.skipif(
-        "nightly-build" not in pytest.hostname
-        and os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
+        "nightly-build" not in pytest.hostname,
         reason="Test is being run on Helm and would run only on nightly-build",
     )
     def test_audit_oidc_fence_client_login_events(self, page: Page):
