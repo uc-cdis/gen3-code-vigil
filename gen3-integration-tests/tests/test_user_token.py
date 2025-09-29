@@ -59,7 +59,6 @@ class TestUserToken:
 
         # Generate expired access_token
         res = create_access_token(
-            "fence",
             "1",
             pytest.users["main_account"],
             test_env_namespace=pytest.namespace,

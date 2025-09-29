@@ -33,29 +33,22 @@ mkdir output
 poetry install
 ```
 
-### Set environment variable GEN3_INSTANCE_TYPE
-Gen3 instances can be run on an admin VM using [cloud-automation](https://github.com/uc-cdis/cloud-automation) or using [helm](https://github.com/uc-cdis/gen3-helm), and the mechanisms for running admin tasks vary based on the instance type.
-
-Since some integration tests run admin tasks, we must set this variable for executing tests correctly in the `.env` file. The following values are accepted:
-- ADMINVM_REMOTE (for instances hosted on a remote admin VM using cloud-automation)
-- HELM_LOCAL (for instances hosted locally using helm)
-
 ### Set up test users
 The code supports running test steps as different users. This [code](conftest.py#L103-L116) can provide insights into the set up process.
 
 The test users required to run the tests are listed [here](test_data/test_setup/users.csv).
 
-The API keys for these users must be saved to `~/.gen3` directory before running tests. Please find the instructions for each GEN3_INSTANCE_TYPE [here](docs/howto/generate_api_keys_for_test_users/)
+The API keys for these users must be saved to `~/.gen3` directory before running tests.[here](docs/howto/generate_api_keys_for_test_users/)
 
 ### Set up test user permissions
 User permissions required for the tests to pass are documented [here](test_data/test_setup/user.yaml). The tests attempt to run usersync before starting, so if usersync is correctly set up with this configuration there is nothing more to do. If that is not the case please make sure to run usersync or useryaml with this configuration before running the tests.
 
 ### Set up test data
 #### Guppy
-We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use one of the setup scripts located [here](test_data/test_setup/guppy_es) depending on the type of Gen3 instance being tested.
+We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use the setup script located [here](test_data/test_setup/guppy_es).
 
 ## Run tests and review results
-Read these [docs](docs/howto/run_tests/) for specific information on how to run tests for each GEN3_INSTANCE_TYPE.
+Read these [docs](docs/howto/run_tests/) for specific information on how to run tests.
 
 The report can be viewed by running `allure serve allure-results`
 
@@ -98,8 +91,7 @@ The test code is organized into several directories for ease of maintenance:
 
 The integration tests perform Gen3 operations and admin tasks, e.g., etl, metadata-aggregate-sync as part of the test flow. The code for handling these is at [utils/gen3_admin_tasks](utils/gen3_admin_tasks.py). Read this [doc](docs/howto/run_admin_tasks/) for more information.
 
-Code used for running integration tests in CI at CTDS is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`. Jenkins is used for setting up the test environments and interacting with them.
-- **`jenkins-jobs`** directory contains the groovy scripts used by the jenkins jobs that perform Gen3 admin tasks.
+Code used for running integration tests in CI at CTDS is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`.
 - **`scripts`** directory contains python scripts used in the github actions workflow.
 
 Tests are organized into test suites using classes as explained [here](https://docs.pytest.org/en/stable/getting-started.html#group-multiple-tests-in-a-class).

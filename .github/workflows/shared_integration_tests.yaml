@@ -28,10 +28,6 @@ on:
         required: false
         type: string
         default: default
-      GEN3_INSTANCE_TYPE:
-        required: false
-        type: string
-        default: HELM_LOCAL
       WORKING_DIR:
         required: false
         type: string
@@ -44,14 +40,6 @@ on:
         required: false
         type: string
     secrets:
-      CI_AWS_ACCESS_KEY_ID:
-        required: false
-      CI_AWS_SECRET_ACCESS_KEY:
-        required: false
-      JENKINS_API_TOKEN:
-        required: false
-      QA_DASHBOARD_S3_PATH:
-        required: false
       CI_TEST_ORCID_USERID:
         required: true
       CI_TEST_ORCID_PASSWORD:
@@ -92,9 +80,6 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JENKINS_URL: "https://jenkins.planx-pla.net"
-          JENKINS_USERNAME: "PlanXCyborg"
-          JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -112,7 +97,6 @@ jobs:
           CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          GEN3_INSTANCE_TYPE: ${{ inputs.GEN3_INSTANCE_TYPE }}
           GH_WORKSPACE: ${{ github.workspace }}
           HELM_BRANCH: ${{ inputs.HELM_BRANCH }}
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
@@ -209,14 +193,14 @@ jobs:
 
           # Setup kubectl
           - name: Set Up kubectl
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             uses: azure/setup-kubectl@v3
             with:
               version: latest
 
           # Setup helm
           - name: Set Up Helm
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             uses: azure/setup-helm@v4.3.0
             with:
               version: latest
@@ -266,7 +250,7 @@ jobs:
 
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             uses: aws-actions/configure-aws-credentials@v3
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
@@ -276,14 +260,14 @@ jobs:
 
           # Create kubeconfig to point at cluster.
           - name: Update kube config
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
               aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
 
           # Ensure we do not cross the threshold of maximum number of CI envs allowed
           # The workflow waits if CI infrastructure is at capacity (MAX_ENVS, set to 10)
           - name: Wait for CI environment
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             id: wait_for_ci_env
             run: |
               MAX_ENVS=20
@@ -311,7 +295,7 @@ jobs:
 
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'HELM_LOCAL' }}
+            if: ${{ env.SKIP_TESTS != 'true' }}
             id: create_ns
             # Change the HOSTNAME with full domain name
             run: |
@@ -332,24 +316,6 @@ jobs:
               # fi
               kubectl create namespace $NAMESPACE || true
 
-          # Select an unlocked environment
-          # If an env is specified in a PR label use it, else pick one from the pool
-          - name: Select CI environment
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' }}
-            id: select_ci_env
-            run: |
-              env_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | startswith("jenkins-"))) | .[0].name')
-              echo "$env_label"
-              if [[ $env_label != "" && $env_label != null ]]; then
-                echo "Found PR label $env_label"
-                poetry run python -m gen3_ci.scripts.select_ci_environment $env_label
-              else
-                poetry run python -m gen3_ci.scripts.select_ci_environment
-              fi
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to select CI environment" >> $GITHUB_ENV
-              fi
-
           - name: Get modified folders
             # This is applicable for Manifest PRs only
             id: get_modified_folders
@@ -357,11 +323,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
-              if [ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]; then
-                UPDATED_FOLDERS=$(echo "$PR_FILES" | grep -v "^.github/" | awk -F'/' '{if ($1 != ".github" && NF > 1) print $1"/"$2}' | sort -u | tr '\n' ',' | sed 's/,$//')
-              else
-                UPDATED_FOLDERS=$(echo "$PR_FILES" | grep '/.*' | sed 's|/.*||' | grep -v "^.github$" | uniq | sort -u | tr '\n' ',' | sed 's/,$//')
-              fi
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep -v "^.github/" | awk -F'/' '{if ($1 != ".github" && NF > 1) print $1"/"$2}' | sort -u | tr '\n' ',' | sed 's/,$//')
               echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
@@ -372,13 +334,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo $UPDATED_FOLDERS
-              echo "Instance Type"
-              echo $GEN3_INSTANCE_TYPE
               mkdir $HOME/.gen3
-              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
-                HOSTNAME=${NAMESPACE}.planx-pla.net
-                echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              fi
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
@@ -408,7 +364,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              GEN3_INSTANCE_TYPE="$GEN3_INSTANCE_TYPE" poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
@@ -419,7 +375,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              GEN3_INSTANCE_TYPE="$GEN3_INSTANCE_TYPE" poetry run pytest -n logical -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
+              poetry run pytest -n logical -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
@@ -447,25 +403,15 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
-                AWS_ACCESS_KEY_ID="${{ secrets.CI_AWS_ACCESS_KEY_ID }}" AWS_SECRET_ACCESS_KEY="${{ secrets.CI_AWS_SECRET_ACCESS_KEY }}" aws s3 sync ./allure-report ${{ secrets.QA_DASHBOARD_S3_PATH }}/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
+              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                DATE=$(date +%Y%m%d)
+                aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE
               else
-                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
-                  DATE=$(date +%Y%m%d)
-                  aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE
-                else
-                  aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
-                fi
+                aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
-
-          - name: Archive pod logs from CI environment
-            id: archive_pod_logs
-            if: ${{ env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' && steps.prep_ci_env.outcome == 'success' || env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' && steps.prep_ci_env.outcome == 'failure' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.save_ci_env_pod_logs
 
           - name: Generate markdown report
             id: generate_md_report
@@ -484,7 +430,7 @@ jobs:
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
                 fi
               fi
-              if [ "${{steps.archive_pod_logs.outcome}}" == "success" && $GEN3_INSTANCE_TYPE == "ADMINVM_REMOTE" ]; then
+              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
                 if [ ! -d output ]; then
                   mkdir output
                 fi
@@ -519,12 +465,6 @@ jobs:
               payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
               payload-templated: true
 
-          - name: Release CI environment
-            id: release_ci_env
-            if: ${{ (env.SKIP_TESTS != 'true' && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE' && steps.select_ci_env.outcome == 'success') || (cancelled() && env.GEN3_INSTANCE_TYPE == 'ADMINVM_REMOTE') }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.release_ci_environment
-
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
@@ -532,8 +472,4 @@ jobs:
           - name: Cleanup
             if: ${{ env.SKIP_TESTS != 'true' }}
             run: |
-              if [[ "$GEN3_INSTANCE_TYPE" == "ADMINVM_REMOTE" ]]; then
-                poetry run python -m gen3_ci.scripts.clean_up_jenkins
-              elif [[ "$GEN3_INSTANCE_TYPE" == "HELM_LOCAL" ]]; then
-                poetry run python -m gen3_ci.scripts.teardown_ci_env
-              fi
+              poetry run python -m gen3_ci.scripts.teardown_ci_env

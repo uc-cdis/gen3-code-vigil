@@ -8,9 +8,6 @@ from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from utils import logger
 
 
-@pytest.mark.skip(
-    reason="Jenkins environments are not yet ready to run funnel tests. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
-)
 @pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
@@ -20,9 +17,8 @@ from utils import logger
     reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
-@pytest.mark.skipif(
-    os.getenv("GEN3_INSTANCE_TYPE") == "HELM_LOCAL",
-    reason="gen3 workflow doesnt support HELM_LOCAL yet",
+@pytest.mark.skip(
+    reason="gen3 workflow is not supported yet. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
 )
 class TestGen3Workflow(object):
     @classmethod

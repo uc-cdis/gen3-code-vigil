@@ -19,7 +19,6 @@ jobs:
       IS_NIGHTLY_RUN: "true"
       TEST_LABELS: ${{ inputs.TEST_LABELS }}
     secrets:
-      QA_DASHBOARD_S3_PATH: ${{ secrets.QA_DASHBOARD_S3_PATH }}
       CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
       CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
       CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
