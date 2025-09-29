@@ -236,6 +236,21 @@ jobs:
           # - name: 'Use gcloud CLI'
           #   run: 'gcloud info'
 
+          - name: Cache Poetry and pip
+            uses: actions/cache@v4
+            with:
+              path: |
+                ~/.cache/pypoetry
+                ~/.cache/pip
+              key: ${{ runner.os }}-poetry-pip-${{ hashFiles('**/poetry.lock') }}
+              restore-keys: |
+                ${{ runner.os }}-poetry-pip-
+
+          - name: Cache Playwright browsers
+            uses: actions/cache@v4
+            with:
+              path: ~/.cache/ms-playwright
+              key: ${{ runner.os }}-playwright-${{ hashFiles('poetry.lock') }}
 
           # Install gen3-integration-tests dependencies
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
@@ -407,7 +422,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              mkdir output
               GEN3_INSTANCE_TYPE="$GEN3_INSTANCE_TYPE" poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
@@ -418,7 +432,6 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              mkdir output
               GEN3_INSTANCE_TYPE="$GEN3_INSTANCE_TYPE" poetry run pytest -n logical -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
