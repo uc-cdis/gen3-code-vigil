@@ -5,7 +5,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
-from utils.jenkins import JenkinsJob
 
 load_dotenv()
 

@@ -17,7 +17,6 @@ from services.ras import RAS
 from utils import logger
 
 
-# audit deployment name is "audit-service" in adminvm and "audit-deployment" in gen3 helm
 @pytest.mark.skipif(
     "audit" not in pytest.deployed_services,
     reason="audit service is not running on this environment",

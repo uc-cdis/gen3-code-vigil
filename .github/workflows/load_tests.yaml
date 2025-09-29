@@ -75,9 +75,6 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JENKINS_URL: "https://jenkins.planx-pla.net"
-          JENKINS_USERNAME: "PlanXCyborg"
-          JENKINS_PASSWORD: ${{ secrets.JENKINS_API_TOKEN }}
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -243,10 +240,10 @@ jobs:
               mkdir output
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                GEN3_INSTANCE_TYPE="HELM_LOCAL" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+                poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                GEN3_INSTANCE_TYPE="HELM_LOCAL" poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
               fi
 
               if [ $? -ne 0 ]; then
@@ -310,7 +307,3 @@ jobs:
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
-
-          - name: Stop pending jenkins jobs for cancelled run
-            if: ${{ env.SKIP_TESTS != 'true' && cancelled() }}
-            run: poetry run python -m gen3_ci.scripts.clean_up_jenkins
