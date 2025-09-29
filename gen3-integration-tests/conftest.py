@@ -173,19 +173,25 @@ def pytest_unconfigure(config):
             setup.delete_all_fence_clients()
 
 
-def pytest_sessionfinish(session, exitstatus):
-    logs_dir = Path("output")
-    combined_log_path = logs_dir / "test_logs.log"
-    worker_logs = sorted(logs_dir.glob("logs_*.log"))
+@pytest.fixture(scope="session", autouse=True)
+def attach_combined_log_on_exit(request):
+    def finalizer():
+        logs_dir = Path("output")
+        combined_log_path = logs_dir / "test_logs.log"
+        worker_logs = sorted(logs_dir.glob("logs_*.log"))
 
-    with open(combined_log_path, "w") as outfile:
-        for log_file in worker_logs:
-            outfile.write(f"\n--- Logs from {log_file.name} ---\n")
-            with open(log_file) as infile:
-                outfile.write(infile.read())
-            outfile.write("\n")
+        with open(combined_log_path, "w") as outfile:
+            for log_file in worker_logs:
+                outfile.write(f"\n--- Logs from {log_file.name} ---\n")
+                with open(log_file) as infile:
+                    outfile.write(infile.read())
+                outfile.write("\n")
 
-    with open(combined_log_path) as f:
-        allure.attach(
-            f.read(), name="Test Run Logs", attachment_type=allure.attachment_type.TEXT
-        )
+        with open(combined_log_path) as f:
+            allure.attach(
+                f.read(),
+                name="Test Run Logs",
+                attachment_type=allure.attachment_type.TEXT,
+            )
+
+    request.addfinalizer(finalizer)

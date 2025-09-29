@@ -250,7 +250,7 @@ jobs:
             uses: actions/cache@v4
             with:
               path: ~/.cache/ms-playwright
-              key: ${{ runner.os }}-playwright-${{ hashFiles('poetry.lock') }}
+              key: ${{ runner.os }}-playwright-${{ hashFiles('**/poetry.lock') }}
 
           # Install gen3-integration-tests dependencies
           # wamerican: data-simulator needs "/usr/share/dict/words" to generate data that isn't random strings
