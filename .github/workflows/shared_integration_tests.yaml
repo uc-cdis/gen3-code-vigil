@@ -51,7 +51,7 @@ on:
       JENKINS_API_TOKEN:
         required: false
       QA_DASHBOARD_S3_PATH:
-        required: true
+        required: false
       CI_TEST_ORCID_USERID:
         required: true
       CI_TEST_ORCID_PASSWORD:
