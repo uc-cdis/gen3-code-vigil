@@ -8,6 +8,7 @@ HELM_SCRIPTS_PATH_OBJECT = Path(__file__).parent.parent / "gen3_ci" / "scripts"
 
 worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
 log_filename = f"output/logs_{worker_id}.log"  # one log file per worker
+os.makedirs(os.path.dirname(log_filename), exist_ok=True)
 logger = get_logger(
     __name__, file_name=log_filename, log_level=os.getenv("LOG_LEVEL", "info")
 )
