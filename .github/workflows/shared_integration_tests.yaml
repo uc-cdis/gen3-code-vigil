@@ -437,16 +437,15 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
-          - name: Debug logging
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
+          - name: Combine and attach logs to allure report
+            id: attach_run_logs_to_allure
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure') }}
             run: |
-              echo steps.run_service_tests.outcome = ${{ steps.run_service_tests.outcome }}
-              echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
+              GEN3_INSTANCE_TYPE="$GEN3_INSTANCE_TYPE" poetry run pytest -k TestAttachCombinedLog
 
           - name: Generate allure report
             id: generate_allure_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure') }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               npm install -g allure-commandline --save-dev
