@@ -179,14 +179,7 @@ def pytest_runtest_logreport(report):
     run_date = start_time.date()
 
     try:
-        conn = psycopg2.connect(
-            host=os.getenv("METRICS_DB_HOST"),
-            port="5432",
-            dbname=os.getenv("METRICS_DB_NAME"),
-            user=os.getenv("METRICS_DB_USERNAME"),
-            password=os.getenv("METRICS_DB_PASSWORD"),
-            sslmode="require",
-        )
+        conn = psycopg2.connect(os.getenv("METRICS_DB_DSN"))
         cursor = conn.cursor()
 
         insert_query = """
