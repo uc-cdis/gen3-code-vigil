@@ -3,7 +3,7 @@ import os
 import shutil
 from datetime import datetime, timedelta
 
-import psycopg2
+import boto3
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
@@ -169,44 +169,76 @@ def pytest_runtest_logreport(report):
         return
 
     test_nodeid = report.nodeid
-    test_case = test_nodeid.split("::")[-1]
-    test_suite = test_nodeid.split("::")[1]
-
     start_time = datetime.fromtimestamp(report.start)
     duration = timedelta(seconds=report.duration)
-    result_status = report.outcome
 
-    run_date = start_time.date()
+    # Construct the message payload
+    message = {
+        "run_date": str(start_time.date()),
+        "repo_name": os.getenv("REPO"),
+        "pr_num": os.getenv("PR_NUM"),
+        "run_num": os.getenv("RUN_NUM"),
+        "test_suite": test_nodeid.split("::")[1],
+        "test_case": test_nodeid.split("::")[-1],
+        "result": report.outcome,
+        "duration": duration.total_seconds(),  # Serialize duration
+    }
 
     try:
-        conn = psycopg2.connect(os.getenv("METRICS_DB_DSN"))
-        cursor = conn.cursor()
+        # Initialize SQS client
+        sqs = boto3.client("sqs")
+        queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
 
-        insert_query = """
-            INSERT INTO ci_metrics_data (
-                run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """
+        # Send message to SQS
+        response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
 
-        cursor.execute(
-            insert_query,
-            (
-                run_date,
-                os.getenv("REPO"),
-                os.getenv("PR_NUM"),
-                os.getenv("RUN_NUM"),
-                test_suite,
-                test_case,
-                result_status,
-                duration,
-            ),
-        )
-
-        conn.commit()
-        cursor.close()
-        conn.close()
+        logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
     except Exception as e:
-        logger.info(f"[DB INSERT ERROR] {e}")
+        logger.error(f"[SQS SEND ERROR] {e}")
+    # yield
+
+    # if report.when != "call":
+    #     return
+
+    # test_nodeid = report.nodeid
+    # test_case = test_nodeid.split("::")[-1]
+    # test_suite = test_nodeid.split("::")[1]
+
+    # start_time = datetime.fromtimestamp(report.start)
+    # duration = timedelta(seconds=report.duration)
+    # result_status = report.outcome
+
+    # run_date = start_time.date()
+
+    # try:
+    #     conn = psycopg2.connect(os.getenv("METRICS_DB_DSN"))
+    #     cursor = conn.cursor()
+
+    #     insert_query = """
+    #         INSERT INTO ci_metrics_data (
+    #             run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration
+    #         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    #     """
+
+    #     cursor.execute(
+    #         insert_query,
+    #         (
+    #             run_date,
+    #             os.getenv("REPO"),
+    #             os.getenv("PR_NUM"),
+    #             os.getenv("RUN_NUM"),
+    #             test_suite,
+    #             test_case,
+    #             result_status,
+    #             duration,
+    #         ),
+    #     )
+
+    #     conn.commit()
+    #     cursor.close()
+    #     conn.close()
+    # except Exception as e:
+    #     logger.info(f"[DB INSERT ERROR] {e}")
 
 
 def pytest_unconfigure(config):
