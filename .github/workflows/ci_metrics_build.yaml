@@ -1,36 +1,22 @@
-ARG AZLINUX_BASE_VERSION=master
+name: CI Metrics Image Build on Push
 
-FROM quay.io/cdis/amazonlinux-base:${AZLINUX_BASE_VERSION} AS base
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to apply to this build. Defaults to 'latest'."
+        default: "latest"
+        required: false
+  push:
+    paths:
+      - gen3-integration-tests/gen3_ci/ci_metrics/**
 
-ARG HELM_VERSION=v3.13.0
-ARG KUBECTL_VERSION=v1.33.0
-
-# Install required tools including kubectl and aws
-RUN dnf install -y --allowerasing \
-    curl \
-    tar \
-    gzip \
-    shadow-utils \
-    coreutils \
-    postgresql15 \
-    awscli
-
-# Install Helm
-RUN curl -LO "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" && \
-    tar -zxvf "helm-${HELM_VERSION}-linux-amd64.tar.gz" && \
-    mv linux-amd64/helm /usr/local/bin/helm && \
-    rm -rf linux-amd64 "helm-${HELM_VERSION}-linux-amd64.tar.gz"
-
-# Install Kubectl
-RUN curl -LO https://dl.k8s.io/release/v1.33.0/bin/linux/amd64/kubectl && \
-    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Create gen3 user
-RUN useradd -m -s /bin/bash gen3
-
-# Set working directory and switch to gen3 user
-USER gen3
-WORKDIR /home/gen3
-
-# Default command
-CMD ["bash"]
+jobs:
+  AmazonLinuxBase2023:
+    name: Build Helm Cleanup Image
+    uses: uc-cdis/.github/.github/workflows/image_build_push.yaml@master
+    with:
+      DOCKERFILE_LOCATION: "./gen3-integration-tests/gen3_ci/ci_metrics/Dockerfile"
+      OVERRIDE_REPO_NAME: "ci_metrics"
+      OVERRIDE_TAG_NAME: "$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+    secrets: inherit
