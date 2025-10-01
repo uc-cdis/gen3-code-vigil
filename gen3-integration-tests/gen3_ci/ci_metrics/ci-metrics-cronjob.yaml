@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: ci-metrics
-            image: quay.io/cdis/ci_metrics:chore/add_allure_metrics
+            image: quay.io/cdis/ci_metrics:chore_add_allure_metrics
             env:
               - name: METRICS_DB_DSN
                 valueFrom:
