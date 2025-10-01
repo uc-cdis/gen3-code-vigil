@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ci-metrics
+  namespace: default
+spec:
+  schedule: "*/15 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: ci-metrics-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: ci-metrics
+            image: quay.io/cdis/ci_metrics:master
+            command:
+              - /bin/sh
+              - -c
+              - |
+                #!/bin/bash
+                set -euo pipefail
+
+                QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
+                REGION="${AWS_REGION:-us-east-1}"  # fallback if AWS_REGION not set
+
+                while true; do
+                    RESPONSE=$(aws sqs receive-message \
+                        --queue-url "$QUEUE_URL" \
+                        --max-number-of-messages 10 \
+                        --wait-time-seconds 10 \
+                        --region "$REGION")
+
+                    MESSAGES=$(echo "$RESPONSE" | jq -c '.Messages[]?')
+
+                    if [ -z "$MESSAGES" ]; then
+                        echo "No more messages found. Exiting."
+                        break
+                    fi
+
+                    echo "$MESSAGES" | while read -r message; do
+                        RECEIPT_HANDLE=$(echo "$message" | jq -r '.ReceiptHandle')
+                        BODY=$(echo "$message" | jq -r '.Body')
+
+                        echo "Processing message: $BODY"
+
+                        # === Example DB write (replace with your real logic) ===
+                        RUN_DATE=$(echo "$BODY" | jq -r '.run_date')
+                        REPO=$(echo "$BODY" | jq -r '.repo_name')
+                        PR_NUM=$(echo "$BODY" | jq -r '.pr_num')
+                        RUN_NUM=$(echo "$BODY" | jq -r '.run_num')
+                        SUITE=$(echo "$BODY" | jq -r '.test_suite')
+                        CASE=$(echo "$BODY" | jq -r '.test_case')
+                        RESULT=$(echo "$BODY" | jq -r '.result')
+                        DURATION=$(echo "$BODY" | jq -r '.duration')
+
+                        psql "$METRICS_DB_DSN" <<EOF
+                INSERT INTO ci_metrics_data (
+                    run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration
+                ) VALUES (
+                    '$RUN_DATE', '$REPO', '$PR_NUM', '$RUN_NUM', '$SUITE', '$CASE', '$RESULT', $DURATION
+                );
+                EOF
+
+                        aws sqs delete-message \
+                            --queue-url "$QUEUE_URL" \
+                            --receipt-handle "$RECEIPT_HANDLE" \
+                            --region "$REGION"
+
+                        echo "Message processed and deleted."
+                    done
+                done
+
+                echo "Finished processing all messages."
