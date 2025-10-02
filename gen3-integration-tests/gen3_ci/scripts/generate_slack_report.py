@@ -43,7 +43,7 @@ def get_test_result_and_metrics():
         / "widgets"
         / "summary.json"
     )
-    if allure_summary_path.exists:
+    if allure_summary_path.exists():
         with open(allure_summary_path) as f:
             summary_json = json.load(f)
         statistic_json = summary_json["statistic"]
