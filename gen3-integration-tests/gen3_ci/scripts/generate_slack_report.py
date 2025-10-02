@@ -11,7 +11,7 @@ def get_failed_suites():
     suite_report_path = (
         Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
     )
-    if suite_report_path.exists:
+    if suite_report_path.exists():
         failed_suites = set()
         with open(suite_report_path) as f:
             csv_reader = csv.DictReader(f)
