@@ -169,7 +169,6 @@ def pytest_runtest_logreport(report):
         return
 
     test_nodeid = report.nodeid
-    start_time = datetime.fromtimestamp(report.start)
     duration = timedelta(seconds=report.duration)
     total_seconds = duration.total_seconds()
 
@@ -182,7 +181,7 @@ def pytest_runtest_logreport(report):
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
-        "duration": str(datetime.timedelta(seconds=total_seconds)),
+        "duration": str(timedelta(seconds=total_seconds)),
     }
 
     try:
