@@ -11,7 +11,7 @@ def get_failed_suites():
     suite_report_path = (
         Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
     )
-    if suite_report_path.exists:
+    if suite_report_path.exists():
         failed_suites = set()
         with open(suite_report_path) as f:
             csv_reader = csv.DictReader(f)
@@ -43,7 +43,7 @@ def get_test_result_and_metrics():
         / "widgets"
         / "summary.json"
     )
-    if allure_summary_path.exists:
+    if allure_summary_path.exists():
         with open(allure_summary_path) as f:
             summary_json = json.load(f)
         statistic_json = summary_json["statistic"]
@@ -84,11 +84,13 @@ def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
         report_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
+        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/gh_actions_log.txt"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
         )
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        gh_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_actions_log.txt"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
@@ -129,20 +131,16 @@ def generate_slack_report():
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."
         )
-    # Pod logs url
-    if test_result == "Failed" and os.getenv("POD_LOGS_URL"):
-        pod_logs_url__block = {
+    gh_logs_path = Path(__file__).parent.parent.parent / "logs" / "gh_action_logs.txt"
+    if gh_logs_path.exists():
+        gh_logs_block = {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Pod Logs Archive*: <{os.getenv('POD_LOGS_URL')}|click here>",
+                "text": f"*Github Action Logs*: <{gh_logs_link}|click here>",
             },
         }
-        slack_report_json["blocks"].append(pod_logs_url__block)
-    else:
-        logger.info(
-            "Pod logs were not archived. Skipping pod logs url block generation."
-        )
+    slack_report_json["blocks"].append(gh_logs_block)
     # qa-bot replay command with failed suites labeled in the PR
     if test_result == "Failed":
         failed_suites_block = get_failed_suites()
