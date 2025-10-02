@@ -308,12 +308,6 @@ jobs:
               fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              # namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-              # if [ -n "$namespace_exists" ]; then
-              #   echo "Namespace $NAMESPACE exists, performing teardown..."
-              #   helm delete $NAMESPACE -n $NAMESPACE || true
-              #   kubectl delete ns $NAMESPACE
-              # fi
               kubectl create namespace $NAMESPACE || true
 
           - name: Get modified folders
@@ -335,9 +329,10 @@ jobs:
             run: |
               echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              if [ $? -ne 0 ]; then
+              mkdir logs
+              if ! poetry run python -m gen3_ci.scripts.prepare_ci_environment > logs/prep_ci_env.log 2>&1; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+                exit 1
               fi
 
           # This is used for running specific test suites by labeling the PR with the test class
@@ -364,9 +359,12 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
-              if [ $? -ne 0 ]; then
+              if ! poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" \
+                  --alluredir allure-results \
+                  --no-header \
+                  --dist loadscope ${{ env.TEST_LABEL }} > logs/run_tests.log 2>&1; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+                exit 1
               fi
 
           - name: Run tests
@@ -375,17 +373,13 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
-              poetry run pytest -n logical -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }}
-              if [ $? -ne 0 ]; then
+              if ! poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" \
+                  --alluredir allure-results \
+                  --no-header \
+                  --dist loadscope ${{ env.TEST_LABEL }} > run_tests.log 2>&1; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+                exit 1
               fi
-
-          - name: Debug logging
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              echo steps.run_service_tests.outcome = ${{ steps.run_service_tests.outcome }}
-              echo steps.run_tests.outcome = ${{ steps.run_tests.outcome }}
 
           - name: Generate allure report
             id: generate_allure_report
@@ -406,8 +400,10 @@ jobs:
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
                 aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE
+                aws s3 sync ./logs s3://ci-allure-reports/nightly-run/$DATE
               else
                 aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
+                aws s3 sync ./logs s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
@@ -415,7 +411,7 @@ jobs:
 
           - name: Generate markdown report
             id: generate_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
@@ -430,19 +426,10 @@ jobs:
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
                 fi
               fi
-              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-                if [ ! -d output ]; then
-                  mkdir output
-                fi
-                if [ ! -f "output/report.md" ]; then
-                  touch "output/report.md"
-                fi
-                echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
-              fi
 
           - name: Render report to the PR
             id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
             env:
@@ -450,7 +437,7 @@ jobs:
 
           - name: Generate Slack report
             id: generate_slack_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.generate_slack_report
 

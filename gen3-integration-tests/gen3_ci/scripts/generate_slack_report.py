@@ -84,11 +84,15 @@ def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
         report_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
+        prep_env_logs_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/prep_ci_env.log"
+        run_logs_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/run_tests.log"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
         )
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        prep_env_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/prep_ci_env.log"
+        run_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/run_tests.log"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
@@ -119,29 +123,25 @@ def generate_slack_report():
         slack_report_json["blocks"].append(test_metrics_block)
         report_link_block = {
             "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Test Report*: <{report_link}|click here>",
-            },
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Test Report*: <{report_link}|click here>",
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*GH Logs - Prepare Env*: <{prep_env_logs_link}>|click here>",
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*GH Logs - Test Run*: <{run_logs_link}|click here>",
+                },
+            ],
         }
         slack_report_json["blocks"].append(report_link_block)
     else:
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."
-        )
-    # Pod logs url
-    if test_result == "Failed" and os.getenv("POD_LOGS_URL"):
-        pod_logs_url__block = {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Pod Logs Archive*: <{os.getenv('POD_LOGS_URL')}|click here>",
-            },
-        }
-        slack_report_json["blocks"].append(pod_logs_url__block)
-    else:
-        logger.info(
-            "Pod logs were not archived. Skipping pod logs url block generation."
         )
     # qa-bot replay command with failed suites labeled in the PR
     if test_result == "Failed":
