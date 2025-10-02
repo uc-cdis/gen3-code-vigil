@@ -13,6 +13,33 @@ kind: ClusterRole
 metadata:
   name: helm-cleaner-role
 rules:
+  - apiGroups: [""]
+    resources:
+      - namespaces
+      - persistentvolumeclaims
+      - secrets
+      - pods
+      - services
+      - configmaps
+      - serviceaccounts
+    verbs:
+      - get
+      - list
+      - describe
+      - delete
+      - update
+      - watch
+
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
   - apiGroups: ["batch"]
     resources:
       - jobs
@@ -37,6 +64,27 @@ rules:
     resources:
       - secretstores
       - externalsecrets
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - roles
+      - rolebindings
+      - clusterrolebindings
+      - clusterroles
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+
+  - apiGroups: ["policy"]
+    resources:
+      - poddisruptionbudgets
     verbs:
       - get
       - list
