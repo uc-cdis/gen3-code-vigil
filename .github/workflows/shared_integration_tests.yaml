@@ -359,7 +359,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo "\n\n************ Run tests ************" >> logs/gh_action_logs.txt
+              echo -e "\n\n************ Run tests ************" >> logs/gh_action_logs.txt
               mkdir output
               poetry run pytest -n logical -m "${{ inputs.SERVICE_TO_TEST }} and not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }} >> logs/gh_action_logs.txt 2>&1
               if [ $? -ne 0 ]; then
@@ -371,7 +371,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && !inputs.SERVICE_TO_TEST && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo "\n\n************ Run tests ************" >> logs/gh_action_logs.txt
+              echo -e "\n\n************ Run tests ************" >> logs/gh_action_logs.txt
               mkdir output
               poetry run pytest -n logical -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }} >> logs/gh_action_logs.txt 2>&1
               if [ $? -ne 0 ]; then
@@ -394,7 +394,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo "******* Upload reports to S3 *******" >> logs/gh_action_logs.txt
+              echo -e "\n\n******* Upload reports to S3 *******" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
                 aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE >> logs/gh_action_logs.txt 2>&1
@@ -410,7 +410,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure') }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo "******** Upload logs to S3 ********" >> logs/gh_action_logs.txt
+              echo -e "\n\n******** Upload logs to S3 ********" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
                 aws s3 sync ./logs s3://ci-allure-reports/nightly-run/$DATE >> logs/gh_action_logs.txt 2>&1
