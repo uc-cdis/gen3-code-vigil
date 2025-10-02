@@ -133,19 +133,26 @@ def generate_slack_report():
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."
         )
-    gh_logs_block = {
-        "type": "section",
-        "fields": [
+    prep_env_logs_path = (
+        Path(__file__).parent.parent.parent / "logs" / "prep_ci_env.log"
+    )
+    run_logs_path = Path(__file__).parent.parent.parent / "logs" / "run_tests.log"
+    gh_log_fields = []
+    if prep_env_logs_path.exists():
+        gh_log_fields.append(
             {
                 "type": "mrkdwn",
                 "text": f"*GH Logs - Prepare Env*: <{prep_env_logs_link}>|click here>",
-            },
+            }
+        )
+    if run_logs_path.exists():
+        gh_log_fields.append(
             {
                 "type": "mrkdwn",
                 "text": f"*GH Logs - Test Run*: <{run_logs_link}|click here>",
-            },
-        ],
-    }
+            }
+        )
+    gh_logs_block = {"type": "section", "fields": gh_log_fields}
     slack_report_json["blocks"].append(gh_logs_block)
     # qa-bot replay command with failed suites labeled in the PR
     if test_result == "Failed":
