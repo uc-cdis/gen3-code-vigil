@@ -5,13 +5,13 @@ metadata:
   name: ci-metrics-sa
   namespace: default
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/helm-cleaner-role
+    eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/ci-metrics-role-sa
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: helm-cleaner-role
+  name: ci-metrics-role-sa
 rules:
   - apiGroups: [""]
     resources:
@@ -95,11 +95,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: helm-cleaner-binding
+  name: ci-metrics-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: helm-cleaner-role
+  name: ci-metrics-role-sa
 subjects:
   - kind: ServiceAccount
     name: helm-cleaner

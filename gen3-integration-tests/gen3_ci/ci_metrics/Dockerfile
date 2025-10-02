@@ -13,6 +13,7 @@ RUN dnf install -y --allowerasing \
     shadow-utils \
     coreutils \
     postgresql15 \
+    jq \
     awscli
 
 # Install Helm
