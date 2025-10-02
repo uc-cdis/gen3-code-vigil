@@ -13,7 +13,6 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 
 load_dotenv()
-CLOUD_AUTO_BRANCH = os.getenv("CLOUD_AUTO_BRANCH")
 
 
 @retry(times=5, delay=60, exceptions=(AssertionError))
