@@ -142,7 +142,7 @@ def generate_slack_report():
         gh_log_fields.append(
             {
                 "type": "mrkdwn",
-                "text": f"*GH Logs - Prepare Env*: <{prep_env_logs_link}>|click here>",
+                "text": f"*GH Logs - Prepare Env*: <{prep_env_logs_link}|click here>",
             }
         )
     if run_logs_path.exists():
