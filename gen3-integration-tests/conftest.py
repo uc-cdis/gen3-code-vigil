@@ -169,8 +169,7 @@ def pytest_runtest_logreport(report):
         return
 
     test_nodeid = report.nodeid
-    duration = timedelta(seconds=report.duration)
-    total_seconds = duration.total_seconds()
+    start_time = datetime.fromtimestamp(report.start)
 
     # Construct the message payload
     message = {
@@ -181,7 +180,7 @@ def pytest_runtest_logreport(report):
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
-        "duration": str(timedelta(seconds=total_seconds)),
+        "duration": str(timedelta(seconds=report.duration)),
     }
 
     try:
