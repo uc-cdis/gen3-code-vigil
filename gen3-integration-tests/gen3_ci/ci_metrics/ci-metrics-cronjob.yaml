@@ -1,0 +1,106 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ci-metrics
+  namespace: default
+spec:
+  schedule: "*/15 * * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          serviceAccountName: ci-metrics-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: ci-metrics
+            image: quay.io/cdis/ci_metrics:chore_add_allure_metrics
+            env:
+              - name: METRICS_DB_DSN
+                valueFrom:
+                  secretKeyRef:
+                    name: ci-metrics-db
+                    key: "METRICS_DB_DSN"
+            command:
+              - /bin/sh
+              - -c
+              - |
+                #!/bin/bash
+                set -euo pipefail
+
+                QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
+                REGION="${AWS_REGION:-us-east-1}"  # fallback if AWS_REGION not set
+
+                while true; do
+                    RESPONSE=$(aws sqs receive-message \
+                        --queue-url "$QUEUE_URL" \
+                        --max-number-of-messages 10 \
+                        --wait-time-seconds 10 \
+                        --region "$REGION" \
+                        --output text \
+                        --query 'Messages[*].[ReceiptHandle, Body]')
+
+                    if [ -z "$RESPONSE" ]; then
+                        echo "No more messages found. Exiting."
+                        break
+                    fi
+
+                    echo "$RESPONSE" | while read -r RECEIPT_HANDLE BODY; do
+                        echo "Processing message: $BODY"
+
+                        # Remove outer braces and split JSON-like string into lines
+                        CLEAN_BODY="${BODY#\{}"           # remove leading {
+                        CLEAN_BODY="${CLEAN_BODY%\}}"     # remove trailing }
+
+                        # Declare all variables empty
+                        unset RUN_DATE REPO PR_NUM RUN_NUM SUITE CASE RESULT DURATION
+
+                        # Loop through key-value pairs like: "key":"value"
+                        IFS=',' read -ra FIELDS <<< "$CLEAN_BODY"
+                        for field in "${FIELDS[@]}"; do
+                            # Split on the first colon
+                            IFS=':' read -r raw_key raw_value <<< "$field"
+
+                            # Clean key/value (remove quotes and whitespace)
+                            key="${raw_key//\"/}"
+                            value="${raw_value//\"/}"
+                            key="${key#"${key%%[![:space:]]*}"}"
+                            key="${key%"${key##*[![:space:]]}"}"
+                            value="${value#"${value%%[![:space:]]*}"}"
+                            value="${value%"${value##*[![:space:]]}"}"
+
+                            # Map fields to variables
+                            case "$key" in
+                                run_date)   RUN_DATE="$value" ;;
+                                repo_name)  REPO="$value" ;;
+                                pr_num)     PR_NUM="$value" ;;
+                                run_num)    RUN_NUM="$value" ;;
+                                test_suite) SUITE="$value" ;;
+                                test_case)  CASE="$value" ;;
+                                result)     RESULT="$value" ;;
+                                duration)   DURATION="$value" ;;
+                            esac
+                        done
+
+                        # Insert into PostgreSQL
+                        psql "$METRICS_DB_DSN" <<EOF
+                INSERT INTO ci_metrics_data (
+                    run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration
+                ) VALUES (
+                    '$RUN_DATE', '$REPO', '$PR_NUM', '$RUN_NUM', '$SUITE', '$CASE', '$RESULT', $DURATION
+                );
+                EOF
+
+                        # Delete message from SQS
+                        aws sqs delete-message \
+                            --queue-url "$QUEUE_URL" \
+                            --receipt-handle "$RECEIPT_HANDLE" \
+                            --region "$REGION"
+
+                        echo "Message processed and deleted."
+                    done
+                done
+
+                echo "Finished processing all messages."
