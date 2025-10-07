@@ -38,62 +38,39 @@ spec:
                         --queue-url "$QUEUE_URL" \
                         --max-number-of-messages 10 \
                         --wait-time-seconds 10 \
-                        --region "$REGION" \
-                        --output text \
-                        --query 'Messages[*].[ReceiptHandle, Body]')
+                        --region "$REGION")
 
-                    if [ -z "$RESPONSE" ]; then
+                    MESSAGES=$(echo "$RESPONSE" | jq -c '.Messages[]?')
+
+                    if [ -z "$MESSAGES" ]; then
                         echo "No more messages found. Exiting."
                         break
                     fi
 
-                    echo "$RESPONSE" | while read -r RECEIPT_HANDLE BODY; do
+                    echo "$MESSAGES" | while read -r message; do
+                        RECEIPT_HANDLE=$(echo "$message" | jq -r '.ReceiptHandle')
+                        BODY=$(echo "$message" | jq -r '.Body')
+
                         echo "Processing message: $BODY"
 
-                        # Remove outer braces and split JSON-like string into lines
-                        CLEAN_BODY="${BODY#\{}"           # remove leading {
-                        CLEAN_BODY="${CLEAN_BODY%\}}"     # remove trailing }
+                        # === Example DB write (replace with your real logic) ===
+                        RUN_DATE=$(echo "$BODY" | jq -r '.run_date')
+                        REPO=$(echo "$BODY" | jq -r '.repo_name')
+                        PR_NUM=$(echo "$BODY" | jq -r '.pr_num')
+                        RUN_NUM=$(echo "$BODY" | jq -r '.run_num')
+                        SUITE=$(echo "$BODY" | jq -r '.test_suite')
+                        CASE=$(echo "$BODY" | jq -r '.test_case')
+                        RESULT=$(echo "$BODY" | jq -r '.result')
+                        DURATION=$(echo "$BODY" | jq -r '.duration')
 
-                        # Declare all variables empty
-                        unset RUN_DATE REPO PR_NUM RUN_NUM SUITE CASE RESULT DURATION
-
-                        # Loop through key-value pairs like: "key":"value"
-                        IFS=',' read -ra FIELDS <<< "$CLEAN_BODY"
-                        for field in "${FIELDS[@]}"; do
-                            # Split on the first colon
-                            IFS=':' read -r raw_key raw_value <<< "$field"
-
-                            # Clean key/value (remove quotes and whitespace)
-                            key="${raw_key//\"/}"
-                            value="${raw_value//\"/}"
-                            key="${key#"${key%%[![:space:]]*}"}"
-                            key="${key%"${key##*[![:space:]]}"}"
-                            value="${value#"${value%%[![:space:]]*}"}"
-                            value="${value%"${value##*[![:space:]]}"}"
-
-                            # Map fields to variables
-                            case "$key" in
-                                run_date)   RUN_DATE="$value" ;;
-                                repo_name)  REPO="$value" ;;
-                                pr_num)     PR_NUM="$value" ;;
-                                run_num)    RUN_NUM="$value" ;;
-                                test_suite) SUITE="$value" ;;
-                                test_case)  CASE="$value" ;;
-                                result)     RESULT="$value" ;;
-                                duration)   DURATION="$value" ;;
-                            esac
-                        done
-
-                        # Insert into PostgreSQL
                         psql "$METRICS_DB_DSN" <<EOF
                 INSERT INTO ci_metrics_data (
                     run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration
                 ) VALUES (
-                    '$RUN_DATE', '$REPO', '$PR_NUM', '$RUN_NUM', '$SUITE', '$CASE', '$RESULT', $DURATION
+                    '$RUN_DATE', '$REPO', '$PR_NUM', '$RUN_NUM', '$SUITE', '$CASE', '$RESULT', '$DURATION'
                 );
                 EOF
 
-                        # Delete message from SQS
                         aws sqs delete-message \
                             --queue-url "$QUEUE_URL" \
                             --receipt-handle "$RECEIPT_HANDLE" \
