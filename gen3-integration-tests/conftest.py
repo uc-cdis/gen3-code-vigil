@@ -170,8 +170,6 @@ def pytest_runtest_logreport(report):
 
     test_nodeid = report.nodeid
     start_time = datetime.fromtimestamp(report.start)
-
-    # Construct the message payload
     message = {
         "run_date": str(start_time.date()),
         "repo_name": os.getenv("REPO"),
@@ -184,13 +182,9 @@ def pytest_runtest_logreport(report):
     }
 
     try:
-        # Initialize SQS client
         sqs = boto3.client("sqs")
         queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
-
-        # Send message to SQS
         response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
-
         logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
     except Exception as e:
         logger.error(f"[SQS SEND ERROR] {e}")
