@@ -16,10 +16,6 @@ on:
         required: false
         type: string
         default: master
-      CLOUD_AUTO_BRANCH:
-        required: false
-        type: string
-        default: master
       HELM_BRANCH:
         required: false
         type: string
@@ -94,7 +90,6 @@ jobs:
           CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
           CI_TEST_RAS_2_EMAIL: ${{ secrets.CI_TEST_RAS_2_EMAIL }}
           CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
-          CLOUD_AUTO_BRANCH: ${{ inputs.CLOUD_AUTO_BRANCH }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           GH_WORKSPACE: ${{ github.workspace }}

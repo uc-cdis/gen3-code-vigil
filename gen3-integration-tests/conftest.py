@@ -1,7 +1,9 @@
 import json
 import os
 import shutil
+from datetime import datetime, timedelta
 
+import boto3
 import pytest
 
 # Using dotenv to simplify setting up env vars locally
@@ -157,6 +159,35 @@ def pytest_configure(config):
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_logreport(report):
+    yield
+
+    if report.when != "call":
+        return
+
+    test_nodeid = report.nodeid
+    start_time = datetime.fromtimestamp(report.start)
+    message = {
+        "run_date": str(start_time.date()),
+        "repo_name": os.getenv("REPO"),
+        "pr_num": os.getenv("PR_NUM"),
+        "run_num": os.getenv("RUN_NUM"),
+        "test_suite": test_nodeid.split("::")[1],
+        "test_case": test_nodeid.split("::")[-1],
+        "result": report.outcome,
+        "duration": str(timedelta(seconds=report.duration)),
+    }
+
+    try:
+        sqs = boto3.client("sqs")
+        queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
+        response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
+        logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
+    except Exception as e:
+        logger.error(f"[SQS SEND ERROR] {e}")
 
 
 def pytest_unconfigure(config):
