@@ -18,8 +18,11 @@ load_dotenv()
 @retry(times=5, delay=60, exceptions=(AssertionError))
 def get_portal_config():
     """Fetch portal config from the GUI"""
+    deployed_services = get_list_of_services_deployed()
+    if "portal" not in deployed_services:
+        return {}
     res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
-    assert res.status_code == 200
+    assert res.status_code == 200, f"Expected 200 but got {res.status_code}"
     return res.json()
 
 
