@@ -6,7 +6,8 @@
    ```psql -h <hostname> -p 5432 -U <username> -d <dbname>```
 
 2. Create the schema
-   ```CREATE TABLE ci_metrics_data (
+   ```
+   CREATE TABLE ci_metrics_data (
        run_date     DATE NOT NULL,
        repo_name    TEXT NOT NULL,
        pr_num       INTEGER NOT NULL,
@@ -19,7 +20,8 @@
    );
 
 3. Add a constraint to avoid duplicates
-   ```ALTER TABLE ci_metrics_data
+   ```
+   ALTER TABLE ci_metrics_data
    ADD CONSTRAINT unique_test_run
    UNIQUE (run_date, repo_name, pr_num, run_num, attempt_num, test_suite, test_case);
 
