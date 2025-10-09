@@ -27,11 +27,21 @@
 
 
 ## Connecting the database in grafana
-
+1. In Grafana, goto **Connections** -> **Data sources** page and click on **Add new data source**.
+![alt text](ci_metrics_images/connections.png)
+2. Search for postgresql
+![alt text](ci_metrics_images/db-search.png)
+3. Fill in the details for the ci-metrics database
+![alt text](ci_metrics_images/db-data-population.png)
 
 ## Creating charts in Dashboard
-1. In Grafana, goto Dashboard page and Click on **New** dashboard.
+1. In Grafana, goto **Dashboard** page and click on **New** -> **New dashboard**.
+![alt text](ci_metrics_images/dashboard.png)
 2. On the top right tab, click on **Add** button -> **Visualization**.
+![alt text](ci_metrics_images/add-chart.png)
 3. In the **Query Panel** panel, select the datasource and database.
+![alt text](ci_metrics_images/query-panel.png)
 4. Build or code your sql query to retrieve relevant data to the chart being created.
+![alt text](ci_metrics_images/query-code.png)
 5. In the **Panel Options** panel, set the required properties pertaining to the chart.
+![alt text](ci_metrics_images/panel-options.png)
