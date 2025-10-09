@@ -16,12 +16,12 @@
        result       TEXT NOT NULL,
        duration     INTERVAL NOT NULL,
        attempt_num  INTEGER NOT NULL
-   );```
+   );
 
 3. Add a constraint to avoid duplicates
    ```ALTER TABLE ci_metrics_data
    ADD CONSTRAINT unique_test_run
-   UNIQUE (run_date, repo_name, pr_num, run_num, attempt_num, test_suite, test_case);```
+   UNIQUE (run_date, repo_name, pr_num, run_num, attempt_num, test_suite, test_case);
 
 
 ## Connecting the database in grafana
