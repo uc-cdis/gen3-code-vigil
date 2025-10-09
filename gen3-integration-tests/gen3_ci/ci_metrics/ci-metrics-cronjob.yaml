@@ -4,7 +4,7 @@ metadata:
   name: ci-metrics
   namespace: default
 spec:
-  schedule: "*/15 * * * *"
+  schedule: "*/10 * * * *"
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
   jobTemplate:

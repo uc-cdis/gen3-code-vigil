@@ -175,6 +175,7 @@ def pytest_runtest_logreport(report):
         "repo_name": os.getenv("REPO"),
         "pr_num": os.getenv("PR_NUM"),
         "run_num": os.getenv("RUN_NUM"),
+        "attempt_num": os.getenv("ATTEMPT_NUM"),
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
