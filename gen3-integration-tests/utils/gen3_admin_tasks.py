@@ -1022,6 +1022,8 @@ def skip_portal_tests():
         return True
     if "dataguids" in deployed_services:
         return True
+    if "portal" not in deployed_services:
+        return True
     return False
 
 
