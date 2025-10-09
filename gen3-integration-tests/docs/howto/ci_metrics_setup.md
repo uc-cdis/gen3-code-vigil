@@ -4,7 +4,6 @@
 
 1. Connect to the database
    ```psql -h <hostname> -p 5432 -U <username> -d <dbname>```
-
 2. Create the schema
    ```
    CREATE TABLE ci_metrics_data (
@@ -18,7 +17,6 @@
        duration     INTERVAL NOT NULL,
        attempt_num  INTEGER NOT NULL
    );
-
 3. Add a constraint to avoid duplicates
    ```
    ALTER TABLE ci_metrics_data
@@ -45,3 +43,50 @@
 ![alt text](ci_metrics_images/query-code.png)
 5. In the **Panel Options** panel, set the required properties pertaining to the chart.
 ![alt text](ci_metrics_images/panel-options.png)
+
+
+# Queries for ci-metrics charts on Grafana
+1. Average Test Suite Execution Time
+    ```
+    SELECT
+    test_suite,
+    ROUND(AVG(EXTRACT(EPOCH FROM duration) / 60.0)::numeric, 2) AS avg_duration_minutes
+    FROM ci_metrics_data
+    WHERE $__timeFilter(run_date)
+    GROUP BY test_suite
+    ORDER BY avg_duration_minutes DESC;
+2. PR Counts Per Day
+    ```
+    SELECT
+      run_date::date AS time,
+      COUNT(DISTINCT pr_num) AS pr_count
+    FROM ci_metrics_data
+    WHERE $__timeFilter(run_date)
+    GROUP BY run_date::date
+    ORDER BY time;
+3. Failure Count by Test Suite
+    ```
+    SELECT
+      test_suite,
+      COUNT(*) AS failure_count
+    FROM ci_metrics_data
+    WHERE result = 'failed' and $__timeFilter(run_date)
+    GROUP BY test_suite
+    ORDER BY failure_count DESC;
+4. Failure Count by Test Case
+    ```
+    SELECT
+      test_case,
+      COUNT(*) AS failure_count
+    FROM ci_metrics_data
+    WHERE result = 'failed' and $__timeFilter(run_date)
+    GROUP BY test_case
+    ORDER BY failure_count DESC;
+5. CI Metrics Data
+    ```
+    SELECT run_date,repo_name,pr_num,run_num,attempt_num,test_suite,test_case,result,duration
+    FROM ci_metrics_data
+    WHERE $__timeFilter(run_date)
+    ORDER BY run_date DESC
+
+![alt text](ci_metrics_images/ci-metrics-dashboard.png)
