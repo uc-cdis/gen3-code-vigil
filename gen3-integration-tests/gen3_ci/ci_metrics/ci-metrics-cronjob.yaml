@@ -4,7 +4,7 @@ metadata:
   name: ci-metrics
   namespace: default
 spec:
-  schedule: "*/15 * * * *"
+  schedule: "*/10 * * * *"
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
   jobTemplate:
@@ -61,12 +61,13 @@ spec:
                         CASE=$(echo "$BODY" | jq -r '.test_case')
                         RESULT=$(echo "$BODY" | jq -r '.result')
                         DURATION=$(echo "$BODY" | jq -r '.duration')
+                        ATTEMPT_NUM=$(echo "$BODY" | jq -r '.attempt_num')
 
                         psql "$METRICS_DB_DSN" <<EOF
                 INSERT INTO ci_metrics_data (
-                    run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration
+                    run_date, repo_name, pr_num, run_num, test_suite, test_case, result, duration, attempt_num
                 ) VALUES (
-                    '$RUN_DATE', '$REPO', '$PR_NUM', '$RUN_NUM', '$SUITE', '$CASE', '$RESULT', '$DURATION'
+                    '$RUN_DATE', '$REPO', '$PR_NUM', '$RUN_NUM', '$SUITE', '$CASE', '$RESULT', '$DURATION', '$ATTEMPT_NUM'
                 );
                 EOF
 
