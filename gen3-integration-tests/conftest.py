@@ -71,27 +71,25 @@ def pytest_collection_finish(session):
         for item in session.items:
             # Access the markers for each test item
             markers = item.keywords
-            for marker_name, marker in markers.items():
-                if (
-                    marker_name == "requires_fence_client"
-                    and requires_fence_client_marker_present is False
-                ):
-                    setup.setup_fence_test_clients_info()
-                    requires_fence_client_marker_present = True
-                if (
-                    marker_name == "requires_google_bucket"
-                    and requires_google_bucket_marker_present is False
-                ):
-                    # Create and Link Google Test Buckets
-                    setup.setup_google_buckets()
-                    requires_google_bucket_marker_present = True
-                if marker_name == "portal" and skip_portal_tests:
-                    item.add_marker(
-                        pytest.mark.skip(
-                            reason="Skipping portal tests as non-supported portal is deployed"
-                        )
+            if (
+                "requires_fence_client" in markers
+                and requires_fence_client_marker_present is False
+            ):
+                setup.setup_fence_test_clients_info()
+                requires_fence_client_marker_present = True
+            if (
+                "requires_google_bucket" in markers
+                and requires_google_bucket_marker_present is False
+            ):
+                # Create and Link Google Test Buckets
+                setup.setup_google_buckets()
+                requires_google_bucket_marker_present = True
+            if "portal" in markers and skip_portal_tests:
+                item.add_marker(
+                    pytest.mark.skip(
+                        reason="Skipping portal tests as non-supported portal is deployed"
                     )
-        # Run Usersync job
+                )  # Run Usersync job
         setup.run_usersync()
 
 
@@ -129,6 +127,9 @@ def pytest_configure(config):
         # Get configuration files
         setup.get_configuration_files()
 
+    # Skip portal tests based on portal version
+    config.skip_portal_tests = gat.skip_portal_tests()
+
     # Compute root url for portal
     try:
         pytest.manifest = json.loads(
@@ -139,7 +140,10 @@ def pytest_configure(config):
             "manifest.json not found. It should have been fetched by `get_configuration_files`..."
         )
         raise
-    if pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff":
+    if (
+        pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff"
+        and not config.skip_portal_tests
+    ):
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
     else:
         pytest.root_url_portal = pytest.root_url
@@ -153,8 +157,6 @@ def pytest_configure(config):
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
     pytest.google_enabled = gat.is_google_enabled()
-    # Skip portal tests based on portal version
-    config.skip_portal_tests = gat.skip_portal_tests()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
     # Register the custom distribution plugin defined above
