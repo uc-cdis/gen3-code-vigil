@@ -295,12 +295,15 @@ def setup_fence_test_client(test_env_namespace, client_data):
     logger.info(f"Creating fence client: {client_name}")
 
     # Delete existing client
-    subprocess.run(
-        _get_delete_cmd(test_env_namespace, client_name),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    try:
+        subprocess.run(
+            _get_delete_cmd(test_env_namespace, client_name),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except Exception:
+        logger.info(f"Client {client_name} not present, deletion failed as expected.")
 
     # Create the client
     create_result = subprocess.run(
