@@ -73,7 +73,7 @@ def pytest_collection_modifyitems(session, config, items):
                         reason="Skipping portal test as unsupported frontend is used"
                     )
                 )
-            logger.info(f"New markers: {item.iter_markers()}")
+            logger.info(f"New markers: {list(item.iter_markers())}")
 
 
 def pytest_collection_finish(session):
