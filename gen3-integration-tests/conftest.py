@@ -66,12 +66,14 @@ def pytest_collection_modifyitems(session, config, items):
     skip_portal_tests = config.skip_portal_tests
     if skip_portal_tests:
         for item in items:
+            logger.info(f"Modifying item {item.nodeid}")
             if "portal" in item.iter_markers():
                 item.add_marker(
                     pytest.mark.skip(
                         reason="Skipping portal test as unsupported frontend is used"
                     )
                 )
+            logger.info(f"New markers: {item.iter_markers()}")
 
 
 def pytest_collection_finish(session):
