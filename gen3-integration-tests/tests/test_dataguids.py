@@ -12,10 +12,6 @@ from utils.test_execution import screenshot
 
 
 # TODO : enable this test after the manifest PRs are ready to roll
-@pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
 @pytest.mark.wip
 @pytest.mark.portal
 class TestDataGuids(object):

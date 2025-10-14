@@ -17,10 +17,6 @@ from utils.test_execution import screenshot
 # @pytest.mark.requestor
 # @pytest.mark.mds
 # @pytest.mark.study_registration
-@pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
 @pytest.mark.wip
 @pytest.mark.portal
 @pytest.mark.skipif(
