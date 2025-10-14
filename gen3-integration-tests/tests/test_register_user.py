@@ -18,10 +18,6 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.skip(reason="This feature is under re-design")
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="fence service is not running on this environment",
-)
-@pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )

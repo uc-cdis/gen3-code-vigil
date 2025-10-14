@@ -32,10 +32,6 @@ def page_setup(page):
     reason="metadata service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
-@pytest.mark.skipif(
     not pytest.use_agg_mdg_flag,
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
