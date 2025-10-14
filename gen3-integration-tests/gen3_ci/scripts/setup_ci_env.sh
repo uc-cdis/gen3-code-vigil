@@ -444,7 +444,7 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
