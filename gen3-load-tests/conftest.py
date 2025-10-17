@@ -48,7 +48,7 @@ def pytest_runtest_logreport(report):
 
     test_nodeid = report.nodeid
     start_time = datetime.fromtimestamp(report.start)
-    file_name = test_nodeid.split("::")[-1].replace("test-", "").replace("_", "-")
+    file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
     output = json.loads(output_path.read_text())
     message = {
