@@ -76,50 +76,50 @@ spec:
 
 
                         psql "$METRICS_DB_DSN" <<EOF
-                        INSERT INTO ci_metrics_data (
-                            run_date,
-                            run_num,
-                            release_version,
-                            test_suite,
-                            test_case,
-                            checks_fails,
-                            checks_passes,
-                            checks_value,
-                            http_req_duration_avg,
-                            http_req_duration_min,
-                            http_req_duration_med,
-                            http_req_duration_max,
-                            http_req_duration_p90,
-                            http_req_duration_p95,
-                            http_req_duration_threshold_avg_lt_3000,
-                            http_req_duration_threshold_p95_lt_15000,
-                            data_sent_count,
-                            data_sent_rate,
-                            iterations_count,
-                            iterations_rate
-                        ) VALUES (
-                            '$RUN_DATE',
-                            $RUN_NUM,
-                            '$RELEASE_VERSION',
-                            '$SUITE',
-                            '$CASE',
-                            $CHECKS_FAILS,
-                            $CHECKS_PASSES,
-                            $CHECKS_VALUE,
-                            $HTTP_REQ_DURATION_AVG,
-                            $HTTP_REQ_DURATION_MIN,
-                            $HTTP_REQ_DURATION_MED,
-                            $HTTP_REQ_DURATION_MAX,
-                            $HTTP_REQ_DURATION_P90,
-                            $HTTP_REQ_DURATION_P95,
-                            $HTTP_REQ_DURATION_THRESHOLD_AVG_LT_3000,
-                            $HTTP_REQ_DURATION_THRESHOLD_P95_LT_15000,
-                            $DATA_SENT_COUNT,
-                            $DATA_SENT_RATE,
-                            $ITERATIONS_COUNT,
-                            $ITERATIONS_RATE
-                        );
-                        EOF
+                INSERT INTO load_test_metrics_data (
+                    run_date,
+                    run_num,
+                    release_version,
+                    test_suite,
+                    test_case,
+                    checks_fails,
+                    checks_passes,
+                    checks_value,
+                    http_req_duration_avg,
+                    http_req_duration_min,
+                    http_req_duration_med,
+                    http_req_duration_max,
+                    http_req_duration_p90,
+                    http_req_duration_p95,
+                    http_req_duration_threshold_avg_lt_3000,
+                    http_req_duration_threshold_p95_lt_15000,
+                    data_sent_count,
+                    data_sent_rate,
+                    iterations_count,
+                    iterations_rate
+                ) VALUES (
+                    '$RUN_DATE',
+                    $RUN_NUM,
+                    '$RELEASE_VERSION',
+                    '$SUITE',
+                    '$CASE',
+                    $CHECKS_FAILS,
+                    $CHECKS_PASSES,
+                    $CHECKS_VALUE,
+                    $HTTP_REQ_DURATION_AVG,
+                    $HTTP_REQ_DURATION_MIN,
+                    $HTTP_REQ_DURATION_MED,
+                    $HTTP_REQ_DURATION_MAX,
+                    $HTTP_REQ_DURATION_P90,
+                    $HTTP_REQ_DURATION_P95,
+                    $HTTP_REQ_DURATION_THRESHOLD_AVG_LT_3000,
+                    $HTTP_REQ_DURATION_THRESHOLD_P95_LT_15000,
+                    $DATA_SENT_COUNT,
+                    $DATA_SENT_RATE,
+                    $ITERATIONS_COUNT,
+                    $ITERATIONS_RATE
+                );
+                EOF
 
 
                         aws sqs delete-message \
