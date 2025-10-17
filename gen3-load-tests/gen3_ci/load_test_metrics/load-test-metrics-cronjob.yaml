@@ -58,6 +58,7 @@ spec:
                         RELEASE_VERSION=$(echo "$BODY" | jq -r '.release_version')
                         SUITE=$(echo "$BODY" | jq -r '.test_suite')
                         CASE=$(echo "$BODY" | jq -r '.test_case')
+                        RESULT=$(echo "$BODY" | jq -r '.result')
                         CHECKS_FAILS=$(echo "$BODY" | jq -r '.checks_fails')
                         CHECKS_PASSES=$(echo "$BODY" | jq -r '.checks_passes')
                         CHECKS_VALUE=$(echo "$BODY" | jq -r '.checks_value')
@@ -82,6 +83,7 @@ spec:
                     release_version,
                     test_suite,
                     test_case,
+                    result,
                     checks_fails,
                     checks_passes,
                     checks_value,
@@ -103,6 +105,7 @@ spec:
                     '$RELEASE_VERSION',
                     '$SUITE',
                     '$CASE',
+                    '$RESULT',
                     $CHECKS_FAILS,
                     $CHECKS_PASSES,
                     $CHECKS_VALUE,

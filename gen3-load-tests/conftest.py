@@ -57,6 +57,7 @@ def pytest_runtest_logreport(report):
         "release_version": os.getenv("RELEASE_VERSION"),
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
+        "result": report.outcome,
         "checks_fails": output["metrics"]["checks"]["fails"],
         "checks_passes": output["metrics"]["checks"]["passes"],
         "checks_value": output["metrics"]["checks"]["value"],
