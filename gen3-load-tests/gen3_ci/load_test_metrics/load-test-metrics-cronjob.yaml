@@ -68,8 +68,6 @@ spec:
                         HTTP_REQ_DURATION_MAX=$(echo "$BODY" | jq -r '.http_req_duration_max')
                         HTTP_REQ_DURATION_P90=$(echo "$BODY" | jq -r '.http_req_duration_p90')
                         HTTP_REQ_DURATION_P95=$(echo "$BODY" | jq -r '.http_req_duration_p95')
-                        HTTP_REQ_DURATION_THRESHOLD_AVG_LT_3000=$(echo "$BODY" | jq -r '.http_req_duration_threshold_avg_lt_3000')
-                        HTTP_REQ_DURATION_THRESHOLD_P95_LT_15000=$(echo "$BODY" | jq -r '.http_req_duration_threshold_p95_lt_15000')
                         DATA_SENT_COUNT=$(echo "$BODY" | jq -r '.data_sent_count')
                         DATA_SENT_RATE=$(echo "$BODY" | jq -r '.data_sent_rate')
                         ITERATIONS_COUNT=$(echo "$BODY" | jq -r '.iterations_count')
@@ -93,8 +91,6 @@ spec:
                     http_req_duration_max,
                     http_req_duration_p90,
                     http_req_duration_p95,
-                    http_req_duration_threshold_avg_lt_3000,
-                    http_req_duration_threshold_p95_lt_15000,
                     data_sent_count,
                     data_sent_rate,
                     iterations_count,
@@ -115,8 +111,6 @@ spec:
                     $HTTP_REQ_DURATION_MAX,
                     $HTTP_REQ_DURATION_P90,
                     $HTTP_REQ_DURATION_P95,
-                    $HTTP_REQ_DURATION_THRESHOLD_AVG_LT_3000,
-                    $HTTP_REQ_DURATION_THRESHOLD_P95_LT_15000,
                     $DATA_SENT_COUNT,
                     $DATA_SENT_RATE,
                     $ITERATIONS_COUNT,

@@ -67,12 +67,6 @@ def pytest_runtest_logreport(report):
         "http_req_duration_max": output["metrics"]["http_req_duration"]["max"],
         "http_req_duration_p90": output["metrics"]["http_req_duration"]["p(90)"],
         "http_req_duration_p95": output["metrics"]["http_req_duration"]["p(95)"],
-        "http_req_duration_threshold_avg_lt_3000": output["metrics"][
-            "http_req_duration"
-        ]["thresholds"]["avg<3000"],
-        "http_req_duration_threshold_p95_lt_15000": output["metrics"][
-            "http_req_duration"
-        ]["thresholds"]["p(95)<15000"],
         "data_sent_count": output["metrics"]["data_sent"]["count"],
         "data_sent_rate": output["metrics"]["data_sent"]["rate"],
         "iterations_count": output["metrics"]["iterations"]["count"],
