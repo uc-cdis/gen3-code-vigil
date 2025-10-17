@@ -25,7 +25,7 @@ class TestIndexdDrsEndpoint:
         for did in self.guids_list:
             self.index.delete_record(guid=did)
 
-    def test_create_indexd_records(self):
+    def test_indexd_drs_endpoint(self):
         # Retrieve all indexd records
         index_records = setup.get_indexd_records(
             self.auth, indexd_record_acl="phs000178"

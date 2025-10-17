@@ -16,7 +16,7 @@ class TestMetadataFilterLargeDatabase:
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
 
-    def test_metadata_create_and_query(self):
+    def test_metadata_service_filter_large_database(self):
         # Setup env_vars to pass into k6 load runner
         env_vars = {
             "SERVICE": "metadata-service",
