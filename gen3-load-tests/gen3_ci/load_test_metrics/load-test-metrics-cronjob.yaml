@@ -16,7 +16,7 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: load-test-metrics
-            image: quay.io/cdis/load_test_metrics:chore_push_load_metrics_to_grafana
+            image: quay.io/cdis/ci_metrics:master
             env:
               - name: METRICS_DB_DSN
                 valueFrom:
