@@ -37,6 +37,8 @@ if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" 
   image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
   if [ "$(echo -n $service_enabled_value)" = "false" ]; then
       echo "Skipping image update for ${key} as service enabled is set to false"
+  elif [[ "$key" == "gen3-user-data-library" && "$RELEASE_VERSION" == "master"]]; then
+      yq eval ".${key}.image.tag = \"main\"" -i $manifest_values_yaml
   elif [ ! -z "$image_tag_value" ]; then
       echo "Updating ${key} service with ${image_tag_value}"
       yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
