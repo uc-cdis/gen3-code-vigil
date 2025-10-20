@@ -1,1 +1,0 @@
-The load-test-metrics cronjob is leveraing the resouces of ci-metrics from gen3-integration-tests to help run the cronjob.

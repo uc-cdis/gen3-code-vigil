@@ -8,10 +8,6 @@ on:
       - gen3-load-tests/*
   workflow_dispatch:
     inputs:
-      TEST_ENV:
-        description: 'Test environment'
-        required: false
-        default: ci-perf
       TEST_SUITE:
         description: 'Load test to execute, use all to run all tests'
         required: false
@@ -43,25 +39,21 @@ jobs:
     setup:
       runs-on: ubuntu-latest
       outputs:
-        TEST_ENV: ${{ steps.setvars.outputs.TEST_ENV }}
         TEST_SUITE: ${{ steps.setvars.outputs.TEST_SUITE }}
         RELEASE_VERSION: ${{ steps.setvars.outputs.RELEASE_VERSION }}
       steps:
-        - name: Determine TEST_ENV, TEST_SUITE and RELEASE_VERSION
+        - name: Determine TEST_SUITE and RELEASE_VERSION
           id: setvars
           run: |
             # Determine values based on trigger
             if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              TEST_ENV="${{ github.event.inputs.TEST_ENV }}"
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_ENV="jenkins-perf"
               TEST_SUITE="ALL"
-              RELEASE_VERSION="master"
+              RELEASE_VERSION=""
             fi
 
-            echo "TEST_ENV=$TEST_ENV" >> $GITHUB_OUTPUT
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
     load_tests:
@@ -84,7 +76,6 @@ jobs:
           MTLS_CRT: ${{ secrets.MTLS_CRT }}
           MTLS_KEY: ${{ secrets.MTLS_KEY }}
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
-          NAMESPACE: ${{ needs.setup.outputs.TEST_ENV }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
 

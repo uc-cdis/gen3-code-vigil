@@ -31,22 +31,22 @@ mv "$master_values_yaml" "$manifest_values_yaml"
 ####################################################################################
 echo "###################################################################################"
 keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
-for key in $keys_ci; do
-if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" && "$key" != "ambassador" && "$key" != "gen3-user-data-library" ]]; then
-  service_enabled_value=$(yq eval ".${key}.enabled" $manifest_values_yaml)
-  image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
-  if [ "$(echo -n $service_enabled_value)" = "false" ]; then
-      echo "Skipping image update for ${key} as service enabled is set to false"
-  elif [[ "$key" == "gen3-user-data-library" && "$RELEASE_VERSION" == "master"]]; then
-      yq eval ".${key}.image.tag = \"main\"" -i $manifest_values_yaml
-  elif [ ! -z "$image_tag_value" ]; then
-      echo "Updating ${key} service with ${image_tag_value}"
-      yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
+if [ -n "${RELEASE_VERSION}" ]; then
+  for key in $keys_ci; do
+  if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" && "$key" != "ambassador" && "$key" != "gen3-user-data-library" ]]; then
+    service_enabled_value=$(yq eval ".${key}.enabled" $manifest_values_yaml)
+    image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
+    if [ "$(echo -n $service_enabled_value)" = "false" ]; then
+        echo "Skipping image update for ${key} as service enabled is set to false"
+    elif [ ! -z "$image_tag_value" ]; then
+        echo "Updating ${key} service with ${image_tag_value}"
+        yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
+    fi
+  else
+    echo "Skipping image update for ${key}"
   fi
-else
-  echo "Skipping image update for ${key}"
+  done
 fi
-done
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 ENV_PREFIX=$NAMESPACE
