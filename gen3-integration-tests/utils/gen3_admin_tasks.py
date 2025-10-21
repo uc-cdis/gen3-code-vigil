@@ -186,7 +186,6 @@ def _get_fence_pod_name(test_env_namespace):
     cmd = [
         "kubectl", "-n", test_env_namespace, "get", "pods",
         "-l", "app=fence", "--field-selector=status.phase==Running",
-        "-o", "{.items[0].metadata.name}"
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
