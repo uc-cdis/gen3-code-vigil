@@ -183,8 +183,6 @@ def check_job_pod(
 @retry(times=2, delay=30, exceptions=(AssertionError,))
 def _get_fence_pod_name(test_env_namespace):
     # Get the pod name for fence app
-    cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
-
     cmd = [
         "kubectl", "-n", test_env_namespace, "get", "pods",
         "-l", "app=fence", "--field-selector=status.phase==Running"
