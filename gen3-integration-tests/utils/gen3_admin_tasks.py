@@ -185,7 +185,7 @@ def _get_fence_pod_name(test_env_namespace):
     # Get the pod name for fence app
     cmd = [
         "kubectl", "-n", test_env_namespace, "get", "pods",
-        "-l", "app=fence", "--field-selector=status.phase==Running",
+        "-o", "jsonpath={range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{\"\\n\"}{end}"
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
