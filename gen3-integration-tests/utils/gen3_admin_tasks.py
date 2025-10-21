@@ -188,12 +188,13 @@ def _get_fence_pod_name(test_env_namespace):
         "-l", "app=fence",
         "-o", "jsonpath={range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{\"\\n\"}{end}"
     ]
-    logger.info(f"Running command - {cmd}")
+    logger.info(f"Running command - {' '.join(cmd)}")
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
     assert result.returncode == 0
     fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+    logger.info(f"Found running fence pod - {fence_pod_name}")
     return fence_pod_name
 
 
