@@ -307,10 +307,6 @@ class TestGraphSubmitAndQuery:
         reason="indexd service is not running on this environment",
     )
     @pytest.mark.skipif(
-        "portal" not in pytest.deployed_services,
-        reason="portal service is not running on this environment",
-    )
-    @pytest.mark.skipif(
         "peregrine" not in pytest.deployed_services,
         reason="peregrine service is not running on this environment",
     )

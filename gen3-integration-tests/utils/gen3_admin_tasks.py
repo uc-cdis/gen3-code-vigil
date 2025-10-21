@@ -18,8 +18,11 @@ load_dotenv()
 @retry(times=5, delay=60, exceptions=(AssertionError))
 def get_portal_config():
     """Fetch portal config from the GUI"""
+    deployed_services = get_list_of_services_deployed()
+    if "portal" not in deployed_services:
+        return {}
     res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
-    assert res.status_code == 200
+    assert res.status_code == 200, f"Expected 200 but got {res.status_code}"
     return res.json()
 
 
@@ -292,12 +295,15 @@ def setup_fence_test_client(test_env_namespace, client_data):
     logger.info(f"Creating fence client: {client_name}")
 
     # Delete existing client
-    subprocess.run(
-        _get_delete_cmd(test_env_namespace, client_name),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
+    try:
+        subprocess.run(
+            _get_delete_cmd(test_env_namespace, client_name),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except Exception:
+        logger.info(f"Client {client_name} not present, deletion failed as expected.")
 
     # Create the client
     create_result = subprocess.run(
@@ -1018,6 +1024,8 @@ def skip_portal_tests():
     if "data-ecosystem-portal" in deployed_services:
         return True
     if "dataguids" in deployed_services:
+        return True
+    if "portal" not in deployed_services:
         return True
     return False
 

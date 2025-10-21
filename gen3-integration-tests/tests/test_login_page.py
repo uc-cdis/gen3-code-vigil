@@ -13,10 +13,6 @@ from utils.test_execution import screenshot
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-@pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
 @pytest.mark.portal
 class TestLoginPage:
     @classmethod
