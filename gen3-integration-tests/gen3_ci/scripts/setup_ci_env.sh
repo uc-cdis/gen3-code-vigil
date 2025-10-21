@@ -121,8 +121,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     # Handle audit logging in fence
     ####################################################################################
-    audit_enabled=$(yq eval '.audit.enabled == true' $new_manifest_values_file_path)
-    if [[ $audit_enabled != "true" ]]; then
+    audit_disabled=$(yq eval '.audit.enabled == false' $new_manifest_values_file_path)
+    if [[ $audit_disabled == "true" ]]; then
       yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_AUDIT_LOGS.presigned_url = false' -i "$ci_default_manifest_values_yaml"
       yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_AUDIT_LOGS.login = false' -i "$ci_default_manifest_values_yaml"
     fi
