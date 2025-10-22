@@ -103,21 +103,21 @@ spec:
                         # If quarantined, check if it is older than 8 hours.
                         if [[ "$quarantine" == "true" ]]; then
                             if (( age_minutes > 480 )); then
-                                echo "Quarantined environment older than 8 hours. Performing teardown..."
+                                echo "Quarantined environment $env older than 8 hours. Performing teardown..."
                                 teardown_environment $env
                             else
-                                echo "Quarantined environment is not older than 8 hours. Skipping..."
+                                echo "Quarantined environment $env is not older than 8 hours. Skipping..."
                             fi
                         # Check if teardown is "true".
                         elif [[ "$teardown" == "true" ]]; then
-                            echo "CI environment has successfully passed all suites. Performing teardown..."
+                            echo "CI environment $env has successfully passed all suites. Performing teardown..."
                             teardown_environment $env
                         # Check if it's older than 90 minutes.
                         elif (( age_minutes > 90 )); then
-                            echo "CI environment is older than 90 minutes. Performing teardown..."
+                            echo "CI environment $env is older than 90 minutes. Performing teardown..."
                             teardown_environment $env
                         else
-                            echo "CI environment is not older than 90 minutes. Skipping..."
+                            echo "CI environment $env is not older than 90 minutes. Skipping..."
                         fi
                     elif (( $(date +%s) - $(date -d "$(kubectl get ns "$env" -o jsonpath='{.metadata.creationTimestamp}')" +%s) > 10800 )); then
                         echo "No Helm installation found... Deleting namespace $env."
