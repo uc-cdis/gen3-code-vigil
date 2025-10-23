@@ -15,10 +15,6 @@ from utils import logger
     reason="Current PR is not a release PR",
 )
 class TestEnvSanity:
-    @classmethod
-    def setup_class(cls):
-        cls.BASE_URL = f"{pytest.root_url}"
-
     def test_service_versions(self):
         """
         Scenario: Test service versions
@@ -53,7 +49,7 @@ class TestEnvSanity:
                         refresh_token=pytest.api_keys["main_account"],
                         endpoint=pytest.root_url,
                     )
-                    url = self.BASE_URL + service_endpoints[service_name]
+                    url = service_endpoints[service_name]
                     response = auth.curl(path=url)
                     assert (
                         response.status_code == 200
