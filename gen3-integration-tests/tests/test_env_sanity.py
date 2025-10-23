@@ -43,7 +43,7 @@ class TestEnvSanity:
         }
         for service in pytest.deployed_services:
             service_name = service.replace("-deployment", "")
-            if service_name in service_endpoints.keys:
+            if service_name in service_endpoints:
                 logger.info(f"Service {service_name} found, checking service version")
                 auth = Gen3Auth(
                     refresh_token=pytest.api_keys["main_account"],
