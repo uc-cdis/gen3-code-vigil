@@ -41,21 +41,33 @@ class TestEnvSanity:
             "sheepdog": "/api/_version",
             "wts": "/wts/_version",
         }
-        for service in pytest.deployed_services:
+        failed_services = []
+        for service in pytest.deployed_services.splitlines():
             service_name = service.replace("-deployment", "")
             if service_name in service_endpoints:
-                logger.info(f"Service {service_name} found, checking service version")
-                auth = Gen3Auth(
-                    refresh_token=pytest.api_keys["main_account"],
-                    endpoint=pytest.root_url,
-                )
-                url = self.BASE_ENDPOINT + "/_status"
-                response = auth.curl(path=url)
-                assert (
-                    response.status_code == 200
-                ), f"Expected 200 but got {response.status_code}"
-                data = response.json()
-                logger.info(f"Got version {data['version']}")
-                assert (
-                    data["version"] == release_version
-                ), f"Expected {release_version} but got {data['version']}"
+                try:
+                    logger.info(
+                        f"Service {service_name} found, checking service version"
+                    )
+                    auth = Gen3Auth(
+                        refresh_token=pytest.api_keys["main_account"],
+                        endpoint=pytest.root_url,
+                    )
+                    url = self.BASE_ENDPOINT + "/_status"
+                    response = auth.curl(path=url)
+                    assert (
+                        response.status_code == 200
+                    ), f"Expected 200 but got {response.status_code}"
+                    data = response.json()
+                    logger.info(f"Got version {data['version']}")
+                    assert (
+                        data["version"] == release_version
+                    ), f"Expected {release_version} but got {data['version']}"
+                except Exception as e:
+                    logger.info(f"Got exception for {service_name}: {e}")
+                    failed_services.append(service_name)
+
+        if len(failed_services) > 0:
+            raise Exception(
+                f"List of services where version validation failed: {failed_services}"
+            )
