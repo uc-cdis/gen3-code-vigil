@@ -35,7 +35,7 @@ class TestEnvSanity:
             "gen3-user-data-library": "/library/_version",
             "guppy": "/guppy/_version",
             "indexd": "/index/_version",
-            "metadata-service": "/mds/version",  # version
+            "metadata": "/mds/version",  # version
             "peregrine": "/peregrine/_version",
             "requestor": "/requestor/_version",
             "sheepdog": "/api/_version",
@@ -53,7 +53,7 @@ class TestEnvSanity:
                         refresh_token=pytest.api_keys["main_account"],
                         endpoint=pytest.root_url,
                     )
-                    url = self.BASE_ENDPOINT + "/_status"
+                    url = self.BASE_URL + service_endpoints[service_name]
                     response = auth.curl(path=url)
                     assert (
                         response.status_code == 200
