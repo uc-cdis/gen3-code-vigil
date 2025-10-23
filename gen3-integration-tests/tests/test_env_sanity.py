@@ -58,6 +58,9 @@ class TestEnvSanity:
                     assert (
                         response.status_code == 200
                     ), f"Expected 200 but got {response.status_code}"
+                    logger.info(f"Status: {response.status_code}")
+                    logger.info(f"Content: {response.content}")
+                    logger.info(f"Data: {response.json}")
                     data = response.json()
                     logger.info(f"Got version {data['version']}")
                     assert (
