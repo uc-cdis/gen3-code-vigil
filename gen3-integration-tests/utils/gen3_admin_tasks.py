@@ -183,12 +183,18 @@ def check_job_pod(
 @retry(times=2, delay=30, exceptions=(AssertionError,))
 def _get_fence_pod_name(test_env_namespace):
     # Get the pod name for fence app
-    cmd = ["kubectl", "-n", test_env_namespace, "get", "pods", "-l", "app=fence"]
+    cmd = [
+        "kubectl", "-n", test_env_namespace, "get", "pods",
+        "-l", "app=fence",
+        "-o", "jsonpath={range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{\"\\n\"}{end}"
+    ]
+    logger.info(f"Running command - {' '.join(cmd)}")
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
     assert result.returncode == 0
     fence_pod_name = result.stdout.splitlines()[-1].split()[0]
+    logger.info(f"Found running fence pod - {fence_pod_name}")
     return fence_pod_name
 
 
