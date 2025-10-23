@@ -55,10 +55,14 @@ class TestEnvSanity:
                         response.status_code == 200
                     ), f"Expected 200 but got {response.status_code}"
                     data = response.json()
-                    logger.info(f"Got version {data['version']}")
+                    if isinstance(data, dict):
+                        response_version = data["version"]
+                    elif isinstance(data, str):
+                        response_version = data
+                    logger.info(f"Got version {response_version}")
                     assert (
-                        data["version"] == release_version
-                    ), f"Expected {release_version} but got {data['version']}"
+                        response_version == release_version
+                    ), f"Expected {release_version} but got {response_version}"
                 except Exception as e:
                     logger.info(f"Got exception for {service_name}: {e}")
                     failed_services.append(service_name)
