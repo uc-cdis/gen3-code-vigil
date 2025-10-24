@@ -11,7 +11,7 @@ from utils import logger
 
 @pytest.mark.env_sanity
 @pytest.mark.skipif(
-    "chore/apply_" not in os.getenv("BRANCH"),
+    "chore/apply_monthly_release_" not in os.getenv("BRANCH"),
     reason="Current PR is not a release PR",
 )
 class TestEnvSanity:
@@ -24,7 +24,7 @@ class TestEnvSanity:
             3. Validate the service version matches the version of the deployment
         """
         logger.info("Running Env Sanity Test")
-        release_version = os.getenv("BRANCH").split("_")[1]
+        release_version = os.getenv("BRANCH").split("_")[3]
         service_endpoints = {
             "audit": "/audit/_version",
             "fence": "/user/_version",
