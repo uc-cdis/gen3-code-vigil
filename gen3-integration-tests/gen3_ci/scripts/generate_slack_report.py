@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -57,11 +58,29 @@ def get_test_result_and_metrics():
             + int(statistic_json["unknown"])
         )  # some broken tests are reported as Unknown
         # duration rounded to the minute
-        duration = (
+        test_duration = (
             round(int(time_json["duration"]) / 60000, 2)
             if "duration" in time_json
             else "?"
         )
+        # Calculate gh action time
+        result = subprocess.run(
+            [
+                "gh",
+                "run",
+                "view",
+                str(os.getenv("RUN_ID")),
+                "--json",
+                "startedAt,updatedAt",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        run_data = json.loads(result.stdout)
+        start = datetime.fromisoformat(run_data["startedAt"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(run_data["updatedAt"].replace("Z", "+00:00"))
+        gh_duration = round((end - start).total_seconds() / 60, 2)
         if total == 0:  # If no test runs on a PR treat it as failed
             test_result = "Failed"
         elif passed + skipped == total:
@@ -72,7 +91,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Run Time - {duration} minutes",
+                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes    :stopwatch: GH Run Time - {gh_duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
