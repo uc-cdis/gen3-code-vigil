@@ -122,8 +122,8 @@ class LoginPage(object):
                 .get("useProfileDropdown", "")
             ):
                 accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
-                logger.info(f"ACCEPT_BUTTON: {accept_button}")
-                if accept_button:
+                accept_button_count = accept_button.count()
+                if accept_button_count > 0:
                     logger.info("Clicking on Accept button")
                     screenshot(page, "ClickingOnAcceptButton")
                     accept_button.click()
