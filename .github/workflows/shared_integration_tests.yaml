@@ -198,7 +198,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             shell: bash
             run: |
-              brew install helm
+              curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
           # # Setup GCP
           # - name: 'Authenticate with GCP'
