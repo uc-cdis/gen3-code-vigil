@@ -217,8 +217,7 @@ class LoginPage(object):
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
-            screenshot(page, "BeforeLogout")
-            page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
+            page.locator(self.LOGOUT_NORMALIZE_SPACE).click(timeout=10000)
         # Click on Logout button to logout
         else:
             page.get_by_role("link", name="Logout").click(timeout=60000)
