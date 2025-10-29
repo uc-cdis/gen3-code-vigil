@@ -217,6 +217,7 @@ class LoginPage(object):
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
+            screenshot(page, "BeforeLogout")
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
         # Click on Logout button to logout
         else:
