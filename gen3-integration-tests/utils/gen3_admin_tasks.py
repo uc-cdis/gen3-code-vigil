@@ -167,7 +167,7 @@ def check_job_pod(
         "wait",
         "--for=condition=complete",
         f"job/{job_name}",
-        "--timeout=20m",
+        "--timeout=30m",
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -184,9 +184,15 @@ def check_job_pod(
 def _get_fence_pod_name(test_env_namespace):
     # Get the pod name for fence app
     cmd = [
-        "kubectl", "-n", test_env_namespace, "get", "pods",
-        "-l", "app=fence",
-        "-o", "jsonpath={range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{\"\\n\"}{end}"
+        "kubectl",
+        "-n",
+        test_env_namespace,
+        "get",
+        "pods",
+        "-l",
+        "app=fence",
+        "-o",
+        'jsonpath={range .items[?(@.status.containerStatuses[0].ready==true)]}{.metadata.name}{"\\n"}{end}',
     ]
     logger.info(f"Running command - {' '.join(cmd)}")
     result = subprocess.run(
