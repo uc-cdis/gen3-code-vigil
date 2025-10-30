@@ -13,7 +13,7 @@ class TestIndexdCreateRecords:
             refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
         )
 
-    def test_create_indexd_records(self):
+    def test_indexd_create_indexd_records(self):
         env_vars = {
             "SERVICE": "indexd",
             "LOAD_TEST_SCENARIO": "create-indexd-records",
