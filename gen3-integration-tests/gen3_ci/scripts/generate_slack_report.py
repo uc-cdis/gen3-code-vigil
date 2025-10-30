@@ -1,8 +1,7 @@
 import csv
 import json
 import os
-import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from utils import logger
@@ -64,23 +63,11 @@ def get_test_result_and_metrics():
             else "?"
         )
         # Calculate gh action time
-        result = subprocess.run(
-            [
-                "gh",
-                "run",
-                "view",
-                str(os.getenv("RUN_ID")),
-                "--json",
-                "startedAt,updatedAt",
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
+        start_time = os.getenv("GITHUB_RUN_STARTED_AT")
+        start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+        gh_duration = round(
+            (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
         )
-        run_data = json.loads(result.stdout)
-        start = datetime.fromisoformat(run_data["startedAt"].replace("Z", "+00:00"))
-        end = datetime.fromisoformat(run_data["updatedAt"].replace("Z", "+00:00"))
-        gh_duration = round((end - start).total_seconds() / 60, 2)
         if total == 0:  # If no test runs on a PR treat it as failed
             test_result = "Failed"
         elif passed + skipped == total:
