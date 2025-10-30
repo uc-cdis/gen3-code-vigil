@@ -1,7 +1,7 @@
 import csv
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from utils import logger
@@ -57,10 +57,17 @@ def get_test_result_and_metrics():
             + int(statistic_json["unknown"])
         )  # some broken tests are reported as Unknown
         # duration rounded to the minute
-        duration = (
+        test_duration = (
             round(int(time_json["duration"]) / 60000, 2)
             if "duration" in time_json
             else "?"
+        )
+        # Calculate gh action time
+        start_time = os.getenv("GITHUB_RUN_STARTED_AT")
+        logger.info(f"GITHUB_RUN_STARTED_AT: {start_time}")
+        start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+        gh_duration = round(
+            (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
         )
         if total == 0:  # If no test runs on a PR treat it as failed
             test_result = "Failed"
@@ -72,7 +79,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Run Time - {duration} minutes",
+                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes    :stopwatch: GH Run Time - {gh_duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
