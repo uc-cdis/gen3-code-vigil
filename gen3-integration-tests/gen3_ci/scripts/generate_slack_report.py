@@ -64,6 +64,7 @@ def get_test_result_and_metrics():
         )
         # Calculate gh action time
         start_time = os.getenv("GITHUB_RUN_STARTED_AT")
+        logger.info(f"GITHUB_RUN_STARTED_AT: {start_time}")
         start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
         gh_duration = round(
             (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
