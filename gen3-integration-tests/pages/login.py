@@ -12,7 +12,7 @@ from utils.test_execution import screenshot
 
 class LoginPage(object):
     def __init__(self):
-        if pytest.frontend_environment:
+        if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Login"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"

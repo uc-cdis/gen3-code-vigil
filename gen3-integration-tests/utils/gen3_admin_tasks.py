@@ -1043,3 +1043,12 @@ def is_register_user_enabled(test_env_namespace: str = ""):
         if "true" in result.stdout.strip():
             return True
     return False
+
+
+def is_frontend_url():
+    if (
+        pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff"
+        and "portal" not in pytest.root_url_portal
+    ):
+        return True
+    return False

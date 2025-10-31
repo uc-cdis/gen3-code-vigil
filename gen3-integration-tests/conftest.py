@@ -145,10 +145,8 @@ def pytest_configure(config):
         and not config.skip_portal_tests
     ):
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
-        pytest.frontend_environment = False
     else:
         pytest.root_url_portal = pytest.root_url
-        pytest.frontend_environment = True
 
     # List of services deployed
     pytest.deployed_services = gat.get_list_of_services_deployed()
@@ -161,6 +159,8 @@ def pytest_configure(config):
     pytest.google_enabled = gat.is_google_enabled()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
+    # Flag for identifying if root_url_portal is for frontend or not
+    pytest.frontend_url = gat.is_frontend_url()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
