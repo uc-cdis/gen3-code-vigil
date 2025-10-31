@@ -1047,6 +1047,8 @@ def is_register_user_enabled(test_env_namespace: str = ""):
 
 def is_frontend_url():
     deployed_services = get_list_of_services_deployed()
+    logger.info(deployed_services)
+    logger.info(pytest.root_url_portal)
     if (
         "frontend-framework" in deployed_services
         and "portal" not in pytest.root_url_portal
