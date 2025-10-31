@@ -1050,5 +1050,6 @@ def is_frontend_url():
         pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff"
         and "portal" not in pytest.root_url_portal
     ):
+        logger.info("Current environment is based on frontend-framework url")
         return True
     return False
