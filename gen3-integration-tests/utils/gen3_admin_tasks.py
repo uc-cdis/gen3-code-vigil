@@ -1046,8 +1046,9 @@ def is_register_user_enabled(test_env_namespace: str = ""):
 
 
 def is_frontend_url():
+    deployed_services = get_list_of_services_deployed()
     if (
-        pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff"
+        "frontend-framework" in deployed_services
         and "portal" not in pytest.root_url_portal
     ):
         logger.info("Current environment is based on frontend-framework url")
