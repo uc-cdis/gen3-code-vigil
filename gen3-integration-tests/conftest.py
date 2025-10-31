@@ -145,8 +145,10 @@ def pytest_configure(config):
         and not config.skip_portal_tests
     ):
         pytest.root_url_portal = f"https://{pytest.hostname}/portal"
+        pytest.frontend_environment = False
     else:
         pytest.root_url_portal = pytest.root_url
+        pytest.frontend_environment = True
 
     # List of services deployed
     pytest.deployed_services = gat.get_list_of_services_deployed()

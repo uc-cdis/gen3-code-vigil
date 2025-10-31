@@ -12,7 +12,10 @@ from utils.test_execution import screenshot
 
 class LoginPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/login"
+        if pytest.frontend_environment:
+            self.BASE_URL = f"{pytest.root_url_portal}/Login"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/login"
         # Locators
         self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
