@@ -51,7 +51,7 @@ jobs:
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
               TEST_SUITE="ALL"
-              RELEASE_VERSION=""
+              RELEASE_VERSION="2025.11"
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
