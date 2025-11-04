@@ -430,6 +430,7 @@ jobs:
             run: |
               if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
                 if [ ! -f output/report.md ]; then
+                  mkdir output
                   touch output/report.md
                 fi
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
