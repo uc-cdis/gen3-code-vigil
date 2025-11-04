@@ -126,6 +126,11 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
 
+          - name: Set Start Time
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            run: |
+              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
 
           # Skip tests when there are only markdown files
           - name: Skip integration tests if PR contains only Markdown files
