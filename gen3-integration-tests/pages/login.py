@@ -128,10 +128,13 @@ class LoginPage(object):
                     screenshot(page, "ClickingOnAcceptButton")
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
-            username = page.locator("//*[text()]").filter(
-                has_text=re.compile(logged_in_user, re.IGNORECASE)
-            )
-
+                username = page.locator("//div[@class='ant-popover-title']").filter(
+                    has_text=re.compile(logged_in_user, re.IGNORECASE)
+                )
+            else:
+                username = page.locator(
+                    "//*[contains(@class, 'top-bar__nav')]//*[text()]"
+                ).filter(has_text=re.compile(logged_in_user, re.IGNORECASE))
             expect(username).to_be_visible(timeout=120000)
         screenshot(page, "AfterLogin")
 
