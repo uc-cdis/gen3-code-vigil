@@ -429,6 +429,9 @@ jobs:
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
               if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+                if [ ! -f output/report.md ]; then
+                  touch output/report.md
+                fi
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
