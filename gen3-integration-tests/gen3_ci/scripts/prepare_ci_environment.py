@@ -192,6 +192,14 @@ def prepare_ci_environment(namespace):
             raise Exception(
                 "More than 1 folder updated, please update only 1 folder per PR..."
             )
+        elif "cluster-values" in updated_folders:
+            logger.info(
+                "This PR is testing cluster-values folder which is not supported"
+            )
+            # Update SKIP_TESTS to true in GITHUB_ENV
+            with open(os.getenv("GITHUB_ENV"), "a") as f:
+                f.write("SKIP_TESTS=true\n")
+            return
         else:
             updated_folder = updated_folders[0]
             logger.info(f"Setting up env using folder: {updated_folder}")
