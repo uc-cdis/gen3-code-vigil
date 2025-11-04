@@ -62,13 +62,6 @@ def get_test_result_and_metrics():
             if "duration" in time_json
             else "?"
         )
-        # Calculate gh action time
-        start_time = os.getenv("GITHUB_RUN_STARTED_AT")
-        logger.info(f"GITHUB_RUN_STARTED_AT: {start_time}")
-        start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-        gh_duration = round(
-            (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
-        )
         if total == 0:  # If no test runs on a PR treat it as failed
             test_result = "Failed"
         elif passed + skipped == total:
@@ -79,7 +72,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes    :stopwatch: GH Run Time - {gh_duration} minutes",
+                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
@@ -114,12 +107,19 @@ def generate_slack_report():
         },
     }
     slack_report_json["blocks"].append(header_block)
+    # Calculate gh action time
+    start_time = os.getenv("GITHUB_RUN_STARTED_AT")
+    logger.info(f"GITHUB_RUN_STARTED_AT: {start_time}")
+    start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+    gh_duration = round(
+        (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
+    )
     # Run summary
     summary_block = {
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result_icons[test_result]} {test_result} run for {pr_link} on :round_pushpin:*{os.getenv('NAMESPACE')}*",
+            "text": f"{test_result_icons[test_result]} {test_result} run for {pr_link} on :round_pushpin:*{os.getenv('NAMESPACE')}* (took :stopwatch: *{gh_duration} minutes*)",
         },
     }
     slack_report_json["blocks"].append(summary_block)
