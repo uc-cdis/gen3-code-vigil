@@ -174,6 +174,7 @@ class LoginPage(object):
             page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
+        screenshot(page, "AfterORCIDLoginButtonClick")
         page.wait_for_url(f"https://{pytest.hostname}/**")
 
     def ras_login(
