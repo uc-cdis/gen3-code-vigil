@@ -6,7 +6,7 @@ repos:
        name: isort (python)
        args: ['--profile', 'black']
 -   repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 25.9.0
     hooks:
     -   id: black
 -   repo: git@github.com:Yelp/detect-secrets
@@ -17,7 +17,7 @@ repos:
         additional_dependencies: ['gibberish-detector']
         exclude: poetry.lock
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer

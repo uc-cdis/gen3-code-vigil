@@ -174,7 +174,7 @@ jobs:
           # gen3-integration-tests run with python 3.9
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-python@v5
+            uses: actions/setup-python@v6
             with:
               python-version: '3.9'
 
