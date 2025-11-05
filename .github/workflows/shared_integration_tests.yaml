@@ -128,6 +128,7 @@ jobs:
 
           - name: Set Start Time
             if: ${{ env.SKIP_TESTS != 'true' }}
+            working-directory: ${{ github.workspace }}
             run: |
               echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
 
@@ -167,7 +168,6 @@ jobs:
 
           - name: Get commit time
             if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
-            working-directory: ${{ github.workspace }}
             run: |
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
