@@ -172,8 +172,10 @@ class LoginPage(object):
         # Handle the Cookie Settings Pop-Up
         if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
             page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
+            page.locator(self.ORCID_REJECT_COOKIE_BUTTON).wait_for(state="hidden")
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
+        screenshot(page, "AfterORCIDLoginButtonClick")
         page.wait_for_url(f"https://{pytest.hostname}/**")
 
     def ras_login(
