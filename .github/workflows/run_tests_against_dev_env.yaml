@@ -79,14 +79,22 @@ jobs:
         run: |
           sudo rm -f /etc/apt/sources.list.d/github_git-lfs.list
           sudo apt update && sudo apt install wget -y
+          sudo wget https://raw.githubusercontent.com/dwyl/english-words/master/words.txt -O /usr/share/dict/words
           sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - |\
           tar xz && sudo mv ${YQ_BINARY} /usr/bin/yq
-          cd gen3-code-vigil/gen3-integration-tests
           python -m pip install --upgrade pip
+          if [[ "$REPO" == "data-simulator" ]]; then
+            sed -i "s|\(data-simulator[[:space:]]*=[[:space:]]*{[^}]*rev[[:space:]]*=[[:space:]]*\"\)[^\"]*\(.*\)|\1$BRANCH\2|" pyproject.toml
+          fi
+          if [[ "$REPO" == "gen3sdk-python" ]]; then
+            sed -i "s|^gen3 = \".*\"|gen3 = { git = \"https://github.com/uc-cdis/gen3sdk-python\", rev = \"$BRANCH\" }|" pyproject.toml
+          fi
           pip install poetry
           poetry lock
           poetry install
           poetry show
+          sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
+          sudo apt install openjdk-11-jre -y
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
