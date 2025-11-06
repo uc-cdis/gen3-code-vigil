@@ -14,7 +14,6 @@ jobs:
     uses: ./.github/workflows/run_tests_against_dev_env.yaml
     with:
       NAMESPACE: krishna-helm
-      TEST_LABELS: TestHomePage
     secrets:
       CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
