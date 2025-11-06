@@ -87,6 +87,7 @@ jobs:
             sed -i "s|^gen3 = \".*\"|gen3 = { git = \"https://github.com/uc-cdis/gen3sdk-python\", rev = \"$BRANCH\" }|" pyproject.toml
           fi
           pip install poetry
+          cd gen3-integrations-tests
           poetry lock
           poetry install
           poetry show
