@@ -45,7 +45,7 @@ jobs:
       CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
       NAMESPACE: ${{ inputs.NAMESPACE }}
-      TEST_LABEL: ${{ inputs.TEST_LABELS }}
+      TEST_LABELS: ${{ inputs.TEST_LABELS }}
       WORKING_DIR: gen3-code-vigil/gen3-integration-tests
       SLACK_CHANNEL: "#test-bots"
       GH_WORKSPACE: ${{ github.workspace }}
