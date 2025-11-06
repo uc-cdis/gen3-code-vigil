@@ -1,0 +1,17 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Test run tests against dev env
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test_workflow.yaml
+      - .github/workflows/run_tests_against_dev_env.yaml
+      - gen3-integration-tests/**
+
+jobs:
+  integration_tests:
+    name: Test run tests against dev env
+    uses: ./.github/workflows/run_tests_against_dev_env.yaml
+    secrets:
+      CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+      EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}

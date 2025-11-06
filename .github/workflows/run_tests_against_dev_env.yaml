@@ -2,13 +2,22 @@
 name: Run tests against dev environment
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       NAMESPACE:
         description: 'Namespace for the dev env'
         required: true
+        type: string
+        default: krishna-helm
       TEST_LABELS:
         description: 'Test labels to determine which tests to run'
+        required: false
+        type: string
+        default: TestHomePage
+    secrets:
+      CI_SLACK_BOT_TOKEN:
+        required: true
+      EKS_CLUSTER_NAME:
         required: false
 
 permissions:
