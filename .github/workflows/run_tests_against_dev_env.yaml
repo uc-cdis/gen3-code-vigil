@@ -27,9 +27,6 @@ permissions:
 jobs:
   create:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: gen3-integration-tests
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
