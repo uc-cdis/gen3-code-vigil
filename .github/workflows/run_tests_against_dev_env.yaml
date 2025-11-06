@@ -30,12 +30,21 @@ jobs:
 
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.event.repository.name }}
+      REPO_FN: ${{ github.event.repository.full_name }}
+      BRANCH: ${{ github.event.pull_request.head.ref }}
+      PR_NUM: ${{ github.event.pull_request.number }}
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+      RUN_NUM: ${{ github.run_number }}
+      RUN_ID: ${{ github.run_id }}
+      ATTEMPT_NUM: ${{ github.run_attempt }}
       CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
       NAMESPACE: ${{ inputs.NAMESPACE }}
       TEST_LABEL: ${{ inputs.TEST_LABELS }}
       WORKING_DIR: gen3-code-vigil/gen3-integration-tests
       SLACK_CHANNEL: "#test-bots"
+      GH_WORKSPACE: ${{ github.workspace }}
     steps:
       - name: Checkout integration test code
         uses: actions/checkout@v4
