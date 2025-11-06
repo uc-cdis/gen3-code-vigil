@@ -8,12 +8,10 @@ on:
         description: 'Namespace for the dev env'
         required: true
         type: string
-        default: krishna-helm
       TEST_LABELS:
         description: 'Test labels to determine which tests to run'
         required: false
         type: string
-        default: TestHomePage
     secrets:
       CI_SLACK_BOT_TOKEN:
         required: true
