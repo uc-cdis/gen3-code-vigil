@@ -28,6 +28,10 @@ jobs:
   create:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: "gen3-code-vigil/gen3-integration-tests"
+
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.event.repository.name }}
@@ -89,7 +93,6 @@ jobs:
           if [[ "$REPO" == "gen3sdk-python" ]]; then
             sed -i "s|^gen3 = \".*\"|gen3 = { git = \"https://github.com/uc-cdis/gen3sdk-python\", rev = \"$BRANCH\" }|" pyproject.toml
           fi
-          cd gen3-code-vigil/gen3-integration-tests
           pip install poetry
           poetry lock
           poetry install
