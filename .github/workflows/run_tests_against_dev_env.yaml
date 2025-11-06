@@ -117,6 +117,14 @@ jobs:
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region "us-east-1"
 
+      - name: Create namespace and env vars
+        id: create_ns
+        # Change the HOSTNAME with full domain name
+        run: |
+            HOSTNAME=${NAMESPACE}.ci.planx-pla.net
+            echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+            echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+
       - name: Prepare CI environment
         id: prep_ci_env
         continue-on-error: true  # if this fails, we still need to run clean-up steps
@@ -124,7 +132,7 @@ jobs:
             mkdir $HOME/.gen3
             mkdir logs
             echo "****** Prepare CI Environment ******" > logs/gh_action_logs.txt
-            ./gen3_ci/scripts/generate_api_keys.sh test_data/test_setup/users.csv ${NAMESPACE}.ci.planx-pla.net ${NAMESPACE} >> logs/gh_action_logs.txt 2>&1
+            ./gen3_ci/scripts/generate_api_keys.sh test_data/test_setup/users.csv ${HOSTNAME} ${NAMESPACE} >> logs/gh_action_logs.txt 2>&1
 
       - name: Get test labels
         id: get_test_labels
