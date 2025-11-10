@@ -25,6 +25,9 @@ class LoginPage(object):
                 "//*[@aria-label='top most navigation']"  # homepage navigation bar
             )
             self.LOGOUT_NORMALIZE_SPACE = "//p[normalize-space()='Logout']"
+            self.LOGIN_BUTTON_LIST = (
+                "//div[@class='flex flex-col items-center justify-center']"
+            )
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"
             self.LOGIN_BUTTONS = [
@@ -36,6 +39,7 @@ class LoginPage(object):
             self.GEN3_ORCID_LOGIN_BUTTON = "//button[normalize-space()='ORCID Login']"
             self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
             self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
+            self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
         # Locators
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
@@ -53,7 +57,6 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
-        self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
         self.REGISTER_BUTTON = "//button[contains(text(),'Register')]"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
