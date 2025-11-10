@@ -29,6 +29,7 @@ class LoginPage(object):
                 "//div[@class='flex flex-col items-center justify-center']"
             )
             self.USERNAME_LOCATOR = "//p[contains(@class, 'font-content') and contains(@class, 'text-secondary-contrast-lighter') and contains(@class, 'block')]"
+            self.LOGOUT_LOCATOR = "//p[contains(normalize-space(.), 'Logout')]"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"
             self.LOGIN_BUTTONS = [
@@ -42,6 +43,7 @@ class LoginPage(object):
             self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
             self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
             self.USERNAME_LOCATOR = "//*[contains(@class, 'top-bar__nav')]//*[text()]"
+            self.LOGOUT_LOCATOR = "//a[contains(normalize-space(.), 'Logout')]"
         # Locators
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
@@ -245,7 +247,7 @@ class LoginPage(object):
             page.locator(self.LOGOUT_NORMALIZE_SPACE).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.get_by_role("link", name="Logout").click(timeout=60000)
+            page.locator(self.LOGOUT_LOCATOR).click(timeout=60000)
         nav_bar_login_button = page.get_by_role("link", name="Login")
         if capture_screenshot:
             screenshot(page, "AfterLogout")
