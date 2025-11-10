@@ -15,9 +15,9 @@ class LoginPage(object):
         if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Login"
             self.LOGIN_BUTTONS = [
-                "//span[text()='Dev login']",
-                "//span[text()='Google']",
-                "//span[text()='BioData Catalyst Developer Login']",
+                "//button[.//span[contains(normalize-space(.), 'Dev login')]]",
+                "//button[.//span[contains(normalize-space(.), 'Google')]]",
+                "//button[.//span[contains(normalize-space(.), 'BioData Catalyst Developer Login')]]",
             ]
             self.GEN3_RAS_LOGIN_BUTTON = "//span[text()='Login from RAS']"
             self.GEN3_ORCID_LOGIN_BUTTON = "//span[text()='ORCID Login']"
