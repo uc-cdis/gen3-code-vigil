@@ -2,20 +2,13 @@
 name: Run tests against dev environment
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       NAMESPACE:
         description: 'Namespace for the dev env'
         required: true
-        type: string
       TEST_LABELS:
         description: 'Test labels to determine which tests to run'
-        required: false
-        type: string
-    secrets:
-      CI_SLACK_BOT_TOKEN:
-        required: true
-      EKS_CLUSTER_NAME:
         required: false
 
 permissions:
@@ -36,9 +29,6 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPO: ${{ github.event.repository.name }}
       REPO_FN: ${{ github.event.repository.full_name }}
-      BRANCH: ${{ github.event.pull_request.head.ref }}
-      PR_NUM: ${{ github.event.pull_request.number }}
-      COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
       RUN_NUM: ${{ github.run_number }}
       RUN_ID: ${{ github.run_id }}
       ATTEMPT_NUM: ${{ github.run_attempt }}
@@ -141,10 +131,6 @@ jobs:
             if [[ -n $TEST_LABELS ]]; then
                 test_label_expr="${TEST_LABELS//,/ or }"
                 test_label="-k \"$test_label_expr\""
-            else
-                if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
-                test_label=$(gh api repos/$REPO_FN/pulls/$PR_NUM --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then "-k \"" + join(" or ") + "\"" else "" end')
-                fi
             fi
             echo $test_label
             echo "TEST_LABEL=$test_label" >> $GITHUB_ENV
