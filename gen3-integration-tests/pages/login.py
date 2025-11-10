@@ -14,14 +14,32 @@ class LoginPage(object):
     def __init__(self):
         if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Login"
+            self.LOGIN_BUTTONS = [
+                "//span[text()='Dev login']",
+                "//span[text()='Google']",
+                "//span[text()='BioData Catalyst Developer Login']",
+            ]
+            self.GEN3_RAS_LOGIN_BUTTON = "//span[text()='Login from RAS']"
+            self.GEN3_ORCID_LOGIN_BUTTON = "//span[text()='ORCID Login']"
+            self.READY_CUE = (
+                "//*[@aria-label='top most navigation']"  # homepage navigation bar
+            )
+            self.LOGOUT_NORMALIZE_SPACE = "//p[normalize-space()='Logout']"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"
+            self.LOGIN_BUTTONS = [
+                "//button[contains(text(), 'Dev login')]",
+                "//button[contains(text(), 'Google')]",
+                "//button[contains(text(), 'BioData Catalyst Developer Login')]",
+            ]
+            self.GEN3_RAS_LOGIN_BUTTON = "//button[normalize-space()='Login from RAS']"
+            self.GEN3_ORCID_LOGIN_BUTTON = "//button[normalize-space()='ORCID Login']"
+            self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
+            self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
         # Locators
-        self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
-        self.RAS_LOGIN_BUTTON = "//button[contains(text(),'Login with RAS')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -39,15 +57,9 @@ class LoginPage(object):
         self.REGISTER_BUTTON = "//button[contains(text(),'Register')]"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
-        self.LOGIN_BUTTONS = [
-            "//button[contains(text(), 'Dev login')]",
-            "//button[contains(text(), 'Google')]",
-            "//button[contains(text(), 'BioData Catalyst Developer Login')]",
-        ]
         self.USER_PROFILE_DROPDOWN = (
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
         )
-        self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
     # TODO: see how to remove this parameter capture_screenshot
     def go_to(self, page: Page, url=None, capture_screenshot=True):
@@ -157,9 +169,9 @@ class LoginPage(object):
 
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
-        page.locator("//button[normalize-space()='ORCID Login']").click()
+        page.locator(self.GEN3_ORCID_LOGIN_BUTTON).click()
         # Perform ORCID Login
-        orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
+        orcid_login_button = page.locator(self.GEN3_ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
         page.locator(self.ORCID_USERNAME_INPUT).fill(os.environ["CI_TEST_ORCID_USERID"])
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
@@ -192,7 +204,7 @@ class LoginPage(object):
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
-            page.locator("//button[normalize-space()='Login from RAS']").click()
+            page.locator(self.RAS_LOGIN_BUTTON).click()
             # Perform RAS Login
             self.ras_login_form(page, username, password)
             screenshot(page, "RASAfterClickingGrantButton")
