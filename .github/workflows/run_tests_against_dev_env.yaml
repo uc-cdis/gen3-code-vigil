@@ -18,7 +18,7 @@ permissions:
   issues: write
 
 jobs:
-  create:
+  run-test-on-dev-env:
     runs-on: ubuntu-latest
 
     defaults:
