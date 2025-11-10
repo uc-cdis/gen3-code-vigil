@@ -579,7 +579,7 @@ def clean_up_indices(test_env_namespace: str = ""):
     get_alias_cmd = (
         "kubectl -n "
         + test_env_namespace
-        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
     )
     get_alias_result = subprocess.run(
         get_alias_cmd,
@@ -660,7 +660,7 @@ def check_indices_after_etl(test_env_namespace: str):
     get_alias_cmd = (
         "kubectl -n "
         + test_env_namespace
-        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
     )
     get_alias_result = subprocess.run(
         get_alias_cmd,
@@ -751,7 +751,7 @@ def check_indices_etl_version(test_env_namespace: str):
     get_alias_cmd = (
         "kubectl -n "
         + test_env_namespace
-        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
     )
     get_alias_result = subprocess.run(
         get_alias_cmd,
