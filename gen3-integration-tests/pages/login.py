@@ -28,7 +28,7 @@ class LoginPage(object):
             self.LOGIN_BUTTON_LIST = (
                 "//div[@class='flex flex-col items-center justify-center']"
             )
-            self.USERNAME_LOCATOR = "//*[contains(@class, 'font-content text-secondary-contrast-lighter block')]//*[text()]"
+            self.USERNAME_LOCATOR = "//p[contains(@class, 'font-content') and contains(@class, 'text-secondary-contrast-lighter') and contains(@class, 'block')]"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"
             self.LOGIN_BUTTONS = [
