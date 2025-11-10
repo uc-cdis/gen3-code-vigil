@@ -28,6 +28,7 @@ class LoginPage(object):
             self.LOGIN_BUTTON_LIST = (
                 "//div[@class='flex flex-col items-center justify-center']"
             )
+            self.USERNAME_LOCATOR = "//*[contains(@class, 'font-content text-secondary-contrast-lighter block')]//*[text()]"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"
             self.LOGIN_BUTTONS = [
@@ -40,8 +41,8 @@ class LoginPage(object):
             self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
             self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
             self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
+            self.USERNAME_LOCATOR = "//*[contains(@class, 'top-bar__nav')]//*[text()]"
         # Locators
-        self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
@@ -150,9 +151,9 @@ class LoginPage(object):
                     has_text=re.compile(logged_in_user, re.IGNORECASE)
                 )
             else:
-                username = page.locator(
-                    "//*[contains(@class, 'top-bar__nav')]//*[text()]"
-                ).filter(has_text=re.compile(logged_in_user, re.IGNORECASE))
+                username = page.locator(self.USERNAME_LOCATOR).filter(
+                    has_text=re.compile(logged_in_user, re.IGNORECASE)
+                )
             expect(username).to_be_visible(timeout=120000)
         screenshot(page, "AfterLogin")
 
