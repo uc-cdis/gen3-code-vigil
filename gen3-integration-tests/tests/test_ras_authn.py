@@ -17,10 +17,6 @@ from utils import gen3_admin_tasks as gat
     reason="fence service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
-@pytest.mark.skipif(
     pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
     reason="frontend_root is set to gen3ff",
 )

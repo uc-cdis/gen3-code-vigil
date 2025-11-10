@@ -3,7 +3,7 @@ import json
 
 import pytest
 import requests
-from gen3.auth import Gen3Auth
+from gen3.auth import Gen3Auth, Gen3AuthError
 from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page
@@ -35,7 +35,14 @@ class Fence(object):
         self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
 
-    @retry(times=3, delay=20, exceptions=(AssertionError,))
+    @retry(
+        times=3,
+        delay=20,
+        exceptions=(
+            AssertionError,
+            Gen3AuthError,
+        ),
+    )
     def create_signed_url(
         self, id, user, expected_status, params=[], access_token=None
     ):

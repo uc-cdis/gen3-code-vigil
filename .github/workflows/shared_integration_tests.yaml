@@ -100,6 +100,12 @@ jobs:
           SKIP_TESTS: 'false'
 
         steps:
+          - name: Set Start Time
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            working-directory: ${{ github.workspace }}
+            run: |
+              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
           # External PRs will not have access to secrets, so tests cannot run
           - name: Skip integration tests for external PRs
             if: ${{ github.event.pull_request.head.repo.fork == true && github.event_name == 'pull_request' }}
@@ -303,7 +309,13 @@ jobs:
               fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              kubectl create namespace $NAMESPACE || true
+              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              if [ -n "$namespace_exists" ]; then
+                echo "Namespace $NAMESPACE exists, performing teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE || true
+                kubectl delete ns $NAMESPACE
+              fi
+              kubectl create namespace $NAMESPACE
 
           - name: Get modified folders
             # This is applicable for Manifest PRs only
@@ -423,6 +435,10 @@ jobs:
             # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
             run: |
               if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
+                if [ ! -f output/report.md ]; then
+                  mkdir output
+                  touch output/report.md
+                fi
                 echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
               fi
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then

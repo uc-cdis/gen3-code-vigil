@@ -13,10 +13,6 @@ from utils import logger
     "requestor" not in pytest.deployed_services,
     reason="requestor service is not running on this environment",
 )
-@pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
-)
 @pytest.mark.requestor
 @pytest.mark.portal
 class TestRequestor:

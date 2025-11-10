@@ -125,14 +125,19 @@ class LoginPage(object):
                 .get("useProfileDropdown", "")
             ):
                 accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
-                if accept_button:
+                accept_button_count = accept_button.count()
+                if accept_button_count > 0:
                     logger.info("Clicking on Accept button")
+                    screenshot(page, "ClickingOnAcceptButton")
                     accept_button.click()
                 page.locator(self.USER_PROFILE_DROPDOWN).click()
-            username = page.locator("//*[text()]").filter(
-                has_text=re.compile(logged_in_user, re.IGNORECASE)
-            )
-
+                username = page.locator("//div[@class='ant-popover-title']").filter(
+                    has_text=re.compile(logged_in_user, re.IGNORECASE)
+                )
+            else:
+                username = page.locator(
+                    "//*[contains(@class, 'top-bar__nav')]//*[text()]"
+                ).filter(has_text=re.compile(logged_in_user, re.IGNORECASE))
             expect(username).to_be_visible(timeout=120000)
         screenshot(page, "AfterLogin")
 
@@ -170,8 +175,10 @@ class LoginPage(object):
         # Handle the Cookie Settings Pop-Up
         if page.locator(self.ORCID_REJECT_COOKIE_BUTTON).is_visible():
             page.locator(self.ORCID_REJECT_COOKIE_BUTTON).click()
+            page.locator(self.ORCID_REJECT_COOKIE_BUTTON).wait_for(state="hidden")
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
+        screenshot(page, "AfterORCIDLoginButtonClick")
         page.wait_for_url(f"https://{pytest.hostname}/**")
 
     def ras_login(
@@ -218,7 +225,8 @@ class LoginPage(object):
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
-            page.locator(self.LOGOUT_NORMALIZE_SPACE).click()
+            screenshot(page, "BeforeLogout")
+            page.locator(self.LOGOUT_NORMALIZE_SPACE).click(timeout=10000)
         # Click on Logout button to logout
         else:
             page.get_by_role("link", name="Logout").click(timeout=60000)

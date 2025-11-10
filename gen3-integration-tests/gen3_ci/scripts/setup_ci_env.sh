@@ -121,10 +121,13 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     # Handle audit logging in fence
     ####################################################################################
-    audit_enabled=$(yq eval '.audit.enabled == true' $new_manifest_values_file_path)
-    if [[ $audit_enabled != "true" ]]; then
+    audit_disabled=$(yq eval '.audit.enabled == false' $new_manifest_values_file_path)
+    if [[ $audit_disabled == "true" ]]; then
+      echo "Audit service is not deployed, disabling fence audit logging"
       yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_AUDIT_LOGS.presigned_url = false' -i "$ci_default_manifest_values_yaml"
       yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_AUDIT_LOGS.login = false' -i "$ci_default_manifest_values_yaml"
+    else
+      echo "Audit service is deployed, enabling fence audit logging"
     fi
 
     ####################################################################################
@@ -444,7 +447,7 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}"; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
