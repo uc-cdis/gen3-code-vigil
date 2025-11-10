@@ -59,19 +59,19 @@ class CustomScheduling(LoadScopeScheduling):
         return nodeid.rsplit("::", 1)[0]
 
 
-def pytest_collection_modifyitems(session, config, items):
-    # Skip running code if --collect-only is passed
-    if session.config.option.collectonly:
-        return
-    skip_portal_tests = config.skip_portal_tests
-    if skip_portal_tests:
-        for item in items:
-            if item.get_closest_marker("portal"):
-                item.add_marker(
-                    pytest.mark.skip(
-                        reason="Skipping portal test as unsupported frontend is used"
-                    )
-                )
+# def pytest_collection_modifyitems(session, config, items):
+#     # Skip running code if --collect-only is passed
+#     if session.config.option.collectonly:
+#         return
+#     skip_portal_tests = config.skip_portal_tests
+#     if skip_portal_tests:
+#         for item in items:
+#             if item.get_closest_marker("portal"):
+#                 item.add_marker(
+#                     pytest.mark.skip(
+#                         reason="Skipping portal test as unsupported frontend is used"
+#                     )
+#                 )
 
 
 def pytest_collection_finish(session):
