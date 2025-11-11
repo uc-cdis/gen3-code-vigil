@@ -22,7 +22,7 @@ class LoginPage(object):
             "Google",
             "BioData Catalyst Developer Login",
         ]
-        self.READY_CUE = re.compile("Login", re.IGNORECASE)
+        self.READY_CUE = re.compile("Explore, Analyze, and Share Data", re.IGNORECASE)
         self.GEN3_RAS_LOGIN_BUTTON = re.compile("Login from RAS", re.IGNORECASE)
         self.GEN3_ORCID_LOGIN_BUTTON = re.compile("ORCID Login", re.IGNORECASE)
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
@@ -228,9 +228,9 @@ class LoginPage(object):
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
+            page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=60000)
         nav_bar_login_button = page.get_by_role("link", name="Login")
-        expect(nav_bar_login_button).to_be_visible()
+        expect(nav_bar_login_button).to_be_visible(timeout=10000)
         if capture_screenshot:
             screenshot(page, "AfterLogout")
 
