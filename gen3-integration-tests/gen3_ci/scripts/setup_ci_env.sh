@@ -226,6 +226,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
+     "global.clusterName"
      "ssjdispatcher.indexing"
      "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
