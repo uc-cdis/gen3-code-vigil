@@ -194,6 +194,14 @@ def prepare_ci_environment(namespace):
             )
         else:
             updated_folder = updated_folders[0]
+            if "cluster-values" in updated_folder:
+                logger.info(
+                    "This PR is testing cluster-values folder which is not supported"
+                )
+                # Update SKIP_TESTS to true in GITHUB_ENV
+                with open(os.getenv("GITHUB_ENV"), "a") as f:
+                    f.write("SKIP_TESTS=true\n")
+                return
             logger.info(f"Setting up env using folder: {updated_folder}")
         result = modify_env_for_manifest_pr(namespace, updated_folder, repo)
         assert result.lower() == "success"
