@@ -10,10 +10,11 @@ class WorkspacePage(object):
         # Endpoints
         if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Workspace"
+            self.READY_CUE = "//a[@href='/Workspace ']"  # Workspace Page
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/workspace"
+            self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
         # Locators
-        self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
         self.WORKSPACE_OPTIONS = (
             "//div[@class='workspace__options']"  # Workspace Options
         )
