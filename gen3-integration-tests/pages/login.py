@@ -230,9 +230,9 @@ class LoginPage(object):
         else:
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         nav_bar_login_button = page.get_by_role("link", name="Login")
+        expect(nav_bar_login_button).to_be_visible()
         if capture_screenshot:
             screenshot(page, "AfterLogout")
-        expect(nav_bar_login_button).to_be_visible
 
     # function to handle pop ups after login
     def handle_popup(self, page: Page):
