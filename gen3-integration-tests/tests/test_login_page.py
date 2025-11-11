@@ -53,7 +53,7 @@ class TestLoginPage:
         self.login_page.login(page)
 
         # Validate the user is redirected to workspace page after logging in
-        current_url = page.url
+        current_url = page.url.lower()
         assert (
             "/workspace" in current_url
         ), f"Expected /workspace in url but got {current_url}"
