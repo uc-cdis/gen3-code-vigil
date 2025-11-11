@@ -300,7 +300,11 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(response, file_record_wit_ccs)
 
     @pytest.mark.indexd
-    @pytest.mark.portal
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services
+        and "frontend-framework" not in pytest.deployed_services,
+        reason="Both portal and frontend-framework services are not running on this environment",
+    )
     @pytest.mark.graph_query
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,

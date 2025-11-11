@@ -8,7 +8,10 @@ from utils import logger
 
 class DiscoveryPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/discovery"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Discovery"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/discovery"
 
         # LOCATORS
         self.READY_CUE = "css=.discovery-search"

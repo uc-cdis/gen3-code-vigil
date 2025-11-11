@@ -8,7 +8,10 @@ from utils.test_execution import screenshot
 class WorkspacePage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url_portal}/workspace"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Workspace"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/workspace"
         # Locators
         self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
         self.WORKSPACE_OPTIONS = (

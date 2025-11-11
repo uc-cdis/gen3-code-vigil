@@ -12,7 +12,11 @@ from utils import logger
     "frontend-framework" not in pytest.deployed_services,
     reason="frontend-framework service is not running on this environment",
 )
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 @pytest.mark.frontend_framework
 class TestGen3FFLandingPage(object):
     def test_home_page_redirection(self, page):

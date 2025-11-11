@@ -80,7 +80,11 @@ class TestAuditService:
             "auxAcct2 Login",
         )
 
-    @pytest.mark.portal
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services
+        and "frontend-framework" not in pytest.deployed_services,
+        reason="Both portal and frontend-framework services are not running on this environment",
+    )
     def test_audit_homepage_mock_login_events(self, page: Page):
         """
         Scenario: Homepage login events

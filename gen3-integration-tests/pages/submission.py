@@ -15,8 +15,12 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 class SubmissionPage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url_portal}/submission"
-        self.FILES_URL = f"{self.BASE_URL}/files"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Submission"
+            self.FILES_URL = f"{self.BASE_URL}/Files"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/submission"
+            self.FILES_URL = f"{self.BASE_URL}/files"
 
         # Locators
         self.PROJECT_LIST_TABLE = (

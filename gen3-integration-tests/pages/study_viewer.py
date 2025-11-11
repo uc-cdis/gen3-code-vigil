@@ -1,10 +1,10 @@
-import pytest
 import os
-from utils import logger
-import utils.gen3_admin_tasks as gat
 
-from utils.test_execution import screenshot
+import pytest
+import utils.gen3_admin_tasks as gat
 from playwright.sync_api import Page
+from utils import logger
+from utils.test_execution import screenshot
 
 portal_config = gat.get_portal_config()
 study_viewer_config = portal_config.get("studyViewerConfig", [])
@@ -15,7 +15,10 @@ if study_viewer_config:
 class StudyViewerPage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url_portal}/study-viewer"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Study-viewer"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/study-viewer"
         self.STUDY_VIEWER_URL = f"{self.BASE_URL}/{study_viewer_index}"
 
         # Locators

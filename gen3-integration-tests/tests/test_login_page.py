@@ -13,7 +13,11 @@ from utils.test_execution import screenshot
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 class TestLoginPage:
     @classmethod
     def setup_class(cls):

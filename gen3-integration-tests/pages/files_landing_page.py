@@ -1,15 +1,17 @@
 import os
+
 import pytest
-
-from utils import logger
 from playwright.sync_api import Page
-
+from utils import logger
 from utils.test_execution import screenshot
 
 
 class FilesLandingPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/files"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Files"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/files"
         self.METADATA_PAGE_CLASS = "//div[@class='core-metadata-page']"
         self.METADATA_PAGE_PICTURE_CLASS = "//div[@class='core-metadata-page__picture']"
         self.METADATA_PAGE_HEADER_CLASS = "//div[@class='core-metadata-page__header']"

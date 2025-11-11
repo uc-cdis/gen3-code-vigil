@@ -14,7 +14,11 @@ from utils import logger
     reason="requestor service is not running on this environment",
 )
 @pytest.mark.requestor
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 class TestRequestor:
     @classmethod
     def setup_class(cls):

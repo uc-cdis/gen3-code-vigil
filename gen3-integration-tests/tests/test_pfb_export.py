@@ -27,7 +27,11 @@ from utils import logger
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 @pytest.mark.sower
 class TestPFBExport(object):
     @classmethod

@@ -7,7 +7,6 @@ from pages import home, login
     and "frontend-framework" not in pytest.deployed_services,
     reason="Both portal and frontend-framework services are not running on this environment",
 )
-@pytest.mark.portal
 @pytest.mark.sanity
 class TestHomePage:
     def test_home_page_navigation(self, page):

@@ -1,18 +1,20 @@
 # Gen3 Frontend Framework Landing Page
 import os
-import pytest
 import re
 
-from utils import logger
+import pytest
 from playwright.sync_api import Page, expect
-
+from utils import logger
 from utils.test_execution import screenshot
 
 
 class Gen3FFLandingPage(object):
     def __init__(self):
         # PATHS
-        self.BASE_URL = f"{pytest.root_url}/landing"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url}/Landing"
+        else:
+            self.BASE_URL = f"{pytest.root_url}/landing"
 
         # LOCATORS
         self.READY_CUE = "css=.flex-grow"

@@ -47,7 +47,11 @@ def page_setup(page):
 @pytest.mark.mds
 @pytest.mark.agg_mds
 @pytest.mark.wts
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 @pytest.mark.sower
 class TestDiscoveryPage(object):
     @classmethod

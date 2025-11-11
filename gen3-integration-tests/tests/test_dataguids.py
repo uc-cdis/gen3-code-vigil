@@ -13,7 +13,11 @@ from utils.test_execution import screenshot
 
 # TODO : enable this test after the manifest PRs are ready to roll
 @pytest.mark.wip
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 class TestDataGuids(object):
     @classmethod
     def setup_class(cls):

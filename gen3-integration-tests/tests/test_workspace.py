@@ -32,7 +32,11 @@ def page_setup(page):
     reason="hatchery service is not running on this environment",
 )
 @pytest.mark.workspace
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page_setup):
         """
