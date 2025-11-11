@@ -11,8 +11,9 @@ from utils.test_execution import screenshot
 
 
 @pytest.mark.skipif(
-    "portal" not in pytest.deployed_services,
-    reason="portal service is not running on this environment",
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
 )
 @pytest.mark.skipif(
     "studyViewerConfig" not in gat.get_portal_config().keys(),

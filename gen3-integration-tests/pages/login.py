@@ -14,37 +14,18 @@ class LoginPage(object):
     def __init__(self):
         if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Login"
-            self.LOGIN_BUTTONS = [
-                "//button[.//span[contains(normalize-space(.), 'Dev login')]]",
-                "//button[.//span[contains(normalize-space(.), 'Google')]]",
-                "//button[.//span[contains(normalize-space(.), 'BioData Catalyst Developer Login')]]",
-            ]
-            self.GEN3_RAS_LOGIN_BUTTON = "//span[text()='Login from RAS']"
-            self.GEN3_ORCID_LOGIN_BUTTON = "//span[text()='ORCID Login']"
-            self.READY_CUE = (
-                "//*[@aria-label='top most navigation']"  # homepage navigation bar
-            )
-            self.LOGOUT_NORMALIZE_SPACE = "//p[normalize-space()='Logout']"
-            self.LOGIN_BUTTON_LIST = (
-                "//div[@class='flex flex-col items-center justify-center']"
-            )
-            self.USERNAME_LOCATOR = "//p[contains(@class, 'font-content') and contains(@class, 'text-secondary-contrast-lighter') and contains(@class, 'block')]"
-            self.LOGOUT_LOCATOR = "//p[contains(normalize-space(.), 'Logout')]"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/login"
-            self.LOGIN_BUTTONS = [
-                "//button[contains(text(), 'Dev login')]",
-                "//button[contains(text(), 'Google')]",
-                "//button[contains(text(), 'BioData Catalyst Developer Login')]",
-            ]
-            self.GEN3_RAS_LOGIN_BUTTON = "//button[normalize-space()='Login from RAS']"
-            self.GEN3_ORCID_LOGIN_BUTTON = "//button[normalize-space()='ORCID Login']"
-            self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
-            self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
-            self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
-            self.USERNAME_LOCATOR = "//*[contains(@class, 'top-bar__nav')]//*[text()]"
-            self.LOGOUT_LOCATOR = "//a[contains(normalize-space(.), 'Logout')]"
         # Locators
+        self.LOGIN_BUTTONS = [
+            "Dev login",
+            "Google",
+            "BioData Catalyst Developer Login",
+        ]
+        self.READY_CUE = re.compile("Login", re.IGNORECASE)
+        self.GEN3_RAS_LOGIN_BUTTON = re.compile("Login from RAS", re.IGNORECASE)
+        self.GEN3_ORCID_LOGIN_BUTTON = re.compile("ORCID Login", re.IGNORECASE)
+        self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
@@ -74,7 +55,7 @@ class LoginPage(object):
             page.goto(url)
         else:
             page.goto(self.BASE_URL)
-            page.wait_for_selector(self.READY_CUE, state="visible")
+            page.get_by_text(self.READY_CUE).wait_for(state="visible")
         if capture_screenshot:
             screenshot(page, "LoginPage")
 
@@ -101,7 +82,9 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=30000)
+        page.get_by_text(self.GEN3_RAS_LOGIN_BUTTON).wait_for(
+            state="visible", timeout=30000
+        )
         self.handle_popup(page)
         if idp == "ORCID":
             self.orcid_login(page)
@@ -114,7 +97,7 @@ class LoginPage(object):
             for login_button in self.LOGIN_BUTTONS:
                 logger.info(login_button)
                 try:
-                    button = page.locator(login_button)
+                    button = page.get_by_text(login_button, exact=False)
                     if button.is_enabled(timeout=5000):
                         button.click()
                         logger.info(f"Clicked on login button : {login_button}")
@@ -153,9 +136,7 @@ class LoginPage(object):
                     has_text=re.compile(logged_in_user, re.IGNORECASE)
                 )
             else:
-                username = page.locator(self.USERNAME_LOCATOR).filter(
-                    has_text=re.compile(logged_in_user, re.IGNORECASE)
-                )
+                username = page.locator("a, p").get_by_text(logged_in_user)
             expect(username).to_be_visible(timeout=120000)
         screenshot(page, "AfterLogin")
 
@@ -244,10 +225,10 @@ class LoginPage(object):
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             screenshot(page, "BeforeLogout")
-            page.locator(self.LOGOUT_NORMALIZE_SPACE).click(timeout=10000)
+            page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.locator(self.LOGOUT_LOCATOR).click(timeout=60000)
+            page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         nav_bar_login_button = page.get_by_role("link", name="Login")
         if capture_screenshot:
             screenshot(page, "AfterLogout")

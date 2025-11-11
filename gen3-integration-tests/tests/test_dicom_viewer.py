@@ -41,8 +41,11 @@ class TestDicomViewer(object):
         study_res = cls.dicom.get_studies(study_instance=study_instance)
         cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
 
-    # TODO: Enable this test once orthanc changes are deployed on midrc prod
-    # @pytest.mark.skip(reason="Temporarily Disabled")
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services
+        and "frontend-framework" not in pytest.deployed_services,
+        reason="Both portal and frontend-framework services are not running on this environment",
+    )
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file
