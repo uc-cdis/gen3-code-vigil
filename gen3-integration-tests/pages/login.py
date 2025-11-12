@@ -228,7 +228,7 @@ class LoginPage(object):
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=60000)
+            page.locator("a, p").get_by_text("Logout").click(timeout=60000)
         nav_bar_login_button = page.get_by_role("link", name="Login")
         # VPODC is having a pop up after clicking logout
         accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
