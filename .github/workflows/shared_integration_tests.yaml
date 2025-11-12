@@ -100,6 +100,12 @@ jobs:
           SKIP_TESTS: 'false'
 
         steps:
+          - name: Set Start Time
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            working-directory: ${{ github.workspace }}
+            run: |
+              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
           # External PRs will not have access to secrets, so tests cannot run
           - name: Skip integration tests for external PRs
             if: ${{ github.event.pull_request.head.repo.fork == true && github.event_name == 'pull_request' }}
@@ -125,11 +131,6 @@ jobs:
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/checkout@v4
-
-          - name: Set Start Time
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
 
 
           # Skip tests when there are only markdown files
