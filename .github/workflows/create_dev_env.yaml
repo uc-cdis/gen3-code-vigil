@@ -38,6 +38,7 @@ jobs:
         with:
           repository: uc-cdis/gen3-gitops
           path: gen3-gitops
+          ref: chore/enable_ci_ff
 
       - name: Set up Python
         uses: actions/setup-python@v5
