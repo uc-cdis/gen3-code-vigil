@@ -22,7 +22,6 @@ class LoginPage(object):
             "Google",
             "BioData Catalyst Developer Login",
         ]
-        self.READY_CUE = re.compile("Explore, Analyze, and Share Data", re.IGNORECASE)
         self.GEN3_RAS_LOGIN_BUTTON = re.compile("Login from RAS", re.IGNORECASE)
         self.GEN3_ORCID_LOGIN_BUTTON = re.compile("ORCID Login", re.IGNORECASE)
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
@@ -55,7 +54,7 @@ class LoginPage(object):
             page.goto(url)
         else:
             page.goto(self.BASE_URL)
-            page.get_by_text(self.READY_CUE).wait_for(state="visible")
+            page.get_by_text(self.GEN3_ORCID_LOGIN_BUTTON).wait_for(state="visible")
         if capture_screenshot:
             screenshot(page, "LoginPage")
 
