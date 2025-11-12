@@ -579,7 +579,7 @@ def clean_up_indices(test_env_namespace: str = ""):
     get_alias_cmd = (
         "kubectl -n "
         + test_env_namespace
-        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
     )
     get_alias_result = subprocess.run(
         get_alias_cmd,
@@ -660,7 +660,7 @@ def check_indices_after_etl(test_env_namespace: str):
     get_alias_cmd = (
         "kubectl -n "
         + test_env_namespace
-        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
     )
     get_alias_result = subprocess.run(
         get_alias_cmd,
@@ -751,7 +751,7 @@ def check_indices_etl_version(test_env_namespace: str):
     get_alias_cmd = (
         "kubectl -n "
         + test_env_namespace
-        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\.yaml}' | yq '.mappings[].name' | xargs"
+        + " get cm etl-mapping -o jsonpath='{.data.etlMapping\\.yaml}' | yq '.mappings[].name' | xargs"
     )
     get_alias_result = subprocess.run(
         get_alias_cmd,
@@ -1054,4 +1054,15 @@ def is_register_user_enabled(test_env_namespace: str = ""):
     if result.returncode == 0:
         if "true" in result.stdout.strip():
             return True
+    return False
+
+
+def is_frontend_url():
+    deployed_services = get_list_of_services_deployed()
+    if (
+        "frontend-framework" in deployed_services
+        and "portal" not in pytest.root_url_portal
+    ):
+        logger.info("Current environment is based on frontend-framework url")
+        return True
     return False

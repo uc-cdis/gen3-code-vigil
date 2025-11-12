@@ -2,7 +2,11 @@ import pytest
 from pages import home, login
 
 
-@pytest.mark.portal
+@pytest.mark.skipif(
+    "portal" not in pytest.deployed_services
+    and "frontend-framework" not in pytest.deployed_services,
+    reason="Both portal and frontend-framework services are not running on this environment",
+)
 @pytest.mark.sanity
 class TestHomePage:
     def test_home_page_navigation(self, page):

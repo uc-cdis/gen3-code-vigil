@@ -59,21 +59,6 @@ class CustomScheduling(LoadScopeScheduling):
         return nodeid.rsplit("::", 1)[0]
 
 
-def pytest_collection_modifyitems(session, config, items):
-    # Skip running code if --collect-only is passed
-    if session.config.option.collectonly:
-        return
-    skip_portal_tests = config.skip_portal_tests
-    if skip_portal_tests:
-        for item in items:
-            if item.get_closest_marker("portal"):
-                item.add_marker(
-                    pytest.mark.skip(
-                        reason="Skipping portal test as unsupported frontend is used"
-                    )
-                )
-
-
 def pytest_collection_finish(session):
     global requires_fence_client_marker_present
     global requires_google_bucket_marker_present
@@ -167,6 +152,8 @@ def pytest_configure(config):
     pytest.google_enabled = gat.is_google_enabled()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
+    # Flag for identifying if root_url_portal is for frontend or not
+    pytest.frontend_url = gat.is_frontend_url()
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
