@@ -237,9 +237,9 @@ class LoginPage(object):
             logger.info("Clicking on Accept button")
             screenshot(page, "ClickingOnAcceptButton")
             accept_button.click()
-        expect(nav_bar_login_button).to_be_visible(timeout=10000)
         if capture_screenshot:
             screenshot(page, "AfterLogout")
+        expect(nav_bar_login_button).to_be_visible(timeout=10000)
 
     # function to handle pop ups after login
     def handle_popup(self, page: Page):
