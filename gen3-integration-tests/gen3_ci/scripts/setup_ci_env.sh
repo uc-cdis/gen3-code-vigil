@@ -443,8 +443,7 @@ fi
 
 # Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
 echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-FUNNEL_SECRET_RESPONSE=$(aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery)
-echo $FUNNEL_SECRET_RESPONSE
+aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
 echo $HOSTNAME
 install_helm_chart() {
