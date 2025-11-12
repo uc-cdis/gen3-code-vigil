@@ -231,12 +231,7 @@ class LoginPage(object):
             logger.info("Clicked on logout button")
         nav_bar_login_button = page.get_by_role("link", name="Login")
         # VPODC is having a pop up after clicking logout
-        accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
-        accept_button_count = accept_button.count()
-        if accept_button_count > 0:
-            logger.info("Clicking on Accept button")
-            screenshot(page, "ClickingOnAcceptButton")
-            accept_button.click()
+        self.handle_popup(page)
         if capture_screenshot:
             screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible(timeout=10000)
