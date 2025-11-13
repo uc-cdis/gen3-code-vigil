@@ -226,6 +226,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
      "global.portalApp"
      "global.netpolicy"
      "global.frontendRoot"
+     "global.clusterName"
+     "global.crossplane.enabled"
+     "global.crossplane.providerConfigName"
+     "global.crossplane.oidcProviderUrl"
+     "global.crossplane.accountId"
      "ssjdispatcher.indexing"
      "metadata.useAggMds"
      # "metadata.aggMdsNamespace"
@@ -386,6 +391,10 @@ common_param_updates=(
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
+  ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
+  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|gen3-${namespace}-workflow-pods"
+  ".gen3-workflow.funnel.Plugins.Params.S3Url|gen3-workflow-service.${namespace}.svc.cluster.local"
+  ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl|https://${HOSTNAME}/user"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -436,6 +445,9 @@ if [ "$namespace" == "nightly-build" ]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
+# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
+echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
+aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
 echo $HOSTNAME
 install_helm_chart() {

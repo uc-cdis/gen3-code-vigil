@@ -17,9 +17,6 @@ from utils import logger
     reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
-@pytest.mark.skip(
-    reason="gen3 workflow is not supported yet. Refer - https://ctds-planx.atlassian.net/browse/MIDRC-1090"
-)
 class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
