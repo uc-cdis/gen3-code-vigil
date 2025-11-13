@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gen3-load-tests"
-version = "0.1.0"
+version = "0.2.0"
 description = "Gen3 Load Tests"
 authors = ["CTDS UChicago <cdis@uchicago.edu>"]
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.13"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
