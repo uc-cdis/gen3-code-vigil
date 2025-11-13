@@ -9,7 +9,6 @@ from gen3.auth import Gen3Auth
 from utils import logger
 
 
-@pytest.mark.env_sanity
 @pytest.mark.skipif(
     "chore/apply_monthly_release_" not in os.getenv("BRANCH"),
     reason="Current PR is not a release PR",
