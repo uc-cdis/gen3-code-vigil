@@ -223,19 +223,20 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Perform operations for global and other sections under values.yaml
     ############################################################################################################################
     keys=("global.dictionaryUrl"
-     "global.portalApp"
-     "global.netpolicy"
-     "global.frontendRoot"
-     "global.clusterName"
-     "global.crossplane.enabled"
-     "global.crossplane.providerConfigName"
-     "global.crossplane.oidcProviderUrl"
-     "global.crossplane.accountId"
-     "ssjdispatcher.indexing"
-     "metadata.useAggMds"
-     # "metadata.aggMdsNamespace"
-     # "metadata.aggMdsDefaultDataDictField"
-     )
+      "global.portalApp"
+      "global.netpolicy"
+      "global.environment"
+      "global.frontendRoot"
+      "global.clusterName"
+      "global.crossplane.enabled"
+      "global.crossplane.providerConfigName"
+      "global.crossplane.oidcProviderUrl"
+      "global.crossplane.accountId"
+      "ssjdispatcher.indexing"
+      "metadata.useAggMds"
+      # "metadata.aggMdsNamespace"
+      # "metadata.aggMdsDefaultDataDictField"
+    )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
         ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
