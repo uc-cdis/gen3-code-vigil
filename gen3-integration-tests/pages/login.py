@@ -1,6 +1,7 @@
 # Login Page
 import os
 import re
+import time
 
 import pytest
 from pages.user_register import UserRegister
@@ -229,8 +230,8 @@ class LoginPage(object):
         else:
             page.locator("a, p").get_by_text("Logout").click(timeout=60000)
             logger.info("Clicked on logout button")
-        nav_bar_login_button = page.get_by_role("link", name="Login")
-        # VPODC is having a pop up after clicking logout
+        nav_bar_login_button = page.locator("a, p").get_by_text("Login")
+        # commons-frontend-app may have a pop up after clicking logout
         self.handle_popup(page)
         if capture_screenshot:
             screenshot(page, "AfterLogout")

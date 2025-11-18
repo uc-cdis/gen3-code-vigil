@@ -8,6 +8,8 @@ from pages import home, login
     reason="Both portal and frontend-framework services are not running on this environment",
 )
 @pytest.mark.sanity
+@pytest.mark.portal
+@pytest.mark.frontend_framework
 class TestHomePage:
     def test_home_page_navigation(self, page):
         """
