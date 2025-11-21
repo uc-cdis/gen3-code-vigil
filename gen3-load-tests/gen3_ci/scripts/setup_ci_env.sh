@@ -30,25 +30,27 @@ mv "$master_values_yaml" "$manifest_values_yaml"
 # Update images for each service from $new_manifest_values_file_path
 ####################################################################################
 echo "###################################################################################"
-INTEGRATION_BRANCH="integration${RELEASE_VERSION/./}"
-echo "INTEGRATION BRANCH value : ${INTEGRATION_BRANCH}"
-keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
-for key in $keys_ci; do
-if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" ]]; then
-  service_enabled_value=$(yq eval ".${key}.enabled" $manifest_values_yaml)
-  image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
-  if ! grep -q $key $THOR_REPO_LIST_PATH; then
-      echo "Skipping image update for ${key} as service is not present in Thor repo_list.txt"
-  elif [ "$(echo -n $service_enabled_value)" = "false" ]; then
-      echo "Skipping image update for ${key} as service enabled is set to false"
-  elif [ ! -z "$image_tag_value" ]; then
-      echo "Updating ${key} service with ${image_tag_value}"
-      yq eval ".${key}.image.tag = \"$INTEGRATION_BRANCH\"" -i $manifest_values_yaml
+if [[ -n $RELEASE_VERSION ]]; then
+  INTEGRATION_BRANCH="integration${RELEASE_VERSION/./}"
+  echo "INTEGRATION BRANCH value : ${INTEGRATION_BRANCH}"
+  keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
+  for key in $keys_ci; do
+  if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" ]]; then
+    service_enabled_value=$(yq eval ".${key}.enabled" $manifest_values_yaml)
+    image_tag_value=$(yq eval ".${key}.image.tag" $manifest_values_yaml 2>/dev/null)
+    if ! grep -q $key $THOR_REPO_LIST_PATH; then
+        echo "Skipping image update for ${key} as service is not present in Thor repo_list.txt"
+    elif [ "$(echo -n $service_enabled_value)" = "false" ]; then
+        echo "Skipping image update for ${key} as service enabled is set to false"
+    elif [ ! -z "$image_tag_value" ]; then
+        echo "Updating ${key} service with ${image_tag_value}"
+        yq eval ".${key}.image.tag = \"$INTEGRATION_BRANCH\"" -i $manifest_values_yaml
+    fi
+  else
+    echo "Skipping image update for ${key}"
   fi
-else
-  echo "Skipping image update for ${key}"
+  done
 fi
-done
 
 # Generate Google Prefix by using commit sha so it is unqiue for each env.
 ENV_PREFIX=$NAMESPACE
