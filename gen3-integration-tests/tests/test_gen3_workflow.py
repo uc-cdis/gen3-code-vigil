@@ -486,7 +486,8 @@ class TestGen3Workflow(object):
             assert (
                 overlapped_filenames and len(overlapped_filenames) == 1
             ), f"Expected to find exactly one of '{expected['filenames']}' to be present in the S3 bucket for task '{task_name}', but found files {s3_file_list}"
-            expected_file = overlapped_filenames[0]
+            # Unpacking the single overlapped filename from the set
+            (expected_file,) = overlapped_filenames
 
             # Verify the expected file is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
