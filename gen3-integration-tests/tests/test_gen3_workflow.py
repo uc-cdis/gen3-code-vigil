@@ -536,10 +536,7 @@ class TestGen3Workflow(object):
                     raise
 
                 # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
-                re_match = re.search(
-                    r"(\d+)(?=\D*$)", expected_file
-                )  # last number before file extension(s)
-                file_num = re_match.group(1)
+                file_num = "1" if "1" in expected_file else "2"
 
                 expected_command_with_filename = expected["command"].replace(
                     "*", file_num
