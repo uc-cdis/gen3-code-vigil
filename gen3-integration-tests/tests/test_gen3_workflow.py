@@ -420,21 +420,16 @@ class TestGen3Workflow(object):
         Test Case: Verify that a Nextflow workflow can be executed successfully.
         """
         expected_task_outputs = {
-            "extract_metadata (1)": {
-                "filename": "dicom-metadata-img-1.dcm.csv",
-                "command": "python3 /utils/extract_metadata.py img-1.dcm",
+            "extract_metadata": {
+                "filenames": {
+                    "dicom-metadata-img-1.dcm.csv",
+                    "dicom-metadata-img-2.dcm.csv",
+                },
+                "command": "python3 /utils/extract_metadata.py img-*.dcm",
             },
-            "extract_metadata (2)": {
-                "filename": "dicom-metadata-img-2.dcm.csv",
-                "command": "python3 /utils/extract_metadata.py img-2.dcm",
-            },
-            "dicom_to_png (1)": {
-                "filename": "img-1.png",
-                "command": "python3 /utils/dicom_to_png.py img-1.dcm",
-            },
-            "dicom_to_png (2)": {
-                "filename": "img-2.png",
-                "command": "python3 /utils/dicom_to_png.py img-2.dcm",
+            "dicom_to_png": {
+                "filenames": {"img-1.png", "img-2.png"},
+                "command": "python3 /utils/dicom_to_png.py img-*.dcm",
             },
         }
         workflow_dir = "test_data/gen3_workflow/"
@@ -454,15 +449,16 @@ class TestGen3Workflow(object):
         for task in completed_tasks:
 
             task_name = task["process_name"]
+            task_category = task["process_name"].split(" ")[0]
             assert (
-                task_name in expected_task_outputs
+                task_category in expected_task_outputs
             ), f"Unexpected task name: {task_name}. Expected one of {list(expected_task_outputs.keys())}"
 
             assert task["workDir"].startswith(
                 f"{self.s3_storage_config.bucket_name}/"
             ), f"[{task_name}] Expected workDir to begin with bucket name -- {self.s3_storage_config.bucket_name}, but got {task['workDir']}"
 
-            expected = expected_task_outputs[task_name]
+            expected = expected_task_outputs[task_category]
 
             assert (
                 task["status"] == "COMPLETED"
@@ -486,20 +482,22 @@ class TestGen3Workflow(object):
 
             filenames_in_s3 = {file["Key"].split("/")[-1] for file in s3_file_list}
 
+            overlapped_filenames = expected["filenames"] & filenames_in_s3
             assert (
-                expected["filename"] in filenames_in_s3
-            ), f"Expected to find '{expected['filename']}' in the S3 bucket for task '{task_name}', but found files {s3_file_list}"
+                overlapped_filenames and len(overlapped_filenames) == 1
+            ), f"Expected to find exactly one of '{expected['filenames']}' to be present in the S3 bucket for task '{task_name}', but found files {s3_file_list}"
+            expected_file = overlapped_filenames[0]
 
             # Verify the expected file is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{task['workDir']}/{expected['filename']}",
+                object_path=f"{task['workDir']}/{expected_file}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
 
             assert (
                 response["ContentLength"] > 0
-            ), f"Expected to have some data in {expected['filename']}. But found empty file instead. Response :{response}"
+            ), f"Expected to have some data in {expected_file}. But found empty file instead. Response :{response}"
 
             test_files = [
                 "/.command.sh",
@@ -536,11 +534,21 @@ class TestGen3Workflow(object):
                     )
                     raise
 
+                # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
+                re_match = re.search(
+                    r"(\d+)(?=\D*$)", expected_file
+                )  # last number before file extension(s)
+                file_num = re_match.group(1)
+
+                expected_command_with_filename = expected["command"].replace(
+                    "*", file_num
+                )
+
                 if test_file_name == "/.command.sh":
                     # TODO: Replace `expected["command"] in file_contents` with `expected["command"] == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert expected["command"] in file_contents, {
+                    assert expected_command_with_filename in file_contents, {
                         f"[{task_name}] .command.sh file does not contain the expected command.\n"
-                        f"Expected to find: {expected['command']}\n"
+                        f"Expected to find: {expected_command_with_filename}\n"
                         f"Actual content: {file_contents}"
                     }
                 elif test_file_name == "/.exitcode":
