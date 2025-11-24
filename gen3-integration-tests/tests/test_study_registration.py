@@ -85,7 +85,7 @@ class TestStudyRegistration(object):
         discovery_page = DiscoveryPage()
         study_register = StudyRegistrationPage()
         # Get UID field name from portal config
-        portal_config = gat.get_portal_config()
+        portal_config = gat.get_portal_config(json_file_name="discovery")
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
             .get("minimalFieldMapping", {})

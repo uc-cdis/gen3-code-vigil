@@ -118,7 +118,7 @@ class LoginPage(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:
-            res = get_portal_config()
+            res = get_portal_config(json_file_name="navigation")
             # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
             if (
                 res.get("components", {})
@@ -219,7 +219,7 @@ class LoginPage(object):
 
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
-        res = get_portal_config()
+        res = get_portal_config(json_file_name="navigation")
         self.handle_popup(page)
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):

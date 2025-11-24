@@ -1,10 +1,12 @@
 import json
 import os
 import random
+import shutil
 import string
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 import pytest
 import requests
@@ -16,14 +18,26 @@ load_dotenv()
 
 
 @retry(times=5, delay=60, exceptions=(AssertionError))
-def get_portal_config():
+def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
     deployed_services = get_list_of_services_deployed()
-    if "portal" not in deployed_services:
-        return {}
-    res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
-    assert res.status_code == 200, f"Expected 200 but got {res.status_code}"
-    return res.json()
+    if pytest.frontend_url:
+        json_path = (
+            Path(__file__).parent.parent
+            / pytest.frontend_commons_name
+            / "config"
+            / "gen3"
+            / f"{json_file_name}.json"
+        )
+        with json_path.open("r", encoding="utf-8") as f:
+            res = json.load(f)
+    else:
+        if "portal" not in deployed_services:
+            return {}
+        res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
+        assert res.status_code == 200, f"Expected 200 but got {res.status_code}"
+        res = res.json()
+    return res
 
 
 def check_button_is_present(data, search_button):
@@ -1066,3 +1080,50 @@ def is_frontend_url():
         logger.info("Current environment is based on frontend-framework url")
         return True
     return False
+
+
+def get_ff_commons_info():
+    logger.info("Downloading commons-frontend-app repo")
+    cmd = [
+        "kubectl",
+        "get",
+        "deployment",
+        "frontend-framework-deployment",
+        "-o",
+        "jsonpath='{.spec.template.spec.containers[*].image}'",
+        "-n",
+        pytest.namespace,
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        repo_name = result.stdout.strip().split("/")[-1].split(":")[0]
+        branch_name = (
+            result.stdout.strip()
+            .split("/")[-1]
+            .split(":")[-1]
+            .replace("_", "/", 1)
+            .strip()
+            .replace("'", "")
+        )
+        target_dir = "ci-data-commons"
+        return repo_name, branch_name, target_dir
+    else:
+        raise Exception("Unable to get frontend-framework image name")
+
+
+def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
+    shutil.rmtree(target_dir, ignore_errors=True)
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--branch",
+            branch_name,
+            "--depth",
+            "1",
+            f"https://github.com/uc-cdis/{repo_name}.git",
+            target_dir,
+        ]
+    )

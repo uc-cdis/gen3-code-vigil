@@ -18,7 +18,10 @@ class TestLoginPage:
     @classmethod
     def setup_class(cls):
         cls.login_page = LoginPage()
-        cls.WORKSPACE_URL = f"{pytest.root_url_portal}/workspace"
+        if pytest.frontend_url:
+            cls.WORKSPACE_URL = f"{pytest.root_url_portal}/Workspace"
+        else:
+            cls.WORKSPACE_URL = f"{pytest.root_url_portal}/workspace"
         cls.QUERY_PARAM_URL = (
             f"{pytest.root_url_portal}/DEV-test/search?node_type=summary_clinical"
         )
@@ -35,18 +38,19 @@ class TestLoginPage:
         self.login_page.go_to(page=page, url=self.WORKSPACE_URL)
 
         # Should be redirected to login page
-        expect(page.locator(self.login_page.LOGIN_BUTTON_LIST)).to_be_visible(
-            timeout=10000
+        screenshot(page, "RedirectPage")
+        page.get_by_text(self.login_page.GEN3_ORCID_LOGIN_BUTTON).wait_for(
+            state="visible", timeout=10000
         )
         screenshot(page, "RedirectPage")
-        current_url = page.url
+        current_url = page.url.lower()
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
         # Perform user login
         self.login_page.login(page)
 
         # Validate the user is redirected to workspace page after logging in
-        current_url = page.url
+        current_url = page.url.lower()
         assert (
             "/workspace" in current_url
         ), f"Expected /workspace in url but got {current_url}"
@@ -67,7 +71,10 @@ class TestLoginPage:
         self.login_page.go_to(page=page, url=self.QUERY_PARAM_URL)
 
         # Should be redirected to login page
-        expect(page.locator(self.login_page.LOGIN_BUTTON_LIST)).to_be_visible()
+        screenshot(page, "RedirectPage")
+        page.get_by_text(self.login_page.GEN3_ORCID_LOGIN_BUTTON).wait_for(
+            state="visible", timeout=10000
+        )
         screenshot(page, "RedirectPage")
         current_url = page.url
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"

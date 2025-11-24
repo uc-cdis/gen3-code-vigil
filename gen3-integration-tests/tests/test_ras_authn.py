@@ -21,7 +21,9 @@ from utils import gen3_admin_tasks as gat
     reason="frontend_root is set to gen3ff",
 )
 @pytest.mark.skipif(
-    gat.get_portal_config().get("components", {}).get("appName", "")
+    gat.get_portal_config(json_file_name="navigation")
+    .get("components", {})
+    .get("appName", "")
     == "VA Data Commons",
     reason="Skipping RAS Auth N tests for VA env",
 )

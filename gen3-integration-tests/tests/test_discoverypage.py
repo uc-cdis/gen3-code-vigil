@@ -12,6 +12,8 @@ from utils import gen3_admin_tasks as gat
 from utils import logger
 from utils.test_execution import screenshot
 
+portal_config = gat.get_portal_config(json_file_name="discovery")
+
 
 @pytest.fixture()
 def page_setup(page):
@@ -36,13 +38,13 @@ def page_setup(page):
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
 @pytest.mark.skipif(
-    "discoveryConfig" not in gat.get_portal_config().keys(),
-    reason="discoveryConfig in not in portal config",
+    "discoveryConfig" not in portal_config and "metadataConfig" not in portal_config,
+    reason="Neither discoveryConfig nor metadataConfig found in portal config",
 )
-@pytest.mark.skipif(
-    "batch-export" not in pytest.enabled_sower_jobs,
-    reason="batch-export is not part of sower in manifest",
-)
+# @pytest.mark.skipif(
+#     "batch-export" not in pytest.enabled_sower_jobs,
+#     reason="batch-export is not part of sower in manifest",
+# )
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
@@ -84,16 +86,17 @@ class TestDiscoveryPage(object):
             8. Terminate workspace
         """
         # Get uid field and study preview field from portal config
-        portal_config = gat.get_portal_config()
-        uid_field_name = (
-            portal_config.get("discoveryConfig", {})
-            .get("minimalFieldMapping", {})
-            .get("uid", None)
+        if "metadataConfig" in portal_config:
+            metadata = portal_config.get("metadataConfig")
+            if isinstance(metadata, list) and metadata:
+                discovery_config = metadata[0]
+        else:
+            discovery_config = portal_config.get("discoverConfig", {})
+        uid_field_name = discovery_config.get("minimalFieldMapping", {}).get(
+            "uid", None
         )
-        study_preview_field = (
-            portal_config.get("discoveryConfig", {})
-            .get("studyPreviewField", {})
-            .get("field", None)
+        study_preview_field = discovery_config.get("studyPreviewField", {}).get(
+            "field", None
         )
         assert uid_field_name is not None
         assert study_preview_field is not None

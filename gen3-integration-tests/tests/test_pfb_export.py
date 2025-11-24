@@ -16,7 +16,8 @@ from utils import logger
 
 @pytest.mark.skipif(
     not gat.validate_button_in_portal_config(
-        data=gat.get_portal_config(), search_button="export-to-pfb"
+        data=gat.get_portal_config(json_file_name="explorer"),
+        search_button="export-to-pfb",
     ),
     reason="Export to PFB button not present in gitops.json",
 )
@@ -43,7 +44,8 @@ class TestPFBExport(object):
         )
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
         if gat.validate_button_in_portal_config(
-            gat.get_portal_config(), search_button="export-to-pfb"
+            gat.get_portal_config(json_file_name="explorer"),
+            search_button="export-to-pfb",
         ):
             if (
                 os.getenv("REPO") == "cdis-manifest"
@@ -62,7 +64,8 @@ class TestPFBExport(object):
     def teardown_class(cls):
         cls.sd_tools.delete_all_records()
         if gat.validate_button_in_portal_config(
-            gat.get_portal_config(), search_button="export-to-pfb"
+            gat.get_portal_config(json_file_name="explorer"),
+            search_button="export-to-pfb",
         ):
             if (
                 os.getenv("REPO") == "cdis-manifest"

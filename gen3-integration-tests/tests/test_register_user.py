@@ -58,7 +58,7 @@ class TestRegisterUser:
 
         # Verify page got redirected to /login page
         page.wait_for_load_state("load")
-        current_url = page.url
+        current_url = page.url.lower()
         screenshot(page, "AfterLoginToDownloadRedirect")
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 
