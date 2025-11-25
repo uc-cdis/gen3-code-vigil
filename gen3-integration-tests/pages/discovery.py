@@ -4,14 +4,20 @@ import os
 import pytest
 from playwright.sync_api import Page
 from utils import logger
+from utils.test_execution import screenshot
 
 
 class DiscoveryPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/discovery"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Discovery"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/discovery"
 
         # LOCATORS
-        self.READY_CUE = "css=.discovery-search"
+        self.READY_CUE = self.READY_CUE = (
+            '.discovery-search, [data-testid="discovery-textbox-search-bar"]'
+        )
         self.NEXT_PAGE_BUTTON = "css=.ant-pagination-next:has-text('Next Page')"
         self.SEARCH_BAR = '//input[contains(@placeholder, "Search studies by keyword")]'
         self.OPEN_IN_WORKSPACE_BUTTON = (
@@ -29,7 +35,8 @@ class DiscoveryPage(object):
 
     def go_to(self, page: Page):
         page.goto(self.BASE_URL)
-        page.wait_for_selector(self.READY_CUE, state="visible")
+        screenshot(page, "DiscoveryPage")
+        page.wait_for_selector(self.READY_CUE, state="visible", timeout=30000)
 
     def search_tag(self, page: Page, tag_name: str) -> None:
         page.click(self._tag_locator(tag_name))

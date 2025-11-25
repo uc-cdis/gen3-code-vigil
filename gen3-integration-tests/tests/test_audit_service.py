@@ -81,6 +81,7 @@ class TestAuditService:
         )
 
     @pytest.mark.portal
+    @pytest.mark.frontend_framework
     def test_audit_homepage_mock_login_events(self, page: Page):
         """
         Scenario: Homepage login events

@@ -16,8 +16,12 @@ class ExplorationPage(object):
     def __init__(self):
         # Endpoints
         self.BASE_URL = f"{pytest.root_url_portal}"
-        self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
-        self.FILE_URL = f"{self.BASE_URL}/files"
+        if pytest.frontend_url:
+            self.EXPLORATION_URL = f"{self.BASE_URL}/Explorer"
+            self.FILE_URL = f"{self.BASE_URL}/Files"
+        else:
+            self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
+            self.FILE_URL = f"{self.BASE_URL}/files"
         # Locators
         self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
         self.GUPPY_TABS = "//div[@id='guppy-explorer-main-tabs']"

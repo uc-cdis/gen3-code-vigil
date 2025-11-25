@@ -43,6 +43,7 @@ class TestDicomViewer(object):
 
     # TODO: Enable this test once orthanc changes are deployed on midrc prod
     # @pytest.mark.skip(reason="Temporarily Disabled")
+    @pytest.mark.portal
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file

@@ -86,12 +86,10 @@ class TestDiscoveryPage(object):
             8. Terminate workspace
         """
         # Get uid field and study preview field from portal config
-        if "metadataConfig" in portal_config:
-            metadata = portal_config.get("metadataConfig")
-            if isinstance(metadata, list) and metadata:
-                discovery_config = metadata[0]
-        else:
+        if "discoverConfig" in portal_config:
             discovery_config = portal_config.get("discoverConfig", {})
+        else:
+            discovery_config = portal_config
         uid_field_name = discovery_config.get("minimalFieldMapping", {}).get(
             "uid", None
         )
