@@ -112,12 +112,12 @@ jobs:
               commit_time=$(gh api repos/$REPO_FN/commits/$COMMIT_SHA | jq -r '.commit.committer.date')
               echo "COMMIT_TIME=$commit_time" >> $GITHUB_ENV
 
-          # gen3-integration-tests run with python 3.9
+          # gen3-load-tests run with python 3.13
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: actions/setup-python@v5
             with:
-              python-version: '3.9'
+              python-version: '3.13'
 
           - name: Set up Go
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -200,7 +200,13 @@ jobs:
               HOSTNAME=perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              kubectl create namespace $NAMESPACE || true
+              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              if [ -n "$namespace_exists" ]; then
+                echo "Namespace $NAMESPACE exists, performing teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE || true
+                kubectl delete ns $NAMESPACE
+              fi
+              kubectl create namespace $NAMESPACE
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
