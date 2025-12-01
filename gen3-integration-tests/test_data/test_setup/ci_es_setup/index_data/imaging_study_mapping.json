@@ -21,6 +21,9 @@
             "_mr_series_file_count":{
                 "type":"float"
             },
+            "_radiology_report_count":{
+                "type":"float"
+            },
             "age_at_imaging":{
                 "type":"float"
             },

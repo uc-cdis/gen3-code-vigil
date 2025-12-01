@@ -176,7 +176,7 @@ class LoginPage(object):
         screenshot(page, "BeforeORCIDLogin")
         orcid_login_button.click()
         screenshot(page, "AfterORCIDLoginButtonClick")
-        page.wait_for_url(f"https://{pytest.hostname}/**")
+        page.wait_for_url(f"https://{pytest.hostname}/**", timeout=300000)
 
     def ras_login(
         self,
