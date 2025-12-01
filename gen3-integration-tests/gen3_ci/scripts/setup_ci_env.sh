@@ -223,14 +223,16 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Perform operations for global and other sections under values.yaml
     ############################################################################################################################
     keys=("global.dictionaryUrl"
-     "global.portalApp"
-     "global.netpolicy"
-     "global.frontendRoot"
-     "ssjdispatcher.indexing"
-     "metadata.useAggMds"
-     # "metadata.aggMdsNamespace"
-     # "metadata.aggMdsDefaultDataDictField"
-     )
+      "global.portalApp"
+      "global.netpolicy"
+      "global.environment"
+      "global.frontendRoot"
+      "global.clusterName"
+      "ssjdispatcher.indexing"
+      "metadata.useAggMds"
+      # "metadata.aggMdsNamespace"
+      # "metadata.aggMdsDefaultDataDictField"
+    )
     echo "###################################################################################"
     for key in "${keys[@]}"; do
         ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
@@ -386,6 +388,10 @@ common_param_updates=(
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
+  ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
+  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|gen3-${namespace}-workflow-pods"
+  ".gen3-workflow.funnel.Plugins.Params.S3Url|gen3-workflow-service.${namespace}.svc.cluster.local"
+  ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl|https://${HOSTNAME}/user"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -436,6 +442,9 @@ if [ "$namespace" == "nightly-build" ]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
+# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
+echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
+aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
 echo $HOSTNAME
 install_helm_chart() {
