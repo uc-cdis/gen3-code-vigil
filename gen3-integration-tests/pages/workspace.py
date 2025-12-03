@@ -10,18 +10,19 @@ class WorkspacePage(object):
         # Endpoints
         if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Workspace"
-            self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
+            self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
+            self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), ' mantine-Grid-inner ')]"  # Workspace Options
+            self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')]"
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/workspace"
             self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
+            self.WORKSPACE_OPTIONS = (
+                "//div[@class='workspace__options']"  # Workspace Options
+            )
+            self.LAUNCH_FIRST_WORKSPACE = (
+                "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
+            )
         # Locators
-
-        self.WORKSPACE_OPTIONS = (
-            "//div[@class='workspace__options']"  # Workspace Options
-        )
-        self.LAUNCH_FIRST_WORKSPACE = (
-            "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
-        )
         self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
         self.NEW_NB = (
