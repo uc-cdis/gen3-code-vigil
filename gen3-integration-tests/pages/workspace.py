@@ -13,6 +13,12 @@ class WorkspacePage(object):
             self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
             self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), ' mantine-Grid-inner ')]"  # Workspace Options
             self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')]"
+            self.TERMINATE_BUTTON = (
+                "//span[contains(text(),'Stop Workspace')]"  # terminate nb button
+            )
+            self.YES_BUTTON = (
+                "//span[contains(text(),'Confirm')]"  # terminate 'confirm' button
+            )
         else:
             self.BASE_URL = f"{pytest.root_url_portal}/workspace"
             self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
@@ -22,6 +28,8 @@ class WorkspacePage(object):
             self.LAUNCH_FIRST_WORKSPACE = (
                 "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
             )
+            self.TERMINATE_BUTTON = "//button[contains(text(),'Terminate Workspace')]"  # terminate nb button
+            self.YES_BUTTON = "//span[contains(text(),'Yes')]"  # terminate 'yes' button
         # Locators
         self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
@@ -38,10 +46,6 @@ class WorkspacePage(object):
             "//button[@aria-label='Run']"  # Notebook button to run cell and select next
         )
         self.NB_CELL_OUTPUT = "//div[@class='output_subarea output_text output_stream output_stdout']//pre"  # output after run command
-        self.TERMINATE_BUTTON = (
-            "//button[contains(text(),'Terminate Workspace')]"  # terminate nb button
-        )
-        self.YES_BUTTON = "//span[contains(text(),'Yes')]"  # terminate 'yes' button
 
     def go_to(self, page: Page):
         """Goes to workspace page and checks if loaded correctly"""
