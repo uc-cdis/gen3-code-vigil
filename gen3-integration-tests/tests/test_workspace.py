@@ -33,6 +33,7 @@ def page_setup(page):
 )
 @pytest.mark.workspace
 @pytest.mark.portal
+@pytest.mark.frontend_framework
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page_setup):
         """

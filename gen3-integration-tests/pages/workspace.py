@@ -11,7 +11,7 @@ class WorkspacePage(object):
         if pytest.frontend_url:
             self.BASE_URL = f"{pytest.root_url_portal}/Workspace"
             self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
-            self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), ' mantine-Grid-inner ')]"  # Workspace Options
+            self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), 'mantine-Grid-inner')]"  # Workspace Options
             self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')]"
             self.TERMINATE_BUTTON = (
                 "//span[contains(text(),'Stop Workspace')]"  # terminate nb button
@@ -116,4 +116,5 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
+        screenshot(page, "WorkspaceTerminationStarted")
         page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=1200000)
