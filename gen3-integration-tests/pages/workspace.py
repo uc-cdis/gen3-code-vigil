@@ -116,5 +116,6 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
-        screenshot(page, "WorkspaceTerminationStarted")
+        if pytest.frontend_url:
+            self.go_to()
         page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=1200000)

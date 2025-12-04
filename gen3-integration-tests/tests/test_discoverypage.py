@@ -62,15 +62,15 @@ class TestDiscoveryPage(object):
             "694b1d13b8148756442739fa2cc37fd6"  # pragma: allowlist secret
         )
 
-    # @classmethod
-    # def teardown_class(cls):
-    #     logger.info(
-    #         "Tearing down - delete indexd record and study metadata, and terminate workspace"
-    #     )
-    #     indexd = Indexd()
-    #     mds = MetadataService()
-    #     indexd.delete_records([cls.variables["did"]])
-    #     mds.delete_metadata(cls.variables["study_id"])
+    @classmethod
+    def teardown_class(cls):
+        logger.info(
+            "Tearing down - delete indexd record and study metadata, and terminate workspace"
+        )
+        indexd = Indexd()
+        mds = MetadataService()
+        indexd.delete_records([cls.variables["did"]])
+        mds.delete_metadata(cls.variables["study_id"])
 
     def test_study_publish_search_export(self, page_setup):
         """
@@ -151,44 +151,48 @@ class TestDiscoveryPage(object):
         screenshot(page_setup, "DiscoveryPage")
 
         # Tag search
-        # discovery_page.search_tag(page_setup, "AUTOTEST Tag")
-        screenshot(page_setup, "TagSearch")
-        # assert discovery_page.study_found(page_setup, self.variables["study_id"])
-        screenshot(page_setup, "StudyFound")
+        # TODO: Tag columns are not yet added to frontend framework
+        if not pytest.frontend_url:
+            discovery_page.search_tag(page_setup, "AUTOTEST Tag")
+            screenshot(page_setup, "TagSearch")
+            assert discovery_page.study_found(page_setup, "AUTOTEST Tag")
+            screenshot(page_setup, "StudyFound")
 
         # Text search by study title
         discovery_page.go_to(page_setup)
         discovery_page.search_text(page_setup, "[AUTOTEST Title]")
         screenshot(page_setup, "TextSearchTitle")
-        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        assert discovery_page.study_found(page_setup, "[AUTOTEST Title]")
         screenshot(page_setup, "StudyFound")
 
         # Text search by study summary
         discovery_page.go_to(page_setup)
         discovery_page.search_text(page_setup, "[AUTOTEST Summary]")
         screenshot(page_setup, "TextSearchSummary")
-        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        assert discovery_page.study_found(page_setup, "[AUTOTEST Summary]")
         screenshot(page_setup, "StudyFound")
 
-        # Open study in workspace
-        discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
-        workspace_page = WorkspacePage()
-        workspace_page.assert_page_loaded(page_setup)
-        workspace_page.launch_workspace(
-            page_setup, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
-        )
-        screenshot(page_setup, "WorkspaceLaunched")
+        # TODO: Login to Open In Workspace is not yet added to frontend framework
+        if not pytest.frontend_url:
+            # Open study in workspace
+            discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
+            workspace_page = WorkspacePage()
+            workspace_page.assert_page_loaded(page_setup)
+            workspace_page.launch_workspace(
+                page_setup, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
+            )
+            screenshot(page_setup, "WorkspaceLaunched")
 
-        # Open Python notebook and run gen3 commands
-        workspace_page.open_python_notebook(page_setup)
-        command = "!pip install -U gen3==4.24.1"  # TODO: Fix the workspace image in jenkins envs, use jupyterlab
-        logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page_setup, command)
-        command = f"!gen3 drs-pull object {self.variables['did']}"
-        logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page_setup, command)
-        logger.info(f"Result: {result}")
+            # Open Python notebook and run gen3 commands
+            workspace_page.open_python_notebook(page_setup)
+            command = "!pip install -U gen3==4.24.1"  # TODO: Fix the workspace image in jenkins envs, use jupyterlab
+            logger.info(f"Running in jupyter notebook: {command}")
+            result = workspace_page.run_command_in_notebook(page_setup, command)
+            command = f"!gen3 drs-pull object {self.variables['did']}"
+            logger.info(f"Running in jupyter notebook: {command}")
+            result = workspace_page.run_command_in_notebook(page_setup, command)
+            logger.info(f"Result: {result}")
 
-        # Terminate workspace
-        workspace_page.terminate_workspace(page_setup)
-        screenshot(page_setup, "WorkspaceTerminated")
+            # Terminate workspace
+            workspace_page.terminate_workspace(page_setup)
+            screenshot(page_setup, "WorkspaceTerminated")

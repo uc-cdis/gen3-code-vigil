@@ -27,10 +27,8 @@ class DiscoveryPage(object):
     def _tag_locator(self, tag_name: str) -> str:
         return f"css=span:is(:text('{tag_name}'))"
 
-    def _study_locator(self, study_id: str) -> str:
-        return (
-            f"//tr[@data-row-key='{study_id}'] | //span[contains(text(), '{study_id}')]"
-        )
+    def _study_locator(self, text: str) -> str:
+        return f"(//*[contains(text(), '{text}') and not(self::input)])"
 
     def _study_selector_locator(self, study_id: str) -> str:
         return f"css=tr[data-row-key='{study_id}'] >> span >> input[type='checkbox']"
@@ -47,11 +45,12 @@ class DiscoveryPage(object):
         page.click(self.SEARCH_BAR)
         page.keyboard.type(text, delay=100)
 
-    def study_found(self, page: Page, study_id: str) -> bool:
-        study_row = page.locator(self._study_locator(study_id))
-        logger.info(study_row)
+    def study_found(self, page: Page, text: str) -> bool:
+        study_row = page.locator(self._study_locator(text))
         try:
             study_row.wait_for()
+            count = study_row.count()
+            assert count == 1, f"Expected 1 count for {text}, but got {count}"
             return True
         except Exception:
             return False
