@@ -15,11 +15,11 @@ class DiscoveryPage(object):
             self.BASE_URL = f"{pytest.root_url_portal}/discovery"
 
         # LOCATORS
-        self.READY_CUE = self.READY_CUE = (
+        self.READY_CUE = (
             '.discovery-search, [data-testid="discovery-textbox-search-bar"]'
         )
         self.NEXT_PAGE_BUTTON = "css=.ant-pagination-next:has-text('Next Page')"
-        self.SEARCH_BAR = '//input[contains(@placeholder, "Search studies by keyword")]'
+        self.SEARCH_BAR = '//input[contains(@placeholder, "Search")]'
         self.OPEN_IN_WORKSPACE_BUTTON = (
             "css=button:has(span:is(:text('Open In Workspace')))"
         )
@@ -28,7 +28,9 @@ class DiscoveryPage(object):
         return f"css=span:is(:text('{tag_name}'))"
 
     def _study_locator(self, study_id: str) -> str:
-        return f"css=tr[data-row-key='{study_id}']"
+        return (
+            f"//tr[@data-row-key='{study_id}'] | //span[contains(text(), '{study_id}')]"
+        )
 
     def _study_selector_locator(self, study_id: str) -> str:
         return f"css=tr[data-row-key='{study_id}'] >> span >> input[type='checkbox']"
@@ -47,6 +49,7 @@ class DiscoveryPage(object):
 
     def study_found(self, page: Page, study_id: str) -> bool:
         study_row = page.locator(self._study_locator(study_id))
+        logger.info(study_row)
         try:
             study_row.wait_for()
             return True
