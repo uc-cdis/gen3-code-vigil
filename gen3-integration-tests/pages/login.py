@@ -156,6 +156,9 @@ class LoginPage(object):
         # Click on 'ORCID Login' on Gen3 Login Page
         button = page.get_by_text(self.GEN3_ORCID_LOGIN_BUTTON, exact=False)
         button.click()
+        # Perform ORCID Login
+        orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
+        expect(orcid_login_button).to_be_visible(timeout=5000)
         page.locator(self.ORCID_USERNAME_INPUT).fill(os.environ["CI_TEST_ORCID_USERID"])
         page.locator(self.ORCID_PASSWORD_INPUT).fill(
             os.environ["CI_TEST_ORCID_PASSWORD"]
