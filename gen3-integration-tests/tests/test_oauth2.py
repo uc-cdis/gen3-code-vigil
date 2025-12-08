@@ -377,6 +377,7 @@ class TestOauth2:
             client_id=self.basic_test_client_id,
             response_type="code",
             scopes="openid+user",
+            logged_in_user=pytest.users["main_account"],
         )
         code = url.split("code=")[-1]
         res = self.fence.get_token_with_auth_code(
