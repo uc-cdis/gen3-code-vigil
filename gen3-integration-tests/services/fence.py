@@ -1,5 +1,6 @@
 import base64
 import json
+import time
 
 import pytest
 import requests
@@ -189,6 +190,8 @@ class Fence(object):
                 page.locator(self.CONSENT_CANCEL_BUTTON).click()
             else:
                 page.locator(self.CONSENT_AUTHORIZE_BUTTON).click()
+            time.sleep(10)
+            screenshot(page, "GetConsentCode")
             page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
         else:
             text_from_page = page.locator(self.CONSENT_CODE_ERROR_TEXT).text_content()
