@@ -1,6 +1,5 @@
 import base64
 import json
-import time
 
 import pytest
 import requests
@@ -157,7 +156,11 @@ class Fence(object):
         login_page.login(page, user=user)
 
         url = self.get_consent_code(
-            page=page, client_id=client_id, response_type="code", scopes=scopes
+            page=page,
+            client_id=client_id,
+            response_type="code",
+            scopes=scopes,
+            logged_in_user=pytest.users[user],
         )
         assert "code=" in url, f"{url} is missing code= substring"
         code = url.split("code=")[-1]
@@ -175,6 +178,7 @@ class Fence(object):
         consent="ok",
         expect_code=True,
         client_email_id="basictestclient@example.org",
+        logged_in_user="test@example.com",
     ):
         """Gets the consent code"""
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
@@ -190,9 +194,8 @@ class Fence(object):
                 page.locator(self.CONSENT_CANCEL_BUTTON).click()
             else:
                 page.locator(self.CONSENT_AUTHORIZE_BUTTON).click()
-            time.sleep(10)
-            screenshot(page, "GetConsentCode")
-            page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
+            login_page = LoginPage()
+            login_page.validate_username(page, logged_in_user)
         else:
             text_from_page = page.locator(self.CONSENT_CODE_ERROR_TEXT).text_content()
             assert text_from_page in [
@@ -236,6 +239,7 @@ class Fence(object):
         consent="yes",
         expect_token=True,
         client_email_id="implicittestclient@example.org",
+        logged_in_user="test@example.com",
     ):
         """Gets the token from the UI"""
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri=https://{pytest.hostname}&scope={scopes}&nonce=n-0S6_WzA2Mj"
@@ -252,7 +256,8 @@ class Fence(object):
                     page.locator(self.CONSENT_CANCEL_BUTTON).click()
                 else:
                     page.locator(self.CONSENT_AUTHORIZE_BUTTON).click()
-                page.wait_for_selector(self.USERNAME_LOCATOR, state="attached")
+                login_page = LoginPage()
+                login_page.validate_username(page, logged_in_user)
         else:
             text_from_page = page.locator(self.CONSENT_CODE_ERROR_TEXT).text_content()
             assert (

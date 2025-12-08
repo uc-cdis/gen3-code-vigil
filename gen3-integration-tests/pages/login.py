@@ -118,28 +118,8 @@ class LoginPage(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:
-            res = get_portal_config(json_file_name="navigation")
-            # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
-            if (
-                res.get("components", {})
-                .get("topBar", {})
-                .get("useProfileDropdown", "")
-            ):
-                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
-                accept_button_count = accept_button.count()
-                if accept_button_count > 0:
-                    logger.info("Clicking on Accept button")
-                    screenshot(page, "ClickingOnAcceptButton")
-                    accept_button.click()
-                page.locator(self.USER_PROFILE_DROPDOWN).click()
-                username = page.locator("//div[@class='ant-popover-title']").filter(
-                    has_text=re.compile(logged_in_user, re.IGNORECASE)
-                )
-            else:
-                username = page.locator("a, p").get_by_text(logged_in_user)
-            expect(username).to_be_visible(timeout=120000)
+            self.validate_username(page, logged_in_user)
         screenshot(page, "AfterLogin")
-
         self.handle_popup(page)
         access_token_cookie = next(
             (
@@ -153,6 +133,24 @@ class LoginPage(object):
             access_token_cookie is not None
         ), "Access token cookie not found after login"
         return access_token_cookie
+
+    def validate_username(self, page, logged_in_user):
+        res = get_portal_config(json_file_name="navigation")
+        # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
+        if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
+            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
+            accept_button_count = accept_button.count()
+            if accept_button_count > 0:
+                logger.info("Clicking on Accept button")
+                screenshot(page, "ClickingOnAcceptButton")
+                accept_button.click()
+            page.locator(self.USER_PROFILE_DROPDOWN).click()
+            username = page.locator("//div[@class='ant-popover-title']").filter(
+                has_text=re.compile(logged_in_user, re.IGNORECASE)
+            )
+        else:
+            username = page.locator("a, p").get_by_text(logged_in_user)
+        expect(username).to_be_visible(timeout=120000)
 
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
