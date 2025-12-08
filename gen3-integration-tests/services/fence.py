@@ -32,7 +32,6 @@ class Fence(object):
         # Locators
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
-        self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"
         self.CONSENT_CODE_ERROR_TEXT = "//div[@class='error-page__status-code-text']/h2"
 
     @retry(
