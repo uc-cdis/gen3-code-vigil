@@ -23,8 +23,8 @@ class LoginPage(object):
             "Google",
             "BioData Catalyst Developer Login",
         ]
-        self.GEN3_RAS_LOGIN_BUTTON = re.compile("Login from RAS", re.IGNORECASE)
-        self.GEN3_ORCID_LOGIN_BUTTON = re.compile("ORCID Login", re.IGNORECASE)
+        self.GEN3_RAS_LOGIN_BUTTON = "Login from RAS"
+        self.GEN3_ORCID_LOGIN_BUTTON = "ORCID Login"
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
@@ -154,7 +154,8 @@ class LoginPage(object):
 
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
-        page.locator(self.GEN3_ORCID_LOGIN_BUTTON).click()
+        button = page.get_by_text(self.GEN3_ORCID_LOGIN_BUTTON, exact=False)
+        button.click()
         # Perform ORCID Login
         orcid_login_button = page.locator(self.GEN3_ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -189,7 +190,8 @@ class LoginPage(object):
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
-            page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()
+            button = page.get_by_text(self.GEN3_RAS_LOGIN_BUTTON, exact=False)
+            button.click()
             # Perform RAS Login
             self.ras_login_form(page, username, password)
             screenshot(page, "RASAfterClickingGrantButton")
