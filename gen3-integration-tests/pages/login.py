@@ -189,7 +189,7 @@ class LoginPage(object):
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
-            page.locator(self.RAS_LOGIN_BUTTON).click()
+            page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()
             # Perform RAS Login
             self.ras_login_form(page, username, password)
             screenshot(page, "RASAfterClickingGrantButton")
