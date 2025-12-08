@@ -18,6 +18,7 @@ jobs:
       WORKING_DIR: gen3-integration-tests
       IS_NIGHTLY_RUN: "true"
       TEST_LABELS: ${{ inputs.TEST_LABELS }}
+      TEST_REPO_BRANCH: chore/setup_ff_nightly_build
     secrets:
       CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
       CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
