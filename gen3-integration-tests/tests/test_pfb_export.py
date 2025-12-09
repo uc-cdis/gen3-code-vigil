@@ -21,10 +21,10 @@ from utils import logger
     ),
     reason="Export to PFB button not present in gitops.json",
 )
-# @pytest.mark.skipif(
-#     "pelican-export" not in pytest.enabled_sower_jobs,
-#     reason="pelican-export is not part of sower in manifest",
-# )
+@pytest.mark.skipif(
+    "pelican-export" not in pytest.enabled_sower_jobs,
+    reason="pelican-export is not part of sower in manifest",
+)
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy

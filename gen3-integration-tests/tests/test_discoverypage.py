@@ -51,6 +51,7 @@ def page_setup(page):
 @pytest.mark.wts
 @pytest.mark.portal
 @pytest.mark.sower
+@pytest.mark.frontend_framework
 class TestDiscoveryPage(object):
     @classmethod
     def setup_class(cls):
