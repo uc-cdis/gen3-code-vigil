@@ -116,7 +116,7 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
-        # TODO: Terminating workspace is resulting in a UI bug for frontend framework
+        # TODO: Terminating workspace is resulting in a UI bug for frontend framework (GFF-521)
         if pytest.frontend_url:
             self.go_to(page)
         page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=1200000)

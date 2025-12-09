@@ -195,6 +195,8 @@ def pytest_runtest_logreport(report):
 
 def pytest_unconfigure(config):
     # Skip running code if --collect-only is passed
+    if pytest.frontend_url:
+        shutil.rmtree(pytest.frontend_commons_name)
     if config.option.collectonly:
         return
     if not hasattr(config, "workerinput"):

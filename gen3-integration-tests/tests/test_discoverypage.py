@@ -41,10 +41,10 @@ def page_setup(page):
     "discoveryConfig" not in portal_config and "metadataConfig" not in portal_config,
     reason="Neither discoveryConfig nor metadataConfig found in portal config",
 )
-# @pytest.mark.skipif(
-#     "batch-export" not in pytest.enabled_sower_jobs,
-#     reason="batch-export is not part of sower in manifest",
-# )
+@pytest.mark.skipif(
+    "batch-export" not in pytest.enabled_sower_jobs,
+    reason="batch-export is not part of sower in manifest",
+)
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
@@ -152,7 +152,7 @@ class TestDiscoveryPage(object):
         screenshot(page_setup, "DiscoveryPage")
 
         # Tag search
-        # TODO: Tag columns are not yet added to frontend framework
+        # TODO: Tag columns are not yet added to frontend framework (GFF-522)
         if not pytest.frontend_url:
             discovery_page.search_tag(page_setup, "AUTOTEST Tag")
             screenshot(page_setup, "TagSearch")
@@ -173,7 +173,7 @@ class TestDiscoveryPage(object):
         assert discovery_page.study_found(page_setup, "[AUTOTEST Summary]")
         screenshot(page_setup, "StudyFound")
 
-        # TODO: Login to Open In Workspace is not yet added to frontend framework
+        # TODO: Login to Open In Workspace is not yet added to frontend framework (GFF-522)
         if not pytest.frontend_url:
             # Open study in workspace
             discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
