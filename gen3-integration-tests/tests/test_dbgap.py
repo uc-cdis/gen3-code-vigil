@@ -363,6 +363,7 @@ class TestDbgap:
         ), f"Expected 401 status, but got {foo_bar_file_deleted_record}"
 
     @pytest.mark.portal
+    @pytest.mark.frontend_framework
     def test_cascading_auth_create_signed_urls(self, page: Page):
         """
         Scenario: dbGaP Sync: Cascading Auth - create signed urls from s3 and gs to download

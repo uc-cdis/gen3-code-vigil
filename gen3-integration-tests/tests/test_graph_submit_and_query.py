@@ -301,7 +301,13 @@ class TestGraphSubmitAndQuery:
 
     @pytest.mark.indexd
     @pytest.mark.portal
+    @pytest.mark.frontend_framework
     @pytest.mark.graph_query
+    # TODO: GFF - Remove once files page functionality is implemented
+    @pytest.mark.skipif(
+        pytest.frontend_url,
+        reason="Files Page functionality is not implemented in frontend-framework",
+    )
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,
         reason="indexd service is not running on this environment",

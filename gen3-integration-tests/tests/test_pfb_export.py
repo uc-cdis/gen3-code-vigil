@@ -25,10 +25,16 @@ from utils import logger
     "pelican-export" not in pytest.enabled_sower_jobs,
     reason="pelican-export is not part of sower in manifest",
 )
+# TODO: GFF - Remove once pfb export functionality is implemented
+@pytest.mark.skipif(
+    pytest.frontend_url,
+    reason="Export to PFB button functionality on Exploration page is not working (GFF-519)",
+)
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
 @pytest.mark.portal
+@pytest.mark.frontend_framework
 @pytest.mark.sower
 class TestPFBExport(object):
     @classmethod
