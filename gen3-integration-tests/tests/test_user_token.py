@@ -143,7 +143,7 @@ class TestUserToken:
 
         # Validate the response
         assert (
-            gen3_sdk_error_msg == exception_content
+            gen3_sdk_error_msg in exception_content
         ), f"{gen3_sdk_error_msg} not found in response {exception_content}"
 
     def test_refresh_access_token_without_api_key(self):

@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bullseye AS base
+FROM quay.io/cdis/amazonlinux-base:3.13-pythonnginx AS base
 
 ENV appname=gen3-integration-tests \
     NODEJS_VERSION=20
