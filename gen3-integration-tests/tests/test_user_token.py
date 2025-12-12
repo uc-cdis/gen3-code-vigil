@@ -23,6 +23,12 @@ class TestUserToken:
         cls.fence = Fence()
 
     @pytest.mark.portal
+    @pytest.mark.frontend_framework
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services
+        and "frontend-framework" not in pytest.deployed_services,
+        reason="Both portal and frontend-framework services are not running on this environment",
+    )
     def test_create_api_key_success(self, page: Page):
         """
         Scenario: test create APIKey success
@@ -46,6 +52,12 @@ class TestUserToken:
         )
 
     @pytest.mark.portal
+    @pytest.mark.frontend_framework
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services
+        and "frontend-framework" not in pytest.deployed_services,
+        reason="Both portal and frontend-framework services are not running on this environment",
+    )
     def test_create_api_key_with_expired_access_token(self, page: Page):
         """
         Scenario: create APIKey with expired access token
@@ -81,6 +93,12 @@ class TestUserToken:
             raise
 
     @pytest.mark.portal
+    @pytest.mark.frontend_framework
+    @pytest.mark.skipif(
+        "portal" not in pytest.deployed_services
+        and "frontend-framework" not in pytest.deployed_services,
+        reason="Both portal and frontend-framework services are not running on this environment",
+    )
     def test_refresh_access_token_with_api_key(self, page: Page):
         """
         Scenario: refresh access token with apiKey

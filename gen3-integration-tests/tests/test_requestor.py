@@ -15,6 +15,7 @@ from utils import logger
 )
 @pytest.mark.requestor
 @pytest.mark.portal
+@pytest.mark.frontend_framework
 class TestRequestor:
     @classmethod
     def setup_class(cls):

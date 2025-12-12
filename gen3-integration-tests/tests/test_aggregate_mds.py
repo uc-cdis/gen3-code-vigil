@@ -17,7 +17,7 @@ from utils.test_execution import assert_with_retry
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
 @pytest.mark.skipif(
-    "discoveryConfig" not in gat.get_portal_config().keys(),
+    "discoveryConfig" not in gat.get_portal_config(json_file_name="discovery").keys(),
     reason="discoveryConfig in not in portal config",
 )
 @pytest.mark.mds
@@ -37,7 +37,7 @@ class TestAggregateMDS:
         study_json_files = ["study1.json", "study2.json"]
         # Identify UID field name from gitops.json
         logger.info("# Fetch UID field name from gitops.json")
-        portal_config = gat.get_portal_config()
+        portal_config = gat.get_portal_config(json_file_name="discovery")
         assert portal_config is not None
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
