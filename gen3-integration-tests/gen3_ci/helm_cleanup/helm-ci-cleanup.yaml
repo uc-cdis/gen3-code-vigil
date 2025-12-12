@@ -24,7 +24,7 @@ spec:
                 #label pvcs with ci label
                 delete_pvcs() {
                 local env=$1
-                for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master"; do
+                for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master" "app=funnel"; do
                     pvc=$(kubectl get pvc -n "$env" -l "$label" -o name | head -n 1 | cut -d'/' -f2)
                     [ -z "$pvc" ] && echo "No PVC found for label: $label" && continue
 
