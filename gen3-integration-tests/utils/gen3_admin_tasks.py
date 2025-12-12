@@ -29,6 +29,8 @@ def get_portal_config(json_file_name=None):
             / "gen3"
             / f"{json_file_name}.json"
         )
+        if not json_path.exists():
+            return {}
         with json_path.open("r", encoding="utf-8") as f:
             res = json.load(f)
     else:

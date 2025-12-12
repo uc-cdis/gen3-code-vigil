@@ -58,6 +58,11 @@ class TestLoginPage:
 
         self.login_page.logout(page)
 
+    # TODO: GFF - Remove once /DEV-test/search?node_type=summary_clinical functionality is implemented
+    @pytest.mark.skipif(
+        pytest.frontend_url,
+        reason="/DEV-test/search?node_type=summary_clinical functionality is not implemented",
+    )
     def test_login_redirects_to_requested_page_with_query_params_intact(
         self, page: Page
     ):
