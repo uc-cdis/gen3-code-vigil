@@ -1,4 +1,6 @@
 # Workspace Page
+import time
+
 import pytest
 from playwright.sync_api import Page, expect
 from utils import logger
@@ -118,5 +120,6 @@ class WorkspacePage(object):
         page.locator(self.YES_BUTTON).click()
         # TODO: Terminating workspace is resulting in a UI bug for frontend framework (GFF-521)
         if pytest.frontend_url:
+            time.sleep(10)
             self.go_to(page)
         page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=1200000)
