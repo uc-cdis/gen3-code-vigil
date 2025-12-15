@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import boto3
 import pytest
@@ -194,9 +195,10 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_unconfigure(config):
-    # Skip running code if --collect-only is passed
     if pytest.frontend_url:
-        shutil.rmtree(pytest.frontend_commons_name)
+        ff_dir = Path(__file__).parent.parent / pytest.frontend_commons_name
+        shutil.rmtree(ff_dir)
+    # Skip running code if --collect-only is passed
     if config.option.collectonly:
         return
     if not hasattr(config, "workerinput"):
