@@ -108,7 +108,6 @@ class LoginPage(object):
         if capture_screenshot:
             screenshot(page, "AfterLogin")
         page.wait_for_load_state("load")
-        # page.wait_for_url(lambda url: "login" not in url.lower())
         current_url = page.url
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
@@ -231,7 +230,7 @@ class LoginPage(object):
         else:
             page.locator("a, p").get_by_text("Logout").click(timeout=60000)
             logger.info("Clicked on logout button")
-        nav_bar_login_button = page.locator("button, p", has_text="Login")
+        nav_bar_login_button = page.locator("button, p", has_text="Login").first
         # commons-frontend-app may have a pop up after clicking logout
         self.handle_popup(page)
         if capture_screenshot:
