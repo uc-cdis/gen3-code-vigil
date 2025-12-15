@@ -145,10 +145,15 @@ yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$EKS_CLUSTER_NAME\"" -i $manife
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
 
 # Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
+yq eval ".global.environment = \"$namespace\"" -i $manifest_values_yaml
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $manifest_values_yaml
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $manifest_values_yaml
 yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $manifest_values_yaml
+yq eval ".gen3-workflow.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
+yq eval ".gen3-workflow.funnel.Kubernetes.JobsNamespace = \"gen3-${namespace}-workflow-pods\"" -i $manifest_values_yaml
+yq eval ".gen3-workflow.funnel.Plugins.Params.S3Url = \"gen3-workflow-service.${namespace}.svc.cluster.local\"" -i $manifest_values_yaml
+yq eval ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl = \"https://${HOSTNAME}/user\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
 # Remove aws-es-proxy block
@@ -178,6 +183,10 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 # Set env variable for ETL enabled or not
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
+
+# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
+echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
+aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
 echo $HOSTNAME
 install_helm_chart() {
