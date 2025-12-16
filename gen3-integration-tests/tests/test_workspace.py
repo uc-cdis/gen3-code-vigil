@@ -32,6 +32,7 @@ def page_setup(page):
     reason="hatchery service is not running on this environment",
 )
 @pytest.mark.workspace
+@pytest.mark.wts
 @pytest.mark.portal
 class TestWorkspacePage:
     def test_workspace_drs_pull(self, page_setup):
