@@ -196,8 +196,8 @@ def pytest_runtest_logreport(report):
 
 def pytest_unconfigure(config):
     if pytest.frontend_url:
-        ff_dir = Path(__file__).parent.parent / pytest.frontend_commons_name
-        shutil.rmtree(ff_dir)
+        ff_dir = Path(__file__).parent / pytest.frontend_commons_name
+        shutil.rmtree(ff_dir, ignore_errors=True)
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
         return
