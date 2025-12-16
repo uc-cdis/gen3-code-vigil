@@ -108,6 +108,8 @@ class LoginPage(object):
         if capture_screenshot:
             screenshot(page, "AfterLogin")
         page.wait_for_load_state("load")
+        # TODO: Remove the below check once GFF team resolves the issue
+        page.wait_for_url(lambda url: "login" not in url.lower())
         current_url = page.url
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
