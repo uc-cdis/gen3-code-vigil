@@ -32,14 +32,13 @@ def page_setup(page):
     reason="hatchery service is not running on this environment",
 )
 @pytest.mark.workspace
-@pytest.mark.wts
 @pytest.mark.portal
 class TestWorkspacePage:
-    def test_workspace_drs_pull(self, page_setup):
+    def test_launch_workspace(self, page_setup):
         """
-        Scenario: Workspace DRS Pull
+        Scenario: Launch Workspace
         Steps:
-            1. Login with main_acct (cdis.autotest) user
+            1. Login with main_acct (main_account) user
             2. Launch workspace
             3. Launch Jupyter notebook and execute gen3 command
 
