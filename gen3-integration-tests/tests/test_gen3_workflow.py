@@ -361,13 +361,12 @@ class TestGen3Workflow(object):
                 )
                 raise
 
-        # TODO: Replace `message in s3_contents[...]` with `message == s3_contents[...]` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
         assert (
-            message in s3_contents["output.txt"]
+            message == s3_contents["output.txt"]
         ), f"The output_response of the TES task did not return the expected output. Expected: '{message}' to be in output_response, but found '{s3_contents['output.txt']}' instead."
 
         assert (
-            message in s3_contents["grep_output.txt"].strip()
+            message == s3_contents["grep_output.txt"].strip()
         ), f"The grep_output_response of the TES task did not return the expected output. Expected: '{message}', but found '{s3_contents['grep_output.txt'].strip()}' instead."
 
     def test_happy_path_cancel_tes_task(self):
@@ -543,26 +542,35 @@ class TestGen3Workflow(object):
                 )
 
                 if test_file_name == "/.command.sh":
-                    # TODO: Replace `expected["command"] in file_contents` with `expected["command"] == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert expected_command_with_filename in file_contents, {
-                        f"[{task_name}] .command.sh file does not contain the expected command.\n"
+                    assert expected_command_with_filename == file_contents, {
+                        f"[{task_name}] {test_file_name} file does not contain the expected command.\n"
                         f"Expected to find: {expected_command_with_filename}\n"
                         f"Actual content: {file_contents}"
                     }
                 elif test_file_name == "/.exitcode":
-                    # TODO: Replace `"0\r\n" in file_contents` with `"0\r\n" == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert "0\r\n" in file_contents, (
-                        f"[{task_name}] exitcode file does not contain '0'.\n"
+                    assert "0\r\n" == file_contents, (
+                        f"[{task_name}] {test_file_name} file does not contain '0'.\n"
                         f"Actual content: {file_contents}"
                     )
-                else:
-                    # TODO: Currently, we're only checking that the files are not empty.
-                    # It's unclear what specific content we should validate in the other files.
-                    # We can revisit this once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert file_contents, (
-                        f"[{task_name}] {test_file_name} file is unexpectedly empty.\n"
-                        f"Expected some content, but found: {file_contents!r}"
+                elif test_file_name == "/.command.err":
+                    assert "" == file_contents, (
+                        f"[{task_name}] {test_file_name} file should be empty.\n"
+                        f"Actual content: {file_contents}"
                     )
+                elif test_file_name == "/.command.out":
+                    expected = "TODO"
+                    assert expected == file_contents, {
+                        f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
+                        f"Expected to find: {expected}\n"
+                        f"Actual content: {file_contents}"
+                    }
+                elif test_file_name == "/.command.log":
+                    expected = "TODO"
+                    assert expected == file_contents, {
+                        f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
+                        f"Expected to find: {expected}\n"
+                        f"Actual content: {file_contents}"
+                    }
 
 
 # TODO: Add more tests for the following:
