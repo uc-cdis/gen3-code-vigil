@@ -239,7 +239,7 @@ class TestAuditService:
                 expected_results,
             )
 
-            # Private File - mainAcct fails to request a presigned URL with a file that doesn't exists
+            # Private File - mainAcct fails to request a presigned URL with a file that doesn't exist
             expected_results = {
                 "action": "download",
                 "username": pytest.users["main_account"],

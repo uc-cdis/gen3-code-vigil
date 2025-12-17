@@ -84,7 +84,7 @@ class TestDicomViewer(object):
         Scenario: Unauthorized user cannot get non-exist dicom file
         Steps:
              1. Get non-exist dicom file deatils using dummy_one user
-             2. Expect 404 in response, since the dicom file doesn't exists
+             2. Expect 404 in response, since the dicom file doesn't exist
         """
         non_exist_id = "538a3dfd-219a25e0-8443a0b7-d1f512a6-2348ff25"
         self.dicom.get_dicom_file(dicom_file_id=non_exist_id, expected_status=404)
