@@ -13,8 +13,7 @@ from utils.test_execution import screenshot
 
 # TODO : enable this test after the manifest PRs are ready to roll
 @pytest.mark.wip
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 class TestDataGuids(object):
     @classmethod
     def setup_class(cls):

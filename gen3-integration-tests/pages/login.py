@@ -19,12 +19,17 @@ class LoginPage(object):
             self.BASE_URL = f"{pytest.root_url_portal}/login"
         # Locators
         self.LOGIN_BUTTONS = [
-            "Dev login",
-            "Google",
-            "BioData Catalyst Developer Login",
+            "//button[contains(normalize-space(), 'Dev login')]",
+            "//button[contains(normalize-space(), 'Google')]",
+            "//button[contains(normalize-space(), 'BioData Catalyst Developer Login')]",
         ]
-        self.GEN3_RAS_LOGIN_BUTTON = "Login from RAS"
-        self.GEN3_ORCID_LOGIN_BUTTON = "ORCID Login"
+        self.READY_CUE = "//button[contains(normalize-space(), 'ORCID Login')]"
+        self.GEN3_RAS_LOGIN_BUTTON = (
+            "//button[contains(normalize-space(), 'Login from RAS')]"
+        )
+        self.GEN3_ORCID_LOGIN_BUTTON = (
+            "//button[contains(normalize-space(), 'ORCID Login')]"
+        )
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
@@ -55,7 +60,7 @@ class LoginPage(object):
             page.goto(url)
         else:
             page.goto(self.BASE_URL)
-            page.get_by_text(self.GEN3_ORCID_LOGIN_BUTTON).wait_for(state="visible")
+            page.wait_for_selector(self.READY_CUE, state="visible")
         if capture_screenshot:
             screenshot(page, "LoginPage")
 
@@ -82,9 +87,7 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        page.get_by_text(self.GEN3_RAS_LOGIN_BUTTON).wait_for(
-            state="visible", timeout=30000
-        )
+        expect(page.locator(self.GEN3_RAS_LOGIN_BUTTON)).to_be_visible(timeout=30000)
         self.handle_popup(page)
         if idp == "ORCID":
             self.orcid_login(page)
@@ -97,7 +100,7 @@ class LoginPage(object):
             for login_button in self.LOGIN_BUTTONS:
                 logger.info(login_button)
                 try:
-                    button = page.get_by_text(login_button, exact=False)
+                    button = page.locator(login_button)
                     if button.is_enabled(timeout=5000):
                         button.click()
                         logger.info(f"Clicked on login button : {login_button}")
@@ -156,8 +159,7 @@ class LoginPage(object):
 
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
-        button = page.get_by_text(self.GEN3_ORCID_LOGIN_BUTTON, exact=False)
-        button.click()
+        page.locator(self.GEN3_ORCID_LOGIN_BUTTON).click()
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -192,8 +194,7 @@ class LoginPage(object):
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
-            button = page.get_by_text(self.GEN3_RAS_LOGIN_BUTTON, exact=False)
-            button.click()
+            page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()
             # Perform RAS Login
             self.ras_login_form(page, username, password)
             screenshot(page, "RASAfterClickingGrantButton")

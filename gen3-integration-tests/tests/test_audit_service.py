@@ -80,8 +80,7 @@ class TestAuditService:
             "auxAcct2 Login",
         )
 
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     def test_audit_homepage_mock_login_events(self, page: Page):
         """
         Scenario: Homepage login events

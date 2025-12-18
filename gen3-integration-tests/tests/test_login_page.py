@@ -13,8 +13,7 @@ from utils.test_execution import screenshot
 logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 class TestLoginPage:
     @classmethod
     def setup_class(cls):

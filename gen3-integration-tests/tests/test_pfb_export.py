@@ -33,8 +33,7 @@ from utils import logger
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 @pytest.mark.sower
 class TestPFBExport(object):
     @classmethod

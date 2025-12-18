@@ -45,8 +45,7 @@ class TestDicomViewer(object):
         pytest.frontend_url,
         reason="Exploration page shows it has records, but doesnt populate them in the table on page (GFF-520)",
     )
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file

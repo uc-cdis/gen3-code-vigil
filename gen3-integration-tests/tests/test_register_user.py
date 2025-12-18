@@ -20,8 +20,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 @pytest.mark.fence
 @pytest.mark.skipif(
     pytest.frontend_url,

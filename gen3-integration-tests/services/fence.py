@@ -177,7 +177,7 @@ class Fence(object):
         consent="ok",
         expect_code=True,
         client_email_id="basictestclient@example.org",
-        logged_in_user="test@example.com",
+        logged_in_user="test@example.com",  # Fence helm chart has mock_default_user set to test@example.com
     ):
         """Gets the consent code"""
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
@@ -238,7 +238,7 @@ class Fence(object):
         consent="yes",
         expect_token=True,
         client_email_id="implicittestclient@example.org",
-        logged_in_user="test@example.com",
+        logged_in_user="test@example.com",  # Fence helm chart has mock_default_user set to test@example.com
     ):
         """Gets the token from the UI"""
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri=https://{pytest.hostname}&scope={scopes}&nonce=n-0S6_WzA2Mj"

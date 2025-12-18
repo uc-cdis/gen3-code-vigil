@@ -300,8 +300,7 @@ class TestGraphSubmitAndQuery:
         indexd.file_equals(response, file_record_wit_ccs)
 
     @pytest.mark.indexd
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     @pytest.mark.graph_query
     # TODO: GFF - Remove once files page functionality is implemented
     @pytest.mark.skipif(

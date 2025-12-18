@@ -41,9 +41,9 @@ class DiscoveryPage(object):
     def search_tag(self, page: Page, tag_name: str) -> None:
         page.click(self._tag_locator(tag_name))
 
-    def search_text(self, page: Page, text: str) -> None:
+    def search_text(self, page: Page, study_id: str) -> None:
         page.click(self.SEARCH_BAR)
-        page.keyboard.type(text, delay=100)
+        page.keyboard.type(study_id, delay=100)
 
     def study_found(self, page: Page, text: str) -> bool:
         study_row = page.locator(self._study_locator(text))

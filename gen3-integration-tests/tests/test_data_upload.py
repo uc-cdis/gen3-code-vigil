@@ -595,8 +595,7 @@ class TestDataUpload:
             id=file_guid, user="main_account", expected_status=404
         )
 
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     @pytest.mark.skipif(
         "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
@@ -662,8 +661,7 @@ class TestDataUpload:
 
         self.login_page.logout(page)
 
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     # TODO: GFF - Remove once submission page functionality is implemented
     @pytest.mark.skipif(
         pytest.frontend_url,

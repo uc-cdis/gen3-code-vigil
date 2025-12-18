@@ -27,8 +27,7 @@ from utils import gen3_admin_tasks as gat
     "nightly-build" not in pytest.hostname,
     reason="Test is being run on Helm and would run only on nightly-build",
 )
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 @pytest.mark.fence
 @pytest.mark.ras
 @pytest.mark.requires_fence_client

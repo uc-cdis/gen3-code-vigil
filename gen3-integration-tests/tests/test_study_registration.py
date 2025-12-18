@@ -18,8 +18,7 @@ from utils.test_execution import screenshot
 @pytest.mark.mds
 @pytest.mark.study_registration
 @pytest.mark.wip
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 @pytest.mark.skipif(
     not pytest.use_agg_mdg_flag,
     reason="USE_AGG_MDS is not set or is false in manifest",

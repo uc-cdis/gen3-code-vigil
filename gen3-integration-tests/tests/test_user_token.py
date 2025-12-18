@@ -22,8 +22,7 @@ class TestUserToken:
     def setup_class(cls):
         cls.fence = Fence()
 
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     @pytest.mark.skipif(
         "portal" not in pytest.deployed_services
         and "frontend-framework" not in pytest.deployed_services,
@@ -51,8 +50,7 @@ class TestUserToken:
             api_key=api_key_res.json()["key_id"], token=access_token, page=page
         )
 
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     @pytest.mark.skipif(
         "portal" not in pytest.deployed_services
         and "frontend-framework" not in pytest.deployed_services,
@@ -92,8 +90,7 @@ class TestUserToken:
             logger.error(api_key_res.content.decode())
             raise
 
-    @pytest.mark.portal
-    @pytest.mark.frontend_framework
+    @pytest.mark.frontend
     @pytest.mark.skipif(
         "portal" not in pytest.deployed_services
         and "frontend-framework" not in pytest.deployed_services,
