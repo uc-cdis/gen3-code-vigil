@@ -534,17 +534,18 @@ class TestGen3Workflow(object):
                     )
                     raise
 
-                # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
-                file_num = "1" if "1" in expected_file else "2"
-
-                expected_command_with_filename = expected["command"].replace(
-                    "*", file_num
-                )
-
                 if test_file_name == "/.command.sh":
-                    assert expected_command_with_filename == file_contents, {
+                    # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
+                    file_num = "1" if "1" in expected_file else "2"
+                    expected_command_with_filename = expected["command"].replace(
+                        "*", file_num
+                    )
+                    expected_file_contents = (
+                        f"#!/bin/bash -ue\n{expected_command_with_filename}\n"
+                    )
+                    assert expected_file_contents == file_contents, {
                         f"[{task_name}] {test_file_name} file does not contain the expected command.\n"
-                        f"Expected to find: {expected_command_with_filename}\n"
+                        f"Expected to find: {expected_file_contents}\n"
                         f"Actual content: {file_contents}"
                     }
                 elif test_file_name == "/.exitcode":
