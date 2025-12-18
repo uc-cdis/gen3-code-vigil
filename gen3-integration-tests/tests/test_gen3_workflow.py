@@ -537,7 +537,7 @@ class TestGen3Workflow(object):
                         f"#!/bin/bash -ue\n{expected_command_with_filename}\n"
                     )
                 elif test_file_name == "/.exitcode":
-                    expected_file_contents = "0\r\n"
+                    expected_file_contents = "0"
                 elif test_file_name in ["/.command.err", "/.command.out"]:
                     expected_file_contents = ""
                 elif test_file_name == "/.command.log":
