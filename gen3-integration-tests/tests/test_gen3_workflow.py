@@ -494,10 +494,10 @@ class TestGen3Workflow(object):
 
             test_files = [
                 "/.command.sh",
+                "/.exitcode",
                 "/.command.err",
                 "/.command.out",
                 "/.command.log",
-                "/.exitcode",
             ]
 
             for test_file_name in test_files:
@@ -542,16 +542,15 @@ class TestGen3Workflow(object):
                     expected_file_contents = ""
                 elif test_file_name == "/.command.log":
                     # we do not check the full logs, just that the file is not empty
-                    assert file_contents, (
-                        f"[{task_name}] {test_file_name} file is unexpectedly empty.\n"
-                        f"Expected some content, but found: {file_contents!r}"
-                    )
+                    assert (
+                        file_contents
+                    ), f"[{task_name}] {test_file_name} file is unexpectedly empty"
                     continue
 
                 assert expected_file_contents == file_contents, {
                     f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
-                    f"Expected to find: {expected_file_contents}\n"
-                    f"Actual content: {file_contents}"
+                    f"Expected to find: `{expected_file_contents}`\n"
+                    f"Actual content: `{file_contents}`"
                 }
 
 
