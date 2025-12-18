@@ -492,15 +492,7 @@ class TestGen3Workflow(object):
                 response["ContentLength"] > 0
             ), f"Expected to have some data in {expected_file}. But found empty file instead. Response :{response}"
 
-            test_files = [
-                "/.command.sh",
-                "/.exitcode",
-                "/.command.err",
-                "/.command.out",
-                "/.command.log",
-            ]
-
-            for test_file_name in test_files:
+            def get_s3_file_contents(test_file_name):
                 matching_keys = [
                     file["Key"]
                     for file in s3_file_list
@@ -520,12 +512,21 @@ class TestGen3Workflow(object):
                 )
 
                 try:
-                    file_contents = response["Body"].read().decode("utf-8")
+                    return response["Body"].read().decode("utf-8")
                 except Exception as e:
                     logger.error(
                         f"[{task_name}] Failed to read or decode content of {s3_key} from S3. Error: {e}"
                     )
                     raise
+
+            test_files = [
+                "/.command.sh",
+                "/.exitcode",
+                "/.command.out",
+                "/.command.log",
+            ]
+            for test_file_name in test_files:
+                file_contents = get_s3_file_contents(test_file_name)
 
                 if test_file_name == "/.command.sh":
                     # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
@@ -538,7 +539,14 @@ class TestGen3Workflow(object):
                     )
                 elif test_file_name == "/.exitcode":
                     expected_file_contents = "0"
-                elif test_file_name in ["/.command.err", "/.command.out"]:
+                    if expected_file_contents != file_contents:
+                        # when the task failed, log the contents of the error output file for
+                        # debugging purposes
+                        err_file_contents = get_s3_file_contents("/.command.err")
+                        logger.info(
+                            f"[{task_name}] /.command.err contents:\n{err_file_contents}"
+                        )
+                elif test_file_name == "/.command.out":
                     expected_file_contents = ""
                 elif test_file_name == "/.command.log":
                     # we do not check the full logs, just that the file is not empty
