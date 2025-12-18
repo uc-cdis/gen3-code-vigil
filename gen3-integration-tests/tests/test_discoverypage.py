@@ -41,10 +41,10 @@ def page_setup(page):
     "discoveryConfig" not in portal_config and "metadataConfig" not in portal_config,
     reason="Neither discoveryConfig nor metadataConfig found in portal config",
 )
-# @pytest.mark.skipif(
-#     "batch-export" not in pytest.enabled_sower_jobs,
-#     reason="batch-export is not part of sower in manifest",
-# )
+@pytest.mark.skipif(
+    "batch-export" not in pytest.enabled_sower_jobs,
+    reason="batch-export is not part of sower in manifest",
+)
 @pytest.mark.workspace
 @pytest.mark.mds
 @pytest.mark.agg_mds
@@ -62,15 +62,15 @@ class TestDiscoveryPage(object):
             "694b1d13b8148756442739fa2cc37fd6"  # pragma: allowlist secret
         )
 
-    # @classmethod
-    # def teardown_class(cls):
-    #     logger.info(
-    #         "Tearing down - delete indexd record and study metadata, and terminate workspace"
-    #     )
-    #     indexd = Indexd()
-    #     mds = MetadataService()
-    #     indexd.delete_records([cls.variables["did"]])
-    #     mds.delete_metadata(cls.variables["study_id"])
+    @classmethod
+    def teardown_class(cls):
+        logger.info(
+            "Tearing down - delete indexd record and study metadata, and terminate workspace"
+        )
+        indexd = Indexd()
+        mds = MetadataService()
+        indexd.delete_records([cls.variables["did"]])
+        mds.delete_metadata(cls.variables["study_id"])
 
     def test_study_publish_search_export(self, page_setup):
         """
