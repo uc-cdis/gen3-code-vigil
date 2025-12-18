@@ -38,10 +38,7 @@ class TestLoginPage:
         self.login_page.go_to(page=page, url=self.WORKSPACE_URL)
 
         # Should be redirected to login page
-        screenshot(page, "RedirectPage")
-        page.get_by_text(self.login_page.GEN3_ORCID_LOGIN_BUTTON).wait_for(
-            state="visible", timeout=10000
-        )
+        expect(page.locator(self.login_page.READY_CUE)).to_be_visible(timeout=10000)
         screenshot(page, "RedirectPage")
         current_url = page.url.lower()
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
@@ -76,10 +73,7 @@ class TestLoginPage:
         self.login_page.go_to(page=page, url=self.QUERY_PARAM_URL)
 
         # Should be redirected to login page
-        screenshot(page, "RedirectPage")
-        page.get_by_text(self.login_page.GEN3_ORCID_LOGIN_BUTTON).wait_for(
-            state="visible", timeout=10000
-        )
+        expect(page.locator(self.login_page.READY_CUE)).to_be_visible(timeout=10000)
         screenshot(page, "RedirectPage")
         current_url = page.url
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
