@@ -41,11 +41,11 @@ class DiscoveryPage(object):
     def search_tag(self, page: Page, tag_name: str) -> None:
         page.click(self._tag_locator(tag_name))
 
-    def search_text(self, page: Page, study_id: str) -> None:
+    def search_study(self, page: Page, study_id: str) -> None:
         page.click(self.SEARCH_BAR)
         page.keyboard.type(study_id, delay=100)
 
-    def study_found(self, page: Page, text: str) -> bool:
+    def search_text_in_record(self, page: Page, text: str) -> bool:
         study_row = page.locator(self._study_locator(text))
         try:
             study_row.wait_for()

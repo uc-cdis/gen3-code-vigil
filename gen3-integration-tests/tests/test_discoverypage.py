@@ -155,21 +155,21 @@ class TestDiscoveryPage(object):
         if not pytest.frontend_url:
             discovery_page.search_tag(page_setup, "AUTOTEST Tag")
             screenshot(page_setup, "TagSearch")
-            assert discovery_page.study_found(page_setup, "AUTOTEST Tag")
+            assert discovery_page.search_text_in_record(page_setup, "AUTOTEST Tag")
             screenshot(page_setup, "StudyFound")
 
         # Text search by study title
         discovery_page.go_to(page_setup)
-        discovery_page.search_text(page_setup, self.variables["study_id"])
+        discovery_page.search_study(page_setup, self.variables["study_id"])
         screenshot(page_setup, "TextSearchTitle")
-        assert discovery_page.study_found(page_setup, "[AUTOTEST Title]")
+        assert discovery_page.search_text_in_record(page_setup, "[AUTOTEST Title]")
         screenshot(page_setup, "StudyFound")
 
         # Text search by study summary
         discovery_page.go_to(page_setup)
-        discovery_page.search_text(page_setup, self.variables["study_id"])
+        discovery_page.search_study(page_setup, self.variables["study_id"])
         screenshot(page_setup, "TextSearchSummary")
-        assert discovery_page.study_found(page_setup, "[AUTOTEST Summary]")
+        assert discovery_page.search_text_in_record(page_setup, "[AUTOTEST Summary]")
         screenshot(page_setup, "StudyFound")
 
         # TODO: Login to Open In Workspace is not yet added to frontend framework (GFF-522)
