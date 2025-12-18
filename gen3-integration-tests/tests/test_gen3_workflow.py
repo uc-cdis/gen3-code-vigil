@@ -225,19 +225,20 @@ class TestGen3Workflow(object):
         - Verify task creation, listing, retrieval, and completion
         - Validate outputs and logs
         """
-        message = "hello beautiful world!"
+        input_file_contents = "hello beautiful world!"
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
 
         # Step 1: Upload input file to S3
         self.gen3_workflow.put_bucket_object_with_boto3(
-            content=message,
+            content=input_file_contents,
             object_path=f"{s3_path_prefix}/input.txt",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
         )
-        echo_message = "Done!"
+
         # Step 2: Create a TES task
+        echo_message = "Done!"
         tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
@@ -343,8 +344,6 @@ class TestGen3Workflow(object):
         ), f"Expected stdout to be `Done!`, but found {stdout} instead."
 
         # Step 6: Validate task outputs
-
-        s3_contents = {}
         for file_name in ["output.txt", "grep_output.txt"]:
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{file_name}",
@@ -354,20 +353,16 @@ class TestGen3Workflow(object):
             )
 
             try:
-                s3_contents[file_name] = response["Body"].read().decode("utf-8")
+                output_file_contents = response["Body"].read().decode("utf-8").strip()
             except Exception as e:
                 logger.error(
                     f"Failed to read or decode content of {file_name} from S3. Error: {e}"
                 )
                 raise
 
-        assert (
-            message == s3_contents["output.txt"]
-        ), f"The output_response of the TES task did not return the expected output. Expected: '{message}' to be in output_response, but found '{s3_contents['output.txt']}' instead."
-
-        assert (
-            message == s3_contents["grep_output.txt"].strip()
-        ), f"The grep_output_response of the TES task did not return the expected output. Expected: '{message}', but found '{s3_contents['grep_output.txt'].strip()}' instead."
+            assert (
+                input_file_contents == output_file_contents
+            ), f"File '{file_name}' does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
 
     def test_happy_path_cancel_tes_task(self):
         """
