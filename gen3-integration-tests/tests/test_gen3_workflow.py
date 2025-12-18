@@ -1,5 +1,3 @@
-import json
-import os
 import re
 import time
 
@@ -540,21 +538,21 @@ class TestGen3Workflow(object):
                     )
                 elif test_file_name == "/.exitcode":
                     expected_file_contents = "0\r\n"
-                elif test_file_name == "/.command.err":
+                elif test_file_name in ["/.command.err", "/.command.out"]:
                     expected_file_contents = ""
-                elif test_file_name == "/.command.out":
-                    print(f"[{task_name}] {test_file_name}: `{file_contents}`")
-                    # expected_file_contents = ""
                 elif test_file_name == "/.command.log":
-                    print(f"[{task_name}] {test_file_name}: `{file_contents}`")
-                    # expected_file_contents = "TODO"
+                    # we do not check the full logs, just that the file is not empty
+                    assert file_contents, (
+                        f"[{task_name}] {test_file_name} file is unexpectedly empty.\n"
+                        f"Expected some content, but found: {file_contents!r}"
+                    )
+                    continue
 
-                # TODO uncomment:
-                # assert expected_file_contents == file_contents, {
-                #     f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
-                #     f"Expected to find: {expected_file_contents}\n"
-                #     f"Actual content: {file_contents}"
-                # }
+                assert expected_file_contents == file_contents, {
+                    f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
+                    f"Expected to find: {expected_file_contents}\n"
+                    f"Actual content: {file_contents}"
+                }
 
 
 # TODO: Add more tests for the following:
