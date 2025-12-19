@@ -15,7 +15,6 @@ from utils import logger
     reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
-@pytest.mark.wip
 class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
@@ -224,19 +223,20 @@ class TestGen3Workflow(object):
         - Verify task creation, listing, retrieval, and completion
         - Validate outputs and logs
         """
-        message = "hello beautiful world!"
+        input_file_contents = "hello beautiful world!"
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
 
         # Step 1: Upload input file to S3
         self.gen3_workflow.put_bucket_object_with_boto3(
-            content=message,
+            content=input_file_contents,
             object_path=f"{s3_path_prefix}/input.txt",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
         )
-        echo_message = "Done!"
+
         # Step 2: Create a TES task
+        echo_message = "Done!"
         tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
@@ -342,8 +342,6 @@ class TestGen3Workflow(object):
         ), f"Expected stdout to be `Done!`, but found {stdout} instead."
 
         # Step 6: Validate task outputs
-
-        s3_contents = {}
         for file_name in ["output.txt", "grep_output.txt"]:
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{file_name}",
@@ -353,21 +351,16 @@ class TestGen3Workflow(object):
             )
 
             try:
-                s3_contents[file_name] = response["Body"].read().decode("utf-8")
+                output_file_contents = response["Body"].read().decode("utf-8").strip()
             except Exception as e:
                 logger.error(
                     f"Failed to read or decode content of {file_name} from S3. Error: {e}"
                 )
                 raise
 
-        # TODO: Replace `message in s3_contents[...]` with `message == s3_contents[...]` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-        assert (
-            message in s3_contents["output.txt"]
-        ), f"The output_response of the TES task did not return the expected output. Expected: '{message}' to be in output_response, but found '{s3_contents['output.txt']}' instead."
-
-        assert (
-            message in s3_contents["grep_output.txt"].strip()
-        ), f"The grep_output_response of the TES task did not return the expected output. Expected: '{message}', but found '{s3_contents['grep_output.txt'].strip()}' instead."
+            assert (
+                input_file_contents == output_file_contents
+            ), f"File '{file_name}' does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
 
     def test_happy_path_cancel_tes_task(self):
         """
@@ -494,20 +487,11 @@ class TestGen3Workflow(object):
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
-
             assert (
                 response["ContentLength"] > 0
-            ), f"Expected to have some data in {expected_file}. But found empty file instead. Response :{response}"
+            ), f"Expected to have some data in {expected_file}. But found empty file instead. Response: {response}"
 
-            test_files = [
-                "/.command.sh",
-                "/.command.err",
-                "/.command.out",
-                "/.command.log",
-                "/.exitcode",
-            ]
-
-            for test_file_name in test_files:
+            def get_nextflow_output_file_contents(test_file_name):
                 matching_keys = [
                     file["Key"]
                     for file in s3_file_list
@@ -527,41 +511,61 @@ class TestGen3Workflow(object):
                 )
 
                 try:
-                    file_contents = response["Body"].read().decode("utf-8")
+                    return response["Body"].read().decode("utf-8")
                 except Exception as e:
                     logger.error(
                         f"[{task_name}] Failed to read or decode content of {s3_key} from S3. Error: {e}"
                     )
                     raise
 
-                # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
-                file_num = "1" if "1" in expected_file else "2"
-
-                expected_command_with_filename = expected["command"].replace(
-                    "*", file_num
-                )
+            test_files = [
+                "/.command.sh",
+                "/.exitcode",
+                "/.command.out",
+                "/.command.log",
+            ]
+            for test_file_name in test_files:
+                file_contents = get_nextflow_output_file_contents(test_file_name)
 
                 if test_file_name == "/.command.sh":
-                    # TODO: Replace `expected["command"] in file_contents` with `expected["command"] == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert expected_command_with_filename in file_contents, {
-                        f"[{task_name}] .command.sh file does not contain the expected command.\n"
-                        f"Expected to find: {expected_command_with_filename}\n"
-                        f"Actual content: {file_contents}"
-                    }
+                    # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
+                    file_num = "1" if "1" in expected_file else "2"
+                    expected_command_with_filename = expected["command"].replace(
+                        "*", file_num
+                    )
+                    expected_file_contents = (
+                        f"#!/bin/bash -ue\n{expected_command_with_filename}\n"
+                    )
                 elif test_file_name == "/.exitcode":
-                    # TODO: Replace `"0\r\n" in file_contents` with `"0\r\n" == file_contents` once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert "0\r\n" in file_contents, (
-                        f"[{task_name}] exitcode file does not contain '0'.\n"
-                        f"Actual content: {file_contents}"
-                    )
-                else:
-                    # TODO: Currently, we're only checking that the files are not empty.
-                    # It's unclear what specific content we should validate in the other files.
-                    # We can revisit this once the extra text is removed from the output files. (https://ctds-planx.atlassian.net/browse/MIDRC-1085)
-                    assert file_contents, (
-                        f"[{task_name}] {test_file_name} file is unexpectedly empty.\n"
-                        f"Expected some content, but found: {file_contents!r}"
-                    )
+                    expected_file_contents = "0"
+                    if expected_file_contents != file_contents:
+                        # when the task failed, log the contents of the error output file for
+                        # debugging purposes
+                        err_file_contents = get_nextflow_output_file_contents(
+                            "/.command.err"
+                        )
+                        logger.info(
+                            f"[{task_name}] /.command.err contents:\n{err_file_contents}"
+                        )
+                elif test_file_name == "/.command.out":
+                    expected_file_contents = ""
+                elif test_file_name in ["/.command.log", "/.command.err"]:
+                    if "dicom_to_png" in task_name:
+                        expected_file_contents = ""
+                    else:  # extract_metadata task_name
+                        # This task currently outputs task progress and a warning (`A value is
+                        # trying to be set on a copy of a slice from a DataFrame`).
+                        # We do not check the full logs, just that the file is not empty.
+                        assert (
+                            file_contents
+                        ), f"[{task_name}] {test_file_name} file is unexpectedly empty"
+                        continue
+
+                assert expected_file_contents == file_contents, {
+                    f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
+                    f"Expected to find: `{expected_file_contents}`\n"
+                    f"Actual content: `{file_contents}`"
+                }
 
 
 # TODO: Add more tests for the following:

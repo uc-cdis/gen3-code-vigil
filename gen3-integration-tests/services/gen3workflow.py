@@ -245,6 +245,12 @@ class Gen3Workflow:
         expected_status=200,
     ):
         """Uploads an object to S3."""
+
+        # Avoid adding `x-amz-checksum-crc32` data to the file contents
+        # See https://github.com/boto/boto3/issues/4435
+        os.environ["AWS_REQUEST_CHECKSUM_CALCULATION"] = "when_required"
+        os.environ["AWS_RESPONSE_CHECKSUM_VALIDATION"] = "when_required"
+
         self._perform_s3_action(
             "put",
             object_path,
