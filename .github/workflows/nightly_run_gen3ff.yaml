@@ -1,0 +1,31 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Nightly run - Gen3FF
+
+on:
+  workflow_dispatch:
+    inputs:
+      TEST_LABELS:
+        description: 'Test labels to determine which tests to run'
+        required: false
+  schedule:
+    - cron: '0 4 * * *' # Nightly at 10pm or 11pm Central (depending of daylight savings)
+
+jobs:
+  nightly_run_gen3ff:
+    name: Nightly run Gen3FF
+    uses: ./.github/workflows/shared_integration_tests.yaml
+    with:
+      WORKING_DIR: gen3-integration-tests
+      IS_NIGHTLY_RUN: "true"
+      TEST_LABELS: ${{ inputs.TEST_LABELS }}
+      CI_ENV: gen3ff
+    secrets:
+      CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+      CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+      CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
+      CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
+      CI_TEST_RAS_2_EMAIL: ${{ secrets.CI_TEST_RAS_2_EMAIL }}
+      CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+      CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+      CI_SLACK_CHANNEL_ID: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+      EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}

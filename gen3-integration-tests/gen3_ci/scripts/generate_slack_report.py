@@ -21,7 +21,10 @@ def get_failed_suites():
                     failed_suites.add(row["SUB SUITE"])
         failed_test_labels = ",".join(failed_suites)
         if os.getenv("IS_NIGHTLY_RUN") == "true":
-            replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run {failed_test_labels}`"
+            if os.getenv("CI_ENV") == "gen3ff":
+                replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run-gen3ff {failed_test_labels}`"
+            else:
+                replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run {failed_test_labels}`"
         else:
             replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {failed_test_labels}`"
         failed_suites_block = {
@@ -83,8 +86,8 @@ def get_test_result_and_metrics():
 def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
-        report_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
-        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/gh_action_logs.txt"
+        report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/index.html"
+        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/gh_action_logs.txt"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
@@ -111,9 +114,7 @@ def generate_slack_report():
     start_time = os.getenv("GITHUB_RUN_STARTED_AT")
     logger.info(f"GITHUB_RUN_STARTED_AT: {start_time}")
     start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-    gh_duration = round(
-        (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
-    )
+    gh_duration = round((datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2)
     # Run summary
     summary_block = {
         "type": "section",
