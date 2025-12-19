@@ -14,7 +14,7 @@ from utils import logger
     reason="requestor service is not running on this environment",
 )
 @pytest.mark.requestor
-@pytest.mark.portal
+@pytest.mark.frontend
 class TestRequestor:
     @classmethod
     def setup_class(cls):

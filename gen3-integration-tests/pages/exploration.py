@@ -16,8 +16,12 @@ class ExplorationPage(object):
     def __init__(self):
         # Endpoints
         self.BASE_URL = f"{pytest.root_url_portal}"
-        self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
-        self.FILE_URL = f"{self.BASE_URL}/files"
+        if pytest.frontend_url:
+            self.EXPLORATION_URL = f"{self.BASE_URL}/Explorer"
+            self.FILE_URL = f"{self.BASE_URL}/Files"
+        else:
+            self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
+            self.FILE_URL = f"{self.BASE_URL}/files"
         # Locators
         self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
         self.GUPPY_TABS = "//div[@id='guppy-explorer-main-tabs']"
@@ -117,8 +121,7 @@ class ExplorationPage(object):
         screenshot(page, "ExplorerPage")
 
         # Verify /explorer page is loaded
-        expect(page.locator(self.USERNAME_LOCATOR)).to_be_visible(timeout=10000)
-        current_url = page.url
+        current_url = page.url.lower()
         assert (
             "/explorer" in current_url
         ), f"Expected /explorer in url but got {current_url}"
@@ -130,7 +133,8 @@ class ExplorationPage(object):
         login_page.handle_popup(page)
         # Click on the Download Button
         tab = gat.validate_button_in_portal_config(
-            data=gat.get_portal_config(), search_button="manifest"
+            data=gat.get_portal_config(json_file_name="explorer"),
+            search_button="manifest",
         )
         if not tab:
             raise Exception("No other tab has manifest download button")

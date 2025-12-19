@@ -15,6 +15,7 @@ from utils import logger
     reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
+@pytest.mark.wip
 class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):

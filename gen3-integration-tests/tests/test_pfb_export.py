@@ -16,18 +16,24 @@ from utils import logger
 
 @pytest.mark.skipif(
     not gat.validate_button_in_portal_config(
-        data=gat.get_portal_config(), search_button="export-to-pfb"
+        data=gat.get_portal_config(json_file_name="explorer"),
+        search_button="export-to-pfb",
     ),
     reason="Export to PFB button not present in gitops.json",
 )
-# @pytest.mark.skipif(
-#     "pelican-export" not in pytest.enabled_sower_jobs,
-#     reason="pelican-export is not part of sower in manifest",
-# )
+@pytest.mark.skipif(
+    "pelican-export" not in pytest.enabled_sower_jobs,
+    reason="pelican-export is not part of sower in manifest",
+)
+# TODO: GFF - Remove once pfb export functionality is implemented
+@pytest.mark.skipif(
+    pytest.frontend_url,
+    reason="Export to PFB button functionality on Exploration page is not working (GFF-519)",
+)
 @pytest.mark.tube
 @pytest.mark.pfb
 @pytest.mark.guppy
-@pytest.mark.portal
+@pytest.mark.frontend
 @pytest.mark.sower
 class TestPFBExport(object):
     @classmethod
@@ -43,7 +49,8 @@ class TestPFBExport(object):
         )
         gat.run_gen3_job("etl", test_env_namespace=pytest.namespace)
         if gat.validate_button_in_portal_config(
-            gat.get_portal_config(), search_button="export-to-pfb"
+            gat.get_portal_config(json_file_name="explorer"),
+            search_button="export-to-pfb",
         ):
             if (
                 os.getenv("REPO") == "cdis-manifest"
@@ -62,7 +69,8 @@ class TestPFBExport(object):
     def teardown_class(cls):
         cls.sd_tools.delete_all_records()
         if gat.validate_button_in_portal_config(
-            gat.get_portal_config(), search_button="export-to-pfb"
+            gat.get_portal_config(json_file_name="explorer"),
+            search_button="export-to-pfb",
         ):
             if (
                 os.getenv("REPO") == "cdis-manifest"

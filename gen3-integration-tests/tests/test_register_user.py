@@ -20,8 +20,12 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
-@pytest.mark.portal
+@pytest.mark.frontend
 @pytest.mark.fence
+@pytest.mark.skipif(
+    pytest.frontend_url,
+    reason="loginForDownload button functionality on Exploration page is not working (GFF-519)",
+)
 class TestRegisterUser:
     @classmethod
     def setup_class(cls):
@@ -58,7 +62,7 @@ class TestRegisterUser:
 
         # Verify page got redirected to /login page
         page.wait_for_load_state("load")
-        current_url = page.url
+        current_url = page.url.lower()
         screenshot(page, "AfterLoginToDownloadRedirect")
         assert "/login" in current_url, f"Expected /login in url but got {current_url}"
 

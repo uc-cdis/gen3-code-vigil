@@ -12,6 +12,8 @@ from utils import gen3_admin_tasks as gat
 from utils import logger
 from utils.test_execution import screenshot
 
+portal_config = gat.get_portal_config(json_file_name="discovery")
+
 
 @pytest.fixture()
 def page_setup(page):
@@ -36,8 +38,8 @@ def page_setup(page):
     reason="USE_AGG_MDS is not set or is false in manifest",
 )
 @pytest.mark.skipif(
-    "discoveryConfig" not in gat.get_portal_config().keys(),
-    reason="discoveryConfig in not in portal config",
+    "discoveryConfig" not in portal_config and "metadataConfig" not in portal_config,
+    reason="Neither discoveryConfig nor metadataConfig found in portal config",
 )
 @pytest.mark.skipif(
     "batch-export" not in pytest.enabled_sower_jobs,
@@ -47,8 +49,8 @@ def page_setup(page):
 @pytest.mark.mds
 @pytest.mark.agg_mds
 @pytest.mark.wts
-@pytest.mark.portal
 @pytest.mark.sower
+@pytest.mark.frontend
 class TestDiscoveryPage(object):
     @classmethod
     def setup_class(cls):
@@ -84,16 +86,15 @@ class TestDiscoveryPage(object):
             8. Terminate workspace
         """
         # Get uid field and study preview field from portal config
-        portal_config = gat.get_portal_config()
-        uid_field_name = (
-            portal_config.get("discoveryConfig", {})
-            .get("minimalFieldMapping", {})
-            .get("uid", None)
+        if "discoveryConfig" in portal_config:
+            discovery_config = portal_config.get("discoveryConfig", {})
+        else:
+            discovery_config = portal_config["metadataConfig"][0]
+        uid_field_name = discovery_config.get("minimalFieldMapping", {}).get(
+            "uid", None
         )
-        study_preview_field = (
-            portal_config.get("discoveryConfig", {})
-            .get("studyPreviewField", {})
-            .get("field", None)
+        study_preview_field = discovery_config.get("studyPreviewField", {}).get(
+            "field", None
         )
         assert uid_field_name is not None
         assert study_preview_field is not None
@@ -150,44 +151,48 @@ class TestDiscoveryPage(object):
         screenshot(page_setup, "DiscoveryPage")
 
         # Tag search
-        discovery_page.search_tag(page_setup, "AUTOTEST Tag")
-        screenshot(page_setup, "TagSearch")
-        assert discovery_page.study_found(page_setup, self.variables["study_id"])
-        screenshot(page_setup, "StudyFound")
+        # TODO: Tag columns are not yet added to frontend framework (GFF-522)
+        if not pytest.frontend_url:
+            discovery_page.search_tag(page_setup, "AUTOTEST Tag")
+            screenshot(page_setup, "TagSearch")
+            assert discovery_page.search_text_in_record(page_setup, "AUTOTEST Tag")
+            screenshot(page_setup, "StudyFound")
 
         # Text search by study title
         discovery_page.go_to(page_setup)
-        discovery_page.search_text(page_setup, "AUTOTEST Title")
+        discovery_page.search_study(page_setup, self.variables["study_id"])
         screenshot(page_setup, "TextSearchTitle")
-        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        assert discovery_page.search_text_in_record(page_setup, "[AUTOTEST Title]")
         screenshot(page_setup, "StudyFound")
 
         # Text search by study summary
         discovery_page.go_to(page_setup)
-        discovery_page.search_text(page_setup, "AUTOTEST Summary")
+        discovery_page.search_study(page_setup, self.variables["study_id"])
         screenshot(page_setup, "TextSearchSummary")
-        assert discovery_page.study_found(page_setup, self.variables["study_id"])
+        assert discovery_page.search_text_in_record(page_setup, "[AUTOTEST Summary]")
         screenshot(page_setup, "StudyFound")
 
-        # Open study in workspace
-        discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
-        workspace_page = WorkspacePage()
-        workspace_page.assert_page_loaded(page_setup)
-        workspace_page.launch_workspace(
-            page_setup, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
-        )
-        screenshot(page_setup, "WorkspaceLaunched")
+        # TODO: Login to Open In Workspace is not yet added to frontend framework (GFF-522)
+        if not pytest.frontend_url:
+            # Open study in workspace
+            discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
+            workspace_page = WorkspacePage()
+            workspace_page.assert_page_loaded(page_setup)
+            workspace_page.launch_workspace(
+                page_setup, "(Tutorial) Bacpac Synthetic Data Analysis Notebook"
+            )
+            screenshot(page_setup, "WorkspaceLaunched")
 
-        # Open Python notebook and run gen3 commands
-        workspace_page.open_python_notebook(page_setup)
-        command = "!pip install -U gen3==4.24.1"  # TODO: Fix the workspace image in jenkins envs, use jupyterlab
-        logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page_setup, command)
-        command = f"!gen3 drs-pull object {self.variables['did']}"
-        logger.info(f"Running in jupyter notebook: {command}")
-        result = workspace_page.run_command_in_notebook(page_setup, command)
-        logger.info(f"Result: {result}")
+            # Open Python notebook and run gen3 commands
+            workspace_page.open_python_notebook(page_setup)
+            command = "!pip install -U gen3==4.24.1"  # TODO: Fix the workspace image in jenkins envs, use jupyterlab
+            logger.info(f"Running in jupyter notebook: {command}")
+            result = workspace_page.run_command_in_notebook(page_setup, command)
+            command = f"!gen3 drs-pull object {self.variables['did']}"
+            logger.info(f"Running in jupyter notebook: {command}")
+            result = workspace_page.run_command_in_notebook(page_setup, command)
+            logger.info(f"Result: {result}")
 
-        # Terminate workspace
-        workspace_page.terminate_workspace(page_setup)
-        screenshot(page_setup, "WorkspaceTerminated")
+            # Terminate workspace
+            workspace_page.terminate_workspace(page_setup)
+            screenshot(page_setup, "WorkspaceTerminated")

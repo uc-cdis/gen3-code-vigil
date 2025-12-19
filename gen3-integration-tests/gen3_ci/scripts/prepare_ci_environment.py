@@ -79,7 +79,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
     )
     helm_service_names = {
         "audit-service": "audit",
@@ -108,7 +108,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
     )
     target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/{updated_folder}/values"
 
@@ -131,7 +131,7 @@ def modify_env_for_test_repo_pr(namespace):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
     )
     arguments = [
         namespace,

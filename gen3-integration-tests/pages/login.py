@@ -1,6 +1,7 @@
 # Login Page
 import os
 import re
+import time
 
 import pytest
 from pages.user_register import UserRegister
@@ -12,13 +13,26 @@ from utils.test_execution import screenshot
 
 class LoginPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/login"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Login"
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/login"
         # Locators
-        self.READY_CUE = "//div[@class='nav-bar']"  # homepage navigation bar
-        self.USERNAME_LOCATOR = "//div[@class='top-bar']//a[3]"  # username locator
+        self.LOGIN_BUTTONS = [
+            "//button[contains(normalize-space(), 'Dev login')]",
+            "//button[contains(normalize-space(), 'Google')]",
+            "//button[contains(normalize-space(), 'BioData Catalyst Developer Login')]",
+        ]
+        self.READY_CUE = "//button[contains(normalize-space(), 'ORCID Login')]"
+        self.GEN3_RAS_LOGIN_BUTTON = (
+            "//button[contains(normalize-space(), 'Login from RAS')]"
+        )
+        self.GEN3_ORCID_LOGIN_BUTTON = (
+            "//button[contains(normalize-space(), 'ORCID Login')]"
+        )
+        self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
         self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
         self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
-        self.RAS_LOGIN_BUTTON = "//button[contains(text(),'Login with RAS')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -32,19 +46,12 @@ class LoginPage(object):
         self.ORCID_USERNAME_INPUT = "//input[@id='username-input']"
         self.ORCID_PASSWORD_INPUT = "//input[@id='password']"
         self.ORCID_LOGIN_BUTTON = "//button[@id='signin-button']"
-        self.LOGIN_BUTTON_LIST = "//div[@class='login-page__central-content']"
         self.REGISTER_BUTTON = "//button[contains(text(),'Register')]"
         # from the list below, the LOGIN_BUTTON is selected in order of preference
         # if it doesnt find DEV_LOGIN button, it looks for GOOGLE LOGIN button instead and so on
-        self.LOGIN_BUTTONS = [
-            "//button[contains(text(), 'Dev login')]",
-            "//button[contains(text(), 'Google')]",
-            "//button[contains(text(), 'BioData Catalyst Developer Login')]",
-        ]
         self.USER_PROFILE_DROPDOWN = (
             "//i[@class='g3-icon g3-icon--user-circle top-icon-button__icon']"
         )
-        self.LOGOUT_NORMALIZE_SPACE = "//a[normalize-space()='Logout']"
 
     # TODO: see how to remove this parameter capture_screenshot
     def go_to(self, page: Page, url=None, capture_screenshot=True):
@@ -80,7 +87,7 @@ class LoginPage(object):
             ]
         )
         # printing cookies if needed for debugging purposes
-        expect(page.locator(self.LOGIN_BUTTON_LIST)).to_be_visible(timeout=30000)
+        expect(page.locator(self.GEN3_RAS_LOGIN_BUTTON)).to_be_visible(timeout=30000)
         self.handle_popup(page)
         if idp == "ORCID":
             self.orcid_login(page)
@@ -104,6 +111,8 @@ class LoginPage(object):
         if capture_screenshot:
             screenshot(page, "AfterLogin")
         page.wait_for_load_state("load")
+        # TODO: Remove the below check once GFF team resolves the issue
+        page.wait_for_url(lambda url: "login" not in url.lower())
         current_url = page.url
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
@@ -114,30 +123,8 @@ class LoginPage(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=pytest.users[user])
         if validate_username_locator:
-            res = get_portal_config()
-            # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
-            if (
-                res.get("components", {})
-                .get("topBar", {})
-                .get("useProfileDropdown", "")
-            ):
-                accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
-                accept_button_count = accept_button.count()
-                if accept_button_count > 0:
-                    logger.info("Clicking on Accept button")
-                    screenshot(page, "ClickingOnAcceptButton")
-                    accept_button.click()
-                page.locator(self.USER_PROFILE_DROPDOWN).click()
-                username = page.locator("//div[@class='ant-popover-title']").filter(
-                    has_text=re.compile(logged_in_user, re.IGNORECASE)
-                )
-            else:
-                username = page.locator(
-                    "//*[contains(@class, 'top-bar__nav')]//*[text()]"
-                ).filter(has_text=re.compile(logged_in_user, re.IGNORECASE))
-            expect(username).to_be_visible(timeout=120000)
+            self.validate_username(page, logged_in_user)
         screenshot(page, "AfterLogin")
-
         self.handle_popup(page)
         access_token_cookie = next(
             (
@@ -152,9 +139,27 @@ class LoginPage(object):
         ), "Access token cookie not found after login"
         return access_token_cookie
 
+    def validate_username(self, page, logged_in_user):
+        res = get_portal_config(json_file_name="navigation")
+        # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
+        if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
+            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
+            accept_button_count = accept_button.count()
+            if accept_button_count > 0:
+                logger.info("Clicking on Accept button")
+                screenshot(page, "ClickingOnAcceptButton")
+                accept_button.click()
+            page.locator(self.USER_PROFILE_DROPDOWN).click()
+            username = page.locator("//div[@class='ant-popover-title']").filter(
+                has_text=re.compile(logged_in_user, re.IGNORECASE)
+            )
+        else:
+            username = page.locator("a, p").get_by_text(logged_in_user)
+        expect(username).to_be_visible(timeout=120000)
+
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
-        page.locator("//button[normalize-space()='ORCID Login']").click()
+        page.locator(self.GEN3_ORCID_LOGIN_BUTTON).click()
         # Perform ORCID Login
         orcid_login_button = page.locator(self.ORCID_LOGIN_BUTTON)
         expect(orcid_login_button).to_be_visible(timeout=5000)
@@ -189,7 +194,7 @@ class LoginPage(object):
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
-            page.locator("//button[normalize-space()='Login from RAS']").click()
+            page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()
             # Perform RAS Login
             self.ras_login_form(page, username, password)
             screenshot(page, "RASAfterClickingGrantButton")
@@ -217,20 +222,23 @@ class LoginPage(object):
 
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
-        res = get_portal_config()
+        res = get_portal_config(json_file_name="navigation")
         self.handle_popup(page)
         # Check if useProfileDropdown is set to True and perform logout accordingly
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             screenshot(page, "BeforeLogout")
-            page.locator(self.LOGOUT_NORMALIZE_SPACE).click(timeout=10000)
+            page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.get_by_role("link", name="Logout").click(timeout=60000)
-        nav_bar_login_button = page.get_by_role("link", name="Login")
+            page.locator("a, p").get_by_text("Logout").click(timeout=60000)
+            logger.info("Clicked on logout button")
+        nav_bar_login_button = page.get_by_text("Login", exact=True)
+        # commons-frontend-app may have a pop up after clicking logout
+        self.handle_popup(page)
         if capture_screenshot:
             screenshot(page, "AfterLogout")
-        expect(nav_bar_login_button).to_be_visible
+        expect(nav_bar_login_button).to_be_visible(timeout=10000)
 
     # function to handle pop ups after login
     def handle_popup(self, page: Page):

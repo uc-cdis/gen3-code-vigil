@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import boto3
 import pytest
@@ -57,21 +58,6 @@ class CustomScheduling(LoadScopeScheduling):
 
         # otherwise, each test is in its own scope
         return nodeid.rsplit("::", 1)[0]
-
-
-def pytest_collection_modifyitems(session, config, items):
-    # Skip running code if --collect-only is passed
-    if session.config.option.collectonly:
-        return
-    skip_portal_tests = config.skip_portal_tests
-    if skip_portal_tests:
-        for item in items:
-            if item.get_closest_marker("portal"):
-                item.add_marker(
-                    pytest.mark.skip(
-                        reason="Skipping portal test as unsupported frontend is used"
-                    )
-                )
 
 
 def pytest_collection_finish(session):
@@ -167,6 +153,13 @@ def pytest_configure(config):
     pytest.google_enabled = gat.is_google_enabled()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
+    # Flag for identifying if root_url_portal is for frontend or not
+    pytest.frontend_url = gat.is_frontend_url()
+    if pytest.frontend_url:
+        repo_name, branch_name, target_dir = gat.get_ff_commons_info()
+        pytest.frontend_commons_name = target_dir
+        if not hasattr(config, "workerinput"):
+            gat.download_frontend_commons_app_repo(repo_name, branch_name, target_dir)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
@@ -202,6 +195,9 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_unconfigure(config):
+    if pytest.frontend_url:
+        ff_dir = Path(__file__).parent / pytest.frontend_commons_name
+        shutil.rmtree(ff_dir, ignore_errors=True)
     # Skip running code if --collect-only is passed
     if config.option.collectonly:
         return
