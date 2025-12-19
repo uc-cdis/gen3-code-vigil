@@ -1,7 +1,5 @@
 import allure
-
 from allure_commons.types import AttachmentType
-
 from utils.misc import retry
 
 
@@ -19,3 +17,5 @@ def assert_with_retry(operation, expected, actual, error_prefix):
         assert (
             expected == actual
         ), f"{error_prefix}: expected - {expected}, actual - {actual}"
+    else:
+        raise Exception(f"Unsupported 'assert_with_retry' operation: {operation}")

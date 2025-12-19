@@ -62,7 +62,7 @@ def setup_fence_test_clients_info():
 def get_rotated_client_id_secret():
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
     if not os.path.exists(path):
-        logger.info("clients_creds.txt doesn't exists.")
+        logger.info("clients_creds.txt doesn't exist.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -82,7 +82,7 @@ def get_client_id_secret():
     """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
     if not os.path.exists(path):
-        logger.info("client_rotate_creds.txt doesn't exists.")
+        logger.info("client_rotate_creds.txt doesn't exist.")
         return
     with open(path, "r") as file:
         content = file.read()
