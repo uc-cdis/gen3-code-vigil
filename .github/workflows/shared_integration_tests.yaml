@@ -405,7 +405,7 @@ jobs:
               echo -e "\n\n******* Upload reports to S3 *******" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
-                aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run/$DATE >> logs/gh_action_logs.txt 2>&1
+                aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
               else
                 aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
               fi
@@ -421,7 +421,7 @@ jobs:
               echo -e "\n\n******** Upload logs to S3 ********" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
-                aws s3 sync ./logs s3://ci-allure-reports/nightly-run/$DATE >> logs/gh_action_logs.txt 2>&1
+                aws s3 sync ./logs s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
               else
                 aws s3 sync ./logs s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
               fi
@@ -445,7 +445,7 @@ jobs:
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
-                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run/$DATE/index.html)" >> output/report.md
+                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/index.html)" >> output/report.md
                 else
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
                 fi
@@ -453,7 +453,7 @@ jobs:
               if [ "${{ steps.upload_gh_action_logs.outcome }}" == "success" ]; then
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
-                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/nightly-run/$DATE/gh_action_logs.txt)" >> output/report.md
+                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/gh_action_logs.txt)" >> output/report.md
                 else
                   echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt)" >> output/report.md
                 fi
