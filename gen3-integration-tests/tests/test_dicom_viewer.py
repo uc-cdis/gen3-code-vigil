@@ -41,8 +41,11 @@ class TestDicomViewer(object):
         study_res = cls.dicom.get_studies(study_instance=study_instance)
         cls.study_id = study_res["MainDicomTags"]["StudyInstanceUID"]
 
-    # TODO: Enable this test once orthanc changes are deployed on midrc prod
-    # @pytest.mark.skip(reason="Temporarily Disabled")
+    @pytest.mark.skipif(
+        pytest.frontend_url,
+        reason="Exploration page shows it has records, but doesnt populate them in the table on page (GFF-520)",
+    )
+    @pytest.mark.frontend
     def test_check_uploaded_dicom_file(self, page: Page):
         """
         Scenario: Verify Uploaded Dicom file

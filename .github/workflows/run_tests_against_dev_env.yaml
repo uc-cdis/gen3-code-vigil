@@ -40,6 +40,12 @@ jobs:
       WORKING_DIR: gen3-code-vigil/gen3-integration-tests
       SLACK_CHANNEL: "#test-bots"
       GH_WORKSPACE: ${{ github.workspace }}
+      CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
+      CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
+      CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
+      CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
+      CI_TEST_RAS_2_EMAIL: ${{ secrets.CI_TEST_RAS_2_EMAIL }}
+      CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
     steps:
       - name: Set Start Time
         working-directory: ${{ github.workspace }}

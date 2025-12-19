@@ -1,5 +1,5 @@
 """
-Hatchery Test
+Workspace Test
 """
 
 import pytest
@@ -32,7 +32,7 @@ def page_setup(page):
     reason="hatchery service is not running on this environment",
 )
 @pytest.mark.workspace
-@pytest.mark.portal
+@pytest.mark.frontend
 class TestWorkspacePage:
     def test_launch_workspace(self, page_setup):
         """

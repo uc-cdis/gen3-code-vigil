@@ -14,11 +14,11 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.test_execution import screenshot
 
 
-# @pytest.mark.requestor
-# @pytest.mark.mds
-# @pytest.mark.study_registration
+@pytest.mark.requestor
+@pytest.mark.mds
+@pytest.mark.study_registration
 @pytest.mark.wip
-@pytest.mark.portal
+@pytest.mark.frontend
 @pytest.mark.skipif(
     not pytest.use_agg_mdg_flag,
     reason="USE_AGG_MDS is not set or is false in manifest",
@@ -85,7 +85,7 @@ class TestStudyRegistration(object):
         discovery_page = DiscoveryPage()
         study_register = StudyRegistrationPage()
         # Get UID field name from portal config
-        portal_config = gat.get_portal_config()
+        portal_config = gat.get_portal_config(json_file_name="discovery")
         uid_field_name = (
             portal_config.get("discoveryConfig", {})
             .get("minimalFieldMapping", {})

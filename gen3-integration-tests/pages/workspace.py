@@ -1,4 +1,6 @@
 # Workspace Page
+import time
+
 import pytest
 from playwright.sync_api import Page, expect
 from utils import logger
@@ -8,15 +10,29 @@ from utils.test_execution import screenshot
 class WorkspacePage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url_portal}/workspace"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Workspace"
+            self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
+            self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), 'mantine-Grid-inner')]"  # Workspace Options
+            self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')]"
+            self.TERMINATE_BUTTON = (
+                "//span[contains(text(),'Stop Workspace')]"  # terminate nb button
+            )
+            self.YES_BUTTON = (
+                "//span[contains(text(),'Confirm')]"  # terminate 'confirm' button
+            )
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/workspace"
+            self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
+            self.WORKSPACE_OPTIONS = (
+                "//div[@class='workspace__options']"  # Workspace Options
+            )
+            self.LAUNCH_FIRST_WORKSPACE = (
+                "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
+            )
+            self.TERMINATE_BUTTON = "//button[contains(text(),'Terminate Workspace')]"  # terminate nb button
+            self.YES_BUTTON = "//span[contains(text(),'Yes')]"  # terminate 'yes' button
         # Locators
-        self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
-        self.WORKSPACE_OPTIONS = (
-            "//div[@class='workspace__options']"  # Workspace Options
-        )
-        self.LAUNCH_FIRST_WORKSPACE = (
-            "(//div[@class='workspace-option'])[1]/button[text()='Launch']"
-        )
         self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
         self.NEW_NB = (
@@ -32,10 +48,6 @@ class WorkspacePage(object):
             "//button[@aria-label='Run']"  # Notebook button to run cell and select next
         )
         self.NB_CELL_OUTPUT = "//div[@class='output_subarea output_text output_stream output_stdout']//pre"  # output after run command
-        self.TERMINATE_BUTTON = (
-            "//button[contains(text(),'Terminate Workspace')]"  # terminate nb button
-        )
-        self.YES_BUTTON = "//span[contains(text(),'Yes')]"  # terminate 'yes' button
 
     def go_to(self, page: Page):
         """Goes to workspace page and checks if loaded correctly"""
@@ -106,4 +118,8 @@ class WorkspacePage(object):
     def terminate_workspace(self, page: Page):
         page.locator(self.TERMINATE_BUTTON).click()
         page.locator(self.YES_BUTTON).click()
+        # TODO: Terminating workspace is resulting in a UI bug for frontend framework (GFF-521)
+        if pytest.frontend_url:
+            time.sleep(10)
+            self.go_to(page)
         page.locator(self.WORKSPACE_OPTIONS).wait_for(timeout=1200000)

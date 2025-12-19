@@ -595,10 +595,15 @@ class TestDataUpload:
             id=file_guid, user="main_account", expected_status=404
         )
 
-    @pytest.mark.portal
+    @pytest.mark.frontend
     @pytest.mark.skipif(
         "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
+    )
+    # TODO: GFF - Remove once submission page functionality is implemented
+    @pytest.mark.skipif(
+        pytest.frontend_url,
+        reason="Submission Page functionality is not implemented in frontend-framework",
     )
     @pytest.mark.skipif(
         not pytest.indexs3client_job_deployed,
@@ -656,7 +661,12 @@ class TestDataUpload:
 
         self.login_page.logout(page)
 
-    @pytest.mark.portal
+    @pytest.mark.frontend
+    # TODO: GFF - Remove once submission page functionality is implemented
+    @pytest.mark.skipif(
+        pytest.frontend_url,
+        reason="Submission Page functionality is not implemented in frontend-framework",
+    )
     @pytest.mark.skipif(
         "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",

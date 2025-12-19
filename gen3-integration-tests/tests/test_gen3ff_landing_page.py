@@ -12,8 +12,7 @@ from utils import logger
     "frontend-framework" not in pytest.deployed_services,
     reason="frontend-framework service is not running on this environment",
 )
-@pytest.mark.portal
-@pytest.mark.frontend_framework
+@pytest.mark.frontend
 class TestGen3FFLandingPage(object):
     def test_home_page_redirection(self, page):
         """

@@ -97,6 +97,7 @@ jobs:
           QUAY_REPO: ${{ inputs.QUAY_REPO }}
           IS_NIGHTLY_RUN: ${{ inputs.IS_NIGHTLY_RUN }}
           TEST_LABELS: ${{ inputs.TEST_LABELS }}
+          CI_ENV: ${{ inputs.CI_ENV }}
           SKIP_TESTS: 'false'
 
         steps:

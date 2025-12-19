@@ -17,11 +17,9 @@ from utils import gen3_admin_tasks as gat
     reason="fence service is not running on this environment",
 )
 @pytest.mark.skipif(
-    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
-    reason="frontend_root is set to gen3ff",
-)
-@pytest.mark.skipif(
-    gat.get_portal_config().get("components", {}).get("appName", "")
+    gat.get_portal_config(json_file_name="navigation")
+    .get("components", {})
+    .get("appName", "")
     == "VA Data Commons",
     reason="Skipping RAS Auth N tests for VA env",
 )
@@ -29,7 +27,7 @@ from utils import gen3_admin_tasks as gat
     "nightly-build" not in pytest.hostname,
     reason="Test is being run on Helm and would run only on nightly-build",
 )
-@pytest.mark.portal
+@pytest.mark.frontend
 @pytest.mark.fence
 @pytest.mark.ras
 @pytest.mark.requires_fence_client
