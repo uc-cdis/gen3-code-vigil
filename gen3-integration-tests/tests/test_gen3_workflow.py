@@ -15,7 +15,6 @@ from utils import logger
     reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
-@pytest.mark.wip
 class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
@@ -488,12 +487,11 @@ class TestGen3Workflow(object):
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
-
             assert (
                 response["ContentLength"] > 0
-            ), f"Expected to have some data in {expected_file}. But found empty file instead. Response :{response}"
+            ), f"Expected to have some data in {expected_file}. But found empty file instead. Response: {response}"
 
-            def get_s3_file_contents(test_file_name):
+            def get_nextflow_output_file_contents(test_file_name):
                 matching_keys = [
                     file["Key"]
                     for file in s3_file_list
@@ -527,7 +525,7 @@ class TestGen3Workflow(object):
                 "/.command.log",
             ]
             for test_file_name in test_files:
-                file_contents = get_s3_file_contents(test_file_name)
+                file_contents = get_nextflow_output_file_contents(test_file_name)
 
                 if test_file_name == "/.command.sh":
                     # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
@@ -543,18 +541,25 @@ class TestGen3Workflow(object):
                     if expected_file_contents != file_contents:
                         # when the task failed, log the contents of the error output file for
                         # debugging purposes
-                        err_file_contents = get_s3_file_contents("/.command.err")
+                        err_file_contents = get_nextflow_output_file_contents(
+                            "/.command.err"
+                        )
                         logger.info(
                             f"[{task_name}] /.command.err contents:\n{err_file_contents}"
                         )
                 elif test_file_name == "/.command.out":
                     expected_file_contents = ""
-                elif test_file_name == "/.command.log":
-                    # we do not check the full logs, just that the file is not empty
-                    assert (
-                        file_contents
-                    ), f"[{task_name}] {test_file_name} file is unexpectedly empty"
-                    continue
+                elif test_file_name in ["/.command.log", "/.command.err"]:
+                    if "dicom_to_png" in task_name:
+                        expected_file_contents = ""
+                    else:  # extract_metadata task_name
+                        # This task currently outputs task progress and a warning (`A value is
+                        # trying to be set on a copy of a slice from a DataFrame`).
+                        # We do not check the full logs, just that the file is not empty.
+                        assert (
+                            file_contents
+                        ), f"[{task_name}] {test_file_name} file is unexpectedly empty"
+                        continue
 
                 assert expected_file_contents == file_contents, {
                     f"[{task_name}] {test_file_name} file does not contain the expected data.\n"
