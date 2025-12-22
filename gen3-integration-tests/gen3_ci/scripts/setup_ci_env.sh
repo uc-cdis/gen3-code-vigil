@@ -48,7 +48,15 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         else
           yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         fi
-    elif [ "$service_yaml_block" != "key not found" ]; then
+    elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
+    then
+        echo "Found a frontend framework based repo '$service_name'"
+        [[ "$CI_ENV" == "gen3ff" ]]; then
+          yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+          repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$ci_default_manifest_values_yaml")
+          yq eval ".frontend-framework.image.repository = \"${repository%/*}/$service_name\"" -i "$ci_default_manifest_values_yaml"
+        fi
+    else
         echo "Key '$service_name' not found."
         # Skip image update for repos which dont need it
         skip_service_list=("gen3-client")
@@ -212,6 +220,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            if [[ "$key" == "" ]]; then
+              repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
+              yq eval ".frontend-framework.image.repository = \"${repository}" -i "$ci_default_manifest_values_yaml"
+            fi
         fi
       fi
     else
