@@ -161,6 +161,7 @@ class Fence(object):
             scopes=scopes,
             logged_in_user=pytest.users[user],
         )
+        screenshot(page, "BeforeCodeCheckInUrl")
         assert "code=" in url, f"{url} is missing code= substring"
         code = url.split("code=")[-1]
         response = self.get_token_with_auth_code(
