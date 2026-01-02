@@ -1,5 +1,6 @@
 import base64
 import json
+import time
 
 import pytest
 import requests
@@ -186,6 +187,7 @@ class Fence(object):
         page.goto(url)
         page.wait_for_load_state("load")
         screenshot(page, "AfterConsentCodeURL")
+        time.sleep(10)
         current_url = page.url
         if "/user/register" in current_url:
             logger.info(f"Registering User {client_email_id}")
