@@ -109,6 +109,8 @@ def generate_slack_report():
             "emoji": True,
         },
     }
+    if os.getenv("CI_ENV") == "gen3ff":
+        header_block["text"]["text"] = "Integration Test Results - Gen3FF"
     slack_report_json["blocks"].append(header_block)
     # Calculate gh action time
     start_time = os.getenv("GITHUB_RUN_STARTED_AT")
