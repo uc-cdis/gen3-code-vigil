@@ -184,12 +184,14 @@ class Fence(object):
         url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
         page.goto(url)
         page.wait_for_load_state("load")
+        screenshot(page, "AfterConsentCodeURL")
         current_url = page.url
         if "/user/register" in current_url:
             logger.info(f"Registering User {client_email_id}")
             user_register = UserRegister()
             user_register.register_user(page, user_email=client_email_id)
         if expect_code:
+            screenshot(page, "ExpectingCode")
             if consent == "cancel":
                 page.locator(self.CONSENT_CANCEL_BUTTON).click()
             else:
@@ -202,6 +204,7 @@ class Fence(object):
                 "Unauthorized",
                 "Bad Request",
             ], f"Expected Unauthorized or Bad Request, instead got {text_from_page}"
+        screenshot(page, "FinalCode")
         return page.url
 
     def get_token_with_auth_code(self, client_id, client_secret, code, grant_type):
