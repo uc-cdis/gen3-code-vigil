@@ -1,5 +1,5 @@
 """
-CENTRALIZED AUTH
+CENTRALIZED AUTHs
 """
 
 import os
