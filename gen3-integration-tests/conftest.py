@@ -4,6 +4,7 @@ import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import allure
 import boto3
 import pytest
 
@@ -162,6 +163,24 @@ def pytest_configure(config):
             gat.download_frontend_commons_app_repo(repo_name, branch_name, target_dir)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item):
+    outcome = yield
+    rep = outcome.get_result()
+
+    # Attach video only if test failed
+    if rep.when == "call" and rep.failed:
+        page = item.funcargs.get("page")
+        if page and page.video:
+            video_path = page.video.path()
+
+            allure.attach.file(
+                video_path,
+                name="Test execution video",
+                attachment_type=allure.attachment_type.MP4,
+            )
 
 
 @pytest.hookimpl(hookwrapper=True)
