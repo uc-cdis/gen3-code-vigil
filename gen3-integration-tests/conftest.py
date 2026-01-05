@@ -214,7 +214,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-    # Add failed test suites to GITHUB variable
-    with open(os.getenv("GITHUB_ENV"), "a") as f:
-        f.write(f"FAILED_TEST_SUITES={','.join(failed_test_suites)}")
-    return
+        # Add failed test suites to GITHUB variable
+        with open(os.getenv("GITHUB_ENV"), "a") as f:
+            f.write(f"FAILED_TEST_SUITES={','.join(failed_test_suites)}")
+        return
