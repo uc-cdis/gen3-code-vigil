@@ -148,7 +148,7 @@ jobs:
         run: |
             echo -e "\n\n************ Run tests ************" >> logs/gh_action_logs.txt
             mkdir output
-            poetry run pytest -n logical -m "not wip" --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }} >> logs/gh_action_logs.txt 2>&1
+            poetry run pytest -n logical -m "not wip" --video=on --alluredir allure-results --no-header --dist loadscope ${{ env.TEST_LABEL }} >> logs/gh_action_logs.txt 2>&1
             if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
             fi
