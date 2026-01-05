@@ -21,6 +21,7 @@ requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
 
 collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
+failed_test_suites = []
 
 
 class XDistCustomPlugin:
@@ -184,7 +185,13 @@ def pytest_runtest_logreport(report):
         "result": report.outcome,
         "duration": str(timedelta(seconds=report.duration)),
     }
-
+    # Collect test suite failures for re-run
+    if (
+        report.outcome == "failed"
+        and test_nodeid.split("::")[1] not in failed_test_suites
+    ):
+        failed_test_suites.append(test_nodeid.split("::")[1])
+    # Add data to the queue
     try:
         sqs = boto3.client("sqs")
         queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
@@ -207,3 +214,7 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+    # Add failed test suites to GITHUB variable
+    with open(os.getenv("GITHUB_ENV"), "a") as f:
+        f.write(f"FAILED_TEST_SUITES={','.join(failed_test_suites)}")
+    return
