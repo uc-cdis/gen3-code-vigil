@@ -484,6 +484,26 @@ jobs:
               payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
               payload-templated: true
 
+          - name: Add labels and re-run current workflow
+            if: ${{ github.event_name == 'pull_request' && github.run_attempt == 1 }}
+            run: |
+              # Add labels first
+              IFS=',' read -ra LABELS <<< "$FAILED_TEST_SUITES"
+              for label in "${LABELS[@]}"; do
+                label="$(echo "$label" | xargs)"
+                curl -s -X POST \
+                  -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                  -H "Accept: application/vnd.github+json" \
+                  https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
+                  -d "$(jq -n --arg l "$label" '{labels: [$l]}')"
+              done
+
+              # Re-run the same workflow run (increment attempt)
+              curl -s -X POST \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun
+
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
