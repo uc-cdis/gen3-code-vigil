@@ -163,8 +163,13 @@ class Fence(object):
             logged_in_user=pytest.users[user],
         )
         screenshot(page, "BeforeCodeCheckInUrl")
+        logger.info(
+            f"Before WaitForURL -- {page.url=}, response from get_consent_code : {url=}"
+        )
         page.wait_for_url(lambda url: "code=" in url.lower())
-        logger.info(page.url)
+        logger.info(
+            f"After WaitForURL --  {page.url=}, response from get_consent_code : {url=}"
+        )
         assert "code=" in url, f"{url} is missing code= substring"
         code = url.split("code=")[-1]
         response = self.get_token_with_auth_code(
