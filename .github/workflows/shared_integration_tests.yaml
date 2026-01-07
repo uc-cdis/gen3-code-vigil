@@ -131,8 +131,7 @@ jobs:
               fi
 
           - name: Get previous workflow run result
-            env:
-              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            working-directory: ${{ github.workspace }}
             run: |
               PREV_WORKFLOW_RUN_RESULT=$(gh api repos/${{ github.repository }}/actions/runs \
                 -q '
