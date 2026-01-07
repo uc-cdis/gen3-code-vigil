@@ -129,6 +129,26 @@ jobs:
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
+          - name: Skip integration tests if master is merged
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
+            run: |
+              COMMIT_MSG=$(git log -1 --pretty=%B)
+              echo "Commit message: $COMMIT_MSG"
+
+              if [[ "$COMMIT_MSG" == Merge\ branch*into* ]]; then
+                echo "This is an update-branch commit"
+                echo "SKIP_TESTS=true" >> $GITHUB_ENV
+              fi
+
+          - name: Remove all PR labels on new commit
+            if: github.event.action == 'synchronize' &&
+                github.event.before != github.event.after
+            run: |
+              curl -X DELETE \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUM/labels
+
           # Checkout current repo
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
