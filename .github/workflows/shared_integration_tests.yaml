@@ -142,8 +142,8 @@ jobs:
               fi
 
           - name: Remove all PR labels on new commit
-            if: github.event.action == 'synchronize' &&
-                github.event.before != github.event.after
+            if: github.event.action == 'synchronize' && github.event.before != github.event.after
+            working-directory: ${{ github.workspace }}
             run: |
               curl -X DELETE \
                 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
