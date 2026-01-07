@@ -76,6 +76,7 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -176,9 +177,6 @@ jobs:
             if: github.event.action == 'synchronize' && github.event.before != github.event.after
             working-directory: ${{ github.workspace }}
             run: |
-              echo "Before SHA: ${{ github.event.before }}"
-              echo "After SHA: ${{ github.event.after }}"
-              echo "Event info: ${{ github.event }}"
               curl -X DELETE \
                 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                 -H "Accept: application/vnd.github+json" \
@@ -555,11 +553,10 @@ jobs:
               done
 
               # Re-run the same workflow run (increment attempt)
-              gh api \
-              --method POST \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/uc-cdis/$${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun
+              curl -s -X POST \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
