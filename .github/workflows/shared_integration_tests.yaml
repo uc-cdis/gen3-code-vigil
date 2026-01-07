@@ -85,6 +85,7 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           RUN_ID: ${{ github.run_id }}
           ATTEMPT_NUM: ${{ github.run_attempt }}
+          WORKFLOW: ${{ github.workflow }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
           CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
@@ -129,6 +130,24 @@ jobs:
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
+          - name: Get previous workflow run result
+            env:
+              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            run: |
+              PREV_WORKFLOW_RUN_RESULT=$(gh api repos/${{ github.repository }}/actions/runs \
+                -q '
+                  .workflow_runs
+                  | map(select(.name == "'"$WORKFLOW"'"))
+                  | map(select(.pull_requests[].number == '"$PR_NUM"'))
+                  | map(select(.id != '"$RUN_ID"'))
+                  | sort_by(.run_number)
+                  | reverse
+                  | .[0].conclusion
+                ')
+
+              echo "PREV_WORKFLOW_RUN_RESULT=$PREV_WORKFLOW_RUN_RESULT"
+              echo "PREV_WORKFLOW_RUN_RESULT=$PREV_WORKFLOW_RUN_RESULT" >> $GITHUB_ENV
+
           - name: Skip integration tests if master is merged
             if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
             working-directory: ${{ github.workspace }}
@@ -136,7 +155,7 @@ jobs:
               COMMIT_MSG=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }} -q '.commit.message')
               echo "Commit message: $COMMIT_MSG"
 
-              if [[ "$COMMIT_MSG" == Merge\ branch*into* ]]; then
+              if [[ "$PREV_WORKFLOW_RUN_RESULT" == "success" && "$COMMIT_MSG" == Merge\ branch*into* ]]; then
                 echo "This is an update-branch commit"
                 echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
