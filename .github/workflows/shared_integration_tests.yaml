@@ -131,6 +131,7 @@ jobs:
 
           - name: Skip integration tests if master is merged
             if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
+            working-directory: ${{ github.workspace }}
             run: |
               COMMIT_MSG=$(git log -1 --pretty=%B)
               echo "Commit message: $COMMIT_MSG"
