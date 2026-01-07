@@ -554,7 +554,7 @@ jobs:
 
               # Re-run the same workflow run (increment attempt)
               curl -s -X POST \
-                -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
+                -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                 -H "Accept: application/vnd.github+json" \
                 https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun
 
