@@ -543,9 +543,11 @@ jobs:
             if: ${{ github.event_name == 'pull_request' && github.run_attempt == 1 }}
             run: |
               # Add labels first
+              echo "Adding labels"
               IFS=',' read -ra LABELS <<< "$FAILED_TEST_SUITES"
               for label in "${LABELS[@]}"; do
                 label="$(echo "$label" | xargs)"
+                echo "Adding label '$label'. URL: 'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels'"
                 curl -s -X POST \
                   -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
                   -H "Accept: application/vnd.github+json" \
@@ -554,6 +556,7 @@ jobs:
               done
 
               # Re-run the same workflow run (increment attempt)
+              echo "Done adding labels. Rerunning workflow. URL: 'https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun'"
               curl -s -X POST \
                 -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
                 -H "Accept: application/vnd.github+json" \
