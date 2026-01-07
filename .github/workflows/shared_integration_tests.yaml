@@ -155,9 +155,23 @@ jobs:
               echo "Commit message: $COMMIT_MSG"
 
               if [[ "$PREV_WORKFLOW_RUN_RESULT" == "success" && "$COMMIT_MSG" == Merge\ branch*into* ]]; then
-                echo "This is an update-branch commit"
-                echo "SKIP_TESTS=true" >> $GITHUB_ENV
+                  echo "This is an update-branch commit"
+                  readarray -t MERGE_FILES < <(git diff --name-only HEAD^1 HEAD)
+                  PR_BASE=$(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }})
+                  readarray -t PR_FILES < <(git diff --name-only $PR_BASE HEAD)
+
+                  # Check if file from master commit is present in pr files
+                  SKIP=true
+                  for f in "${MERGE_FILES[@]}"; do
+                      if printf "%s\n" "${PR_FILES[@]}" | grep -qx "$f"; then
+                          SKIP=false
+                          echo "File $f from master commit is part of PR changes"
+                          break
+                      fi
+                  done
+                  echo "SKIP_TESTS=$SKIP" >> $GITHUB_ENV
               fi
+
 
           - name: Remove all PR labels on new commit
             if: github.event.action == 'synchronize' && github.event.before != github.event.after
