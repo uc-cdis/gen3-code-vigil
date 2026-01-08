@@ -42,7 +42,7 @@ def _nextflow_parse_completed_line(log_line):
         r"Task completed > TaskHandler\[.*?"
         r"name: (?P<name>.+); status: (?P<status>-?\w+); "
         r"exit: (?P<exit_code>-?\d+); "
-        r".*?workDir: (?P<workDirProtocol>.+?)(:\/\/)?(?P<workDir>.+)]"
+        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
     )
 
     match = re.match(log_regex, log_line)
@@ -53,6 +53,9 @@ def _nextflow_parse_completed_line(log_line):
         task_info["workDirProtocol"] = match.group("workDirProtocol")
         task_info["exit_code"] = match.group("exit_code")
         task_info["status"] = match.group("status") or "-"
+
+        if task_info["workDirProtocol"]:
+            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
 
         if task_info["exit_code"] != "0":
             task_info["status"] = "FAILED"
