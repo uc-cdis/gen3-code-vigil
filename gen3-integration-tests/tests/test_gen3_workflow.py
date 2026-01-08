@@ -1,9 +1,63 @@
+import os
 import re
+import shutil
+import subprocess
 import time
 
 import pytest
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from utils import logger
+
+
+def _nextflow_parse_completed_line(log_line):
+    """
+    Parses a line from the nextflow log that indicates a completed task.
+    Extracts: task name, work directory (and protocol), exit code, and status.
+
+    :param str log_line: A line from the Nextflow log file.
+    :return: Dictionary with extracted task information.
+    :rtype: dict
+
+    Example log line:
+    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
+    Example return value:
+    {
+        "process_name": "extract_metadata (1)",
+        "workDir": "bucket-name/work-dir",
+        "workDirProtocol": "s3",
+        "exit_code": "0",
+        "status": "COMPLETED"
+    }
+    """
+
+    task_info = {
+        "process_name": "-",
+        "workDir": "-",
+        "workDirProtocol": "-",
+        "exit_code": "-",
+        "status": "-",
+    }
+    log_regex = (
+        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
+        r"Task completed > TaskHandler\[.*?"
+        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
+        r"exit: (?P<exit_code>-?\d+); "
+        r".*?workDir: (?P<workDirProtocol>.+?)(:\/\/)?(?P<workDir>.+)]"
+    )
+
+    match = re.match(log_regex, log_line)
+
+    if match:
+        task_info["process_name"] = match.group("name")
+        task_info["workDir"] = match.group("workDir")
+        task_info["workDirProtocol"] = match.group("workDirProtocol")
+        task_info["exit_code"] = match.group("exit_code")
+        task_info["status"] = match.group("status") or "-"
+
+        if task_info["exit_code"] != "0":
+            task_info["status"] = "FAILED"
+
+    return task_info
 
 
 @pytest.mark.skipif(
@@ -29,55 +83,6 @@ class TestGen3Workflow(object):
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
             cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
         )
-
-    def _nextflow_parse_completed_line(self, log_line):
-        """
-        Parses a line from the nextflow log that indicates a completed task.
-        Extracts: task name, work directory (and protocol), exit code, and status.
-
-        :param str log_line: A line from the Nextflow log file.
-        :return: Dictionary with extracted task information.
-        :rtype: dict
-
-        Example log line:
-        "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
-        Example return value:
-        {
-            "process_name": "extract_metadata (1)",
-            "workDir": "bucket-name/work-dir",
-            "workDirProtocol": "s3",
-            "exit_code": "0",
-            "status": "COMPLETED"
-        }
-        """
-
-        task_info = {
-            "process_name": "-",
-            "workDir": "-",
-            "workDirProtocol": "-",
-            "exit_code": "-",
-            "status": "-",
-        }
-        log_regex = (
-            r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
-            r"Task completed > TaskHandler\[.*?"
-            r"name: (?P<name>.+); status: (?P<status>-?\w+); "
-            r"exit: (?P<exit_code>-?\d+); "
-            r".*?workDir: (?P<workDirProtocol>.+):\/\/(?P<workDir>.+)]"
-        )
-        match = re.match(log_regex, log_line)
-
-        if match:
-            task_info["process_name"] = match.group("name")
-            task_info["workDir"] = match.group("workDir")
-            task_info["workDirProtocol"] = match.group("workDirProtocol")
-            task_info["exit_code"] = match.group("exit_code")
-            task_info["status"] = match.group("status") or "-"
-
-            if task_info["exit_code"] != "0":
-                task_info["status"] = "FAILED"
-
-        return task_info
 
     ######################## Test /storage/info endpoint ########################
 
@@ -407,6 +412,8 @@ class TestGen3Workflow(object):
             final_state in valid_states
         ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
 
+    ######################## Test Nextflow with TES executor ########################
+
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -436,7 +443,7 @@ class TestGen3Workflow(object):
         for line in workflow_log.splitlines():
             logger.info(line)
             if "Task completed > TaskHandler" in line:
-                completed_tasks.append(self._nextflow_parse_completed_line(line))
+                completed_tasks.append(_nextflow_parse_completed_line(line))
 
         for task in completed_tasks:
 
@@ -454,10 +461,10 @@ class TestGen3Workflow(object):
 
             assert (
                 task["status"] == "COMPLETED"
-            ), f"Task {task_name} failed with status: {task['status']}"
+            ), f"Task '{task_name}' failed with status: {task['status']}"
             assert (
                 task["exit_code"] == "0"
-            ), f"Task {task_name} failed with exit code: {task['exit_code']}"
+            ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
             assert (
                 task["workDirProtocol"] == "s3"
             ), f"Expected workDir to be an 's3' location, but got {task['workDirProtocol']}"
@@ -566,6 +573,65 @@ class TestGen3Workflow(object):
                     f"Expected to find: `{expected_file_contents}`\n"
                     f"Actual content: `{file_contents}`"
                 }
+
+    def test_nf_canary(self):
+        """
+        Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
+        """
+        # clone the tests repo
+        directory = "test_data/gen3_workflow/nf-canary"
+        shutil.rmtree(directory, ignore_errors=True)
+        subprocess.run(
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "https://github.com/seqeralabs/nf-canary.git",
+                directory,
+            ]
+        )
+
+        # update the nextflow config
+        lines = [
+            "process.executor = 'tes'",
+            "plugins.id = 'nf-ga4gh'",
+            'tes.endpoint = "https://${HOSTNAME}/ga4gh/tes"',
+            'tes.oauthToken = "${GEN3_TOKEN}"',
+            'aws.accessKey = "${GEN3_TOKEN}"',
+            "aws.secretKey = 'N/A'",
+            f"aws.region = '{self.s3_storage_config.bucket_region}'",
+            "aws.client.endpoint = 'tes'",
+            "aws.client.s3PathStyleAccess = true",
+            "aws.client.maxErrorRetry = 1",
+            'workDir = "${WORK_DIR}"',
+        ]
+        with open(os.path.join(directory, "nextflow.config"), "a") as file:
+            file.write("\n".join(lines) + "\n")
+
+        # run the test nextflow workflow
+        workflow_log = self.gen3_workflow.run_nextflow_task(
+            workflow_dir=directory,
+            workflow_script="main.nf",
+            nextflow_config_file="nextflow.config",
+            s3_working_directory=self.s3_storage_config.working_directory,
+        )
+
+        # check that each test == each task succeeded
+        logger.info(f"Workflow log:")
+        completed_tasks = []
+        for line in workflow_log.splitlines():
+            logger.info(line)
+            if "Task completed > TaskHandler" in line:
+                completed_tasks.append(_nextflow_parse_completed_line(line))
+        for task in completed_tasks:
+            task_name = task["process_name"]
+            assert (
+                task["status"] == "COMPLETED"
+            ), f"Task '{task_name}' failed with status: {task['status']}"
+            assert (
+                task["exit_code"] == "0"
+            ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
 
 # TODO: Add more tests for the following:
