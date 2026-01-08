@@ -1,0 +1,51 @@
+# Uses the shared workflow from this repo for ease of maintenance
+name: Rerun integration tests
+
+on:
+    workflow_dispatch:
+      inputs:
+        GITHUB_REPOSITORY:
+          description: 'GITHUB repository name where action needs to run'
+          required: true
+        ACTION_RUN_ID:
+          description: 'Action run_id of the workflow to rerun'
+          required: true
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
+  actions: write
+
+jobs:
+  rerun-integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for existing run to complete
+        run: |
+          echo "Waiting for run ${{ inputs.ACTION_RUN_ID }} to complete..."
+
+          while true; do
+            status=$(curl -s \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              https://api.github.com/repos/${{ inputs.GITHUB_REPOSITORY }}/actions/runs/${{ inputs.ACTION_RUN_ID }} \
+              | jq -r '.status')
+
+            echo "Current status: $status"
+
+            if [ "$status" = "completed" ]; then
+              break
+            fi
+
+            sleep 15
+          done
+
+      - name: Rerun workflow using the run_id
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ inputs.GITHUB_REPOSITORY }}/actions/runs/${{ inputs.ACTION_RUN_ID }}/rerun
