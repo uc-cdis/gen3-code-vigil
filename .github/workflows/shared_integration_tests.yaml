@@ -35,6 +35,10 @@ on:
       TEST_LABELS:
         required: false
         type: string
+      WORKFLOW_RETRIES:
+        required: false
+        type: string
+        default: "0"
     secrets:
       CI_TEST_ORCID_USERID:
         required: true
@@ -540,7 +544,7 @@ jobs:
               payload-templated: true
 
           - name: Add labels and re-run current workflow
-            if: ${{ github.event_name == 'pull_request' && github.run_attempt == 1 }}
+            if: ${{ github.event_name == 'pull_request' && inputs.WORKFLOW_RETRIES == 0 }}
             run: |
               # Add labels first
               echo "Adding labels"
@@ -560,7 +564,11 @@ jobs:
               curl -s -X POST \
                 -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                 -H "Accept: application/vnd.github+json" \
-                https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun
+                https://api.github.com/repos/${{ github.repository }}/actions/workflows/integration_tests.yaml/dispatches \
+                -d "{
+                  \"ref\": \"${{ github.ref }}\",
+                  \"inputs\": { \"WORKFLOW_RETRIES\": \"1\" }
+                }"
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
