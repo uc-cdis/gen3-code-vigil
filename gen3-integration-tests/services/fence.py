@@ -193,6 +193,7 @@ class Fence(object):
                 page.locator(self.CONSENT_CANCEL_BUTTON).click()
             else:
                 page.locator(self.CONSENT_AUTHORIZE_BUTTON).click()
+            page.wait_for_url("**code=**")
             result_url = page.url
             login_page = LoginPage()
             login_page.validate_username(page, logged_in_user)
