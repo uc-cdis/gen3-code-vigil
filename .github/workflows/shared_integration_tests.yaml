@@ -562,7 +562,7 @@ jobs:
                 -H "Accept: application/vnd.github+json" \
                 https://api.github.com/repos/${{ github.repository }}/actions/workflows/.github/workflows/rerun_integration_tests.yaml.yaml/dispatches \
                 -d '{
-                  "ref": "main",
+                  "ref": "chore/rereun_pytest_on_failure",
                   "inputs": {
                     "GITHUB_REPOSITORY": "${{ github.repository }}",
                     "ACTION_RUN_ID": "${{ github.run_id }}"
