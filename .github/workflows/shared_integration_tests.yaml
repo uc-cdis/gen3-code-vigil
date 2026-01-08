@@ -558,7 +558,7 @@ jobs:
               # Re-run the same workflow run (increment attempt)
               echo "Done adding labels. Rerunning workflow. URL: 'https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun'"
               curl -s -X POST \
-                -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                 -H "Accept: application/vnd.github+json" \
                 https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun
 
