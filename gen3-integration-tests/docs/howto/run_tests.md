@@ -24,5 +24,5 @@ The API keys should be saved to `~/.gen3` directory
     ```
 1. Run tests with pytest
     ```
-    poetry run pytest --alluredir allure-results -n auto --dist loadscope
+    poetry run pytest --video=on --alluredir allure-results -n auto --dist loadscope
     ```
