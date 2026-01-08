@@ -193,6 +193,7 @@ class Fence(object):
                 page.locator(self.CONSENT_CANCEL_BUTTON).click()
             else:
                 page.locator(self.CONSENT_AUTHORIZE_BUTTON).click()
+            result_url = page.url
             login_page = LoginPage()
             login_page.validate_username(page, logged_in_user)
         else:
@@ -201,7 +202,8 @@ class Fence(object):
                 "Unauthorized",
                 "Bad Request",
             ], f"Expected Unauthorized or Bad Request, instead got {text_from_page}"
-        return page.url
+            result_url = page.url
+        return result_url
 
     def get_token_with_auth_code(self, client_id, client_secret, code, grant_type):
         """Gets the access token with authroization code"""
