@@ -60,6 +60,7 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
+  actions: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
@@ -76,6 +77,7 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -84,6 +86,7 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           RUN_ID: ${{ github.run_id }}
           ATTEMPT_NUM: ${{ github.run_attempt }}
+          WORKFLOW: ${{ github.workflow }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
           CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
@@ -127,6 +130,58 @@ jobs:
                   echo "Skipping CI since one of the PR labels is present - not-ready-for-ci / decommission-environment"
                   echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
+
+          - name: Get previous workflow run result
+            working-directory: ${{ github.workspace }}
+            run: |
+              PREV_WORKFLOW_RUN_RESULT=$(gh api repos/${{ github.repository }}/actions/runs \
+                -q '
+                  .workflow_runs
+                  | map(select(.name == "'"$WORKFLOW"'"))
+                  | map(select(.pull_requests[].number == '"$PR_NUM"'))
+                  | map(select(.id != '"$RUN_ID"'))
+                  | sort_by(.run_number)
+                  | reverse
+                  | .[0].conclusion
+                ')
+
+              echo "PREV_WORKFLOW_RUN_RESULT=$PREV_WORKFLOW_RUN_RESULT"
+              echo "PREV_WORKFLOW_RUN_RESULT=$PREV_WORKFLOW_RUN_RESULT" >> $GITHUB_ENV
+
+          - name: Skip integration tests if master is merged
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request' }}
+            working-directory: ${{ github.workspace }}
+            run: |
+              COMMIT_MSG=$(gh api repos/${{ github.repository }}/commits/${{ github.event.pull_request.head.sha }} -q '.commit.message')
+              echo "Commit message: $COMMIT_MSG"
+
+              if [[ "$PREV_WORKFLOW_RUN_RESULT" == "success" && "$COMMIT_MSG" == Merge\ branch*into* ]]; then
+                  echo "This is an update-branch commit"
+                  readarray -t MERGE_FILES < <(git diff --name-only HEAD^1 HEAD)
+                  PR_BASE=$(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }})
+                  readarray -t PR_FILES < <(git diff --name-only $PR_BASE HEAD)
+
+                  # Check if file from master commit is present in pr files
+                  SKIP=true
+                  for f in "${MERGE_FILES[@]}"; do
+                      if printf "%s\n" "${PR_FILES[@]}" | grep -qx "$f"; then
+                          SKIP=false
+                          echo "File $f from master commit is part of PR changes"
+                          break
+                      fi
+                  done
+                  echo "SKIP_TESTS=$SKIP" >> $GITHUB_ENV
+              fi
+
+
+          # - name: Remove all PR labels on new commit
+          #   if: github.event.action == 'synchronize' && github.event.before != github.event.after
+          #   working-directory: ${{ github.workspace }}
+          #   run: |
+          #     curl -X DELETE \
+          #       -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          #       -H "Accept: application/vnd.github+json" \
+          #       https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUM/labels
 
           # Checkout current repo
           - name: Checkout current repo
@@ -483,6 +538,36 @@ jobs:
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
               payload-templated: true
+
+          - name: Add labels and re-run current workflow
+            if: ${{ github.event_name == 'pull_request' && github.run_attempt == 1 }}
+            run: |
+              # Add labels first
+              echo "Adding labels"
+              IFS=',' read -ra LABELS <<< "$FAILED_TEST_SUITES"
+              for label in "${LABELS[@]}"; do
+                label="$(echo "$label" | xargs)"
+                echo "Adding label '$label'. URL: 'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels'"
+                curl -s -X POST \
+                  -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                  -H "Accept: application/vnd.github+json" \
+                  https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
+                  -d "$(jq -n --arg l "$label" '{labels: [$l]}')"
+              done
+
+              # Re-run the same workflow run (increment attempt)
+              echo "Done adding labels. Rerunning workflow. URL: 'https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun'"
+              curl -s -X POST \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github+json" \
+                https://api.github.com/repos/${{ github.repository }}/actions/workflows/.github/workflows/rerun_integration_tests.yaml/dispatches \
+                -d '{
+                  "ref": "chore/rereun_pytest_on_failure",
+                  "inputs": {
+                    "GITHUB_REPOSITORY": "${{ github.repository }}",
+                    "ACTION_RUN_ID": "${{ github.run_id }}"
+                  }
+                }'
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
