@@ -567,7 +567,67 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
+    # TODO: Add more tests for the following:
+    # 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
+    # 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
+    # 3. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a body trying to access arborist(restricted communication) endpoints
 
-# TODO: Add more tests for the following:
-# 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
-# 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
+    def test_access_internal_endpoints(self):
+        """
+        Test Case: Access internal endpoints must be restricted
+        - Create and submit a TES task where we try to curl into arborist service
+        - Make a GET call with the task ID to verify that the task failed
+        """
+        # TODO: update method body .
+
+        # Step 1: Create a TES task where we try to curl into arborist service
+        tes_task_payload = {
+            "name": "Hello world after hitting arborist",
+            "description": "Tries to reach arborist-service before saying HelloWorld!",
+            "executors": [
+                {
+                    "image": "curlimages/curl:latest",
+                    "command": [
+                        "curl http://arborist-service/user && sleep 1000 && echo HelloWorld!"
+                    ],
+                }
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Step 2: Poll until the TES task completes or fails with a known status
+        max_retries = 10
+        poll_interval = 30  # seconds
+
+        for attempt in range(1, max_retries + 1):
+            task_info = self.gen3_workflow.get_tes_task(
+                task_id=task_id,
+                user=self.valid_user,
+                expected_status=200,
+            )
+            state = task_info.get("state")
+
+            if state == "EXECUTOR_ERROR":
+                logger.info("TES task failed as expected")
+                break
+
+            logger.debug(
+                f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying..."
+            )
+            time.sleep(poll_interval)
+        else:
+            raise Exception(
+                f"TES task did not complete in time. Final state: {state}, Response: {task_info}"
+            )
+
+        #
+        assert (
+            state == "EXECUTOR_ERROR"
+        ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead"
