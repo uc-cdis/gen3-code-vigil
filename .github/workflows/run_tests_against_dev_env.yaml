@@ -2,9 +2,6 @@
 name: Run tests against dev environment
 
 on:
-  push:
-    branches:
-      - chore/rereun_pytest_on_failure
   workflow_dispatch:
     inputs:
       NAMESPACE:

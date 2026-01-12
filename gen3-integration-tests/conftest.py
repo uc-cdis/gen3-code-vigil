@@ -216,5 +216,5 @@ def pytest_unconfigure(config):
             setup.delete_all_fence_clients()
         # Add failed test suites to GITHUB variable
         with open(os.getenv("GITHUB_ENV"), "a") as f:
-            f.write(f"FAILED_TEST_SUITES={','.join(failed_test_suites)}")
+            f.write(f"FAILED_TEST_SUITES={' or '.join(failed_test_suites)}")
         return

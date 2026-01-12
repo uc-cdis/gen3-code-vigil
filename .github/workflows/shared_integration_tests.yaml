@@ -173,16 +173,6 @@ jobs:
                   echo "SKIP_TESTS=$SKIP" >> $GITHUB_ENV
               fi
 
-
-          # - name: Remove all PR labels on new commit
-          #   if: github.event.action == 'synchronize' && github.event.before != github.event.after
-          #   working-directory: ${{ github.workspace }}
-          #   run: |
-          #     curl -X DELETE \
-          #       -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          #       -H "Accept: application/vnd.github+json" \
-          #       https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUM/labels
-
           # Checkout current repo
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -441,6 +431,18 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
+          - name: Replay failed tests
+            id: replay_failed_tests
+            if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              echo -e "\n\n************ Replaying failed tests ************" >> logs/gh_action_logs.txt
+              mkdir output
+              poetry run pytest -n logical -m "not wip" --alluredir replay-allure-results --no-header --dist loadscope ${{ env.FAILED_TEST_SUITES }} >> logs/gh_action_logs.txt 2>&1
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
+
           - name: Generate allure report
             id: generate_allure_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
@@ -450,6 +452,12 @@ jobs:
               allure generate allure-results -o allure-report --clean
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+              fi
+              if [ -n "$FAILED_TEST_SUITES" ]; then
+                allure generate replay-allure-results -o allure-report --clean
+                if [ $? -ne 0 ]; then
+                  echo "PR_ERROR_MSG=Failed to generate allure report on replay attempt" >> $GITHUB_ENV
+                fi
               fi
 
           - name: Upload allure report to S3
@@ -461,8 +469,14 @@ jobs:
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
                 aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
+                if [ -n "$FAILED_TEST_SUITES" ]; then
+                  aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE-replay >> logs/gh_action_logs.txt 2>&1
+                fi
               else
                 aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
+                if [ -n "$FAILED_TEST_SUITES" ]; then
+                  aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM-replay >> logs/gh_action_logs.txt 2>&1
+                fi
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
@@ -501,8 +515,14 @@ jobs:
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/index.html)" >> output/report.md
+                  if [ -n "$FAILED_TEST_SUITES" ]; then
+                    echo -e "\nPlease find the detailed integration test report after replaying failed tests [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE-replay/index.html)" >> output/report.md
+                  fi
                 else
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
+                  if [ -n "$FAILED_TEST_SUITES" ]; then
+                    echo -e "\nPlease find the detailed integration test report after replaying failed tests [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
+                  fi
                 fi
               fi
               if [ "${{ steps.upload_gh_action_logs.outcome }}" == "success" ]; then
@@ -538,36 +558,6 @@ jobs:
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
               payload-templated: true
-
-          - name: Add labels and re-run current workflow
-            if: ${{ github.event_name == 'pull_request' && github.run_attempt == 1 }}
-            run: |
-              # Add labels first
-              echo "Adding labels"
-              IFS=',' read -ra LABELS <<< "$FAILED_TEST_SUITES"
-              for label in "${LABELS[@]}"; do
-                label="$(echo "$label" | xargs)"
-                echo "Adding label '$label'. URL: 'https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels'"
-                curl -s -X POST \
-                  -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                  -H "Accept: application/vnd.github+json" \
-                  https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
-                  -d "$(jq -n --arg l "$label" '{labels: [$l]}')"
-              done
-
-              # Re-run the same workflow run (increment attempt)
-              echo "Done adding labels. Rerunning workflow. URL: 'https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/rerun'"
-              curl -s -X POST \
-                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Accept: application/vnd.github+json" \
-                https://api.github.com/repos/${{ github.repository }}/actions/workflows/.github/workflows/rerun_integration_tests.yaml/dispatches \
-                -d '{
-                  "ref": "chore/rereun_pytest_on_failure",
-                  "inputs": {
-                    "GITHUB_REPOSITORY": "${{ github.repository }}",
-                    "ACTION_RUN_ID": "${{ github.run_id }}"
-                  }
-                }'
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
