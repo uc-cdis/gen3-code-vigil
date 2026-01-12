@@ -14,6 +14,7 @@ jobs:
     uses: ./.github/workflows/shared_integration_tests.yaml
     with:
       WORKING_DIR: gen3-integration-tests
+      HELM_BRANCH: chore/improve-gen3-workflow
     secrets:
       CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
       CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
