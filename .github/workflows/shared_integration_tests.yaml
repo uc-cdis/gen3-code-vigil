@@ -431,13 +431,23 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
-          - name: Replay failed tests
+          - name: Rerun failed tests
             id: replay_failed_tests
             if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo -e "\n\n************ Replaying failed tests ************" >> logs/gh_action_logs.txt
+              mv output/report.md output/report_run_before_rerun.md
               poetry run pytest -n logical -m "not wip" --alluredir replay-allure-results --no-header --dist loadscope -k ${{ env.FAILED_TEST_SUITES }} >> logs/gh_action_logs.txt 2>&1
+              mv output/report.md output/report_run_after_rerun.md
+              {
+                cat output/report_run_before_rerun.md
+
+                if [ -f output/report_run_after_rerun.md ]; then
+                  echo "\nTest summary after rerunning failed integration tests"
+                  cat output/report_run_after_rerun.md
+                fi
+              } > output/report.md
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi

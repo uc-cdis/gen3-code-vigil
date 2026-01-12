@@ -144,7 +144,7 @@ def generate_slack_report():
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": f"*Replayed Test Report*: <{replay_report_link}|click here>",
+                    "text": f"*Rerun Failed Test Report*: <{replay_report_link}|click here>",
                 },
             }
             slack_report_json["blocks"].append(replay_report_link_block)
