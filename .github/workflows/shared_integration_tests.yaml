@@ -453,7 +453,7 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
               fi
               if [ -n "$FAILED_TEST_SUITES" ]; then
-                allure generate replay-allure-results -o allure-report --clean
+                allure generate replay-allure-results -o replay-allure-report --clean
                 if [ $? -ne 0 ]; then
                   echo "PR_ERROR_MSG=Failed to generate allure report on replay attempt" >> $GITHUB_ENV
                 fi
@@ -469,12 +469,12 @@ jobs:
                 DATE=$(date +%Y%m%d)
                 aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
                 if [ -n "$FAILED_TEST_SUITES" ]; then
-                  aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE-replay >> logs/gh_action_logs.txt 2>&1
+                  aws s3 sync ./replay-allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE-replay >> logs/gh_action_logs.txt 2>&1
                 fi
               else
                 aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
                 if [ -n "$FAILED_TEST_SUITES" ]; then
-                  aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM-replay >> logs/gh_action_logs.txt 2>&1
+                  aws s3 sync ./replay-allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM-replay >> logs/gh_action_logs.txt 2>&1
                 fi
               fi
               if [ $? -ne 0 ]; then
