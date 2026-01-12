@@ -437,7 +437,6 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo -e "\n\n************ Replaying failed tests ************" >> logs/gh_action_logs.txt
-              mkdir output
               poetry run pytest -n logical -m "not wip" --alluredir replay-allure-results --no-header --dist loadscope ${{ env.FAILED_TEST_SUITES }} >> logs/gh_action_logs.txt 2>&1
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
