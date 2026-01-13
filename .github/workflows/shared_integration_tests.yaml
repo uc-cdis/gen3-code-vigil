@@ -445,10 +445,8 @@ jobs:
               {
                 cat output/report_run_before_rerun.md
 
-                if [ -f output/report_run_after_rerun.md ]; then
-                  echo "\nTest summary after rerunning failed integration tests"
-                  cat output/report_run_after_rerun.md
-                fi
+                echo "\nTest summary after rerunning failed integration tests"
+                cat output/report_run_after_rerun.md
               } > output/report.md
               ls -ltr output/ >> logs/gh_action_logs.txt 2>&1
               if [ $? -ne 0 ]; then
