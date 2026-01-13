@@ -99,7 +99,7 @@ def generate_slack_report():
             "Allure report was not found. Skipping test metrics block generation."
         )
 
-    slack_report_json["channel"] = "#gen3-release-notifications"
+    slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
     # DEBUG LOGS
     print(slack_report_json)
 
