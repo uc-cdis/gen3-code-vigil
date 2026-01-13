@@ -567,11 +567,6 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
-    # TODO: Add more tests for the following:
-    # 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
-    # 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
-    # 3. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a body trying to access arborist(restricted communication) endpoints
-
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
@@ -626,3 +621,8 @@ class TestGen3Workflow(object):
         assert (
             state == "EXECUTOR_ERROR"
         ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead, Response: {task_info}"
+
+
+# TODO: Add more tests for the following:
+# 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
+# 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
