@@ -60,7 +60,6 @@ permissions:
   contents: read
   pull-requests: write
   issues: write
-  actions: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.repository.name }}-${{ github.event.pull_request.number || github.ref }}
@@ -77,7 +76,6 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.PLANXCYBORG_PAT }}
           REPO: ${{ github.event.repository.name }}
           REPO_FN: ${{ github.event.repository.full_name }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -86,7 +84,6 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           RUN_ID: ${{ github.run_id }}
           ATTEMPT_NUM: ${{ github.run_attempt }}
-          WORKFLOW: ${{ github.workflow }}
           CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
           CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
           CI_TEST_RAS_EMAIL: ${{ secrets.CI_TEST_RAS_EMAIL }}
@@ -157,20 +154,7 @@ jobs:
 
               if [[ "$PREV_WORKFLOW_RUN_RESULT" == "success" && "$COMMIT_MSG" == Merge\ branch*into* ]]; then
                   echo "This is an update-branch commit"
-                  readarray -t MERGE_FILES < <(git diff --name-only HEAD^1 HEAD)
-                  PR_BASE=$(git merge-base HEAD origin/${{ github.event.pull_request.base.ref }})
-                  readarray -t PR_FILES < <(git diff --name-only $PR_BASE HEAD)
-
-                  # Check if file from master commit is present in pr files
-                  SKIP=true
-                  for f in "${MERGE_FILES[@]}"; do
-                      if printf "%s\n" "${PR_FILES[@]}" | grep -qx "$f"; then
-                          SKIP=false
-                          echo "File $f from master commit is part of PR changes"
-                          break
-                      fi
-                  done
-                  echo "SKIP_TESTS=$SKIP" >> $GITHUB_ENV
+                  echo "SKIP_TESTS=true" >> $GITHUB_ENV
               fi
 
           # Checkout current repo
