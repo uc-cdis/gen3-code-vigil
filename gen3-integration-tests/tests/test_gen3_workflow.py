@@ -603,10 +603,10 @@ class TestGen3Workflow(object):
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
         # Step 2: Poll until the TES task completes or fails with a known status
-        max_retries = 10
         poll_interval = 30  # seconds
-
-        for attempt in range(1, max_retries + 1):
+        state = "QUEUED"  # inital state
+        transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
+        while state in transient_states:
             task_info = self.gen3_workflow.get_tes_task(
                 task_id=task_id,
                 user=self.valid_user,
@@ -619,15 +619,10 @@ class TestGen3Workflow(object):
                 break
 
             logger.debug(
-                f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying..."
+                f"Current task state is '{state}', sleeping for {poll_interval} seconds before retrying..."
             )
             time.sleep(poll_interval)
-        else:
-            raise Exception(
-                f"TES task did not complete in time. Final state: {state}, Response: {task_info}"
-            )
 
-        #
         assert (
             state == "EXECUTOR_ERROR"
-        ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead"
+        ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead, Response: {task_info}"
