@@ -449,11 +449,11 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mv output/report.md output/report_run_after_rerun.md
-              echo "Test summary after running integration tests" > output/report.md
+              echo -e "Test summary after running integration tests" > output/report.md
               {
                 cat output/report_run_before_rerun.md
               } >> output/report.md
-              echo "\nTest summary after rerunning failed integration tests" >> output/report.md
+              echo -e "\nTest summary after rerunning failed integration tests" >> output/report.md
               {
                 cat output/report_run_after_rerun.md
               } >> output/report.md
