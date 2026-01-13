@@ -440,6 +440,8 @@ jobs:
               mv output/report.md output/report_run_before_rerun.md
               poetry run pytest -n logical -m "not wip" --alluredir replay-allure-results --no-header --dist loadscope -k ${{ env.FAILED_TEST_SUITES }} >> logs/gh_action_logs.txt 2>&1
               mv output/report.md output/report_run_after_rerun.md
+              cat output/report_run_before_rerun.md >> logs/gh_action_logs.txt
+              cat output/report_run_after_rerun.md >> logs/gh_action_logs.txt
               {
                 cat output/report_run_before_rerun.md
 
