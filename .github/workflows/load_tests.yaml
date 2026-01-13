@@ -81,6 +81,11 @@ jobs:
 
 
         steps:
+          - name: Set Start Time
+            working-directory: ${{ github.workspace }}
+            run: |
+              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' }}
