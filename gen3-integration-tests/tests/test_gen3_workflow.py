@@ -573,7 +573,6 @@ class TestGen3Workflow(object):
         - Create and submit a TES task where we try to curl into arborist service
         - Make a GET call with the task ID to verify that the task failed
         """
-        # TODO: update method body .
 
         # Step 1: Create a TES task where we try to curl into arborist service
         tes_task_payload = {
