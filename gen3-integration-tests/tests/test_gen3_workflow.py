@@ -614,14 +614,27 @@ class TestGen3Workflow(object):
                 logger.info("TES task failed as expected")
                 break
 
+            if state == "COMPLETE":
+                break
+
             logger.debug(
                 f"Current task state is '{state}', sleeping for {poll_interval} seconds before retrying..."
             )
             time.sleep(poll_interval)
 
+        # FIXME: This test was ideally supposed to return EXECUTOR_ERROR state, but returns COMPLETE state due to a bug in Funnel == 0.1.58.
+        # Therefore instead of asserting for state, we assert the error message to have the required error response.
+        # Uncomment the following code, once funnel version is updated to a later stable version in https://github.com/uc-cdis/gen3-helm/blob/master/helm/gen3-workflow/Chart.yaml#L37
+
+        # assert (
+        #     state == "EXECUTOR_ERROR"
+        # ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead, Response: {task_info}"
+
+        task_logs = task_info.get("logs", [])
+        stdout = task_logs[0]["logs"][0]["stdout"].strip() if len(task_logs) > 0 else ""
         assert (
-            state == "EXECUTOR_ERROR"
-        ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead, Response: {task_info}"
+            "Could not resolve host: arborist-service" in stdout
+        ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
 
 # TODO: Add more tests for the following:
