@@ -276,5 +276,5 @@ jobs:
             run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
