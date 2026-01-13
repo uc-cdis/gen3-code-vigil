@@ -439,6 +439,15 @@ jobs:
               echo -e "\n\n************ Rerunning failed tests ************" >> logs/gh_action_logs.txt 2>&1
               mv output/report.md output/report_run_before_rerun.md
               poetry run pytest -n logical -m "not wip" --alluredir replay-allure-results --no-header --dist loadscope -k ${{ env.FAILED_TEST_SUITES }} >> logs/gh_action_logs.txt 2>&1
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
+
+          - name: Merge report.md if failed tests were rerun
+            id: merge_report_md_on_rerun
+            if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
               mv output/report.md output/report_run_after_rerun.md
               cat output/report_run_before_rerun.md >> logs/gh_action_logs.txt 2>&1
               cat output/report_run_after_rerun.md >> logs/gh_action_logs.txt 2>&1
@@ -449,9 +458,6 @@ jobs:
                 cat output/report_run_after_rerun.md
               } > output/report.md
               ls -ltr output/ >> logs/gh_action_logs.txt 2>&1
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
-              fi
 
           - name: Generate allure report
             id: generate_allure_report
