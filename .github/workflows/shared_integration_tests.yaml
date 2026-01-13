@@ -448,8 +448,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo "Test summary after running integration tests" > output/report.md
               mv output/report.md output/report_run_after_rerun.md
+              echo "Test summary after running integration tests" > output/report.md
               {
                 cat output/report_run_before_rerun.md
               } >> output/report.md
