@@ -288,7 +288,7 @@ jobs:
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./gen3-load-tests/slack_report.json"
+              payload-file-path: "./slack_report.json"
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
