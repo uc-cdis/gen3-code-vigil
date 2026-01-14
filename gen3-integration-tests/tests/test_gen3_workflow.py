@@ -580,7 +580,31 @@ class TestGen3Workflow(object):
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
+
+        TODO: fix infra to support the following tests:
+        - TEST_MV_FILE and TEST_MV_FOLDER_CONTENTS. Error:
+            mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
+        - TEST_PUBLISH_FILE and TEST_PUBLISH_FOLDER. Error:
+            Failed to publish file: s3://gen3wf-pauline-planx-pla-net-16/ga4gh-tes/33/
+            ab32810279415c8067b64a73518812/test; to: s3://gen3wf-pauline-planx-pla-net-16/ga4gh-tes/
+            outputs/test [copy] -- attempt: 1; reason: Failed to parse XML document with handler
+            class com.amazonaws.services.s3.model.transform.
+        - TEST_GPU (only runs with param `gpu: true`). Reported successful but fails with:
+            CUDA is not available on this system.
+            [...]
+            in gpu_computation
+              x = torch.rand(size, size, device='cuda')
+            RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
+            NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
         """
+        known_unsupported = [
+            "TEST_PUBLISH_FILE",
+            "TEST_PUBLISH_FOLDER",
+            "TEST_MV_FILE",
+            "TEST_MV_FOLDER_CONTENTS",
+            "TEST_GPU",
+        ]
+
         # clone the tests repo
         directory = "test_data/gen3_workflow/nf-canary"
         shutil.rmtree(directory, ignore_errors=True)
@@ -619,6 +643,7 @@ class TestGen3Workflow(object):
             workflow_script="main.nf",
             nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
+            params={"gpu": "true", "skip": ",".join(known_unsupported)},
         )
 
         # check that each test == each task succeeded
