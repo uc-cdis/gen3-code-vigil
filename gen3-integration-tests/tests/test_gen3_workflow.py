@@ -598,13 +598,14 @@ class TestGen3Workflow(object):
         # update the nextflow config
         lines = [
             "process.executor = 'tes'",
-            "plugins.id = 'nf-ga4gh'",
+            # for some reason using `plugins.id` here throws `UnsupportedOperationException`
+            "plugins {id 'nf-ga4gh'}",
             'tes.endpoint = "https://${HOSTNAME}/ga4gh/tes"',
             'tes.oauthToken = "${GEN3_TOKEN}"',
             'aws.accessKey = "${GEN3_TOKEN}"',
             "aws.secretKey = 'N/A'",
             f"aws.region = '{self.s3_storage_config.bucket_region}'",
-            "aws.client.endpoint = 'tes'",
+            'aws.client.endpoint = "https://${HOSTNAME}/workflows/s3"',
             "aws.client.s3PathStyleAccess = true",
             "aws.client.maxErrorRetry = 1",
             'workDir = "${WORK_DIR}"',
