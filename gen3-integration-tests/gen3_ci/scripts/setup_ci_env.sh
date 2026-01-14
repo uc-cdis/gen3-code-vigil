@@ -389,9 +389,6 @@ common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|gen3-${namespace}-workflow-pods"
-  ".gen3-workflow.funnel.Plugins.Params.S3Url|gen3-workflow-service.${namespace}.svc.cluster.local"
-  ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl|https://${HOSTNAME}/user"
 )
 
 for item in "${common_param_updates[@]}"; do
