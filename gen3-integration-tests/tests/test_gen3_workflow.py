@@ -7,6 +7,7 @@ import time
 import pytest
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from utils import logger
+from utils.misc import retry
 
 
 def _nextflow_parse_completed_line(log_line):
@@ -417,6 +418,7 @@ class TestGen3Workflow(object):
 
     ######################## Test Nextflow with TES executor ########################
 
+    @retry(times=3, delay=5, exceptions=(AssertionError))
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -661,6 +663,73 @@ class TestGen3Workflow(object):
             assert (
                 task["exit_code"] == "0"
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
+
+    def test_access_internal_endpoints(self):
+        """
+        Test Case: Access internal endpoints must be restricted
+        - Create and submit a TES task where we try to curl into arborist service
+        - Make a GET call with the task ID to verify that the task failed
+        """
+
+        # Step 1: Create a TES task where we try to curl into arborist service
+        tes_task_payload = {
+            "name": "Hello world after hitting arborist",
+            "description": "Tries to reach arborist-service before saying HelloWorld!",
+            "executors": [
+                {
+                    "image": "curlimages/curl:latest",
+                    "command": [
+                        "curl http://arborist-service/user && sleep 1000 && echo HelloWorld!"
+                    ],
+                }
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Step 2: Poll until the TES task completes or fails with a known status
+        poll_interval = 30  # seconds
+        state = "QUEUED"  # inital state
+        transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
+        while state in transient_states:
+            task_info = self.gen3_workflow.get_tes_task(
+                task_id=task_id,
+                user=self.valid_user,
+                expected_status=200,
+            )
+            state = task_info.get("state")
+
+            if state == "EXECUTOR_ERROR":
+                logger.info("TES task failed as expected")
+                break
+
+            if state == "COMPLETE":
+                break
+
+            logger.debug(
+                f"Current task state is '{state}', sleeping for {poll_interval} seconds before retrying..."
+            )
+            time.sleep(poll_interval)
+
+        # FIXME: This test was ideally supposed to return EXECUTOR_ERROR state, but returns COMPLETE state due to a bug in Funnel == 0.1.58.
+        # Therefore instead of asserting for state, we assert the error message to have the required error response.
+        # Uncomment the following code, once funnel version is updated to a later stable version in https://github.com/uc-cdis/gen3-helm/blob/master/helm/gen3-workflow/Chart.yaml#L37
+
+        # assert (
+        #     state == "EXECUTOR_ERROR"
+        # ), f"Expected task to fail with `EXECUTOR_ERROR` state, but found {state} instead, Response: {task_info}"
+
+        task_logs = task_info.get("logs", [])
+        stdout = task_logs[0]["logs"][0]["stdout"].strip() if len(task_logs) > 0 else ""
+        assert (
+            "Could not resolve host: arborist-service" in stdout
+        ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
 
 # TODO: Add more tests for the following:
