@@ -52,15 +52,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
 python_files = ["test_*.py"]
-norecursedirs = [
-  "docs",
-  "gen3_ci",
-  "pages",
-  "scripts",
-  "services",
-  "test_data",
-  "utils",
-]
 addopts = "--log-cli-level=ERROR"
 markers = [
   # general
