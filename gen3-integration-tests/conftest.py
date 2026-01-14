@@ -195,24 +195,6 @@ def pytest_runtest_logreport(report):
         logger.error(f"[SQS SEND ERROR] {e}")
 
 
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item):
-    outcome = yield
-    rep = outcome.get_result()
-
-    # Attach video only if test failed
-    if rep.when == "call" and rep.failed:
-        page = item.funcargs.get("page")
-        if page and page.video:
-            video_path = page.video.path()
-
-            allure.attach.file(
-                video_path,
-                name="Test execution video",
-                attachment_type=allure.attachment_type.MP4,
-            )
-
-
 def pytest_unconfigure(config):
     if pytest.frontend_url:
         ff_dir = Path(__file__).parent / pytest.frontend_commons_name
