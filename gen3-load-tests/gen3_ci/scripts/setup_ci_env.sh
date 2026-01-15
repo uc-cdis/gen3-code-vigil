@@ -43,7 +43,7 @@ if [[ -n $RELEASE_VERSION ]]; then
     elif [ "$(echo -n $service_enabled_value)" = "false" ]; then
         echo "Skipping image update for ${key} as service enabled is set to false"
     elif [ ! -z "$image_tag_value" ]; then
-        echo "Updating ${key} service with ${image_tag_value}"
+        echo "Updating ${key} service from ${image_tag_value} to ${INTEGRATION_BRANCH}"
         yq eval ".${key}.image.tag = \"$INTEGRATION_BRANCH\"" -i $manifest_values_yaml
     fi
   else
