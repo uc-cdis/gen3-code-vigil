@@ -52,7 +52,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
 python_files = ["test_*.py"]
-addopts = "--log-cli-level=ERROR"
+addopts = "--log-cli-level=ERROR -q -ra"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
