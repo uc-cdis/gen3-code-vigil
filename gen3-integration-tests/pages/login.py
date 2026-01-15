@@ -31,8 +31,10 @@ class LoginPage(object):
             "//button[contains(normalize-space(), 'ORCID Login')]"
         )
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
-        self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
-        self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
+        self.POP_UP_BOX = (
+            "//*[@role='dialog'] | //div[@class='popup__box']"  # pop_up_box
+        )
+        self.POP_UP_ACCEPT_BUTTON = "//button[contains(normalize-space(), 'Accept')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -77,6 +79,16 @@ class LoginPage(object):
         Sets up Dev Cookie for main Account and logs in with Google
         Also checks if the access_token exists after login
         """
+        height = page.evaluate(
+            """
+            () => Math.max(
+                document.body.scrollHeight,
+                document.documentElement.scrollHeight
+            )
+        """
+        )
+
+        page.set_viewport_size({"width": 1920, "height": height})
         page.context.add_cookies(
             [
                 {
