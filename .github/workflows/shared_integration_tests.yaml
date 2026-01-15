@@ -129,6 +129,7 @@ jobs:
               fi
 
           - name: Get previous workflow run result
+            if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name == 'gen3-gitops' }}
             working-directory: ${{ github.workspace }}
             run: |
               PREV_WORKFLOW_RUN_RESULT=$(gh api repos/${{ github.repository }}/actions/runs \
