@@ -20,9 +20,6 @@ gen3 = "^4.27.3"
 nextflow = "^24.10.3"
 pandas = "<3"
 pytest = "^7.4.0"
-pytest-datadir = "^1.4.1"
-pytest-env = "^1.0.0"
-pytest-html = "^3.2.0"
 pytest-md-report = "^0.5.0"
 pytest-playwright = "^0.4.3"
 pytest-xdist = "^3.3.1"
@@ -52,7 +49,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
 python_files = ["test_*.py"]
-addopts = "--log-cli-level=ERROR -q -ra"
+addopts = "--log-cli-level=ERROR -ra -q"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
