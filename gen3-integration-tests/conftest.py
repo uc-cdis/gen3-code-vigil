@@ -156,10 +156,10 @@ def pytest_configure(config):
     # Flag for identifying if root_url_portal is for frontend or not
     pytest.frontend_url = gat.is_frontend_url()
     if pytest.frontend_url:
-        repo_name, branch_name, target_dir = gat.get_ff_commons_info()
-        pytest.frontend_commons_name = target_dir
+        repo_name, branch_name = gat.get_ff_commons_info()
+        pytest.frontend_commons_name = repo_name
         if not hasattr(config, "workerinput"):
-            gat.download_frontend_commons_app_repo(repo_name, branch_name, target_dir)
+            gat.download_frontend_commons_app_repo(repo_name, branch_name)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
 
