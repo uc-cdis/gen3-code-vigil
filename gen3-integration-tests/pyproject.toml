@@ -20,9 +20,6 @@ gen3 = "^4.27.3"
 nextflow = "^24.10.3"
 pandas = "<3"
 pytest = "^7.4.0"
-pytest-datadir = "^1.4.1"
-pytest-env = "^1.0.0"
-pytest-html = "^3.2.0"
 pytest-md-report = "^0.5.0"
 pytest-playwright = "^0.4.3"
 pytest-xdist = "^3.3.1"
@@ -40,7 +37,7 @@ boto3 = "^1.38.20"
 # ValueError: numpy.dtype size changed, may indicate binary incompatibility.
 # Expected 96 from C header, got 88 from PyObject
 # This is caused by a tertiary dependency conflict between newer versions of NumPy, Pandas, and Gen3.
-numpy = "<2"
+# numpy = "<2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
@@ -51,7 +48,8 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/"]
-addopts = "--log-cli-level=ERROR"
+python_files = ["test_*.py"]
+addopts = "--log-cli-level=ERROR -ra -q"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
