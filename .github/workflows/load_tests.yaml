@@ -81,6 +81,11 @@ jobs:
 
 
         steps:
+          - name: Set Start Time
+            working-directory: ${{ github.workspace }}
+            run: |
+              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -269,38 +274,23 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
 
+          - name: Generate Slack report
+            id: generate_slack_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.upload_allure_report.outcome == 'success' }}
+            continue-on-error: true # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
-          - name: Generate markdown report
-            id: generate_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-            continue-on-error: true
-            # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
-            run: |
-              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
-                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
-              fi
-              if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                DATE=$(date +%Y%m%d)
-                echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/load-tests/$DATE/index.html)" >> output/report.md
-              fi
-              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-                if [ ! -d output ]; then
-                  mkdir output
-                fi
-                if [ ! -f "output/report.md" ]; then
-                  touch "output/report.md"
-                fi
-                echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
-              fi
-
-          - name: Render report to the PR
-            id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+          - name: Publish report to Slack
+            id: slack_notify
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            uses: slackapi/slack-github-action@v2.0.0
+            with:
+              method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-file-path: "./gen3-load-tests/slack_report.json"
+              payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1

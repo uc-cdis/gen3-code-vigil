@@ -679,7 +679,9 @@ class TestGen3Workflow(object):
                 {
                     "image": "curlimages/curl:latest",
                     "command": [
-                        "curl http://arborist-service/user && sleep 1000 && echo HelloWorld!"
+                        # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
+                        # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
+                        "sleep 10 && curl http://arborist-service/user"
                     ],
                 }
             ],
