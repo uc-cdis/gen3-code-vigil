@@ -420,6 +420,8 @@ jobs:
             id: rerun_failed_tests
             if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
+            env:
+              RERUNNING_TESTS: true
             run: |
               echo -e "\n\n************ Rerunning failed tests ************" >> logs/gh_action_logs.txt 2>&1
               mv output/report.md output/report_run_before_rerun.md
