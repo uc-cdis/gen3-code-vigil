@@ -168,7 +168,8 @@ def pytest_configure(config):
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_logreport(report):
-    yield
+    outcome = yield
+    report = outcome.get_result()
 
     if report.when != "call":
         return
@@ -186,6 +187,12 @@ def pytest_runtest_logreport(report):
         "result": report.outcome,
         "duration": str(timedelta(seconds=report.duration)),
     }
+    # Collect test suite failures for re-run
+    if (
+        report.outcome == "failed"
+        and test_nodeid.split("::")[1] not in failed_test_suites
+    ):
+        failed_test_suites.append(test_nodeid.split("::")[1])
     # Add data to the queue
     try:
         sqs = boto3.client("sqs")
@@ -203,9 +210,6 @@ def pytest_runtest_makereport(item):
 
     # Attach video only if test failed
     if rep.when == "call" and rep.failed:
-        suite_name = item.nodeid.split("::")[1]
-        if suite_name not in failed_test_suites:
-            failed_test_suites.append(suite_name)
         page = item.funcargs.get("page")
         if page and page.video:
             video_path = page.video.path()
