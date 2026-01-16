@@ -583,7 +583,7 @@ class TestGen3Workflow(object):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
 
-        TODO: fix infra to support the following tests:
+        TODO (MIDRC-1203): fix infra to support the following tests:
         - TEST_MV_FILE and TEST_MV_FOLDER_CONTENTS. Error:
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
         - TEST_PUBLISH_FILE and TEST_PUBLISH_FOLDER. Error:
