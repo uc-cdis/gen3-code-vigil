@@ -353,6 +353,7 @@ class Gen3Workflow:
         nextflow_config_file: str,
         s3_working_directory: str,
         user: str = "main_account",
+        params: dict = {},
     ):
         """
         Runs a Nextflow workflow using the given workflow script and config file.
@@ -379,7 +380,9 @@ class Gen3Workflow:
             os.chdir(workflow_dir_path)
             # Run the Nextflow workflow
             # TODO: Replace nextflow.run with nextflow.run_and_poll to add a timeout of 10 minutes
-            execution = nextflow.run(workflow_script, configs=[nextflow_config_file])
+            execution = nextflow.run(
+                workflow_script, configs=[nextflow_config_file], params=params
+            )
 
             log_file_content = ""
             with open(".nextflow.log", "r") as log_file:

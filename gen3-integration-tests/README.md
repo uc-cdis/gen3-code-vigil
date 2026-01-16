@@ -48,7 +48,7 @@ User permissions required for the tests to pass are documented [here](test_data/
 We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use the setup script located [here](test_data/test_setup/guppy_es).
 
 ## Run tests and review results
-Read these [docs](docs/howto/run_tests/) for specific information on how to run tests.
+Read these [docs](docs/howto/run_tests.md) for specific information on how to run tests.
 
 The report can be viewed by running `allure serve allure-results`
 
