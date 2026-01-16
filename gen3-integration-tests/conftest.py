@@ -166,11 +166,7 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
-@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_logreport(report):
-    outcome = yield
-    report = outcome.get_result()
-
     if report.when != "call":
         return
 
