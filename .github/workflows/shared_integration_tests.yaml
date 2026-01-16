@@ -562,7 +562,7 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' && steps.rerun_failed_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           - name: Cleanup
