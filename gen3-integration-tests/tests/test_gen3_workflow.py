@@ -576,7 +576,6 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
-    @pytest.mark.skip("Skipping this test to identify GetTasks error")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
@@ -662,6 +661,7 @@ class TestGen3Workflow(object):
                 task["exit_code"] == "0"
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
+    @pytest.mark.skip("Skipping this test to identify GetTasks error")
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
