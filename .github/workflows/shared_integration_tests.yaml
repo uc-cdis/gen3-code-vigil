@@ -386,6 +386,35 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
+          - name: Rerun failed tests
+            id: rerun_failed_tests
+            if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            env:
+              RERUNNING_TESTS: true
+            run: |
+              echo -e "\n\n************ Rerunning failed tests ************" >> logs/gh_action_logs.txt 2>&1
+              mv output/report.md output/report_run_before_rerun.md
+              poetry run pytest --video=retain-on-failure -n logical -m "not wip" --alluredir rerun-allure-results --no-header --dist loadscope -k ${{ env.FAILED_TEST_SUITES }} >> logs/gh_action_logs.txt 2>&1
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
+              fi
+
+          - name: Merge report.md if failed tests were rerun
+            id: merge_report_md_on_rerun
+            if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              mv output/report.md output/report_run_after_rerun.md
+              echo -e "Test summary after running integration tests" > output/report.md
+              {
+                cat output/report_run_before_rerun.md
+              } >> output/report.md
+              echo -e "\nTest summary after rerunning failed integration tests" >> output/report.md
+              {
+                cat output/report_run_after_rerun.md
+              } >> output/report.md
+
           - name: Generate allure report
             id: generate_allure_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome == 'success' || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
@@ -395,6 +424,12 @@ jobs:
               allure generate allure-results -o allure-report --clean
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
+              fi
+              if [ -n "$FAILED_TEST_SUITES" ]; then
+                allure generate rerun-allure-results -o rerun-allure-report --clean
+                if [ $? -ne 0 ]; then
+                  echo "PR_ERROR_MSG=Failed to generate allure report on rerun attempt" >> $GITHUB_ENV
+                fi
               fi
 
           - name: Upload allure report to S3
@@ -406,8 +441,14 @@ jobs:
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
                 aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
+                if [ -n "$FAILED_TEST_SUITES" ]; then
+                  aws s3 sync ./rerun-allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE-rerun >> logs/gh_action_logs.txt 2>&1
+                fi
               else
                 aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
+                if [ -n "$FAILED_TEST_SUITES" ]; then
+                  aws s3 sync ./rerun-allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM-rerun >> logs/gh_action_logs.txt 2>&1
+                fi
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
@@ -446,8 +487,14 @@ jobs:
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/index.html)" >> output/report.md
+                  if [ -n "$FAILED_TEST_SUITES" ]; then
+                    echo -e "\nPlease find the detailed integration test report after rerunning failed tests [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE-rerun/index.html)" >> output/report.md
+                  fi
                 else
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
+                  if [ -n "$FAILED_TEST_SUITES" ]; then
+                    echo -e "\nPlease find the detailed integration test report after rerunning failed tests [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM-rerun/index.html)" >> output/report.md
+                  fi
                 fi
               fi
               if [ "${{ steps.upload_gh_action_logs.outcome }}" == "success" ]; then
@@ -485,7 +532,7 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' && steps.rerun_failed_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
 
           - name: Cleanup
