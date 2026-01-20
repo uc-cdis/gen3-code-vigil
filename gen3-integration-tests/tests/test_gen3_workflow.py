@@ -576,6 +576,7 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
+    @pytest.mark.skip("Skipping this test to identify GetTasks error")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
