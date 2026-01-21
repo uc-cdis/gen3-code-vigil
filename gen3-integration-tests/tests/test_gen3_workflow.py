@@ -661,7 +661,6 @@ class TestGen3Workflow(object):
                 task["exit_code"] == "0"
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
-    @pytest.mark.skip("Skipping this test to identify GetTasks error")
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
