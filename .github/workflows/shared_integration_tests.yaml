@@ -302,8 +302,13 @@ jobs:
             # Change the HOSTNAME with full domain name
             run: |
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
-                NAMESPACE=nightly-build
-                HOSTNAME=nightly-build.ci.planx-pla.net
+                if [[ "$CI_ENV" == "gen3ff" ]]; then
+                  NAMESPACE=nightly-build-ff
+                  HOSTNAME=nightly-build-ff.ci.planx-pla.net
+                else
+                  NAMESPACE=nightly-build
+                  HOSTNAME=nightly-build.ci.planx-pla.net
+                fi
               else
                 NAMESPACE=${REPO}-pr-${PR_NUM}
                 HOSTNAME=${REPO}-pr-${PR_NUM}.ci.planx-pla.net
