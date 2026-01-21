@@ -8,8 +8,13 @@ from utils import logger
 
 
 def get_failed_suites():
+    allure_folder = (
+        "rerun-allure-report"
+        if os.environ.get("FAILED_TEST_SUITES")
+        else "allure-report"
+    )
     suite_report_path = (
-        Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
+        Path(__file__).parent.parent.parent / allure_folder / "data" / "suites.csv"
     )
     if suite_report_path.exists():
         failed_suites = set()
@@ -40,11 +45,13 @@ def get_failed_suites():
 
 
 def get_test_result_and_metrics():
+    allure_folder = (
+        "rerun-allure-report"
+        if os.environ.get("FAILED_TEST_SUITES")
+        else "allure-report"
+    )
     allure_summary_path = (
-        Path(__file__).parent.parent.parent
-        / "allure-report"
-        / "widgets"
-        / "summary.json"
+        Path(__file__).parent.parent.parent / allure_folder / "widgets" / "summary.json"
     )
     if allure_summary_path.exists():
         with open(allure_summary_path) as f:
