@@ -8,8 +8,13 @@ from utils import logger
 
 
 def get_failed_suites():
+    allure_folder = (
+        "rerun-allure-report"
+        if os.environ.get("FAILED_TEST_SUITES")
+        else "allure-report"
+    )
     suite_report_path = (
-        Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
+        Path(__file__).parent.parent.parent / allure_folder / "data" / "suites.csv"
     )
     if suite_report_path.exists():
         failed_suites = set()
@@ -40,11 +45,13 @@ def get_failed_suites():
 
 
 def get_test_result_and_metrics():
+    allure_folder = (
+        "rerun-allure-report"
+        if os.environ.get("FAILED_TEST_SUITES")
+        else "allure-report"
+    )
     allure_summary_path = (
-        Path(__file__).parent.parent.parent
-        / "allure-report"
-        / "widgets"
-        / "summary.json"
+        Path(__file__).parent.parent.parent / allure_folder / "widgets" / "summary.json"
     )
     if allure_summary_path.exists():
         with open(allure_summary_path) as f:
@@ -87,12 +94,14 @@ def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
         report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/gh_action_logs.txt"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
         )
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
     slack_report_json = {}
     # Fetch run result and test metrics
@@ -137,6 +146,15 @@ def generate_slack_report():
             },
         }
         slack_report_json["blocks"].append(report_link_block)
+        if os.environ.get("FAILED_TEST_SUITES"):
+            rerun_report_link_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Rerun Failed Test Report*: <{rerun_report_link}|click here>",
+                },
+            }
+            slack_report_json["blocks"].append(rerun_report_link_block)
     else:
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."
