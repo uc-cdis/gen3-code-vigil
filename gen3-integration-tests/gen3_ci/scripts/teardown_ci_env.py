@@ -11,6 +11,7 @@ if __name__ == "__main__":
         content = file.read().lower()
     if ("failed" not in content and "error" not in content) or (
         os.getenv("NAMESPACE") == "nightly-build"
+        or os.getenv("NAMESPACE") == "nightly-build-ff"
     ):
         logger.info(f"Setting label teardown for environment: {NAMESPACE}")
         cmd = ["kubectl", "label", "namespace", NAMESPACE, "teardown=true"]
