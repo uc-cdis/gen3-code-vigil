@@ -155,10 +155,6 @@ def pytest_configure(config):
     pytest.google_enabled = gat.is_google_enabled()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
-    # Is ALLOW_NEW_USER_ON_LOGIN enabled
-    pytest.is_allow_new_user_on_login_enabled = gat.is_allow_new_user_on_login_enabled(
-        pytest.namespace
-    )
     # Flag for identifying if root_url_portal is for frontend or not
     pytest.frontend_url = gat.is_frontend_url()
     if pytest.frontend_url:

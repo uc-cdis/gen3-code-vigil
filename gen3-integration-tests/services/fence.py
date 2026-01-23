@@ -444,8 +444,8 @@ class Fence(object):
         )
         return response
 
-    def inactivate_user(self, username, user="main_account"):
-        """inactivates a username using fence admin endpoint"""
+    def deactivate_user(self, username, user="main_account"):
+        """deactivates a username using fence admin endpoint"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         url = (
             f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/soft"

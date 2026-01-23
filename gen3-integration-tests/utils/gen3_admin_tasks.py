@@ -1074,21 +1074,6 @@ def is_register_user_enabled(test_env_namespace: str = ""):
     return False
 
 
-def is_allow_new_user_on_login_enabled(test_env_namespace: str = ""):
-    cmd = (
-        "kubectl get cm manifest-fence -o yaml -n "
-        + test_env_namespace
-        + " | grep ALLOW_NEW_USER_ON_LOGIN"
-    )
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
-    )
-    if result.returncode == 0:
-        if "true" in result.stdout.strip():
-            return True
-    return False
-
-
 def is_frontend_url():
     deployed_services = get_list_of_services_deployed()
     if (
@@ -1170,7 +1155,9 @@ def activate_fence_user(username):
     db_name = get_db_secret_value("database")
     db_host = get_db_secret_value("host")
     db_port = get_db_secret_value("port")
-    sql = f"UPDATE \"User\" SET active = 't' WHERE username = '{username}';"
+    sql = (
+        f"UPDATE \"User\" SET active = 't' WHERE username = '{pytest.users[username]}';"
+    )
     cmd = [
         "kubectl",
         "-n",
