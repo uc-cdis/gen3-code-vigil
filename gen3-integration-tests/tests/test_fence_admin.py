@@ -1,5 +1,5 @@
 """
-OAUTH2
+Fence Admin
 """
 
 import pytest
@@ -25,7 +25,7 @@ class TestFenceAdmin:
         pytest.users["fence_admin_1"] = "fence-admin-1@example.org"
         pytest.users["fence_admin_2"] = "fence-admin-2@example.org"
 
-    def test_access_admin_user_endpoint(self):
+    def test_access_admin_user_endpoint(self, page: Page):
         """
         Scenario: Validate only users with fence admin permissions can access /admin/user/{username} endpoint
         Steps:
@@ -35,6 +35,10 @@ class TestFenceAdmin:
             4. Verify the endpoint is accessible by main_account as it has fence admin permission
             5. Perform a post request for /admin/user, it should fail with duplicate user error (500 error)
         """
+        logger.info("Logging in using fence_admin_1 user")
+        self.login_page.go_to(page)
+        self.login_page.login(page, user="fence_admin_1")
+        self.login_page.logout(page)
         logger.info("Verifying fence_admin_1 status using indexing_account")
         response = self.fence.verify_authorized_username(
             verify_username="fence_admin_1", user="indexing_account"
@@ -63,7 +67,7 @@ class TestFenceAdmin:
             msg in response.content.decode()
         ), f"Expected {msg}, but got {response.content}"
 
-    def test_delete_request_for_soft_endpoint(self):
+    def test_delete_request_for_soft_endpoint(self, page: Page):
         """
         Scenario: Perform delete request for /admin/user/{username}/soft endpoint
         Steps:
@@ -76,6 +80,10 @@ class TestFenceAdmin:
             7. Perform the delete request using /admin/user/{username}/soft endpoint for a fence_admin_2 user that doesn't exists
             8. Verify the request fails
         """
+        logger.info("Logging in using fence_admin_1 user")
+        self.login_page.go_to(page)
+        self.login_page.login(page, user="fence_admin_1")
+        self.login_page.logout(page)
         logger.info("Verifying fence_admin_1 user is present")
         response = self.fence.verify_authorized_username(
             verify_username="fence_admin_1"
