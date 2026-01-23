@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import random
@@ -1073,6 +1074,21 @@ def is_register_user_enabled(test_env_namespace: str = ""):
     return False
 
 
+def is_allow_new_user_on_login_enabled(test_env_namespace: str = ""):
+    cmd = (
+        "kubectl get cm manifest-fence -o yaml -n "
+        + test_env_namespace
+        + " | grep ALLOW_NEW_USER_ON_LOGIN"
+    )
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
+    )
+    if result.returncode == 0:
+        if "true" in result.stdout.strip():
+            return True
+    return False
+
+
 def is_frontend_url():
     deployed_services = get_list_of_services_deployed()
     if (
@@ -1129,3 +1145,73 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
             target_dir,
         ]
     )
+
+
+def get_db_secret_value(key):
+    cmd = [
+        "kubectl",
+        "-n",
+        pytest.namespace,
+        "get",
+        "secret",
+        "fence-dbcreds",
+        "-o",
+        f"jsonpath={{.data.{key}}}",
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    return base64.b64decode(result.stdout.strip()).decode("utf-8")
+
+
+def activate_fence_user(username):
+    db_user = get_db_secret_value("username")
+    db_pass = get_db_secret_value("password")
+    db_name = get_db_secret_value("database")
+    db_host = get_db_secret_value("host")
+    db_port = get_db_secret_value("port")
+    sql = f"UPDATE \"User\" SET active = 't' WHERE username = '{username}';"
+    cmd = [
+        "kubectl",
+        "-n",
+        pytest.namespace,
+        "get",
+        "pods",
+        "-l",
+        "app.kubernetes.io/name=postgresql",
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        pod_name = result.stdout.splitlines()[-1].split()[0]
+    else:
+        raise Exception("Unable to retrieve postgresql pod")
+    cmd = [
+        "kubectl",
+        "-n",
+        pytest.namespace,
+        "exec",
+        "-i",
+        pod_name,
+        "--",
+        "env",
+        f"PGPASSWORD={db_pass}",
+        "psql",
+        "-h",
+        db_host,
+        "-p",
+        db_port,
+        "-U",
+        db_user,
+        "-d",
+        db_name,
+        "-c",
+        sql,
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        return True
+    return False
