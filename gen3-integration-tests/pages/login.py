@@ -241,6 +241,7 @@ class LoginPage(object):
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             screenshot(page, "BeforeLogout")
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
+            logger.info("Clicked on logout button")
         # Click on Logout button to logout
         else:
             page.locator("a, p").get_by_text("Logout").click(timeout=60000)
@@ -249,6 +250,7 @@ class LoginPage(object):
         self.handle_popup(page)
         nav_bar_login_button = page.get_by_text("Login", exact=True)
         if capture_screenshot:
+            page.wait_for_load_state("load")
             screenshot(page, "AfterLogout")
         expect(nav_bar_login_button).to_be_visible(timeout=10000)
 
