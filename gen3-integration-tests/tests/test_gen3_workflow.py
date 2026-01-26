@@ -268,6 +268,8 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
+                        # Note: This also serves as a regression test for an issue when the command contains quotes:
+                        # `Error: yaml: line 33: did not find expected ',' or ']'`
                         f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
                 }
