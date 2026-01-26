@@ -268,9 +268,9 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
-                        # TODO: The command below fails due to the quotes around the echo '{echo_message}',so removed the quotes temporarily for the tests to run. Replace the quotes once this issue is resolved from funnel side.
-                        # f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
-                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
+                        # Note: This also serves as a regression test for an issue when the command contains quotes:
+                        # `Error: yaml: line 33: did not find expected ',' or ']'`
+                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
                 }
             ],
