@@ -139,8 +139,7 @@ def generate_slack_report():
     # Test metrics
     if test_metrics_block:
         if rerun_test_metrics_block:
-            if os.getenv("IS_NIGHTLY_RUN") == "true":
-                slack_report_json["blocks"].append(test_metrics_block)
+            slack_report_json["blocks"].append(test_metrics_block)
             slack_report_json["blocks"].append(rerun_test_metrics_block)
         else:
             slack_report_json["blocks"].append(test_metrics_block)
