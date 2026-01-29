@@ -44,12 +44,9 @@ def get_failed_suites():
         return None
 
 
-def get_test_result_and_metrics():
-    allure_folder = (
-        "rerun-allure-report"
-        if os.environ.get("FAILED_TEST_SUITES")
-        else "allure-report"
-    )
+def get_test_result_and_metrics(
+    allure_folder="allure-report", metrics_msg="Test Metrics"
+):
     allure_summary_path = (
         Path(__file__).parent.parent.parent / allure_folder / "widgets" / "summary.json"
     )
@@ -82,7 +79,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
+                "text": f"*{metrics_msg}*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
@@ -106,6 +103,10 @@ def generate_slack_report():
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
+    if os.environ.get("FAILED_TEST_SUITES"):
+        test_result, rerun_test_metrics_block = get_test_result_and_metrics(
+            allure_folder="rerun-allure-report", metrics_msg="Rerun Test Metrics"
+        )
     test_result_icons = {"Successful": ":tada:", "Failed": ":fire:"}
     slack_report_json["text"] = f"Integration Test Result: {pr_link}"
     slack_report_json["blocks"] = []
@@ -137,7 +138,11 @@ def generate_slack_report():
     slack_report_json["blocks"].append(summary_block)
     # Test metrics
     if test_metrics_block:
-        slack_report_json["blocks"].append(test_metrics_block)
+        if rerun_test_metrics_block:
+            slack_report_json["blocks"].append(test_metrics_block)
+            slack_report_json["blocks"].append(rerun_test_metrics_block)
+        else:
+            slack_report_json["blocks"].append(test_metrics_block)
         report_link_block = {
             "type": "section",
             "text": {
