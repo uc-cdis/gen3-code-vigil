@@ -103,8 +103,7 @@ def generate_slack_report():
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
-    # Adding rerun metrics information for nightly-build
-    if os.environ.get("FAILED_TEST_SUITES") and os.getenv("IS_NIGHTLY_RUN") == "true":
+    if os.environ.get("FAILED_TEST_SUITES"):
         test_result, rerun_test_metrics_block = get_test_result_and_metrics(
             allure_folder="rerun-allure-report", metrics_msg="Rerun Test Metrics"
         )
@@ -139,9 +138,12 @@ def generate_slack_report():
     slack_report_json["blocks"].append(summary_block)
     # Test metrics
     if test_metrics_block:
-        slack_report_json["blocks"].append(test_metrics_block)
         if rerun_test_metrics_block:
+            if os.getenv("IS_NIGHTLY_RUN") == "true":
+                slack_report_json["blocks"].append(test_metrics_block)
             slack_report_json["blocks"].append(rerun_test_metrics_block)
+        else:
+            slack_report_json["blocks"].append(test_metrics_block)
         report_link_block = {
             "type": "section",
             "text": {
