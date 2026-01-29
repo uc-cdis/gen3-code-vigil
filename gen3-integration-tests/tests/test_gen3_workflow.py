@@ -245,7 +245,7 @@ class TestGen3Workflow(object):
         )
 
         # Step 2: Create a TES task
-        echo_message = "Done!"
+        echo_message = "I'm done!"
         tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
