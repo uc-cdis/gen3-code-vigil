@@ -231,8 +231,13 @@ class LoginPage(object):
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.locator("a, p").get_by_text("Logout").click(timeout=60000)
+            logout_button = page.get_by_text("Logout", exact=True)
+            logout_button.click(timeout=60000)
             logger.info("Clicked on logout button")
+            # TODO: Remove the below handling once GFF-531 is fixed
+            if logout_button.is_visible():
+                logout_button.click()
+                logger.info("Clicked on logout button Again")
         nav_bar_login_button = page.get_by_text("Login", exact=True)
         # commons-frontend-app may have a pop up after clicking logout
         self.handle_popup(page)
