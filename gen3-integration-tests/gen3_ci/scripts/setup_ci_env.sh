@@ -52,7 +52,11 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     then
         echo "Found a frontend framework based repo '$service_name'"
         if [[ "$CI_ENV" == "gen3ff" ]]; then
-          yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+          if [[ "$REPO" == "commons-frontend-app" ]]; then
+            yq eval ".frontend-framework.image.tag = \"${image_name}_test\"" -i "$ci_default_manifest_values_yaml"
+          else
+            yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+          fi
           repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$ci_default_manifest_values_yaml")
           yq eval ".frontend-framework.image.repository = \"${repository%/*}/$service_name\"" -i "$ci_default_manifest_values_yaml"
         fi
