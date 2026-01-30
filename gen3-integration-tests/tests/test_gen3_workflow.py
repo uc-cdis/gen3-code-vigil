@@ -245,7 +245,7 @@ class TestGen3Workflow(object):
         )
 
         # Step 2: Create a TES task
-        echo_message = "'I'm done!'"
+        echo_message = "I'm done!"
         tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
@@ -270,7 +270,7 @@ class TestGen3Workflow(object):
                     "command": [
                         # Note: This also serves as a regression test for an issue when the command contains quotes:
                         # `Error: yaml: line 33: did not find expected ',' or ']'`
-                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
+                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
                 }
             ],
@@ -348,7 +348,7 @@ class TestGen3Workflow(object):
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
         assert (
             stdout == echo_message
-        ), f"Expected stdout to be `{echo_message}`, but found {stdout} instead."
+        ), f"Expected stdout to be `Done!`, but found {stdout} instead."
 
         # Step 6: Validate task outputs
         for file_name in ["output.txt", "grep_output.txt"]:
