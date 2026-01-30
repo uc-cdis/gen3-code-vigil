@@ -232,7 +232,8 @@ class LoginPage(object):
         # Click on Logout button to logout
         else:
             logout_button = page.get_by_text("Logout", exact=True)
-            logout_button.click(timeout=60000)
+            logout_button.wait_for(state="visible", timeout=60000)
+            logout_button.click()
             logger.info("Clicked on logout button")
             # TODO: Remove the below handling once GFF-531 is fixed
             if logout_button.is_visible():
