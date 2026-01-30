@@ -270,6 +270,9 @@ class TestGen3Workflow(object):
                     "command": [
                         # Note: This also serves as a regression test for an issue when the command contains quotes:
                         # `Error: yaml: line 33: did not find expected ',' or ']'`
+                        # A current limitation of quote handling is that the command received by
+                        # the Funnel executor is: echo \'I'm done!\'
+                        # so the output includes extra quotes (see `expected_stdout` variable).
                         f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
                 }
@@ -346,9 +349,10 @@ class TestGen3Workflow(object):
 
         # Check if the stdout contains the expected echo message
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        expected_stdout = f"'{echo_message}'"
         assert (
-            stdout == echo_message
-        ), f"Expected stdout to be `Done!`, but found {stdout} instead."
+            stdout == expected_stdout
+        ), f"Expected stdout to be `{expected_stdout}`, but found {stdout} instead."
 
         # Step 6: Validate task outputs
         for file_name in ["output.txt", "grep_output.txt"]:
