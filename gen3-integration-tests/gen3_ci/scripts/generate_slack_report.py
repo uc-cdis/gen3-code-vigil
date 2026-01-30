@@ -8,8 +8,13 @@ from utils import logger
 
 
 def get_failed_suites():
+    allure_folder = (
+        "rerun-allure-report"
+        if os.environ.get("FAILED_TEST_SUITES")
+        else "allure-report"
+    )
     suite_report_path = (
-        Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
+        Path(__file__).parent.parent.parent / allure_folder / "data" / "suites.csv"
     )
     if suite_report_path.exists():
         failed_suites = set()
@@ -39,12 +44,11 @@ def get_failed_suites():
         return None
 
 
-def get_test_result_and_metrics():
+def get_test_result_and_metrics(
+    allure_folder="allure-report", metrics_msg="Test Metrics"
+):
     allure_summary_path = (
-        Path(__file__).parent.parent.parent
-        / "allure-report"
-        / "widgets"
-        / "summary.json"
+        Path(__file__).parent.parent.parent / allure_folder / "widgets" / "summary.json"
     )
     if allure_summary_path.exists():
         with open(allure_summary_path) as f:
@@ -75,7 +79,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
+                "text": f"*{metrics_msg}*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
@@ -87,16 +91,22 @@ def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
         report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/gh_action_logs.txt"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
         )
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
+    if os.environ.get("FAILED_TEST_SUITES"):
+        test_result, rerun_test_metrics_block = get_test_result_and_metrics(
+            allure_folder="rerun-allure-report", metrics_msg="Rerun Test Metrics"
+        )
     test_result_icons = {"Successful": ":tada:", "Failed": ":fire:"}
     slack_report_json["text"] = f"Integration Test Result: {pr_link}"
     slack_report_json["blocks"] = []
@@ -109,6 +119,8 @@ def generate_slack_report():
             "emoji": True,
         },
     }
+    if os.getenv("CI_ENV") == "gen3ff":
+        header_block["text"]["text"] = "Integration Test Results - Gen3FF"
     slack_report_json["blocks"].append(header_block)
     # Calculate gh action time
     start_time = os.getenv("GITHUB_RUN_STARTED_AT")
@@ -126,7 +138,11 @@ def generate_slack_report():
     slack_report_json["blocks"].append(summary_block)
     # Test metrics
     if test_metrics_block:
-        slack_report_json["blocks"].append(test_metrics_block)
+        if rerun_test_metrics_block:
+            slack_report_json["blocks"].append(test_metrics_block)
+            slack_report_json["blocks"].append(rerun_test_metrics_block)
+        else:
+            slack_report_json["blocks"].append(test_metrics_block)
         report_link_block = {
             "type": "section",
             "text": {
@@ -135,6 +151,15 @@ def generate_slack_report():
             },
         }
         slack_report_json["blocks"].append(report_link_block)
+        if os.environ.get("FAILED_TEST_SUITES"):
+            rerun_report_link_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Rerun Failed Test Report*: <{rerun_report_link}|click here>",
+                },
+            }
+            slack_report_json["blocks"].append(rerun_report_link_block)
     else:
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."

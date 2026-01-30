@@ -4,6 +4,7 @@ import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import allure
 import boto3
 import pytest
 
@@ -21,6 +22,7 @@ requires_fence_client_marker_present = False
 requires_google_bucket_marker_present = False
 
 collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
+failed_test_suites = []
 
 
 class XDistCustomPlugin:
@@ -164,10 +166,7 @@ def pytest_configure(config):
     config.pluginmanager.register(XDistCustomPlugin())
 
 
-@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_logreport(report):
-    yield
-
     if report.when != "call":
         return
 
@@ -184,7 +183,13 @@ def pytest_runtest_logreport(report):
         "result": report.outcome,
         "duration": str(timedelta(seconds=report.duration)),
     }
-
+    # Collect test suite failures for re-run
+    if (
+        report.outcome == "failed"
+        and test_nodeid.split("::")[1] not in failed_test_suites
+    ):
+        failed_test_suites.append(test_nodeid.split("::")[1])
+    # Add data to the queue
     try:
         sqs = boto3.client("sqs")
         queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
@@ -192,6 +197,24 @@ def pytest_runtest_logreport(report):
         logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
     except Exception as e:
         logger.error(f"[SQS SEND ERROR] {e}")
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item):
+    outcome = yield
+    rep = outcome.get_result()
+
+    # Attach video only if test failed
+    if rep.when == "call" and rep.failed:
+        page = item.funcargs.get("page")
+        if page and page.video:
+            video_path = page.video.path()
+
+            allure.attach.file(
+                video_path,
+                name="Test execution video",
+                attachment_type=allure.attachment_type.MP4,
+            )
 
 
 def pytest_unconfigure(config):
@@ -207,3 +230,8 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
+        if not os.getenv("RERUNNING_TESTS") == "true":
+            # Add failed test suites to GITHUB variable
+            with open(os.getenv("GITHUB_ENV"), "a") as f:
+                f.write(f"FAILED_TEST_SUITES={' or '.join(failed_test_suites)}")
+            return

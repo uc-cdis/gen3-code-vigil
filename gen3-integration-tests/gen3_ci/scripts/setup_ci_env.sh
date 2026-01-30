@@ -401,9 +401,7 @@ common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|gen3-${namespace}-workflow-pods"
-  ".gen3-workflow.funnel.Plugins.Params.S3Url|gen3-workflow-service.${namespace}.svc.cluster.local"
-  ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl|https://${HOSTNAME}/user"
+  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -449,7 +447,7 @@ yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}'
 yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
 
 # TODO: Delete this after nightly-build teardown is working properly with helm-ci-cleanup
-if [ "$namespace" == "nightly-build" ]; then
+if [[ "$namespace" == nightly-build* ]]; then
   echo "Deleting indexd-userdb for nightly-build"
   kubectl delete job indexd-userdb -n $namespace
 fi
@@ -476,7 +474,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
