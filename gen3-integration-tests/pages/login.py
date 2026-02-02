@@ -8,6 +8,7 @@ from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -220,6 +221,8 @@ class LoginPage(object):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
+    # TODO: Remove the below handling once GFF-531 is fixed
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config(json_file_name="navigation")
@@ -232,13 +235,8 @@ class LoginPage(object):
         # Click on Logout button to logout
         else:
             logout_button = page.get_by_text("Logout", exact=True)
-            logout_button.wait_for(state="visible", timeout=60000)
-            logout_button.click()
+            logout_button.click(timeout=10000)
             logger.info("Clicked on logout button")
-            # TODO: Remove the below handling once GFF-531 is fixed
-            if logout_button.is_visible():
-                logout_button.click()
-                logger.info("Clicked on logout button Again")
         nav_bar_login_button = page.get_by_text("Login", exact=True)
         # commons-frontend-app may have a pop up after clicking logout
         self.handle_popup(page)
