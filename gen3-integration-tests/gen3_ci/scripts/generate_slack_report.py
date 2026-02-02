@@ -103,6 +103,7 @@ def generate_slack_report():
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
+    rerun_test_metrics_block = None
     if os.environ.get("FAILED_TEST_SUITES"):
         test_result, rerun_test_metrics_block = get_test_result_and_metrics(
             allure_folder="rerun-allure-report", metrics_msg="Rerun Test Metrics"
