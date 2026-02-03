@@ -167,9 +167,6 @@ def pytest_configure(config):
 
 
 def pytest_runtest_logreport(report):
-    if report.when != "call":
-        return
-
     test_nodeid = report.nodeid
     start_time = datetime.fromtimestamp(report.start)
     message = {
@@ -185,7 +182,7 @@ def pytest_runtest_logreport(report):
     }
     # Collect test suite failures for re-run
     if (
-        report.outcome == "failed"
+        report.failed
         and test_nodeid.split("::")[1] not in failed_test_suites
     ):
         failed_test_suites.append(test_nodeid.split("::")[1])
