@@ -268,7 +268,7 @@ class TestGen3Workflow(object):
                         # Note: This also serves as a regression test for an issue when the command contains quotes:
                         # `Error: yaml: line 33: did not find expected ',' or ']'`
                         # A current limitation of quote handling is that the command received by
-                        # the Funnel executor is: echo \'I'm done!\'
+                        # the Funnel executor is: echo \'I\'m done!\'
                         # so the output includes extra quotes (see `expected_stdout` variable).
                         f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
@@ -672,7 +672,11 @@ class TestGen3Workflow(object):
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"
             assert (
-                task["exit_code"] == -999 if task_name == "TEST_IGNORED_FAIL" else "0"
+                # Note: `-999` is not in the TES spec but is currently returned by Funnel in case
+                # of error
+                task["exit_code"] == -999
+                if task_name == "TEST_IGNORED_FAIL"
+                else "0"
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
         assert tasks_with_ignored_error == [
