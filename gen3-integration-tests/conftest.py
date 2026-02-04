@@ -184,10 +184,7 @@ def pytest_runtest_logreport(report):
         "duration": str(timedelta(seconds=report.duration)),
     }
     # Collect test suite failures for re-run
-    if (
-        report.outcome == "failed"
-        and test_nodeid.split("::")[1] not in failed_test_suites
-    ):
+    if report.failed and test_nodeid.split("::")[1] not in failed_test_suites:
         failed_test_suites.append(test_nodeid.split("::")[1])
     # Add data to the queue
     try:
