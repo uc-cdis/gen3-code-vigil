@@ -390,7 +390,7 @@ common_param_updates=(
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do

@@ -349,7 +349,7 @@ class TestGen3Workflow(object):
         expected_stdout = f"'{echo_message}'"
         assert (
             stdout == expected_stdout
-        ), f"Expected stdout to be `{expected_stdout}`, but found {stdout} instead."
+        ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
 
         # Step 6: Validate task outputs
         for file_name in ["output.txt", "grep_output.txt"]:

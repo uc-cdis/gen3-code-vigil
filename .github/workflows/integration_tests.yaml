@@ -14,7 +14,6 @@ jobs:
     uses: ./.github/workflows/shared_integration_tests.yaml
     with:
       WORKING_DIR: gen3-integration-tests
-      HELM_BRANCH: chore/update_funnel_0_1_85
     secrets:
       CI_TEST_ORCID_USERID: ${{ secrets.CI_TEST_ORCID_USERID }}
       CI_TEST_ORCID_PASSWORD: ${{ secrets.CI_TEST_ORCID_PASSWORD }}
