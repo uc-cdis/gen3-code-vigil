@@ -16,6 +16,7 @@ class Fence(object):
     def __init__(self):
         # Endpoints
         self.BASE_URL = f"{pytest.root_url}/user"
+        self.ADMIN_FENCE_ENDPOINT = "/admin/user"
         self.API_CREDENTIALS_ENDPOINT = "/credentials/api"
         self.OAUTH_TOKEN_ENDPOINT = "/oauth2/token"
         self.DATA_UPLOAD_ENDPOINT = "/data/upload"
@@ -419,3 +420,35 @@ class Fence(object):
             logger.info(
                 f"Deleted a key for {pytest.users[user]} and got response {delete_resp.status_code}"
             )
+
+    def verify_authorized_username(self, verify_username, user="main_account"):
+        """verifies a username using fence admin endpoint"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        response = auth.curl(
+            path=f"{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[verify_username]}"
+        )
+        return response
+
+    def create_user(self, username, user="main_account"):
+        """creates a username using fence admin endpoint"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        headers = {
+            "Content-Type": "application/json",
+        }
+        data = {"username": pytest.users[username], "email": pytest.users[username]}
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}",
+            data=json.dumps(data),
+            auth=auth,
+            headers=headers,
+        )
+        return response
+
+    def deactivate_user(self, username, user="main_account"):
+        """deactivates a username using fence admin endpoint"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        url = (
+            f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/soft"
+        )
+        response = requests.delete(url=url, auth=auth)
+        return response
