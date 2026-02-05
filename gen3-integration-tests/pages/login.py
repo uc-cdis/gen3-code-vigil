@@ -8,6 +8,7 @@ from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -220,6 +221,8 @@ class LoginPage(object):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
+    # TODO: Remove the below handling once GFF-531 is fixed
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config(json_file_name="navigation")
