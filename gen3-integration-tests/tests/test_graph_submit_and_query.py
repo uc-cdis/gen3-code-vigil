@@ -31,8 +31,11 @@ class TestGraphSubmitAndQuery:
         cls.sd_tools.delete_all_records()
 
     def teardown_method(self, method):
-        # Delete all test records at the end of each test
-        self.sd_tools.delete_all_records()
+        try:
+            # Delete all test records at the end of each test
+            self.sd_tools.delete_all_records()
+        except Exception as e:
+            logger.error(f"Exception occured while deleting records: {e}")
 
     @pytest.mark.graph_query
     @pytest.mark.skipif(
