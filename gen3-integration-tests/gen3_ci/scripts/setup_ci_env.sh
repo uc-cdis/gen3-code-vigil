@@ -460,6 +460,17 @@ fi
 echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
 aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
+# For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
+# so env doesnt need portal configuration
+if [ "$setup_type" == "test-env-setup" && "$setup_type" == "service-env-setup" ] ; then
+  if [[ $CI_ENV == "gen3ff" ]]; then
+    yq eval "del(.portal)" -i $ci_default_manifest_values_yaml
+    yq eval ".global.frontendRoot = \"gen3ff\"" -i "$ci_default_manifest_values_yaml"
+  else
+    yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
+  fi
+fi
+
 echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
