@@ -388,8 +388,9 @@ common_param_updates=(
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
-  ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
+  ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
+  ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
