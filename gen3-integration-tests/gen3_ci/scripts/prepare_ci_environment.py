@@ -211,6 +211,10 @@ def prepare_ci_environment(namespace):
         )
         result = wait_for_quay_build(quay_repo, quay_tag)
         assert result.lower() == "success"
+        # commons-frontend-app builds an additional image for ci config
+        if quay_repo == "commons-frontend-app":
+            result = wait_for_quay_build(quay_repo, f"{quay_tag}_test")
+            assert result.lower() == "success"
         result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
         assert result.lower() == "success"
     # generate api keys for test users for the ci env
