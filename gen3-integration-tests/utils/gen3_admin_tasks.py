@@ -1109,14 +1109,13 @@ def get_ff_commons_info():
             .strip()
             .replace("'", "")
         )
-        target_dir = "ci-data-commons"
-        return repo_name, branch_name, target_dir
+        return repo_name, branch_name
     else:
         raise Exception("Unable to get frontend-framework image name")
 
 
-def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
-    shutil.rmtree(target_dir, ignore_errors=True)
+def download_frontend_commons_app_repo(repo_name, branch_name):
+    shutil.rmtree(repo_name, ignore_errors=True)
     subprocess.run(
         [
             "git",
@@ -1126,6 +1125,6 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
             "--depth",
             "1",
             f"https://github.com/uc-cdis/{repo_name}.git",
-            target_dir,
+            repo_name,
         ]
     )
