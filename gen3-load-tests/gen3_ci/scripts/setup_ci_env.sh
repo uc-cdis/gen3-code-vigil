@@ -150,8 +150,9 @@ yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $manifest_values_ya
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $manifest_values_yaml
 yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $manifest_values_yaml
-yq eval ".gen3-workflow.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
-yq eval ".gen3-workflow.funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
+yq eval ".funnel.externalSecrets.dbcreds = \"${namespace}-funnel-creds\"" -i $manifest_values_yaml
+yq eval ".funnel.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
+yq eval ".funnel.funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
 # Remove aws-es-proxy block
