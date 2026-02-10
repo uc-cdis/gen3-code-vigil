@@ -22,6 +22,7 @@ The API keys should be saved to `~/.gen3` directory
     HOSTNAME="<hostname>"
     NAMESPACE="<namespace>"
     ```
+Note: Please make sure the usersync job is configured on the environment, as the usersync job is run during pytest setup.
 1. Run tests with pytest
     ```
     poetry run pytest --video=retain-on-failure --alluredir allure-results -n auto --dist loadscope
