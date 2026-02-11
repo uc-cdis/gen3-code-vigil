@@ -311,6 +311,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$google_enabled" != "true" ]]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
+
+    # This is to make sure any changes for ci/default are run with portal for now
+    if [[ $UPDATED_FOLDERS == "ci/default" ]]; then
+      echo "Current change is in ci/default, removing frontend-framework config"
+      yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
+    fi
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
