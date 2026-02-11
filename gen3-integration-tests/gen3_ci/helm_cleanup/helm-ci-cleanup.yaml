@@ -82,12 +82,6 @@ spec:
                 delete_gen3_workflow_s3_buckets() {
                 s3_bucket_pattern='^gen3wf-${env}-ci-planx-pla-net-.*$'
                 buckets=$(aws s3api list-buckets --query 'Buckets[].Name' --output text)
-                echo "Matching buckets:"
-                for b in $buckets; do
-                if [[ $b =~ $s3_bucket_pattern ]]; then
-                    echo "  $b"
-                fi
-                done
                 for bucket in $buckets; do
                 if [[ $bucket =~ $s3_bucket_pattern ]]; then
                     echo "==== Deleting bucket: $bucket ===="

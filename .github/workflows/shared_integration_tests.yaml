@@ -164,7 +164,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-gitops
-              ref: 'test/gen3-workflow-delete-endpoint'
+              ref: 'master'
               path: gen3-gitops-ci
 
           - name: Get commit time
