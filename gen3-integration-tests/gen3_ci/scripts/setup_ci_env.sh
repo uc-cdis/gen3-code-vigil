@@ -441,9 +441,6 @@ if [[ "$namespace" == nightly-build* ]]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
-# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
-echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
 echo $HOSTNAME
 install_helm_chart() {
