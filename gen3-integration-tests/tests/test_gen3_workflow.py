@@ -85,12 +85,6 @@ class TestGen3Workflow(object):
             cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
         )
 
-    @classmethod
-    def teardown_class(cls):
-        # Ensure user-bucket is deleted after the test suite ends.
-        # Not sure if this is a good idea, since having the bucket intact if CI fails seems like a better idea.
-        cls.gen3_workflow.delete_user_bucket()
-
     ######################## Test /storage/info endpoint ########################
 
     def test_get_storage_info_without_token(self):
