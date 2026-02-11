@@ -183,9 +183,6 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
-echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
 echo $HOSTNAME
 install_helm_chart() {
