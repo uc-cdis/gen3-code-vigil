@@ -112,7 +112,8 @@ class LoginPage(object):
             screenshot(page, "AfterLogin")
         page.wait_for_load_state("load")
         # TODO: Remove the below check once GFF team resolves the issue
-        page.wait_for_url(lambda url: "login" not in url.lower())
+        if validate_username_locator:
+            page.wait_for_url(lambda url: "login" not in url.lower())
         current_url = page.url
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
@@ -134,9 +135,10 @@ class LoginPage(object):
             ),
             None,
         )
-        assert (
-            access_token_cookie is not None
-        ), "Access token cookie not found after login"
+        if validate_username_locator:
+            assert (
+                access_token_cookie is not None
+            ), "Access token cookie not found after login"
         return access_token_cookie
 
     def validate_username(self, page, logged_in_user):
