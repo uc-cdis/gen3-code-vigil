@@ -24,33 +24,33 @@ spec:
               - |
                 #label pvcs with ci label
                 delete_pvcs() {
-                local env=$1
-                for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master" "app=funnel"; do
-                    pvc=$(kubectl get pvc -n "$env" -l "$label" -o name | head -n 1 | cut -d'/' -f2)
-                    [ -z "$pvc" ] && echo "No PVC found for label: $label" && continue
+                    local env=$1
+                    for label in "app.kubernetes.io/name=postgresql" "app=gen3-elasticsearch-master" "app=funnel"; do
+                        pvc=$(kubectl get pvc -n "$env" -l "$label" -o name | head -n 1 | cut -d'/' -f2)
+                        [ -z "$pvc" ] && echo "No PVC found for label: $label" && continue
 
-                    echo "Deleting PVC $pvc with label: $label..."
-                    kubectl delete pvc "$pvc" -n "$env" --wait=false
+                        echo "Deleting PVC $pvc with label: $label..."
+                        kubectl delete pvc "$pvc" -n "$env" --wait=false
 
-                    for i in {1..15}; do
-                    kubectl get pvc "$pvc" -n "$env" &>/dev/null || { echo "PVC $pvc deleted."; break; }
-                    echo "Waiting for PVC $pvc to delete..."
-                    sleep 5
+                        for i in {1..15}; do
+                        kubectl get pvc "$pvc" -n "$env" &>/dev/null || { echo "PVC $pvc deleted."; break; }
+                        echo "Waiting for PVC $pvc to delete..."
+                        sleep 5
+                        done
+
+                        # If still exists after 15 retries, remove finalizers.
+                        if kubectl get pvc "$pvc" -n "$env" &>/dev/null; then
+                        echo "Force removing finalizers from $pvc..."
+                        kubectl patch pvc "$pvc" -n "$env" -p '{"metadata":{"finalizers":null}}' --type=merge
+                        fi
                     done
-
-                    # If still exists after 15 retries, remove finalizers.
-                    if kubectl get pvc "$pvc" -n "$env" &>/dev/null; then
-                    echo "Force removing finalizers from $pvc..."
-                    kubectl patch pvc "$pvc" -n "$env" -p '{"metadata":{"finalizers":null}}' --type=merge
-                    fi
-                done
                 }
 
                 delete_queue_and_subscription() {
-                AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
-                UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
-                UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
-                SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+                    AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
+                    UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
+                    UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
+                    SNS_TOPIC_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
 
                     if aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" &>/dev/null; then
 
@@ -80,20 +80,20 @@ spec:
 
 
                 delete_gen3_workflow_s3_buckets() {
-                s3_bucket_pattern='^gen3wf-${env}-ci-planx-pla-net-.*$'
-                buckets=$(aws s3api list-buckets --query 'Buckets[].Name' --output text)
-                for bucket in $buckets; do
-                if [[ $bucket =~ $s3_bucket_pattern ]]; then
-                    echo "==== Deleting bucket: $bucket ===="
-                    # delete all bucket objects
-                    aws s3 rm "s3://$bucket" --recursive > dev/null || true
-                    # delete bucket
-                    aws s3api delete-bucket --bucket "$bucket"
-                    echo "Deleted: $bucket"
-                    echo
-                fi
-                done
-                echo "All matching buckets deleted."
+                    s3_bucket_pattern='^gen3wf-${env}-ci-planx-pla-net-.*$'
+                    buckets=$(aws s3api list-buckets --query 'Buckets[].Name' --output text)
+                    for bucket in $buckets; do
+                    if [[ $bucket =~ $s3_bucket_pattern ]]; then
+                        echo "==== Deleting bucket: $bucket ===="
+                        # delete all bucket objects
+                        aws s3 rm "s3://$bucket" --recursive > dev/null || true
+                        # delete bucket
+                        aws s3api delete-bucket --bucket "$bucket"
+                        echo "Deleted: $bucket"
+                        echo
+                    fi
+                    done
+                    echo "All gen3-workflow buckets deleted."
                 }
 
                 teardown_environment() {
