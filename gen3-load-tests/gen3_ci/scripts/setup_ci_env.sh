@@ -183,6 +183,11 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
+# This is to make sure any changes for ci/default are run with portal for now
+echo "Current change is in ci/default, removing frontend-framework config"
+yq eval "del(.frontend-framework)" -i $manifest_values_yaml
+
+
 
 echo $HOSTNAME
 install_helm_chart() {
