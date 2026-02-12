@@ -243,7 +243,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       "global.netpolicy"
       "global.environment"
       "global.frontendRoot"
-      "global.clusterName"
       "ssjdispatcher.indexing"
       "metadata.useAggMds"
       # "metadata.aggMdsNamespace"
