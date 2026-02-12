@@ -243,7 +243,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       "global.netpolicy"
       "global.environment"
       "global.frontendRoot"
-      "global.clusterName"
       "ssjdispatcher.indexing"
       "metadata.useAggMds"
       # "metadata.aggMdsNamespace"
@@ -254,14 +253,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
         manifest_value=$(yq eval ".$key // \"key not found\"" $new_manifest_values_file_path)
         if [ "$manifest_value" = "key not found" ]; then
-            echo "The key '$key' is not present in target manifest."
+            echo "The key '$key' is not present in target manifest: making sure it's unset in CI manifest..."
             if [[ "$ci_value" != "key not found" ]]; then
                 echo "Removing key '$key' from CI env configuration"
                 yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
             fi
         else
             echo "CI default value of the key '$key' is: $ci_value"
-            echo "Manifest value of the key '$key' is: $manifest_value"
+            echo "Manifest value of the key '$key' is: $manifest_value: updating '$key' to that in CI manifest..."
             yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
         fi
     done
