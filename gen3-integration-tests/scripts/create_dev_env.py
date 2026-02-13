@@ -16,7 +16,7 @@ def setup_env_for_helm(arguments):
         logger.info(result.stdout)
         return "SUCCESS"
     else:
-        logger.info("Script execution failed. Error:")
+        logger.info("Script execution failed. Logs:")
         logger.info(result.stderr)
         logger.info(result.stdout)
         return "FAILURE"
