@@ -47,6 +47,7 @@ spec:
                 }
 
                 delete_queue_and_subscription() {
+                    local env="$1"
                     AUDIT_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-audit-service-sqs-${env}"
                     UPLOAD_QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/ci-data-upload-bucket-${env}"
                     UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
@@ -80,24 +81,35 @@ spec:
 
 
                 delete_gen3_workflow_s3_buckets() {
-                    s3_bucket_pattern='^gen3wf-${env}-ci-planx-pla-net-.*$'
-                    buckets=$(aws s3api list-buckets --query 'Buckets[].Name' --output text)
-                    for bucket in $buckets; do
-                    if [[ $bucket =~ $s3_bucket_pattern ]]; then
+                    local env="$1"
+                    s3_bucket_pattern="^gen3wf-${env}-ci-planx-pla-net-.*$"
+                    matching_buckets=$(aws s3api list-buckets \
+                        --query 'Buckets[].Name' \
+                        --output text | tr '\t' '\n' | grep -E "$s3_bucket_pattern")
+
+                    # if no matches, exit silently
+                    if [[ -z "$matching_buckets" ]]; then
+                        echo "No buckets found matching the pattern -- $s3_bucket_pattern"
+                        return
+                    fi
+                    for bucket in $matching_buckets; do
                         echo "==== Deleting bucket: $bucket ===="
                         # delete all bucket objects
-                        aws s3 rm "s3://$bucket" --recursive > dev/null || true
+                        aws s3 rm "s3://$bucket" --recursive || true
                         # delete bucket
                         aws s3api delete-bucket --bucket "$bucket"
                         echo "Deleted: $bucket"
                         echo
-                    fi
                     done
                     echo "All gen3-workflow buckets deleted."
                 }
 
                 teardown_environment() {
-                    helm delete $env -n $env
+                    local env="$1"
+                    local delete_helm="${2:-True}"   # default = True
+                    if [[ "$delete_helm" == "True" ]]; then
+                        helm delete "$env" -n "$env"
+                    fi
                     delete_pvcs $env
                     kubectl delete ns $env
                     kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
@@ -141,10 +153,8 @@ spec:
                         fi
                     elif (( $(date +%s) - $(date -d "$(kubectl get ns "$env" -o jsonpath='{.metadata.creationTimestamp}')" +%s) > 10800 )); then
                         echo "No Helm installation found... Deleting namespace $env."
-                        delete_pvcs $env
-                        kubectl delete ns $env
-                        kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
-                        delete_queue_and_subscription $env
+                        # Teardown env with delete_helm set to False
+                        teardown_environment $env False
                     else
                         echo "No Helm installation found in namespace $env... But not older than 3 hours. PR in progress."
                     fi
