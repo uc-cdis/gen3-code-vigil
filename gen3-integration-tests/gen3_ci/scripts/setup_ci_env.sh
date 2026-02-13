@@ -12,6 +12,7 @@ namespace="$1"
 setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
+echo ci_default_manifest_dir $ci_default_manifest_dir
 ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
 ci_default_manifest_portal_yaml="${ci_default_manifest_dir}/portal.yaml"
 master_values_yaml="master_values.yaml"
@@ -134,6 +135,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Handle audit logging in fence
     ####################################################################################
     audit_disabled=$(yq eval '.audit.enabled == false' $new_manifest_values_file_path)
+    echo audit_disabled $audit_disabled
+    echo new_manifest_values_file_path:
+    cat $new_manifest_values_file_path
     if [[ $audit_disabled == "true" ]]; then
       echo "Audit service is not deployed, disabling fence audit logging"
       yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_AUDIT_LOGS.presigned_url = false' -i "$ci_default_manifest_values_yaml"

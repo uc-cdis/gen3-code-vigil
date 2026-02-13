@@ -54,6 +54,7 @@ def wait_for_quay_build(repo, tag):
 
 
 def setup_env_for_helm(arguments):
+    print("setup_env_for_helm arguments:", arguments)
     file_path = HELM_SCRIPTS_PATH_OBJECT / "setup_ci_env.sh"
     logger.info(f"File path: {file_path}")
     logger.info(f"Argument: {arguments}")
@@ -78,6 +79,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     Run usersync
     """
     helm_branch = os.getenv("HELM_BRANCH")
+    print("CI_ENV:", os.getenv("CI_ENV"))
     ci_default_manifest = (
         f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
     )
