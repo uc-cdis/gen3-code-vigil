@@ -487,11 +487,6 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
   fi
 fi
 
-echo "=========="
-echo ci_default_manifest_values_yaml:
-cat $ci_default_manifest_values_yaml
-echo "=========="
-
 echo $HOSTNAME
 install_helm_chart() {
   #For custom helm branch
@@ -511,17 +506,20 @@ install_helm_chart() {
     helm repo add gen3 https://helm.gen3.org
     helm repo update
 
-    # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
-    git clone https://github.com/uc-cdis/gen3-helm.git
-    cd gen3-helm/helm/
-    git checkout remove-funnel-mongodb
-    cd gen3 && helm dependency update && cd ..
-    # helm upgrade --install gen3 gen3/ -f ../../.github/values.yaml
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
-      echo "Helm chart installed!"
-    else
-      return 1
-    fi
+    # # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
+    # git clone https://github.com/uc-cdis/gen3-helm.git
+    # cd gen3-helm/helm/
+    # git checkout remove-funnel-mongodb
+    # cd gen3 && helm dependency update && cd ..
+    # # helm upgrade --install gen3 gen3/ -f ../../.github/values.yaml
+
+    helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
+
+    # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    #   echo "Helm chart installed!"
+    # else
+    #   return 1
+    # fi
   fi
   return 0
 }
