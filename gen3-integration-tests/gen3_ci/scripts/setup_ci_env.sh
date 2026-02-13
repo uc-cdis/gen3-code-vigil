@@ -465,12 +465,12 @@ fi
 
 # For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
 # so env doesnt need portal configuration
-if [ "$setup_type" == "test-env-setup" && "$setup_type" == "service-env-setup" ] ; then
-  if [[ $CI_ENV == "gen3ff" ]]; then
-    yq eval "del(.portal)" -i $ci_default_manifest_values_yaml
-    yq eval ".global.frontendRoot = \"gen3ff\"" -i "$ci_default_manifest_values_yaml"
+if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" ]]; then
+  if [[ "$CI_ENV" == "gen3ff" ]]; then
+    yq eval 'del(.portal)' --inplace "$ci_default_manifest_values_yaml"
+    yq eval '.global.frontendRoot = "gen3ff"' --inplace "$ci_default_manifest_values_yaml"
   else
-    yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
+    yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
   fi
 fi
 
