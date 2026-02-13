@@ -324,18 +324,12 @@ random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
-# Create sqs queues and save to var.
-AUDIT_QUEUE_NAME=""
-AUDIT_QUEUE_URL=""
-UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
-UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
-UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
-UPLOAD_SNS_NAME="ci-data-upload-bucket"
-UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
-
 audit_disabled="true" # TODO support disabling this when "setup_type" == "service-env-setup"
+ssjdispatcher_disabled="true" # TODO support this
+
+# Create audit sqs queue and save to var.
+AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
 if [[ $audit_disabled != "true" ]]; then
-  AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
   AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
   if [ -z "$AUDIT_QUEUE_URL" ]; then
     echo "Initial Audit SQS queue creation failed, retrying in 60 seconds..."
@@ -348,24 +342,30 @@ if [[ $audit_disabled != "true" ]]; then
   fi
 fi
 
-if [ -z "$UPLOAD_QUEUE_URL" ]; then
-  echo "Initial Upload SQS queue creation failed, retrying in 60 seconds..."
-  sleep 60
+# Create data upload sqs queue and save to var.
+UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+if [[ $ssjdispatcher_disabled != "true" ]]; then
   UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+  UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
   if [ -z "$UPLOAD_QUEUE_URL" ]; then
-    echo "SQS Upload queue creation failed after retry."
-    exit 1
+    echo "Initial Upload SQS queue creation failed, retrying in 60 seconds..."
+    sleep 60
+    UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+    if [ -z "$UPLOAD_QUEUE_URL" ]; then
+      echo "SQS Upload queue creation failed after retry."
+      exit 1
+    fi
   fi
-fi
 
-# Subscribing the SQS queue to the SNS topic.
-aws sns subscribe \
-  --topic-arn "$UPLOAD_SNS_ARN" \
-  --protocol sqs \
-  --notification-endpoint "$UPLOAD_QUEUE_ARN"
+  # Subscribing the SQS queue to the SNS topic.
+  aws sns subscribe \
+    --topic-arn "$UPLOAD_SNS_ARN" \
+    --protocol sqs \
+    --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
-# Set SQS policy on SQS queue.
-cat <<EOF > raw-policy.json
+  # Set SQS policy on SQS queue.
+  cat <<EOF > raw-policy.json
 {
   "Version": "2012-10-17",
   "Id": "sqspolicy",
@@ -386,15 +386,16 @@ cat <<EOF > raw-policy.json
 }
 EOF
 
-# Step 2: Escape the policy JSON into a single string and embed it in the final file and save as final attributes JSON
-escaped_policy=$(jq -c . raw-policy.json | jq -R '{ Policy: . }')
-echo "$escaped_policy" > policy.json
+  # Step 2: Escape the policy JSON into a single string and embed it in the final file and save as final attributes JSON
+  escaped_policy=$(jq -c . raw-policy.json | jq -R '{ Policy: . }')
+  echo "$escaped_policy" > policy.json
 
-if ! aws sqs set-queue-attributes \
-  --queue-url "$UPLOAD_QUEUE_URL" \
-  --attributes file://policy.json ; then
-  echo "❌ Failed to set SQS queue attributes" >&2
-  exit 1
+  if ! aws sqs set-queue-attributes \
+    --queue-url "$UPLOAD_QUEUE_URL" \
+    --attributes file://policy.json ; then
+    echo "❌ Failed to set SQS queue attributes" >&2
+    exit 1
+  fi
 fi
 
 common_param_updates=(
