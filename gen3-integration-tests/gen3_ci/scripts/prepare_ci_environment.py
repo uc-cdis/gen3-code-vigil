@@ -81,7 +81,9 @@ def modify_env_for_service_pr(namespace, service, tag):
     helm_branch = os.getenv("HELM_BRANCH")
     print("CI_ENV:", os.getenv("CI_ENV"))
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        # f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        # TODO CI_ENV should be "default" but it's "None"; fix that
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
     helm_service_names = {
         "audit-service": "audit",
