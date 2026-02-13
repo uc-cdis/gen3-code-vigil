@@ -399,7 +399,7 @@ class Gen3Workflow:
                 log_file_content = log_file.read()
             assert (
                 execution.status == "OK"
-            ), f"Nextflow workflow execution failed with status: {execution.status} and log: {log_file_content}"
+            ), f"Nextflow workflow execution failed with status: {execution.status} and log:\n{log_file_content}"
 
             return log_file_content
         finally:

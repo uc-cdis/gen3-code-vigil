@@ -324,21 +324,25 @@ ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
 # Create sqs queues and save to var.
-AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
-AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
+AUDIT_QUEUE_NAME=""
+AUDIT_QUEUE_URL=""
 UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
 UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
 UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
 UPLOAD_SNS_NAME="ci-data-upload-bucket"
 UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
 
-if [ -z "$AUDIT_QUEUE_URL" ]; then
-  echo "Initial Audit SQS queue creation failed, retrying in 60 seconds..."
-  sleep 60
+if [[ $audit_disabled != "true" ]]; then
+  AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
   AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
   if [ -z "$AUDIT_QUEUE_URL" ]; then
-    echo "SQS Audit queue creation failed after retry."
-    exit 1
+    echo "Initial Audit SQS queue creation failed, retrying in 60 seconds..."
+    sleep 60
+    AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
+    if [ -z "$AUDIT_QUEUE_URL" ]; then
+      echo "SQS Audit queue creation failed after retry."
+      exit 1
+    fi
   fi
 fi
 
