@@ -31,6 +31,10 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
+echo "=========="
+echo ci_default_manifest_values_yaml:
+cat $ci_default_manifest_values_yaml
+echo "=========="
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
