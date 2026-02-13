@@ -135,9 +135,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Handle audit logging in fence
     ####################################################################################
     audit_disabled=$(yq eval '.audit.enabled == false' $new_manifest_values_file_path)
-    echo audit_disabled $audit_disabled
-    echo new_manifest_values_file_path:
-    cat $new_manifest_values_file_path
     if [[ $audit_disabled == "true" ]]; then
       echo "Audit service is not deployed, disabling fence audit logging"
       yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_AUDIT_LOGS.presigned_url = false' -i "$ci_default_manifest_values_yaml"
@@ -336,6 +333,7 @@ UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" 
 UPLOAD_SNS_NAME="ci-data-upload-bucket"
 UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
 
+audit_disabled="true" # TODO support disabling this when "setup_type" == "service-env-setup"
 if [[ $audit_disabled != "true" ]]; then
   AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
   AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
