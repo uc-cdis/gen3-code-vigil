@@ -504,7 +504,15 @@ install_helm_chart() {
     fi
   else
     helm repo add gen3 https://helm.gen3.org
+    helm repo add external-secrets https://charts.external-secrets.io
     helm repo update
+
+    kubectl create namespace external-secrets
+    helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace --set installCRDs=true --version 0.8.5
+    echo "--------"
+    kubectl get crd | grep external-secrets
+    echo "--------"
+    kubectl get pods -n external-secrets
 
     # # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
     # git clone https://github.com/uc-cdis/gen3-helm.git
@@ -515,7 +523,7 @@ install_helm_chart() {
 
     # helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
 
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug --set installCRDs=true; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
