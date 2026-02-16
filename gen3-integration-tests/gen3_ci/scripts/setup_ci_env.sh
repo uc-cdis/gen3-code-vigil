@@ -31,10 +31,10 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
-echo "=========="
-echo ci_default_manifest_values_yaml:
-cat $ci_default_manifest_values_yaml
-echo "=========="
+# echo "=========="
+# echo ci_default_manifest_values_yaml:
+# cat $ci_default_manifest_values_yaml
+# echo "=========="
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
@@ -513,13 +513,13 @@ install_helm_chart() {
     # cd gen3 && helm dependency update && cd ..
     # # helm upgrade --install gen3 gen3/ -f ../../.github/values.yaml
 
-    helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
+    # helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
 
-    # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
-    #   echo "Helm chart installed!"
-    # else
-    #   return 1
-    # fi
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug --set installCRDs=true; then
+      echo "Helm chart installed!"
+    else
+      return 1
+    fi
   fi
   return 0
 }
@@ -578,10 +578,20 @@ wait_for_pods_ready() {
 
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
 
-    echo "\nkubectl get pods:"
-    kubectl get pods
+    echo "NAMESPACE:" $NAMESPACE
+    # echo "kubectl get namespaces:"
+    # kubectl get namespaces
+    echo "============"
+    echo "kubectl get pods --all-namespaces:"
+    kubectl get pods --all-namespaces
+    echo "============"
 
     if [ "$not_ready_count" -eq 0 ]; then
+      n_pods=$(kubectl get pods -l app!=gen3job -o json | jq '[.items[]]' | jq 'length')
+      if [ "$n_pods" -eq 0 ]; then
+        echo "❌ No running pods!"
+        return 1  # TODO remove this return
+      fi
       echo "✅ All pods containers are Ready"
       return 0
     fi
@@ -603,6 +613,9 @@ wait_for_pods_ready() {
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
+  echo helm list:
+  helm list
+  echo ===
   if kubectl get deployment guppy-deployment -n "${namespace}" >/dev/null 2>&1; then
     echo "Guppy is running in this env, setting up ES indices"
     ci_es_indices_setup

@@ -26,18 +26,18 @@ OUTPUT_DIR="$HOME/.gen3"
 mkdir -p "$OUTPUT_DIR"
 chmod -R 755 "$OUTPUT_DIR"
 
-echo "NAMESPACE:" $NAMESPACE
-echo "kubectl get namespaces:"
-kubectl get namespaces
-echo "============"
-echo "kubectl get pods -o json:"
-echo "1============"
-kubectl get pods -o json
-echo "1============"
-echo "kubectl get pods -o json -n $NAMESPACE:"
-echo "2============"
-kubectl get pods -o json -n "$NAMESPACE"
-echo "2============"
+# echo "NAMESPACE:" $NAMESPACE
+# # echo "kubectl get namespaces:"
+# # kubectl get namespaces
+# echo "============"
+# echo "kubectl get pods -n default:"
+# echo "1============"
+# kubectl get pods -n default
+# echo "1============"
+# echo "kubectl get pods -n $NAMESPACE:"
+# echo "2============"
+# kubectl get pods -n "$NAMESPACE"
+# echo "2============"
 
 # Get running fence pod
 FENCE_POD=$(kubectl get pods -l app=fence -o json -n "$NAMESPACE" | jq -r '.items[0].metadata.name // empty')
