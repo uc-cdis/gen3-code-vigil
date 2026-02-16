@@ -8,6 +8,8 @@
 # setup_type - type of setup being performed
 # helm_branch - gen3 helm branch to bring up the env
 
+echo Starting setup_ci_env.sh...
+
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
@@ -507,12 +509,31 @@ install_helm_chart() {
     helm repo add external-secrets https://charts.external-secrets.io
     helm repo update
 
-    kubectl create namespace external-secrets
     helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace --set installCRDs=true --version 0.8.5
-    echo "--------"
-    kubectl get crd | grep external-secrets
-    echo "--------"
-    kubectl get pods -n external-secrets
+    # echo "--------"
+    # kubectl get crd | grep external-secrets
+    # echo "--------"
+    # kubectl get pods -n external-secrets
+
+    max_retries=10
+    delay=5
+    for attempt in $(seq 0 $max_retries); do
+      echo "Attempt $((attempt + 1))..."
+      kubectl get pods -n external-secrets
+      if kubectl get pods -n external-secrets | grep -q '0/'; then
+        echo "external-secrets pods are not ready"
+      else
+        echo "external-secrets pods are ready"
+        break
+      fi
+      if [ "$attempt" -lt "$max_retries" ]; then
+        echo "Retrying in $delay seconds..."
+        sleep "$delay"
+      else
+        echo "Failed after $((max_retries + 1)) attempts."
+        exit 1
+      fi
+    done
 
     # # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
     # git clone https://github.com/uc-cdis/gen3-helm.git
@@ -586,13 +607,13 @@ wait_for_pods_ready() {
 
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
 
-    echo "NAMESPACE:" $NAMESPACE
-    # echo "kubectl get namespaces:"
-    # kubectl get namespaces
-    echo "============"
-    echo "kubectl get pods --all-namespaces:"
-    kubectl get pods --all-namespaces
-    echo "============"
+    # echo "NAMESPACE:" $NAMESPACE
+    # # echo "kubectl get namespaces:"
+    # # kubectl get namespaces
+    # echo "============"
+    # echo "kubectl get pods --all-namespaces:"
+    # kubectl get pods --all-namespaces
+    # echo "============"
 
     if [ "$not_ready_count" -eq 0 ]; then
       n_pods=$(kubectl get pods -l app!=gen3job -o json | jq '[.items[]]' | jq 'length')

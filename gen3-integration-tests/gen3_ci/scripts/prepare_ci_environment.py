@@ -29,7 +29,8 @@ def wait_for_quay_build(repo, tag):
     logger.info(f"Repo - {repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
-            logger.info(f"Waiting for image {repo_item}:{tag} to be built in quay")
+            logger.info(f"Waiting for image '{repo_item}:{tag}' to be built in quay")
+            # TODO why does this work for funnel:ci
             res = requests.get(f"{quay_url_org}/{repo_item}/tag")
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
@@ -47,9 +48,10 @@ def wait_for_quay_build(repo, tag):
         time.sleep(60)
         found = all(repo_image_status.values())
     if found:
+        logger.info(f"Found image '{repo_item}:{tag}'")
         return "success"
     if not found:
-        logger.error(f"Image with tag {tag} was not found in repo {repo}")
+        logger.error(f"Image with tag '{tag}' was not found in repo '{repo}'")
         return "failure"
 
 
