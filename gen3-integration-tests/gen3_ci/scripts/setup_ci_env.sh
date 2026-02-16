@@ -515,9 +515,6 @@ install_helm_chart() {
 
     helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
 
-    echo "kubectl get pods:"
-    kubectl get pods
-
     # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
     #   echo "Helm chart installed!"
     # else
@@ -580,6 +577,9 @@ wait_for_pods_ready() {
       ]')
 
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
+
+    echo "\nkubectl get pods:"
+    kubectl get pods
 
     if [ "$not_ready_count" -eq 0 ]; then
       echo "✅ All pods containers are Ready"
