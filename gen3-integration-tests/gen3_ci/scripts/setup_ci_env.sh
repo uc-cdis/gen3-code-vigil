@@ -515,25 +515,25 @@ install_helm_chart() {
     # echo "--------"
     # kubectl get pods -n external-secrets
 
-    # max_retries=10
-    # delay=5
-    # for attempt in $(seq 0 $max_retries); do
-    #   echo "Attempt $((attempt + 1))..."
-    #   kubectl get pods -n external-secrets
-    #   if kubectl get pods -n external-secrets | grep -q '0/'; then
-    #     echo "external-secrets pods are not ready"
-    #   else
-    #     echo "external-secrets pods are ready"
-    #     break
-    #   fi
-    #   if [ "$attempt" -lt "$max_retries" ]; then
-    #     echo "Retrying in $delay seconds..."
-    #     sleep "$delay"
-    #   else
-    #     echo "Failed after $((max_retries + 1)) attempts."
-    #     exit 1
-    #   fi
-    # done
+    max_retries=3
+    delay=5
+    for attempt in $(seq 1 $max_retries); do
+      echo "Attempt $attempt..."
+      kubectl get pods -n external-secrets
+      if kubectl get pods -n external-secrets | grep -q '0/'; then
+        echo "external-secrets pods are not ready"
+      else
+        echo "external-secrets pods are ready"
+        break
+      fi
+      if [ "$attempt" -lt "$max_retries" ]; then
+        echo "Retrying in $delay seconds..."
+        sleep "$delay"
+      else
+        echo "external-secrets pods still not ready after $max_retries attempts. Giving up"
+        return 1
+      fi
+    done
 
     # # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
     # git clone https://github.com/uc-cdis/gen3-helm.git
@@ -559,8 +559,8 @@ ci_es_indices_setup() {
   max_retries=3
   delay=30
 
-  for attempt in $(seq 0 $max_retries); do
-    echo "Attempt $((attempt + 1))..."
+  for attempt in $(seq 1 $max_retries); do
+    echo "Attempt $attempt..."
     if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
       if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
         echo "Pod is ready!"
@@ -574,7 +574,7 @@ ci_es_indices_setup() {
       echo "Retrying in $delay seconds..."
       sleep "$delay"
     else
-      echo "Failed after $((max_retries + 1)) attempts."
+      echo "Failed after $max_retries attempts."
       exit 1
     fi
   done

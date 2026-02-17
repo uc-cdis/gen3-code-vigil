@@ -56,19 +56,31 @@ def wait_for_quay_build(repo, tag):
 
 
 def setup_env_for_helm(arguments):
-    file_path = HELM_SCRIPTS_PATH_OBJECT / "setup_ci_env.sh"
+    file_name = "setup_ci_env.sh"
+    file_path = HELM_SCRIPTS_PATH_OBJECT / file_name
     logger.info(f"[setup_env_for_helm] File path: {file_path}")
     logger.info(f"[setup_env_for_helm] Argument: {arguments}")
-    result = subprocess.run(
-        [file_path] + arguments, capture_output=True, text=True, timeout=180  # 1200
-    )
+    try:
+        result = subprocess.run(
+            [file_path] + arguments, capture_output=True, text=True, timeout=180  # 1200
+        )
+    except subprocess.TimeoutExpired as e:
+        logger.info(f"{file_name} script timed out. Logs (stderr):")
+        logger.info(e.stderr)
+        logger.info("------------------------")
+        logger.info(f"{file_name} script timed out. Logs (stdout):")
+        logger.info(e.stdout)
+        return "failure"
+
     if result.returncode == 0:
-        logger.info("Script executed successfully. Logs:")
+        logger.info(f"{file_name} script executed successfully. Logs:")
         logger.info(result.stdout)
         return "SUCCESS"
     else:
-        logger.info("Script execution failed. Logs:")
+        logger.info(f"{file_name} script execution failed. Logs (stderr):")
         logger.info(result.stderr)
+        logger.info("------------------------")
+        logger.info(f"{file_name} script execution failed. Logs (stdout):")
         logger.info(result.stdout)
         return "failure"
 
