@@ -102,6 +102,14 @@
                     }
                 }
             },
+            "dicom_header_file_guid":{
+                "type":"keyword",
+                "fields":{
+                    "analyzed":{
+                        "type":"text"
+                    }
+                }
+            },
             "data_category":{
                 "type":"keyword",
                 "fields":{
