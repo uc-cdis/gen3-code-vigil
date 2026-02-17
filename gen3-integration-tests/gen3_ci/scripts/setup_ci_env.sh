@@ -541,9 +541,13 @@ install_helm_chart() {
 
     # helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
 
+    echo "======= helm template..."
+    helm template ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug | grep postgresql
+    echo "======= helm template..."
+
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug --force; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug --set postgresql.enabled=false; then
       echo "Helm chart installed!"
     else
       return 1
