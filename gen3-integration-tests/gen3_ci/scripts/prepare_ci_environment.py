@@ -62,14 +62,16 @@ def setup_env_for_helm(arguments):
     logger.info(f"[setup_env_for_helm] Argument: {arguments}")
     try:
         result = subprocess.run(
-            [file_path] + arguments, capture_output=True, text=True, timeout=180  # 1200
+            [file_path] + arguments, capture_output=True, text=True, timeout=1200
         )
     except subprocess.TimeoutExpired as e:
         logger.info(f"{file_name} script timed out. Logs (stderr):")
-        logger.info(e.stderr)
+        for line in e.stderr.split("\n"):
+            logger.info(line)
         logger.info("------------------------")
         logger.info(f"{file_name} script timed out. Logs (stdout):")
-        logger.info(e.stdout)
+        for line in e.stdout.split("\n"):
+            logger.info(line)
         return "failure"
 
     if result.returncode == 0:

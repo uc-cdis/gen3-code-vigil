@@ -8,14 +8,11 @@
 # setup_type - type of setup being performed
 # helm_branch - gen3 helm branch to bring up the env
 
-echo Starting setup_ci_env.sh...
-
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
 
-echo ci_default_manifest_dir $ci_default_manifest_dir
 mkdir -p $ci_default_manifest_dir
 ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
 ci_default_manifest_portal_yaml="${ci_default_manifest_dir}/portal.yaml"
@@ -33,10 +30,10 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
-# echo "=========="
-# echo ci_default_manifest_values_yaml:
-# cat $ci_default_manifest_values_yaml
-# echo "=========="
+echo "=========="
+echo ci_default_manifest_values_yaml:
+cat $ci_default_manifest_values_yaml
+echo "=========="
 
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
@@ -515,8 +512,8 @@ install_helm_chart() {
     # echo "--------"
     # kubectl get pods -n external-secrets
 
-    max_retries=3
-    delay=5
+    max_retries=10
+    delay=10
     for attempt in $(seq 1 $max_retries); do
       echo "Attempt $attempt..."
       kubectl get pods -n external-secrets
@@ -642,9 +639,6 @@ wait_for_pods_ready() {
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
-  echo helm list:
-  helm list
-  echo ===
   if kubectl get deployment guppy-deployment -n "${namespace}" >/dev/null 2>&1; then
     echo "Guppy is running in this env, setting up ES indices"
     ci_es_indices_setup
