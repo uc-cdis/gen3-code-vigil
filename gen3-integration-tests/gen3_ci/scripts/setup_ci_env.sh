@@ -541,7 +541,9 @@ install_helm_chart() {
 
     # helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
 
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
+    # or use `--force` to force StatefulSets delete+recreate
+    if helm install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
