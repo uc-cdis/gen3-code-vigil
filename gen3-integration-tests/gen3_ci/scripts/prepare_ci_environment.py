@@ -56,15 +56,14 @@ def wait_for_quay_build(repo, tag):
 
 
 def setup_env_for_helm(arguments):
-    print("setup_env_for_helm arguments:", arguments)
     file_path = HELM_SCRIPTS_PATH_OBJECT / "setup_ci_env.sh"
-    logger.info(f"File path: {file_path}")
-    logger.info(f"Argument: {arguments}")
+    logger.info(f"[setup_env_for_helm] File path: {file_path}")
+    logger.info(f"[setup_env_for_helm] Argument: {arguments}")
     result = subprocess.run(
-        [file_path] + arguments, capture_output=True, text=True, timeout=1200
+        [file_path] + arguments, capture_output=True, text=True, timeout=180  # 1200
     )
     if result.returncode == 0:
-        logger.info("Script executed successfully. Output:")
+        logger.info("Script executed successfully. Logs:")
         logger.info(result.stdout)
         return "SUCCESS"
     else:
@@ -114,7 +113,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv('CI_ENV')}/values"
     )
     target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/{updated_folder}/values"
 
@@ -137,7 +136,7 @@ def modify_env_for_test_repo_pr(namespace):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv('CI_ENV')}/values"
     )
     arguments = [
         namespace,
