@@ -601,6 +601,6 @@ kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespac
 # Install ollama pod
 helm install ollama gen3_ci/ollama -n ${namespace}
 kubectl wait --for=condition=ready pod -l app=ollama --timeout=5m -n ${namespace}
-kubectl port-forward deployment/ollama 11434:11434 &
+kubectl port-forward deployment/ollama 11434:11434 -n ${namespace} &
 
 echo "YAY!!! Env is up..."
