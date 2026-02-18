@@ -28,7 +28,7 @@ RUN bash -c "\
     ollama create gemma:4b -f Modelfile \
 "
 
-# List ollama model
+# List ollama models
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
