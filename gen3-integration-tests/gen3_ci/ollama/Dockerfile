@@ -4,13 +4,16 @@ FROM quay.io/cdis/amazonlinux-base:${AZLINUX_BASE_VERSION} AS base
 
 # Install curl
 RUN dnf install -y --allowerasing \
-    curl
-
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+    curl \
+    findutils \
+    zstd \
+    tar
 
 # Create model directory
 WORKDIR /models
+
+# Install Ollama
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Download model
 RUN curl -L -O https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf
