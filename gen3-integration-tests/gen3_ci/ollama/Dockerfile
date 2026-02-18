@@ -28,6 +28,13 @@ RUN bash -c "\
     ollama create gemma:4b -f Modelfile \
 "
 
+# List ollama model
+RUN bash -c "\
+    ollama serve & \
+    sleep 5 && \
+    ollama list \
+"
+
 # Remove GGUF file from /models
 RUN rm gemma-3-4b-it-Q4_K_M.gguf
 
