@@ -2,9 +2,9 @@ ARG AZLINUX_BASE_VERSION=master
 
 FROM quay.io/cdis/amazonlinux-base:${AZLINUX_BASE_VERSION} AS base
 
-# Install wget
+# Install curl
 RUN dnf install -y --allowerasing \
-    wget
+    curl
 
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
@@ -13,7 +13,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 WORKDIR /models
 
 # Download model
-RUN wget https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf
+RUN curl -L -O https://huggingface.co/unsloth/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf
 
 # Create model file
 RUN echo 'FROM /models/gemma-3-4b-it-Q4_K_M.gguf' > Modelfile
