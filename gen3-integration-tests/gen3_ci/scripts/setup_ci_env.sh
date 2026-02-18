@@ -48,7 +48,19 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         else
           yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         fi
-    elif [ "$service_yaml_block" != "key not found" ]; then
+    elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
+    then
+        echo "Found a frontend framework based repo '$service_name'"
+        if [[ "$CI_ENV" == "gen3ff" ]]; then
+          if [[ "$REPO" == "commons-frontend-app" ]]; then
+            yq eval ".frontend-framework.image.tag = \"${image_name}_test\"" -i "$ci_default_manifest_values_yaml"
+          else
+            yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+          fi
+          repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$ci_default_manifest_values_yaml")
+          yq eval ".frontend-framework.image.repository = \"${repository%/*}/$service_name\"" -i "$ci_default_manifest_values_yaml"
+        fi
+    else
         echo "Key '$service_name' not found."
         # Skip image update for repos which dont need it
         skip_service_list=("gen3-client")
@@ -212,6 +224,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            if [[ "$key" == "frontend-framework" ]]; then
+              repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
+              yq eval ".frontend-framework.image.repository = \"${repository}\"" -i "$ci_default_manifest_values_yaml"
+            fi
         fi
       fi
     else
@@ -227,7 +243,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       "global.netpolicy"
       "global.environment"
       "global.frontendRoot"
-      "global.clusterName"
       "ssjdispatcher.indexing"
       "metadata.useAggMds"
       # "metadata.aggMdsNamespace"
@@ -238,14 +253,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
         manifest_value=$(yq eval ".$key // \"key not found\"" $new_manifest_values_file_path)
         if [ "$manifest_value" = "key not found" ]; then
-            echo "The key '$key' is not present in target manifest."
+            echo "The key '$key' is not present in target manifest: making sure it's unset in CI manifest..."
             if [[ "$ci_value" != "key not found" ]]; then
                 echo "Removing key '$key' from CI env configuration"
                 yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
             fi
         else
             echo "CI default value of the key '$key' is: $ci_value"
-            echo "Manifest value of the key '$key' is: $manifest_value"
+            echo "Manifest value of the key '$key' is: $manifest_value: updating '$key' to that in CI manifest..."
             yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
         fi
     done
@@ -294,6 +309,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     google_enabled=$(yq eval '.global.manifestGlobalExtraValues.google_enabled == true' "$new_manifest_values_file_path")
     if [[ "$google_enabled" != "true" ]]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
+    fi
+
+    # This is to make sure any changes for ci/default are run with portal for now
+    if [[ $UPDATED_FOLDERS == "ci/default" ]]; then
+      echo "Current change is in ci/default, removing frontend-framework config"
+      yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
     fi
 fi
 
@@ -388,8 +409,9 @@ common_param_updates=(
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
-  ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
+  ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
+  ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -440,9 +462,17 @@ if [[ "$namespace" == nightly-build* ]]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
-# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
-echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
+
+# For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
+# so env doesnt need portal configuration
+if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" ]]; then
+  if [[ "$CI_ENV" == "gen3ff" ]]; then
+    yq eval 'del(.portal)' --inplace "$ci_default_manifest_values_yaml"
+    yq eval '.global.frontendRoot = "gen3ff"' --inplace "$ci_default_manifest_values_yaml"
+  else
+    yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
+  fi
+fi
 
 echo $HOSTNAME
 install_helm_chart() {

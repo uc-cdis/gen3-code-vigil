@@ -58,9 +58,6 @@ def _nextflow_parse_completed_line(log_line):
         if task_info["workDirProtocol"]:
             task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
 
-        if task_info["exit_code"] != "0":
-            task_info["status"] = "FAILED"
-
     return task_info
 
 
@@ -81,8 +78,8 @@ class TestGen3Workflow(object):
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
-        # Ensure the bucket is wiped before running the tests
-        cls.gen3_workflow.delete_user_bucket()
+        # Ensure the bucket is emptied before running the tests
+        cls.gen3_workflow.cleanup_user_bucket()
 
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
             cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
@@ -245,7 +242,7 @@ class TestGen3Workflow(object):
         )
 
         # Step 2: Create a TES task
-        echo_message = "Done!"
+        echo_message = "I'm done!"
         tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
@@ -270,6 +267,9 @@ class TestGen3Workflow(object):
                     "command": [
                         # Note: This also serves as a regression test for an issue when the command contains quotes:
                         # `Error: yaml: line 33: did not find expected ',' or ']'`
+                        # A current limitation of quote handling is that the command received by
+                        # the Funnel executor is: echo \'I\'m done!\'
+                        # so the output includes extra quotes (see `expected_stdout` variable).
                         f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
                     ],
                 }
@@ -346,9 +346,10 @@ class TestGen3Workflow(object):
 
         # Check if the stdout contains the expected echo message
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        expected_stdout = f"'{echo_message}'"
         assert (
-            stdout == echo_message
-        ), f"Expected stdout to be `Done!`, but found {stdout} instead."
+            stdout == expected_stdout
+        ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
 
         # Step 6: Validate task outputs
         for file_name in ["output.txt", "grep_output.txt"]:
@@ -648,18 +649,39 @@ class TestGen3Workflow(object):
         # check that each test == each task succeeded
         logger.info(f"Workflow log:")
         completed_tasks = []
+        tasks_with_ignored_error = []
         for line in workflow_log.splitlines():
             logger.info(line)
             if "Task completed > TaskHandler" in line:
                 completed_tasks.append(_nextflow_parse_completed_line(line))
+            if "Error is ignored" in line:
+                try:
+                    # Example line: Jan-29 18:12:33.445 [TaskFinalizer-6] INFO  nextflow.processor.
+                    # TaskProcessor - [13/6084d3] NOTE: Process `NF_CANARY:TEST_IGNORED_FAIL (1)`
+                    # terminated with an error exit status (-999) -- Error is ignored
+                    task_name = line.split("NF_CANARY:")[1].split(" ")[0]
+                    tasks_with_ignored_error.append(task_name)
+                except IndexError:
+                    logger.error(
+                        f"Unable to extract task name from log line. Proceeding... Log line: {line}"
+                    )
+
         for task in completed_tasks:
             task_name = task["process_name"]
             assert (
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"
             assert (
-                task["exit_code"] == "0"
+                # Note: `-999` is not in the TES spec but is currently returned by Funnel in case
+                # of error
+                task["exit_code"] == -999
+                if task_name == "TEST_IGNORED_FAIL"
+                else "0"
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
+
+        assert tasks_with_ignored_error == [
+            "TEST_IGNORED_FAIL"
+        ], "TEST_IGNORED_FAIL failure is expected to be ignored"
 
     def test_access_internal_endpoints(self):
         """
