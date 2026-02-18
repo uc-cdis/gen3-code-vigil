@@ -680,7 +680,7 @@ class TestGen3Workflow(object):
                 # Note: code `1` is not in the TES spec but is currently returned by Funnel in case
                 # of error
                 task["exit_code"]
-                == (1 if "TEST_IGNORED_FAIL" in task_name else "0")
+                == ("1" if "TEST_IGNORED_FAIL" in task_name else "0")
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
         assert tasks_with_ignored_error == [
