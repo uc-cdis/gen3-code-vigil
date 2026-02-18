@@ -19,5 +19,5 @@ jobs:
       DOCKERFILE_LOCATION: "./gen3-integration-tests/gen3_ci/ollama/Dockerfile"
       OVERRIDE_REPO_NAME: "ollama"
       OVERRIDE_TAG_NAME: "$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
-      USE_QUAY_ONLY: true
+      USE_QUAY_ONLY: "true"
     secrets: inherit
