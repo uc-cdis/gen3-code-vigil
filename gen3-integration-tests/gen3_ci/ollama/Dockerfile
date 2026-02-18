@@ -28,7 +28,7 @@ RUN bash -c "\
     ollama create gemma:4b -f Modelfile \
 "
 
-# Remove GGUF file
+# Remove GGUF file from /models
 RUN rm gemma-3-4b-it-Q4_K_M.gguf
 
 # Expose the port 11434
