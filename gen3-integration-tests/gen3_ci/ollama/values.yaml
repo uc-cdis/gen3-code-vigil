@@ -1,0 +1,9 @@
+image:
+  repository: quay.io/cdis/ollama
+  tag: chore_add_ollama_dockerfile
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: "1"
+    memory: "4Gi"
