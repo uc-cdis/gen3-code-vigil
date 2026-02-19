@@ -1,5 +1,6 @@
 import os
 import subprocess
+import time
 
 import requests
 from dotenv import load_dotenv
@@ -27,7 +28,7 @@ def setup_port_forwarding():
 
 
 def validate_ollama_model():
-    response = requests.get("http://ollama:11434/api/tags")
+    response = requests.get("http://localhost:11434/api/tags")
     logger.info(response.json())
     return response.json()
 
@@ -36,6 +37,7 @@ if __name__ == "__main__":
     process = None
     try:
         process = setup_port_forwarding()
+        time.sleep(10)
         assert "gemma:4b" in str(validate_ollama_model())
     except Exception as e:
         logger.error(f"Failed to run inference: {e}")
