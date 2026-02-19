@@ -27,7 +27,7 @@ def setup_port_forwarding():
 
 
 def validate_ollama_model():
-    response = requests.get("http://localhost:11434/api/tags")
+    response = requests.get("http://ollama:11434/api/tags")
     logger.info(response.json())
     return response.json()
 
