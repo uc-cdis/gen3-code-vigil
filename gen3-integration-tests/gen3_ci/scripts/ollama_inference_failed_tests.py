@@ -12,7 +12,7 @@ def setup_port_forwarding():
     cmd = [
         "kubectl",
         "port-forward",
-        "deployment/ollama",
+        "svc/ollama",
         "11434:11434",
         "-n",
         os.getenv("NAMESPACE"),
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     process = None
     try:
         process = setup_port_forwarding()
-        assert "gemma:4b" in validate_ollama_model()
+        assert "gemma:4b" in str(validate_ollama_model())
     except Exception as e:
         logger.error(f"Failed to run inference: {e}")
     finally:

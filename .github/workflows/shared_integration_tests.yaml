@@ -523,13 +523,13 @@ jobs:
             id: run_ollama_inference
             if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request'  }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.generate_slack_report
+            run: poetry run python -m gen3_ci.scripts.ollama_inference_failed_tests
 
           - name: Generate Slack report
             id: generate_slack_report
             if: ${{ env.SKIP_TESTS != 'true' && (steps.upload_allure_report.outcome == 'success' || steps.upload_gh_action_logs.outcome == 'success') }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.ollama_inference_failed_tests
+            run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
           - name: Publish report to Slack
             id: slack_notify
