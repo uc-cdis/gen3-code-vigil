@@ -704,7 +704,7 @@ class TestGen3Workflow(object):
                     "command": [
                         # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
                         # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
-                        "sleep 10 && curl http://arborist-service/user"
+                        f"sleep 10 && curl http://arborist-service.{pytest.namespace}/user"
                     ],
                 }
             ],
