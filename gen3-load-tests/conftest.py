@@ -53,8 +53,8 @@ def pytest_runtest_logreport(report):
     output = json.loads(output_path.read_text())
     message = {
         "run_date": str(start_time.date()),
-        "run_num": f"{os.getenv("RUN_NUM")}_1",
-        "release_version": os.getenv("RELEASE_VERSION"),
+        "run_num": os.getenv("RUN_NUM"),
+        "release_version": f"{os.getenv("RELEASE_VERSION")}_1",
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
