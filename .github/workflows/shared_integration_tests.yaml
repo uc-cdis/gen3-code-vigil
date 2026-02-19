@@ -519,11 +519,11 @@ jobs:
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          - name: Run Ollama inference on Failed Tests
-            id: run_ollama_inference
+          - name: Analyze Failed tests using AI agent
+            id: analyze_failed_tests_using_ai_agent
             if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request'  }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.ollama_inference_failed_tests
+            run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
 
           - name: Generate Slack report
             id: generate_slack_report
