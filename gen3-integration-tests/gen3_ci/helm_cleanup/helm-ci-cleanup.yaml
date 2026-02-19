@@ -104,6 +104,27 @@ spec:
                     echo "All gen3-workflow buckets deleted."
                 }
 
+                delete_gen3_workflow_iam_roles() {
+                    env=$1
+                    role_pattern="^gen3wf-${env}-.*-funnel-role$"
+                    # list all role names
+                    roles=$(aws iam list-roles --query 'Roles[].RoleName' --output text)
+                    for role in $roles; do
+                        if [[ "$role" =~ $role_pattern ]]; then
+                        echo "==== Deleting IAM role: $role ===="
+                        inline_policies=$(aws iam list-role-policies --role-name "$role" --query 'PolicyNames[]' --output text)
+                        for pol in $inline_policies; do
+                            echo "Deleting inline policy: $pol"
+                            aws iam delete-role-policy --role-name "$role" --policy-name "$pol" || true
+                        done
+                        aws iam delete-role --role-name "$role"
+                        echo "Deleted role: $role"
+                        echo
+                        fi
+                    done
+                    echo "All matching gen3-workflow IAM roles deleted."
+                }
+
                 teardown_environment() {
                     local env="$1"
                     local delete_helm="${2:-True}"   # default = True
@@ -115,6 +136,7 @@ spec:
                     kubectl get ns "jupyter-pods-$env" &>/dev/null && kubectl delete ns "jupyter-pods-$env" --wait=false || echo "Namespace jupyter-pods-$env does not exist, skipping."
                     delete_queue_and_subscription $env
                     delete_gen3_workflow_s3_buckets $env
+                    delete_gen3_workflow_iam_roles $env
                 }
 
                 for env in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | grep -E '(^nightly-build.*$|^ci-perf$|.*-pr-)' | grep -v jupyter); do
