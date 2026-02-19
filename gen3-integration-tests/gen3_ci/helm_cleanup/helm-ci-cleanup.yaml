@@ -105,7 +105,7 @@ spec:
                 }
 
                 delete_gen3_workflow_iam_roles() {
-                    env=$1
+                    local env="$1"
                     role_pattern="^gen3wf-${env}-.*-funnel-role$"
                     # list all role names
                     roles=$(aws iam list-roles --query 'Roles[].RoleName' --output text)
