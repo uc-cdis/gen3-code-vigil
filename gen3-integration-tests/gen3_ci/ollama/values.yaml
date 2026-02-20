@@ -1,0 +1,13 @@
+image:
+  repository: quay.io/cdis/ollama
+  tag: master
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    cpu: "1"
+    memory: "4Gi"
+
+service:
+  type: ClusterIP
+  port: 11434

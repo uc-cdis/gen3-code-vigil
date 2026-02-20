@@ -598,4 +598,8 @@ kubectl delete job usersync-manual -n ${namespace}
 kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
 kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
 
+# Install ollama pod
+helm install ollama gen3_ci/ollama -n ${namespace}
+kubectl wait --for=condition=ready pod -l app=ollama --timeout=5m -n ${namespace}
+
 echo "YAY!!! Env is up..."

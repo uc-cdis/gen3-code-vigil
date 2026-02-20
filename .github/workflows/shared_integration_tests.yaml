@@ -519,6 +519,12 @@ jobs:
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+          - name: Analyze Failed tests using AI agent
+            id: analyze_failed_tests_using_ai_agent
+            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request'  }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
+
           - name: Generate Slack report
             id: generate_slack_report
             if: ${{ env.SKIP_TESTS != 'true' && (steps.upload_allure_report.outcome == 'success' || steps.upload_gh_action_logs.outcome == 'success') }}
