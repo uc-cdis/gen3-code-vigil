@@ -542,7 +542,7 @@ install_helm_chart() {
 
 
 
-    yq eval ".postgresql = null" -i "$ci_default_manifest_values_yaml"
+    # yq eval ".postgresql = null" -i "$ci_default_manifest_values_yaml"
     echo "=========="
     echo ci_default_manifest_values_yaml:
     cat $ci_default_manifest_values_yaml
@@ -550,7 +550,8 @@ install_helm_chart() {
 
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    # support support for removing "-f $ci_default_manifest_portal_yaml"
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -596,7 +597,7 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=900
+  export timeout=180 #900
   export interval=20
 
   end=$((SECONDS + timeout))
@@ -636,6 +637,11 @@ wait_for_pods_ready() {
   done
 
   echo "❌ Timeout: Pods' containers not ready"
+
+  kubectl describe pods -l app=arborist
+  kubectl describe pods -l app=fence
+  kubectl describe pods -l app=gen3-workflow
+
   echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
     .status.containerStatuses[]?
