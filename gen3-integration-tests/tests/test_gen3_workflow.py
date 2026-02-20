@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shutil
@@ -658,13 +659,17 @@ class TestGen3Workflow(object):
                 try:
                     # Example line: Jan-29 18:12:33.445 [TaskFinalizer-6] INFO  nextflow.processor.
                     # TaskProcessor - [13/6084d3] NOTE: Process `NF_CANARY:TEST_IGNORED_FAIL (1)`
-                    # terminated with an error exit status (-999) -- Error is ignored
+                    # terminated with an error exit status (1) -- Error is ignored
                     task_name = line.split("NF_CANARY:")[1].split(" ")[0]
                     tasks_with_ignored_error.append(task_name)
                 except IndexError:
                     logger.error(
                         f"Unable to extract task name from log line. Proceeding... Log line: {line}"
                     )
+        assert len(completed_tasks) > 0
+
+        logger.info("Completed tasks:")
+        logger.info(json.dumps(completed_tasks, indent=2))
 
         for task in completed_tasks:
             task_name = task["process_name"]
@@ -672,11 +677,10 @@ class TestGen3Workflow(object):
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"
             assert (
-                # Note: `-999` is not in the TES spec but is currently returned by Funnel in case
+                # Note: code `1` is not in the TES spec but is currently returned by Funnel in case
                 # of error
-                task["exit_code"] == -999
-                if task_name == "TEST_IGNORED_FAIL"
-                else "0"
+                task["exit_code"]
+                == ("1" if "TEST_IGNORED_FAIL" in task_name else "0")
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
         assert tasks_with_ignored_error == [
