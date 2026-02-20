@@ -30,11 +30,6 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
-echo "=========="
-echo ci_default_manifest_values_yaml:
-cat $ci_default_manifest_values_yaml
-echo "=========="
-
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."
@@ -544,6 +539,14 @@ install_helm_chart() {
     # echo "======= helm template..."
     # helm template ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug | grep postgresql
     # echo "======= helm template..."
+
+
+
+    yq eval ".postgresql = null" -i "$ci_default_manifest_values_yaml"
+    echo "=========="
+    echo ci_default_manifest_values_yaml:
+    cat $ci_default_manifest_values_yaml
+    echo "=========="
 
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate
