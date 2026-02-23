@@ -9,8 +9,7 @@ from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_ollama import ChatOllama
-
-# from utils import logger
+from utils import logger
 
 load_dotenv()
 
@@ -96,7 +95,7 @@ def setup_port_forwarding():
 
 def validate_ollama_model():
     response = requests.get("http://localhost:11434/api/tags")
-    print(response.json())
+    logger.info(response.json())
     return response.json()
 
 
@@ -129,7 +128,7 @@ async def run_test_failure_analysis():
             "messages": "Read all JSON files under ./allure-report/data/test-cases/ and summarize the failed tests with their names and error messages."
         }
     )
-    print(response)
+    logger.info(response)
 
 
 if __name__ == "__main__":
@@ -141,7 +140,7 @@ if __name__ == "__main__":
         assert "gemma:4b" in str(validate_ollama_model())
         asyncio.run(run_test_failure_analysis())
     except Exception as e:
-        print(f"Failed to run inference: {e}")
+        logger.info(f"Failed to run inference: {e}")
     finally:
         if process and process.poll() is None:
             process.terminate()
