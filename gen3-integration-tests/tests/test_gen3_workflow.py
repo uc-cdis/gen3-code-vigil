@@ -594,9 +594,12 @@ class TestGen3Workflow(object):
             CUDA is not available on this system.
             [...]
             in gpu_computation
-              x = torch.rand(size, size, device='cuda')
+            x = torch.rand(size, size, device='cuda')
             RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
             NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
+        - TEST_FUSION_DOCTOR. Error:
+            "chmod: changing permissions of '/work/nextflow-bin/fusion.mock': Operation not permitted
+                chmod: changing permissions of '/work/nextflow-bin/run.sh': Operation not permitted",
         """
         known_unsupported = [
             "TEST_PUBLISH_FILE",
@@ -604,6 +607,7 @@ class TestGen3Workflow(object):
             "TEST_MV_FILE",
             "TEST_MV_FOLDER_CONTENTS",
             "TEST_GPU",
+            "TEST_FUSION_DOCTOR",
         ]
 
         # clone the tests repo
