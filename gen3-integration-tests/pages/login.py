@@ -208,6 +208,7 @@ class LoginPage(object):
         page.locator(self.RAS_PASSWORD_INPUT).fill(password)
         ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
         ras_signin_button.click()
+        page.wait_for_load_state("load")
         screenshot(page, "RASAfterLogging")
         # Handle "Yes, I authorize." button
         authorize_button = page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON)
