@@ -181,8 +181,17 @@ def prepare_ci_environment(namespace):
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa", "gen3-gitops"):  # Manifest repos
         updated_folders = os.getenv("UPDATED_FOLDERS", "").split(",")
+        updated_folder = updated_folders[0] if updated_folders else ""
         if len(updated_folders) == 1 and updated_folders[0] == "":
             logger.info("No folders were updated. Skipping tests...")
+            # Update SKIP_TESTS to true in GITHUB_ENV
+            with open(os.getenv("GITHUB_ENV"), "a") as f:
+                f.write("SKIP_TESTS=true\n")
+            return
+        elif "cluster-values" in updated_folder:
+            logger.info(
+                "This PR is changing cluster-values folder which is not testable"
+            )
             # Update SKIP_TESTS to true in GITHUB_ENV
             with open(os.getenv("GITHUB_ENV"), "a") as f:
                 f.write("SKIP_TESTS=true\n")
@@ -192,17 +201,7 @@ def prepare_ci_environment(namespace):
             raise Exception(
                 "More than 1 folder updated, please update only 1 folder per PR..."
             )
-        else:
-            updated_folder = updated_folders[0]
-            if "cluster-values" in updated_folder:
-                logger.info(
-                    "This PR is testing cluster-values folder which is not supported"
-                )
-                # Update SKIP_TESTS to true in GITHUB_ENV
-                with open(os.getenv("GITHUB_ENV"), "a") as f:
-                    f.write("SKIP_TESTS=true\n")
-                return
-            logger.info(f"Setting up env using folder: {updated_folder}")
+        logger.info(f"Setting up env using folder: {updated_folder}")
         result = modify_env_for_manifest_pr(namespace, updated_folder, repo)
         assert result.lower() == "success"
     else:  # Service repos
@@ -211,6 +210,10 @@ def prepare_ci_environment(namespace):
         )
         result = wait_for_quay_build(quay_repo, quay_tag)
         assert result.lower() == "success"
+        # commons-frontend-app builds an additional image for ci config
+        if quay_repo == "commons-frontend-app":
+            result = wait_for_quay_build(quay_repo, f"{quay_tag}_test")
+            assert result.lower() == "success"
         result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
         assert result.lower() == "success"
     # generate api keys for test users for the ci env

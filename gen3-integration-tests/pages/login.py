@@ -8,6 +8,7 @@ from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -31,8 +32,8 @@ class LoginPage(object):
             "//button[contains(normalize-space(), 'ORCID Login')]"
         )
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
-        self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
-        self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
+        self.POP_UP_BOX = "//section[contains(@class, 'mantine-Modal-content')] | //div[@class='popup__box']"  # pop_up_box
+        self.POP_UP_ACCEPT_BUTTON = "//button[contains(normalize-space(),'Accept')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -220,6 +221,8 @@ class LoginPage(object):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
+    # TODO: Remove the below handling once GFF-531 is fixed
+    @retry(times=3, delay=10, exceptions=(AssertionError))
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config(json_file_name="navigation")
@@ -248,7 +251,13 @@ class LoginPage(object):
         if popup_locator.count() > 0:
             logger.info("Popup message found")
             page.locator(self.POP_UP_BOX).evaluate(
-                "element => element.scrollTop = element.scrollHeight"
+                """
+                element => {
+                    if (element && element.scrollHeight > element.clientHeight) {
+                        element.scrollTop = element.scrollHeight;
+                    }
+                }
+                """
             )
             screenshot(page, "DataUsePopup")
             accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)

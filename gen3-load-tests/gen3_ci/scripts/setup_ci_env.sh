@@ -183,9 +183,11 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
-echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
+# This is to make sure any changes for ci/default are run with portal for now
+echo "Current change is in ci/default, removing frontend-framework config"
+yq eval "del(.frontend-framework)" -i $manifest_values_yaml
+
+
 
 echo $HOSTNAME
 install_helm_chart() {

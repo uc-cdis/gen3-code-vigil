@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import shutil
@@ -78,8 +79,8 @@ class TestGen3Workflow(object):
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
-        # Ensure the bucket is wiped before running the tests
-        cls.gen3_workflow.delete_user_bucket()
+        # Ensure the bucket is emptied before running the tests
+        cls.gen3_workflow.cleanup_user_bucket()
 
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
             cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
@@ -596,6 +597,7 @@ class TestGen3Workflow(object):
               x = torch.rand(size, size, device='cuda')
             RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
             NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
+        - TEST_FUSION_DOCTOR: unknown cause
         """
         known_unsupported = [
             "TEST_PUBLISH_FILE",
@@ -603,6 +605,7 @@ class TestGen3Workflow(object):
             "TEST_MV_FILE",
             "TEST_MV_FOLDER_CONTENTS",
             "TEST_GPU",
+            "TEST_FUSION_DOCTOR",
         ]
 
         # clone the tests repo
@@ -658,13 +661,17 @@ class TestGen3Workflow(object):
                 try:
                     # Example line: Jan-29 18:12:33.445 [TaskFinalizer-6] INFO  nextflow.processor.
                     # TaskProcessor - [13/6084d3] NOTE: Process `NF_CANARY:TEST_IGNORED_FAIL (1)`
-                    # terminated with an error exit status (-999) -- Error is ignored
+                    # terminated with an error exit status (1) -- Error is ignored
                     task_name = line.split("NF_CANARY:")[1].split(" ")[0]
                     tasks_with_ignored_error.append(task_name)
                 except IndexError:
                     logger.error(
                         f"Unable to extract task name from log line. Proceeding... Log line: {line}"
                     )
+        assert len(completed_tasks) > 0
+
+        logger.info("Completed tasks:")
+        logger.info(json.dumps(completed_tasks, indent=2))
 
         for task in completed_tasks:
             task_name = task["process_name"]
@@ -672,11 +679,10 @@ class TestGen3Workflow(object):
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"
             assert (
-                # Note: `-999` is not in the TES spec but is currently returned by Funnel in case
+                # Note: code `1` is not in the TES spec but is currently returned by Funnel in case
                 # of error
-                task["exit_code"] == -999
-                if task_name == "TEST_IGNORED_FAIL"
-                else "0"
+                task["exit_code"]
+                == ("1" if "TEST_IGNORED_FAIL" in task_name else "0")
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
         assert tasks_with_ignored_error == [

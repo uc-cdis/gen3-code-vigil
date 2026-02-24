@@ -162,21 +162,31 @@ class Gen3Workflow:
         assert isinstance(storage_info, dict), "Expected a valid JSON response"
         return storage_info
 
-    def delete_user_bucket(
-        self, user: str = "main_account", ignore_missing=True, expected_status=204
+    def cleanup_user_bucket(
+        self,
+        user: str = "main_account",
+        ignore_missing=True,
+        delete_bucket=False,
+        expected_status=204,
     ) -> None:
         """
-        Makes a DELETE request to the `/storage/user-bucket` endpoint.
-        This endpoint is used to delete the user's bucket in the Gen3 Workflow service.
+        Makes a DELETE request to the `/storage/user-bucket/objects` endpoint.
+        This endpoint is used to delete the objects in a user's bucket in the Gen3 Workflow service.
         Args:
             user (str): The user whose bucket is to be deleted. Defaults to "main_account".
             ignore_missing (bool): If True, suppress error when the bucket does not exist (i.e., 404).
+            delete_bucket(bool): If True, the s3 bucket is also deleted along with the object by making a request to DELETE /storage/user-bucket
             expected_status (int): Expected successful status code (default: 204 No Content).
         Raises:
             AssertionError: If the response status code does not match the expected status.
 
         """
-        delete_bucket_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
+
+        cleanup_url = (
+            f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
+            if delete_bucket
+            else f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket/objects"
+        )
         headers = (
             {
                 "Authorization": f"bearer {self._get_access_token(user)}",
@@ -184,7 +194,7 @@ class Gen3Workflow:
             if user
             else {}
         )
-        response = requests.delete(url=delete_bucket_url, headers=headers)
+        response = requests.delete(url=cleanup_url, headers=headers)
 
         # If ignore_missing is True, we allow 404 as a valid response status
         allowed_statuses = (
@@ -193,7 +203,7 @@ class Gen3Workflow:
 
         assert (
             response.status_code in allowed_statuses
-        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {delete_bucket_url}"
+        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {cleanup_url}"
 
     ###############################################
     ###### /s3 endpoint and boto3 functions #######
