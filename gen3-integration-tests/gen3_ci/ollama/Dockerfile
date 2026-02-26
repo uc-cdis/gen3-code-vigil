@@ -15,17 +15,11 @@ WORKDIR /models
 # Install Ollama
 RUN curl -fsSL https://ollama.com/install.sh | sh
 
-# Download model
-RUN curl -L -O https://huggingface.co/unsloth/Qwen3-4B-Thinking-2507-GGUF/resolve/main/Qwen3-4B-Thinking-2507-Q4_K_M.gguf
-
-# Create model file
-RUN echo 'FROM /models/Qwen3-4B-Thinking-2507-Q4_K_M.gguf' > Modelfile
-
 # Have ollama create/build the model
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama create qwen3:4b -f Modelfile \
+    ollama pull qwen3:4b \
 "
 
 # List ollama models
@@ -35,8 +29,12 @@ RUN bash -c "\
     ollama list \
 "
 
-# Remove GGUF file from /models
-RUN rm Qwen3-4B-Thinking-2507-Q4_K_M.gguf
+# Show ollama models
+RUN bash -c "\
+    ollama serve & \
+    sleep 5 && \
+    ollama show qwen3:4b \
+"
 
 # Expose the port 11434
 EXPOSE 11434
