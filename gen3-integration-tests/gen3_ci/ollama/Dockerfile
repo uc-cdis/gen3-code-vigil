@@ -22,14 +22,14 @@ RUN bash -c "\
     ollama pull qwen3:4b \
 "
 
-# List ollama models
+# List ollama model
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
     ollama list \
 "
 
-# Show ollama models
+# Show ollama model
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
