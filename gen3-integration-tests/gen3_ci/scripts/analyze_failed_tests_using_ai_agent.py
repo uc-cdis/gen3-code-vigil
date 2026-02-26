@@ -1,34 +1,18 @@
-import asyncio
+import json
 import os
+import re
 import subprocess
 import time
 
+# from utils import logger
+from pathlib import Path
+
 import requests
 from dotenv import load_dotenv
-from langchain.agents import create_agent
-from langchain_core.messages import AIMessage, ToolMessage
-from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_ollama import ChatOllama
-from utils import logger
 
 load_dotenv()
-
-SYSTEM_PROMPT = """You have access to MCP filesystem tools.
-
-Rules:
-- The allowed root directory is the Allure report root.
-- Always use paths relative to the allowed root.
-- Never use absolute paths.
-- To analyze test results:
-  1. Use list_directory on allure-report/data/test-cases
-  2. Read each JSON file using read_file
-  3. Extract tests where status == "failed"
-  4. Return a structured summary including:
-     - Test name (name field)
-     - File name
-
-Do not assume file contents. Always read files before answering.
-"""
+llm = ChatOllama(model="qwen3:4b", temperature=0)
 
 
 def setup_ollama_helm_chart():
@@ -95,53 +79,143 @@ def setup_port_forwarding():
 
 def validate_ollama_model():
     response = requests.get("http://localhost:11434/api/tags")
-    logger.info(response.json())
+    print(response.json())
     return response.json()
 
 
-async def run_test_failure_analysis():
-    client = MultiServerMCPClient(
-        {
-            "filesystem": {
-                "transport": "stdio",
-                "command": "npx",
-                "args": [
-                    "-y",
-                    "@modelcontextprotocol/server-filesystem",
-                    "./allure-report",
-                ],
-            }
-        }
-    )
+def analyze_env_setup_failure() -> str:
+    """Check env setup failure and analyze the error"""
+    print("Checking logs/gh_action_logs.txt")
+    with open("logs/gh_action_logs.txt", "r") as f:
+        logfile_content = f.read()
+    pattern = re.compile(r"\b(error|failed|exception|traceback)\b", re.IGNORECASE)
 
-    tools = await client.get_tools()
-    llm = ChatOllama(model="gemma:4b", temperature=0, base_url="http://localhost:11434")
-
-    agent = create_agent(
-        model=llm,
-        tools=tools,
-        system_prompt=SYSTEM_PROMPT,
+    error_lines = "\n".join(
+        [line for line in logfile_content.splitlines() if pattern.search(line)]
     )
+    debug_prompt = f"""
+    You are a senior DevOps engineer.
 
-    response = await agent.ainvoke(
-        {
-            "messages": "Read all JSON files under ./allure-report/data/test-cases/ and summarize the failed tests with their names and error messages."
-        }
-    )
-    logger.info(response)
+    Analyze the log snippet below.
+
+    Return output sctrictly in this format for each error:
+
+    Root cause:
+    <one clear sentence>
+
+    Fix:
+    <actionable remediation steps>
+
+    Log:
+    {error_lines}
+    """
+    messages = [("system", debug_prompt), ("human", "analyse the errors")]
+    response = llm.invoke(messages)
+    return response.content
+
+
+def analyze_failed_tests() -> str:
+    """Analyze the failed tests and provide fixes"""
+    if Path("rerun-allure-report").exists():
+        report_dir = Path("rerun-allure-report/data/test-cases")
+    elif Path("allure-report/data/test-cases").exists():
+        report_dir = Path("allure-report/data/test-cases")
+    else:
+        report_dir = None
+
+    if report_dir:
+        print(f"Looking into {report_dir} folder")
+        failed_tests = {"failed_tests": []}
+
+        for case_file in report_dir.glob("*.json"):
+            with case_file.open() as f:
+                case = json.load(f)
+            if case.get("status") in ["failed", "broken"]:
+                failed_tests["failed_tests"].append(
+                    {
+                        "name": case.get("name"),
+                        "statusMessage": case.get("statusMessage"),
+                    },
+                )
+        debug_prompt = f"""
+        You are a senior DevOps engineer.
+
+        Analyze each status message below.
+
+        Return output sctrictly in this format for each test failure:
+
+            Test case: <test case name>
+
+            Root cause:
+            <one clear sentence>
+
+            Fix:
+            <actionable remediation steps>
+
+        Status Trace:
+        {failed_tests}
+        """
+        messages = [("system", debug_prompt), ("human", "analyse the failed tests")]
+        response = llm.invoke(messages)
+        return response.content
+    else:
+        return "No reports found"
+
+
+def run_test_failure_analysis():
+    if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
+        response = analyze_env_setup_failure()
+    else:
+        response = analyze_failed_tests()
+    print(response)
+    return response
+
+
+def generate_slack_report(response):
+    slack_report_json = {}
+    slack_report_json["text"] = "Failed Test Analysis"
+    slack_report_json["blocks"] = []
+    header_block = {
+        "type": "header",
+        "text": {
+            "type": "plain_text",
+            "text": "Failed Test Analysis",
+            "emoji": True,
+        },
+    }
+    slack_report_json["blocks"].append(header_block)
+    summary_block = {
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": response,
+        },
+    }
+    slack_report_json["blocks"].append(summary_block)
+    if os.getenv("IS_NIGHTLY_RUN") == "true":
+        slack_report_json["channel"] = "#nightly-builds"
+    else:
+        slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
+    slack_report_json["thread_ts"] = os.getenv("THREAD_TS")
+    json.dump(slack_report_json, open("test_analysis_slack_report.json", "w"))
 
 
 if __name__ == "__main__":
     process = None
-    try:
-        # setup_ollama_helm_chart()
-        process = setup_port_forwarding()
-        time.sleep(10)
-        assert "gemma:4b" in str(validate_ollama_model())
-        asyncio.run(run_test_failure_analysis())
-    except Exception as e:
-        logger.info(f"Failed to run inference: {e}")
-    finally:
-        if process and process.poll() is None:
-            process.terminate()
-            process.wait()
+    # try:
+    # setup_ollama_helm_chart()
+    # process = setup_port_forwarding()
+    # time.sleep(10)
+    # assert "qwen3:4b" in str(validate_ollama_model())
+    # response = run_test_failure_analysis()
+    # generate_slack_report(response)
+    # except Exception as e:
+    #     print(f"Failed to run inference: {e}")
+    # finally:
+    #     if process and process.poll() is None:
+    #         process.terminate()
+    #         process.wait()
+    process = setup_port_forwarding()
+    time.sleep(10)
+    assert "qwen3:4b" in str(validate_ollama_model())
+    response = run_test_failure_analysis()

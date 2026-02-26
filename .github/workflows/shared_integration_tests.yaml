@@ -519,12 +519,6 @@ jobs:
             env:
               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          - name: Analyze Failed tests using AI agent
-            id: analyze_failed_tests_using_ai_agent
-            if: ${{ env.SKIP_TESTS != 'true' && github.event_name == 'pull_request'  }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
-
           - name: Generate Slack report
             id: generate_slack_report
             if: ${{ env.SKIP_TESTS != 'true' && (steps.upload_allure_report.outcome == 'success' || steps.upload_gh_action_logs.outcome == 'success') }}
@@ -540,6 +534,25 @@ jobs:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
+              payload-templated: true
+
+          - name: Analyze Failed tests using AI agent
+            id: analyze_failed_tests_using_ai_agent
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'failure') || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'failure' || steps.rerun_failed_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
+            env:
+              THREAD_TS: ${{ steps.slack_notify.outputs.thread_ts }}
+
+          - name: Publish test anaylsis on same slack thread
+            id: publish_test_analysis
+            if: ${{ env.SKIP_TESTS != 'true' && steps.analyze_failed_tests_using_ai_agent.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            uses: slackapi/slack-github-action@v2.0.0
+            with:
+              method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-file-path: "./${{ inputs.WORKING_DIR }}/test_analysis_slack_report.json"
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs

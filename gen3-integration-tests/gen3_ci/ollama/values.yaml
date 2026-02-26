@@ -1,12 +1,15 @@
 image:
   repository: quay.io/cdis/ollama
-  tag: master
+  tag: chore_add_ollama_deployment
   pullPolicy: IfNotPresent
 
 resources:
   requests:
-    cpu: "1"
+    cpu: 1
     memory: "4Gi"
+  limits:
+    cpu: 2
+    memory: "6Gi"
 
 service:
   type: ClusterIP
