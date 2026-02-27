@@ -136,7 +136,7 @@ def analyze_env_setup_failure() -> str:
         {"role": "system", "content": debug_prompt},
         {"role": "user", "content": "analyse the errors"},
     ]
-    payload = {"model": "gemma3:12b", "messages": messages, "temperature": 0}
+    payload = {"model": "qwen3:4b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
@@ -190,7 +190,7 @@ def analyze_failed_tests() -> str:
             {"role": "system", "content": debug_prompt},
             {"role": "user", "content": "analyse the failed tests"},
         ]
-        payload = {"model": "gemma3:12b", "messages": messages, "temperature": 0}
+        payload = {"model": "qwen3:4b", "messages": messages, "temperature": 0}
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         setup_ollama_helm_chart()
         process = setup_port_forwarding()
         time.sleep(10)
-        assert "gemma3:12b" in str(validate_ollama_model())
+        assert "qwen3:4b" in str(validate_ollama_model())
         response = run_test_failure_analysis()
         generate_slack_report(response)
     except Exception as e:
