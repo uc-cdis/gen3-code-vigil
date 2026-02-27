@@ -19,7 +19,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama pull qwen3:4b \
+    ollama pull gemma:4b \
 "
 
 # List ollama model
@@ -33,7 +33,7 @@ RUN bash -c "\
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama show qwen3:4b \
+    ollama show gemma:4b \
 "
 
 # Expose the port 11434
