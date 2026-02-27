@@ -5,11 +5,11 @@ image:
 
 resources:
   requests:
-    cpu: 1
-    memory: "4Gi"
+    cpu: 6
+    memory: "10Gi"
   limits:
-    cpu: 2
-    memory: "6Gi"
+    cpu: 6
+    memory: "10Gi"
 
 service:
   type: ClusterIP

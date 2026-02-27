@@ -3,16 +3,13 @@ import os
 import re
 import subprocess
 import time
-
-# from utils import logger
 from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from langchain_ollama import ChatOllama
+from utils import logger
 
 load_dotenv()
-llm = ChatOllama(model="qwen3:4b", temperature=0)
 
 
 def setup_ollama_helm_chart():
@@ -20,7 +17,8 @@ def setup_ollama_helm_chart():
         "helm",
         "install",
         "ollama",
-        "gen3_ci/ollama" "-n",
+        "gen3_ci/ollama",
+        "-n",
         os.getenv("NAMESPACE"),
     ]
 
@@ -77,15 +75,38 @@ def setup_port_forwarding():
     return process
 
 
+def uninstall_ollama_helm_chart():
+    cmd = [
+        "helm",
+        "uninstall",
+        "ollama",
+        "-n",
+        os.getenv("NAMESPACE"),
+    ]
+
+    helm_install_result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if not helm_install_result.returncode == 0:
+        raise Exception(
+            f"Unable to uninstall ollama. Error: {helm_install_result.stderr.strip()}"
+        )
+
+
 def validate_ollama_model():
+    # Need to find fix for this sleep - the ollama model isnt available immediately after pod is up
+    time.sleep(30)
     response = requests.get("http://localhost:11434/api/tags")
-    print(response.json())
+    logger.info(response.json())
     return response.json()
 
 
 def analyze_env_setup_failure() -> str:
     """Check env setup failure and analyze the error"""
-    print("Checking logs/gh_action_logs.txt")
+    logger.info("Checking logs/gh_action_logs.txt")
     with open("logs/gh_action_logs.txt", "r") as f:
         logfile_content = f.read()
     pattern = re.compile(r"\b(error|failed|exception|traceback)\b", re.IGNORECASE)
@@ -106,11 +127,19 @@ def analyze_env_setup_failure() -> str:
     Fix:
     <actionable remediation steps>
 
+    Keep all explanations very brief—just a summary, no long paragraphs.
+
     Log:
     {error_lines}
     """
-    messages = [("system", debug_prompt), ("human", "analyse the errors")]
-    response = llm.invoke(messages)
+    messages = [
+        {"role": "system", "content": debug_prompt},
+        {"role": "user", "content": "analyse the errors"},
+    ]
+    payload = {"model": "gemma3:12b", "messages": messages, "temperature": 0}
+    headers = {"Content-Type": "application/json"}
+    url = "http://localhost:11434/v1/chat/completions"
+    response = requests.post(url, json=payload, headers=headers)
     return response.content
 
 
@@ -124,7 +153,7 @@ def analyze_failed_tests() -> str:
         report_dir = None
 
     if report_dir:
-        print(f"Looking into {report_dir} folder")
+        logger.info(f"Looking into {report_dir} folder")
         failed_tests = {"failed_tests": []}
 
         for case_file in report_dir.glob("*.json"):
@@ -152,11 +181,19 @@ def analyze_failed_tests() -> str:
             Fix:
             <actionable remediation steps>
 
+        Keep all explanations very brief—just a summary, no long paragraphs.
+
         Status Trace:
         {failed_tests}
         """
-        messages = [("system", debug_prompt), ("human", "analyse the failed tests")]
-        response = llm.invoke(messages)
+        messages = [
+            {"role": "system", "content": debug_prompt},
+            {"role": "user", "content": "analyse the failed tests"},
+        ]
+        payload = {"model": "gemma3:12b", "messages": messages, "temperature": 0}
+        headers = {"Content-Type": "application/json"}
+        url = "http://localhost:11434/v1/chat/completions"
+        response = requests.post(url, json=payload, headers=headers)
         return response.content
     else:
         return "No reports found"
@@ -167,8 +204,10 @@ def run_test_failure_analysis():
         response = analyze_env_setup_failure()
     else:
         response = analyze_failed_tests()
-    print(response)
-    return response
+    data = json.loads(response.decode("utf-8"))
+    reasoning = data["choices"][0]["message"].get("content")
+    logger.info(reasoning)
+    return reasoning
 
 
 def generate_slack_report(response):
@@ -202,20 +241,17 @@ def generate_slack_report(response):
 
 if __name__ == "__main__":
     process = None
-    # try:
-    # setup_ollama_helm_chart()
-    # process = setup_port_forwarding()
-    # time.sleep(10)
-    # assert "qwen3:4b" in str(validate_ollama_model())
-    # response = run_test_failure_analysis()
-    # generate_slack_report(response)
-    # except Exception as e:
-    #     print(f"Failed to run inference: {e}")
-    # finally:
-    #     if process and process.poll() is None:
-    #         process.terminate()
-    #         process.wait()
-    process = setup_port_forwarding()
-    time.sleep(10)
-    assert "qwen3:4b" in str(validate_ollama_model())
-    response = run_test_failure_analysis()
+    try:
+        setup_ollama_helm_chart()
+        process = setup_port_forwarding()
+        time.sleep(10)
+        assert "gemma3:12b" in str(validate_ollama_model())
+        response = run_test_failure_analysis()
+        generate_slack_report(response)
+    except Exception as e:
+        logger.info(f"Failed to run inference: {e}")
+    finally:
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait()
+        uninstall_ollama_helm_chart()
