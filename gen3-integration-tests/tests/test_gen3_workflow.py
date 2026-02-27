@@ -83,14 +83,14 @@ class TestGen3Workflow(object):
         cls.gen3_workflow.cleanup_user_bucket()
 
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
+            cls.gen3_workflow.storage_setup(user=cls.valid_user, expected_status=200)
         )
 
-    ######################## Test /storage/info endpoint ########################
+    ######################## Test /storage/setup endpoint ########################
 
-    def test_get_storage_info_without_token(self):
-        """Test GET /storage/info without an access token."""
-        self.gen3_workflow.get_storage_info(user=None, expected_status=401)
+    def test_setup_storage_without_token(self):
+        """Test GET /storage/setup without an access token."""
+        self.gen3_workflow.setup_storage(user=None, expected_status=401)
 
     ######################## Test /s3/ endpoint ########################
 
