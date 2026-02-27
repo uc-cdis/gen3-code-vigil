@@ -542,7 +542,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
             env:
-              THREAD_TS: ${{ steps.slack_notify.outputs.thread_ts }}
+              THREAD_TS: ${{ steps.slack_notify.outputs.ts }}
 
           - name: Publish test anaylsis on same slack thread
             id: publish_test_analysis
