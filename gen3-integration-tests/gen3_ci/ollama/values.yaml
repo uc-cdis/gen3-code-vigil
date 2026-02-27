@@ -3,6 +3,8 @@ image:
   tag: chore_add_ollama_deployment
   pullPolicy: IfNotPresent
 
+pdb: true
+
 resources:
   requests:
     cpu: 6
