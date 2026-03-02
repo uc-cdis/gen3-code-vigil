@@ -323,31 +323,31 @@ jobs:
               fi
               kubectl create namespace $NAMESPACE
 
-          # - name: Get modified folders
-          #   # This is applicable for Manifest PRs only
-          #   id: get_modified_folders
-          #   if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa' || github.event.repository.name == 'gen3-gitops') }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
-          #     UPDATED_FOLDERS=$(echo "$PR_FILES" | grep -v "^.github/" | awk -F'/' '{if ($1 != ".github" && NF > 1) print $1"/"$2}' | sort -u | tr '\n' ',' | sed 's/,$//')
-          #     echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+          - name: Get modified folders
+            # This is applicable for Manifest PRs only
+            id: get_modified_folders
+            if: ${{ env.SKIP_TESTS != 'true' && (github.event.repository.name == 'cdis-manifest' || github.event.repository.name == 'gitops-qa' || github.event.repository.name == 'gen3-gitops') }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
+              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep -v "^.github/" | awk -F'/' '{if ($1 != ".github" && NF > 1) print $1"/"$2}' | sort -u | tr '\n' ',' | sed 's/,$//')
+              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
 
-          # # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
-          # # Generate API keys for test users for the environment
-          # - name: Prepare CI environment
-          #   id: prep_ci_env
-          #   if: ${{ env.SKIP_TESTS != 'true' && (steps.create_ns.outcome == 'success' || steps.select_ci_env.outcome == 'success') }}
-          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
-          #   run: |
-          #     echo $UPDATED_FOLDERS
-          #     mkdir $HOME/.gen3
-          #     mkdir logs
-          #     echo "****** Prepare CI Environment ******" > logs/gh_action_logs.txt
-          #     if ! poetry run python -m gen3_ci.scripts.prepare_ci_environment >> logs/gh_action_logs.txt 2>&1; then
-          #       echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-          #       exit 1
-          #     fi
+          # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
+          # Generate API keys for test users for the environment
+          - name: Prepare CI environment
+            id: prep_ci_env
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.create_ns.outcome == 'success' || steps.select_ci_env.outcome == 'success') }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              echo $UPDATED_FOLDERS
+              mkdir $HOME/.gen3
+              mkdir logs
+              echo "****** Prepare CI Environment ******" > logs/gh_action_logs.txt
+              if ! poetry run python -m gen3_ci.scripts.prepare_ci_environment >> logs/gh_action_logs.txt 2>&1; then
+                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+                exit 1
+              fi
 
           # # This is used for running specific test suites by labeling the PR with the test class
           # # Multiple suites can be executed by adding multiple labels
@@ -536,6 +536,11 @@ jobs:
           #     payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
           #     payload-templated: true
 
+          - name: Helm uninstall environment
+            id: helm_uninstall_env
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              helm uninstall $NAMESPACE -n $NAMESPACE
           - name: Analyze Failed tests using AI agent
             id: analyze_failed_tests_using_ai_agent
             continue-on-error: true  # if this fails, we still need to run clean-up steps
