@@ -545,7 +545,7 @@ jobs:
 
           - name: Port forward Ollama
             run: |
-              kubectl port-forward svc/ollama 11434:11434 &
+              kubectl port-forward svc/ollama 11434:11434 -n gen3-code-vigil-pr-476 &
               sleep 30
 
           - name: Test Ollama
