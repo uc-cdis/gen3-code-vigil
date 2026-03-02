@@ -53,7 +53,7 @@ def setup_ollama_helm_chart():
     )
     if not ollama_pod_ready_result.returncode == 0:
         raise Exception(
-            f"Unable to install ollama. Error: {ollama_pod_ready_result.stderr.strip()}"
+            f"Ollama pod hasn't started yet. Error: {ollama_pod_ready_result.stderr.strip()}"
         )
 
 
@@ -72,7 +72,12 @@ def setup_port_forwarding():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    return process
+
+    for i in range(45):
+        line = process.stdout.readline()
+        if "Forwarding from" in line:
+            return process
+    raise Exception("Port-forward failed to start")
 
 
 def uninstall_ollama_helm_chart():
@@ -97,8 +102,6 @@ def uninstall_ollama_helm_chart():
 
 
 def validate_ollama_model():
-    # Need to find fix for this sleep - the ollama model isnt available immediately after pod is up
-    time.sleep(30)
     response = requests.get("http://localhost:11434/api/tags")
     logger.info(response.json())
     return response.json()
