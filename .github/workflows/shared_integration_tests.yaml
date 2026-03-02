@@ -467,7 +467,7 @@ jobs:
 
           - name: Analyze Failed tests using AI agent
             id: analyze_failed_tests_using_ai_agent
-            if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'failure') || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'failure' || steps.rerun_failed_tests.outcome == 'failure' }}
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'failure' || ((steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'failure') && steps.rerun_failed_tests.outcome != 'success')) }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               echo -e "\n\n****** Running Failure Analysis ******" >>  logs/gh_action_logs.txt
@@ -481,9 +481,9 @@ jobs:
               echo -e "\n\n******** Upload failure analysis to S3 ********" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
-                aws s3 cp logs/failure_analysis.txt s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
+                aws s3 cp logs/failure_analysis.txt s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE/failure_analysis.txt >> logs/gh_action_logs.txt 2>&1
               else
-                aws s3 cp logs/failure_analysis.txt s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
+                aws s3 cp logs/failure_analysis.txt s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/failure_analysis.txt >> logs/gh_action_logs.txt 2>&1
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload failure analysis file to s3 bucket" >> $GITHUB_ENV
@@ -497,9 +497,9 @@ jobs:
               echo -e "\n\n******** Upload GH action logs to S3 ********" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
-                aws s3 cp logs/gh_action_logs.txt s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
+                aws s3 cp logs/gh_action_logs.txt s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE/gh_action_logs.txt >> logs/gh_action_logs.txt 2>&1
               else
-                aws s3 cp logs/gh_action_logs.txt s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
+                aws s3 cp logs/gh_action_logs.txt s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt >> logs/gh_action_logs.txt 2>&1
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
