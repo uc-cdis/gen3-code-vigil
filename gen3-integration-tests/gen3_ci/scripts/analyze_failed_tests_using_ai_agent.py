@@ -124,10 +124,10 @@ def analyze_env_setup_failure() -> str:
 
     Return output sctrictly in this format for each error:
 
-    Root cause:
+    Potential Root cause:
     <one clear sentence>
 
-    Fix:
+    Possible Fix:
     <actionable remediation steps>
 
     Keep all explanations very brief—just a summary, no long paragraphs.
@@ -178,10 +178,10 @@ def analyze_failed_tests() -> str:
 
             Test case: <test case name>
 
-            Root cause:
+            Potential Root cause:
             <one clear sentence>
 
-            Fix:
+            Possible Fix:
             <actionable remediation steps>
 
         Keep all explanations very brief—just a summary, no long paragraphs.
@@ -215,35 +215,6 @@ def run_test_failure_analysis():
     return reasoning
 
 
-def generate_slack_report(response):
-    slack_report_json = {}
-    slack_report_json["text"] = "Failed Test Analysis"
-    slack_report_json["blocks"] = []
-    header_block = {
-        "type": "header",
-        "text": {
-            "type": "plain_text",
-            "text": "Failed Test Analysis",
-            "emoji": True,
-        },
-    }
-    slack_report_json["blocks"].append(header_block)
-    summary_block = {
-        "type": "section",
-        "text": {
-            "type": "mrkdwn",
-            "text": response,
-        },
-    }
-    slack_report_json["blocks"].append(summary_block)
-    if os.getenv("IS_NIGHTLY_RUN") == "true":
-        slack_report_json["channel"] = "#nightly-builds"
-    else:
-        slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
-    slack_report_json["thread_ts"] = os.getenv("THREAD_TS")
-    json.dump(slack_report_json, open("test_analysis_slack_report.json", "w"))
-
-
 if __name__ == "__main__":
     process = None
     try:
@@ -251,7 +222,8 @@ if __name__ == "__main__":
         process = setup_port_forwarding()
         assert "gemma3:4b" in str(validate_ollama_model())
         response = run_test_failure_analysis()
-        generate_slack_report(response)
+        with open("logs/failure_analysis.txt", "w") as f:
+            f.write(response)
     except Exception as e:
         logger.info(f"Failed to run inference: {e}")
     finally:

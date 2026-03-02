@@ -405,6 +405,12 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
+          - name: Helm uninstall environment
+            id: helm_uninstall_env
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              helm uninstall $NAMESPACE -n $NAMESPACE
+
           - name: Merge report.md if failed tests were rerun
             id: merge_report_md_on_rerun
             if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
@@ -459,6 +465,28 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
 
+          - name: Analyze Failed tests using AI agent
+            id: analyze_failed_tests_using_ai_agent
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'failure') || steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'failure' || steps.rerun_failed_tests.outcome == 'failure' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
+
+          - name: Upload failure_analsis log to S3
+            id: upload_failure_analysis_logs
+            if: ${{ env.SKIP_TESTS != 'true' && steps.analyze_failed_tests_using_ai_agent.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              echo -e "\n\n******** Upload failure analysis log to S3 ********" >> logs/gh_action_logs.txt
+              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                DATE=$(date +%Y%m%d)
+                aws s3 sync ./logs s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/failure_analysis.txt 2>&1
+              else
+                aws s3 sync ./logs s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/failure_analysis.txt 2>&1
+              fi
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to upload failure analysis log to s3 bucket" >> $GITHUB_ENV
+              fi
+
           - name: Upload logs to S3
             id: upload_gh_action_logs
             if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure') }}
@@ -474,6 +502,7 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
+
 
           - name: Generate markdown report
             id: generate_md_report
@@ -510,6 +539,14 @@ jobs:
                   echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt)" >> output/report.md
                 fi
               fi
+              if [ "${{ steps.upload_failure_analysis_logs.outcome }}" == "success" ]; then
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                  DATE=$(date +%Y%m%d)
+                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/failure_analysis.txt)" >> output/report.md
+                else
+                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/failure_analysis.txt)" >> output/report.md
+                fi
+              fi
 
           - name: Render report to the PR
             id: publish_md_report
@@ -534,24 +571,6 @@ jobs:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
               payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
-              payload-templated: true
-
-          - name: Analyze Failed tests using AI agent
-            id: analyze_failed_tests_using_ai_agent
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
-            env:
-              THREAD_TS: ${{ steps.slack_notify.outputs.ts }}
-
-          - name: Publish test anaylsis on same slack thread
-            id: publish_test_analysis
-            if: ${{ env.SKIP_TESTS != 'true' && steps.analyze_failed_tests_using_ai_agent.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v2.0.0
-            with:
-              method: chat.postMessage
-              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./${{ inputs.WORKING_DIR }}/test_analysis_slack_report.json"
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
