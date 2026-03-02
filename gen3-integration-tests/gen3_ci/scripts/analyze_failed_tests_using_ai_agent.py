@@ -40,7 +40,7 @@ def setup_ollama_helm_chart():
         "pod",
         "-l",
         "app=ollama",
-        "--timeout=5m",
+        "--timeout=10m",
         "-n",
         os.getenv("NAMESPACE"),
     ]
