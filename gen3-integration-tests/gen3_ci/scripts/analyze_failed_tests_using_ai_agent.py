@@ -106,7 +106,11 @@ def validate_ollama_model():
 def analyze_env_setup_failure() -> str:
     """Check env setup failure and analyze the error"""
     logger.info("Checking logs/gh_action_logs.txt")
-    with open("logs/gh_action_logs.txt", "r") as f:
+    log_file_path = "logs/gh_action_logs.txt"
+    if not os.path.exists(log_file_path):
+        logger.info(f"{log_file_path} path doesn't exists")
+        return None
+    with open(log_file_path, "r") as f:
         logfile_content = f.read()
     pattern = re.compile(r"\b(error|failed|exception|traceback)\b", re.IGNORECASE)
 
@@ -194,8 +198,8 @@ def analyze_failed_tests() -> str:
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
         return response.content
-    else:
-        return "No reports found"
+    logger.info("No allure report folder found")
+    return None
 
 
 def run_test_failure_analysis():
@@ -203,6 +207,8 @@ def run_test_failure_analysis():
         response = analyze_env_setup_failure()
     else:
         response = analyze_failed_tests()
+    if response is None:
+        return "No logs found to analyze"
     data = json.loads(response.decode("utf-8"))
     reasoning = data["choices"][0]["message"].get("content")
     logger.info(reasoning)
@@ -252,4 +258,4 @@ if __name__ == "__main__":
         if process and process.poll() is None:
             process.terminate()
             process.wait()
-    # uninstall_ollama_helm_chart()
+    uninstall_ollama_helm_chart()
