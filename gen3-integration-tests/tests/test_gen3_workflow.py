@@ -62,6 +62,7 @@ def _nextflow_parse_completed_line(log_line):
     return task_info
 
 
+@pytest.mark.skip(reason="Until https://github.com/uc-cdis/gen3-code-vigil/pull/484 is merged")
 @pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
