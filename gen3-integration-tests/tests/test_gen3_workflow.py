@@ -79,12 +79,14 @@ class TestGen3Workflow(object):
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
-        # Ensure the bucket is emptied before running the tests
-        cls.gen3_workflow.cleanup_user_bucket()
 
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
             cls.gen3_workflow.storage_setup(user=cls.valid_user, expected_status=200)
         )
+
+        # Ensure the bucket is emptied before running the tests (must run after
+        # `storage_setup` so the user has access to empty the bucket)
+        cls.gen3_workflow.cleanup_user_bucket()
 
     ######################## Test /storage/setup endpoint ########################
 
