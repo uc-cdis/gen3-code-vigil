@@ -211,7 +211,6 @@ def run_test_failure_analysis():
         return "No logs found to analyze"
     data = json.loads(response.decode("utf-8"))
     reasoning = data["choices"][0]["message"].get("content")
-    logger.info(reasoning)
     return reasoning
 
 
