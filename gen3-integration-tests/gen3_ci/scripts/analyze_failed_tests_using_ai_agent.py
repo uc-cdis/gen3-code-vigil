@@ -124,10 +124,10 @@ def analyze_env_setup_failure() -> str:
 
     Return output sctrictly in this format for each error:
 
-    Potential Root cause:
+    Possible Root cause:
     <one clear sentence>
 
-    Possible Fix:
+    Potential Fix:
     <actionable remediation steps>
 
     Keep all explanations very brief—just a summary, no long paragraphs.
@@ -178,10 +178,10 @@ def analyze_failed_tests() -> str:
 
             Test case: <test case name>
 
-            Potential Root cause:
+            Possible Root cause:
             <one clear sentence>
 
-            Possible Fix:
+            Potential Fix:
             <actionable remediation steps>
 
         Keep all explanations very brief—just a summary, no long paragraphs.
