@@ -81,7 +81,7 @@ class TestGen3Workflow(object):
         cls.s3_file_name = "test-input.txt"
 
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.storage_setup(user=cls.valid_user, expected_status=200)
+            cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
         )
 
         # Ensure the bucket is emptied before running the tests (must run after
