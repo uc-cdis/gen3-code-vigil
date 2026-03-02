@@ -126,7 +126,6 @@ def analyze_env_setup_failure() -> str:
 
     Possible Root cause:
     <one clear sentence>
-
     Potential Fix:
     <actionable remediation steps>
 
@@ -177,10 +176,8 @@ def analyze_failed_tests() -> str:
         Return output sctrictly in this format for each test failure:
 
             Test case: <test case name>
-
             Possible Root cause:
             <one clear sentence>
-
             Potential Fix:
             <actionable remediation steps>
 
