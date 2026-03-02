@@ -536,26 +536,12 @@ jobs:
           #     payload-file-path: "./${{ inputs.WORKING_DIR }}/slack_report.json"
           #     payload-templated: true
 
-          - name: Helm uninstall environment
-            id: helm_uninstall_env
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              helm uninstall $NAMESPACE -n $NAMESPACE
           - name: Analyze Failed tests using AI agent
             id: analyze_failed_tests_using_ai_agent
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent
             env:
               THREAD_TS: ${{ steps.slack_notify.outputs.ts }}
-
-          - name: Port forward Ollama
-            run: |
-              kubectl port-forward svc/ollama 11434:11434 -n gen3-code-vigil-pr-476 &
-              sleep 30
-
-          - name: Test Ollama
-            run: |
-              curl http://localhost:11434/api/tags
 
           # - name: Publish test anaylsis on same slack thread
           #   id: publish_test_analysis

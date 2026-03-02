@@ -72,12 +72,8 @@ def setup_port_forwarding():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-
-    for i in range(45):
-        line = process.stdout.readline()
-        if "Forwarding from" in line:
-            return process
-    raise Exception("Port-forward failed to start")
+    time.sleep(30)
+    return process
 
 
 def uninstall_ollama_helm_chart():
@@ -246,15 +242,14 @@ if __name__ == "__main__":
     process = None
     try:
         setup_ollama_helm_chart()
-        # process = setup_port_forwarding()
-        # time.sleep(10)
-        # assert "gemma3:4b" in str(validate_ollama_model())
-        # response = run_test_failure_analysis()
-        # generate_slack_report(response)
+        process = setup_port_forwarding()
+        assert "gemma3:4b" in str(validate_ollama_model())
+        response = run_test_failure_analysis()
+        generate_slack_report(response)
     except Exception as e:
         logger.info(f"Failed to run inference: {e}")
-    # finally:
-    #     if process and process.poll() is None:
-    #         process.terminate()
-    #         process.wait()
+    finally:
+        if process and process.poll() is None:
+            process.terminate()
+            process.wait()
     # uninstall_ollama_helm_chart()
