@@ -7,8 +7,8 @@ pdb: true
 
 resources:
   requests:
-    cpu: 6
-    memory: "10Gi"
+    cpu: 4
+    memory: "6Gi"
   limits:
     cpu: 6
     memory: "10Gi"
