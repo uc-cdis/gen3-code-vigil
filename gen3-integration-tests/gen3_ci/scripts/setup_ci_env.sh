@@ -544,7 +544,7 @@ wait_for_pods_ready() {
   end=$((SECONDS + timeout))
   while [ $SECONDS -lt $end ]; do
     # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
+    not_ready_json=$(kubectl get pods -l 'app!=gen3job,app!=hatchery-reaper' -n "${namespace}" -o json | \
       jq '[.items[]
         | select(
             (.metadata.deletionTimestamp == null) and
