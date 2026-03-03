@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -57,6 +58,17 @@ def setup_ollama_helm_chart():
         )
 
 
+def wait_for_port(host="localhost", port=11434, timeout=60):
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return True
+        except OSError:
+            time.sleep(1)
+    raise TimeoutError("Port-forward did not become ready")
+
+
 def setup_port_forwarding():
     cmd = [
         "kubectl",
@@ -69,10 +81,10 @@ def setup_port_forwarding():
 
     process = subprocess.Popen(
         cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
-    time.sleep(30)
+    wait_for_port("localhost", 11434, timeout=60)
     return process
 
 
@@ -112,11 +124,7 @@ def analyze_env_setup_failure() -> str:
         return None
     with open(log_file_path, "r") as f:
         logfile_content = f.read()
-    pattern = re.compile(r"\b(error|failed|exception|traceback)\b", re.IGNORECASE)
 
-    error_lines = "\n".join(
-        [line for line in logfile_content.splitlines() if pattern.search(line)]
-    )
     debug_prompt = f"""
     You are a senior DevOps engineer.
 
@@ -132,11 +140,11 @@ def analyze_env_setup_failure() -> str:
     Keep all explanations very brief—just a summary, no long paragraphs.
 
     Log:
-    {error_lines}
+    {logfile_content}
     """
     messages = [
         {"role": "system", "content": debug_prompt},
-        {"role": "user", "content": "analyse the errors"},
+        {"role": "user", "content": "analyse the errors from this logfile"},
     ]
     payload = {"model": "gemma3:4b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
@@ -226,4 +234,4 @@ if __name__ == "__main__":
         if process and process.poll() is None:
             process.terminate()
             process.wait()
-    # uninstall_ollama_helm_chart()
+    uninstall_ollama_helm_chart()
