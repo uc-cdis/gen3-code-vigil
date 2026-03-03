@@ -226,4 +226,4 @@ if __name__ == "__main__":
         if process and process.poll() is None:
             process.terminate()
             process.wait()
-    uninstall_ollama_helm_chart()
+    # uninstall_ollama_helm_chart()
