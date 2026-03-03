@@ -347,7 +347,7 @@ def setup_fence_test_client(test_env_namespace, client_data):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        timeout=30,
+        timeout=60,
     )
     if create_result.returncode == 0:
         client_info = create_result.stdout.strip().split("\n")[-1]
