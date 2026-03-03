@@ -195,6 +195,18 @@ def generate_slack_report():
         if failed_suites_block:
             slack_report_json["blocks"].append(failed_suites_block)
 
+    # Add replay message if CI env setup fails
+    if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
+        replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')}`"
+        replay_block = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": replay_message,
+            },
+        }
+        slack_report_json["blocks"].append(replay_block)
+
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
     else:
