@@ -143,9 +143,9 @@ class Gen3Workflow:
     ##### /storage endpoint #####
     #############################
 
-    def get_storage_info(self, user: str = "main_account", expected_status=200) -> Dict:
-        """Makes a GET request to the `/storage/info` endpoint."""
-        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/info"
+    def setup_storage(self, user: str = "main_account", expected_status=200) -> Dict:
+        """Makes a GET request to the `/storage/setup` endpoint."""
+        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/setup"
         headers = (
             {
                 "Authorization": f"bearer {self._get_access_token(user)}",
