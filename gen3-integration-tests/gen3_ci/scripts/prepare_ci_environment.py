@@ -58,7 +58,7 @@ def setup_env_for_helm(arguments):
     logger.info(f"File path: {file_path}")
     logger.info(f"Argument: {arguments}")
     result = subprocess.run(
-        [file_path] + arguments, capture_output=True, text=True, timeout=1200
+        [file_path] + arguments, capture_output=True, text=True, timeout=1800
     )
     if result.returncode == 0:
         logger.info("Script executed successfully. Output:")
