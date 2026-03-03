@@ -188,7 +188,7 @@ def generate_slack_report():
                 "text": f"*Failure Analysis*: <{failure_analysis_link}|click here>",
             },
         }
-    slack_report_json["blocks"].append(failure_analysis_block)
+        slack_report_json["blocks"].append(failure_analysis_block)
     # qa-bot replay command with failed suites labeled in the PR
     if test_result == "Failed":
         failed_suites_block = get_failed_suites()
