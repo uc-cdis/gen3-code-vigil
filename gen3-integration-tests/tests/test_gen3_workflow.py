@@ -692,6 +692,9 @@ class TestGen3Workflow(object):
             "TEST_IGNORED_FAIL"
         ], "TEST_IGNORED_FAIL failure is expected to be ignored"
 
+    # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
+    #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
+    #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
@@ -855,7 +858,6 @@ class TestGen3Workflow(object):
                 task_exit_code == test_case["expected_exit_code"]
             ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
 
-    # 3. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a multi-user setup to verify that users can only see and access their own tasks and storage.
     def test_multi_user_task_isolation(self):
         """
         Test Case: Verify that users can only see and access their own TES tasks and storage.
@@ -923,13 +925,15 @@ class TestGen3Workflow(object):
             expected_status=200,
         )
 
-    # 4. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid request format, and expect a 400 from gen3-workflow
     def test_create_task_format_error(self):
         """
         Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
         - Attempt to create a TES task with missing required fields and invalid command format
         - Verify that the response status is 400 Bad Request
         """
+        # Note: These tests are a part of integration tests instead of unit tests,
+        # since the error is thrown by funnel and not gen3-workflow,
+        # and we want to verify that the error is properly propagated through gen3-workflow's API.
 
         # Missing required 'executors' field
         invalid_payload_1 = {
@@ -960,15 +964,6 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=400,
         )
-
-        # Invalid command format (invalid json format in payload)
-        # TODO: this requires more work, since create_tes_task currently only accepts a valid Python Dict
-        # invalid_payload_3 = "{name: Invalid Task 3, description: This task has an invalid JSON format, executors: [{image: public.ecr.aws/docker/library/alpine:latest, command: [echo 'Hello']}], tags: {user: test}}"
-        # self.gen3_workflow.create_tes_task(
-        #     request_body=invalid_payload_3,
-        #     user=self.valid_user,
-        #     expected_status=400,
-        # )
 
     # TODO:
     # * Test the POST /ga4gh/tes/v1/tasks:cancel with a task id that is not present in the system, and expect a 404 from gen3-workflow
