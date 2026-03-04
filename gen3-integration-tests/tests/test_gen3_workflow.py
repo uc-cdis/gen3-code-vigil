@@ -307,7 +307,7 @@ class TestGen3Workflow(object):
         poll_interval = 30  # seconds
         transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
         final_success_state = "COMPLETE"
-        final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED"}
+        final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED", "SYSTEM_ERROR"}
 
         for attempt in range(1, max_retries + 1):
             task_info = self.gen3_workflow.get_tes_task(
@@ -809,7 +809,12 @@ class TestGen3Workflow(object):
             poll_interval = 30  # seconds
             state = "QUEUED"  # initial state
             transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
-            final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED"}
+            final_failure_states = {
+                "FAILED",
+                "EXECUTOR_ERROR",
+                "CANCELED",
+                "SYSTEM_ERROR",
+            }
 
             while state in transient_states:
                 task_info = self.gen3_workflow.get_tes_task(
