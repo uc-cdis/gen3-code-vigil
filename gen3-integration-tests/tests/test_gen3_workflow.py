@@ -976,3 +976,4 @@ class TestGen3Workflow(object):
     # * Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
     #   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
     # * Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
+    # * Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
