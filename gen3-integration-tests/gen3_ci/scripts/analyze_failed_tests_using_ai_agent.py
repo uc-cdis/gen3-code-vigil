@@ -150,6 +150,8 @@ def analyze_env_setup_failure() -> str:
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        logger.info(f"API call failed. Response: {response.text}")
     return response.content
 
 
@@ -202,6 +204,8 @@ def analyze_failed_tests() -> str:
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
+        if response.status_code != 200:
+            logger.info(f"API call failed. Response: {response.text}")
         return response.content
     logger.info("No allure report folder found")
     return analyze_env_setup_failure()
