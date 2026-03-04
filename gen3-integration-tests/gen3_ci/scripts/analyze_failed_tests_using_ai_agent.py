@@ -204,7 +204,7 @@ def analyze_failed_tests() -> str:
         response = requests.post(url, json=payload, headers=headers)
         return response.content
     logger.info("No allure report folder found")
-    return None
+    return analyze_env_setup_failure()
 
 
 def run_test_failure_analysis():
