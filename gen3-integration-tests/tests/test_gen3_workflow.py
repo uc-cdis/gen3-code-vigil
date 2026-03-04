@@ -765,6 +765,85 @@ class TestGen3Workflow(object):
     # 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
     # 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
 
+    def test_command_failure_in_tes_task(self):
+        """
+        Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
+        - Create a TES task with a command that exits with code 1
+        - Poll until the task fails
+        - Verify the task status is 'EXECUTOR_ERROR' and exit code is non-zero
+        - Validate that the logs capture the error message
+        """
+
+        test_cases = [
+            {
+                "command": ["echo 'This will fail' && exit 1"],
+                "expected_exit_code": 1,
+                "expected_state": "EXECUTOR_ERROR",
+            },
+            {
+                "command": ["False"],
+                "expected_exit_code": 0,  # This is current funnel's behavior but ideally it should be a non-zero exit code. Need to investigate further, once fixed, change this expected_exit_code to non-zero.
+                "expected_state": "SYSTEM_ERROR",
+            },
+        ]
+
+        for test_case in test_cases:
+            # Step 1: Create a TES task with a command that fails (exit 1)
+            tes_task_payload = {
+                "name": f"Task with failing command: {test_case['command']}",
+                "description": f"This task is expected to fail due to a non-zero exit code: {test_case['command']}",
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": test_case["command"],
+                    }
+                ],
+                "tags": {"user": self.valid_user},
+            }
+            task_response = self.gen3_workflow.create_tes_task(
+                request_body=tes_task_payload,
+                user=self.valid_user,
+                expected_status=200,
+            )
+
+            task_id = task_response.get("id", None)
+            assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+            # Step 2: Poll until the TES task fails with a known status
+            poll_interval = 30  # seconds
+            state = "QUEUED"  # initial state
+            transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
+            final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED"}
+
+            while state in transient_states:
+                task_info = self.gen3_workflow.get_tes_task(
+                    task_id=task_id,
+                    user=self.valid_user,
+                    expected_status=200,
+                )
+                state = task_info.get("state")
+
+                if state in final_failure_states:
+                    logger.info(f"TES task failed as expected with state: {state}")
+                    break
+
+                logger.debug(
+                    f"Current task state is '{state}', sleeping for {poll_interval} seconds before retrying..."
+                )
+                time.sleep(poll_interval)
+            else:
+                raise Exception(
+                    f"TES task did not fail in time. Final state: {state}, Response: {task_info}"
+                )
+
+            # Step 3: Verify the task status is in a failure state and exit code is non-zero
+            assert (
+                state == test_case["expected_state"]
+            ), f"Expected task to fail with `{test_case['expected_state']}` state, but found {state} instead, Response: {task_info}"
+            assert (
+                task_info.get("exit_code", 0) == test_case["expected_exit_code"]
+            ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_info.get('exit_code', 0)} instead. Response: {task_info}"
+
     # 3. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a multi-user setup to verify that users can only see and access their own tasks and storage.
     def test_multi_user_task_isolation(self):
         """
@@ -800,7 +879,7 @@ class TestGen3Workflow(object):
             user=self.other_valid_user,
             expected_status=403,
         )
-
+        # Verify that User A can access their own task
         self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=self.valid_user,
@@ -825,9 +904,57 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
+        # Verify that User A can access their own S3 file
         self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/user_a_file.txt",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
         )
+
+    # 4. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid request format, and expect a 400 from gen3-workflow
+    def test_create_task_format_error(self):
+        """
+        Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
+        - Attempt to create a TES task with missing required fields and invalid command format
+        - Verify that the response status is 400 Bad Request
+        """
+
+        # Missing required 'executors' field
+        invalid_payload_1 = {
+            "name": "Invalid Task 1",
+            "description": "This task is missing the 'executors' field.",
+            "tags": {"user": self.valid_user},
+        }
+        self.gen3_workflow.create_tes_task(
+            request_body=invalid_payload_1,
+            user=self.valid_user,
+            expected_status=400,
+        )
+
+        # Invalid command format (should be a list of strings)
+        invalid_payload_2 = {
+            "name": "Invalid Task 2",
+            "description": "This task has an invalid command format.",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": "not_a_list",  # Invalid command format
+                }
+            ],
+            "tags": {"user": self.valid_user},
+        }
+        self.gen3_workflow.create_tes_task(
+            request_body=invalid_payload_2,
+            user=self.valid_user,
+            expected_status=400,
+        )
+
+        # Invalid command format (invalid json format in payload)
+        # TODO: this requires more work, since create_tes_task currently only accepts a valid Python Dict
+        # invalid_payload_3 = "{name: Invalid Task 3, description: This task has an invalid JSON format, executors: [{image: public.ecr.aws/docker/library/alpine:latest, command: [echo 'Hello']}], tags: {user: test}}"
+        # self.gen3_workflow.create_tes_task(
+        #     request_body=invalid_payload_3,
+        #     user=self.valid_user,
+        #     expected_status=400,
+        # )
