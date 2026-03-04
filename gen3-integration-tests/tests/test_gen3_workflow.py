@@ -76,7 +76,7 @@ class TestGen3Workflow(object):
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
         cls.valid_user = "main_account"
-        cls.other_valid_user = "user0"
+        cls.other_valid_user = "user0_account"
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
@@ -761,10 +761,6 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
-    # TODO: Add more tests for the following:
-    # 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
-    # 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
-
     def test_command_failure_in_tes_task(self):
         """
         Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
@@ -840,9 +836,19 @@ class TestGen3Workflow(object):
             assert (
                 state == test_case["expected_state"]
             ), f"Expected task to fail with `{test_case['expected_state']}` state, but found {state} instead, Response: {task_info}"
+
+            task_exit_code = None
+            task_logs = task_info.get("logs", [])
+            if (
+                task_logs
+                and len(task_logs) > 0
+                and len(task_logs[0].get("logs", [])) > 0
+            ):
+                task_exit_code = task_logs[0]["logs"][0].get("exit_code")
+
             assert (
-                task_info.get("exit_code", 0) == test_case["expected_exit_code"]
-            ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_info.get('exit_code', 0)} instead. Response: {task_info}"
+                task_exit_code == test_case["expected_exit_code"]
+            ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
 
     # 3. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a multi-user setup to verify that users can only see and access their own tasks and storage.
     def test_multi_user_task_isolation(self):
@@ -958,3 +964,10 @@ class TestGen3Workflow(object):
         #     user=self.valid_user,
         #     expected_status=400,
         # )
+
+    # TODO:
+    # * Test the POST /ga4gh/tes/v1/tasks:cancel with a task id that is not present in the system, and expect a 404 from gen3-workflow
+    # * Test the GET /ga4gh/tes/v1/tasks/<task_id> endpoint with a task id that is not present in the system, and expect a 404 from gen3-workflow
+    # * Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
+    #   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
+    # * Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
