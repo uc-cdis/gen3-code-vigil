@@ -76,6 +76,7 @@ class TestGen3Workflow(object):
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
         cls.valid_user = "main_account"
+        cls.other_valid_user = "user0"
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
@@ -760,7 +761,73 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
+    # TODO: Add more tests for the following:
+    # 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
+    # 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
 
-# TODO: Add more tests for the following:
-# 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
-# 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
+    # 3. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a multi-user setup to verify that users can only see and access their own tasks and storage.
+    def test_multi_user_task_isolation(self):
+        """
+        Test Case: Verify that users can only see and access their own TES tasks and storage.
+        - User A creates a TES task and uploads a file to S3
+        - User B attempts to access User A's TES task and S3 file, and is denied access
+        """
+
+        # Step 1: User A creates a TES task
+        tes_task_payload = {
+            "name": "User A's Task",
+            "description": "This task belongs to User A.",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": ["echo", "Hello from User A!"],
+                }
+            ],
+            "tags": {"user": self.valid_user},
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Step 2: User B attempts to access User A's TES task
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=self.other_valid_user,
+            expected_status=403,
+        )
+
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        # Step 3: User A uploads a file to S3
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content="User A's secret data",
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        # Step 4: User B attempts to access User A's S3 file
+        self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.other_valid_user,
+            expected_status=403,
+        )
+
+        self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
