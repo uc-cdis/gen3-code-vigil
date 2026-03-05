@@ -123,12 +123,12 @@ def analyze_env_setup_failure() -> str:
         logger.info(f"{log_file_path} path doesn't exists")
         return None
     with open(log_file_path, "r") as f:
-        logfile_content = f.read()
+        logfile_content = f.read().split("Upload reports to S3", 1)[0]
 
     debug_prompt = f"""
     You are a senior DevOps engineer.
 
-    Analyze the log snippet below.
+    Find all errors and exceptions in the logfile content and analyze them.
 
     Return output sctrictly in this format for each error:
 
@@ -137,7 +137,8 @@ def analyze_env_setup_failure() -> str:
     Potential Fix:
     <actionable remediation steps>
 
-    Keep all explanations very brief—just a summary, no long paragraphs.
+    Start with an "Executive Summary" (2–3 sentences).
+    After that, keep all explanations very brief—summary style only, no long paragraphs.
 
     Log:
     {logfile_content}
