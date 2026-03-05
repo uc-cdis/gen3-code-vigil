@@ -188,9 +188,9 @@ def prepare_ci_environment(namespace):
             with open(os.getenv("GITHUB_ENV"), "a") as f:
                 f.write("SKIP_TESTS=true\n")
             return
-        elif "cluster-values" in updated_folder:
+        elif "cluster-values" in updated_folder or "cluster-level-resources" in updated_folder:
             logger.info(
-                "This PR is changing cluster-values folder which is not testable"
+                "This PR is changing cluster-values/cluster-level-resources folder which is not testable"
             )
             # Update SKIP_TESTS to true in GITHUB_ENV
             with open(os.getenv("GITHUB_ENV"), "a") as f:
