@@ -126,6 +126,8 @@ def analyze_env_setup_failure() -> str:
         logfile_content = f.read().split("Upload reports to S3", 1)[0]
 
     debug_prompt = f"""
+    All output MUST be in English. Do not use any other language.
+
     You are a senior DevOps engineer.
 
     Find all errors and exceptions in the logfile content and analyze them.
@@ -180,6 +182,8 @@ def analyze_failed_tests() -> str:
                     },
                 )
         debug_prompt = f"""
+        All output MUST be in English. Do not use any other language.
+
         You are a senior DevOps engineer.
 
         Analyze each status message below.
