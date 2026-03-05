@@ -20,3 +20,6 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
             - containerPort: 11434
+          env:
+            - name: OLLAMA_LOG_LEVEL
+              value: "debug"

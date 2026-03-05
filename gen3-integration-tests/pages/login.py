@@ -251,15 +251,13 @@ class LoginPage(object):
         page.wait_for_load_state("load")
         if popup_locator.count() > 0:
             logger.info("Popup message found")
-            page.locator(self.POP_UP_BOX).evaluate(
-                """
+            page.locator(self.POP_UP_BOX).evaluate("""
                 element => {
                     if (element && element.scrollHeight > element.clientHeight) {
                         element.scrollTop = element.scrollHeight;
                     }
                 }
-                """
-            )
+                """)
             screenshot(page, "DataUsePopup")
             accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
             if accept_button:
