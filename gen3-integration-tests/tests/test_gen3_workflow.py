@@ -76,6 +76,7 @@ class TestGen3Workflow(object):
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
         cls.valid_user = "main_account"
+        cls.other_valid_user = "user0_account"
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
@@ -306,7 +307,7 @@ class TestGen3Workflow(object):
         poll_interval = 30  # seconds
         transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
         final_success_state = "COMPLETE"
-        final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED"}
+        final_failure_states = {"FAILED", "EXECUTOR_ERROR", "CANCELED", "SYSTEM_ERROR"}
 
         for attempt in range(1, max_retries + 1):
             task_info = self.gen3_workflow.get_tes_task(
@@ -691,6 +692,9 @@ class TestGen3Workflow(object):
             "TEST_IGNORED_FAIL"
         ], "TEST_IGNORED_FAIL failure is expected to be ignored"
 
+    # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
+    #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
+    #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
@@ -760,7 +764,211 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
+    def test_command_failure_in_tes_task(self):
+        """
+        Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
+        - Create a TES task with a command that exits with code 1
+        - Poll until the task fails
+        - Verify the task status is 'EXECUTOR_ERROR' and exit code is non-zero
+        - Validate that the logs capture the error message
+        """
 
-# TODO: Add more tests for the following:
-# 1. Test the POST /ga4gh/tes/v1/tasks/ endpoint with a command that fails. (e.g. `exit 1` and `cd <missing_directory>`)
-# 2. Test the POST /ga4gh/tes/v1/tasks/ endpoint with an invalid command format (e.g. cmd = ['False'] key)
+        test_cases = [
+            {
+                "command": ["echo 'This will fail' && exit 1"],
+                "expected_exit_code": 1,
+                "expected_state": "EXECUTOR_ERROR",
+            },
+            {
+                "command": ["False"],
+                "expected_exit_code": 0,  # This is current funnel's behavior but ideally it should be a non-zero exit code. Need to investigate further, once fixed, change this expected_exit_code to non-zero.
+                "expected_state": "SYSTEM_ERROR",
+            },
+        ]
+
+        for test_case in test_cases:
+            # Step 1: Create a TES task with a command that fails (exit 1)
+            tes_task_payload = {
+                "name": f"Task with failing command: {test_case['command']}",
+                "description": f"This task is expected to fail due to a non-zero exit code: {test_case['command']}",
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": test_case["command"],
+                    }
+                ],
+                "tags": {"user": self.valid_user},
+            }
+            task_response = self.gen3_workflow.create_tes_task(
+                request_body=tes_task_payload,
+                user=self.valid_user,
+                expected_status=200,
+            )
+
+            task_id = task_response.get("id", None)
+            assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+            # Step 2: Poll until the TES task fails with a known status
+            poll_interval = 30  # seconds
+            state = "QUEUED"  # initial state
+            transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
+            final_failure_states = {
+                "FAILED",
+                "EXECUTOR_ERROR",
+                "CANCELED",
+                "SYSTEM_ERROR",
+            }
+
+            while state in transient_states:
+                task_info = self.gen3_workflow.get_tes_task(
+                    task_id=task_id,
+                    user=self.valid_user,
+                    expected_status=200,
+                )
+                state = task_info.get("state")
+
+                if state in final_failure_states:
+                    logger.info(f"TES task failed as expected with state: {state}")
+                    break
+
+                logger.debug(
+                    f"Current task state is '{state}', sleeping for {poll_interval} seconds before retrying..."
+                )
+                time.sleep(poll_interval)
+            else:
+                raise Exception(
+                    f"TES task did not fail in time. Final state: {state}, Response: {task_info}"
+                )
+
+            # Step 3: Verify the task status is in a failure state and exit code is non-zero
+            assert (
+                state == test_case["expected_state"]
+            ), f"Expected task to fail with `{test_case['expected_state']}` state, but found {state} instead, Response: {task_info}"
+
+            task_exit_code = None
+            task_logs = task_info.get("logs", [])
+            if (
+                task_logs
+                and len(task_logs) > 0
+                and len(task_logs[0].get("logs", [])) > 0
+            ):
+                task_exit_code = task_logs[0]["logs"][0].get("exit_code")
+
+            assert (
+                task_exit_code == test_case["expected_exit_code"]
+            ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
+
+    def test_multi_user_task_isolation(self):
+        """
+        Test Case: Verify that users can only see and access their own TES tasks and storage.
+        - User A creates a TES task and uploads a file to S3
+        - User B attempts to access User A's TES task and S3 file, and is denied access
+        """
+
+        # Step 1: User A creates a TES task
+        tes_task_payload = {
+            "name": "User A's Task",
+            "description": "This task belongs to User A.",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": ["echo", "Hello from User A!"],
+                }
+            ],
+            "tags": {"user": self.valid_user},
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Step 2: User B attempts to access User A's TES task
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=self.other_valid_user,
+            expected_status=403,
+        )
+        # Verify that User A can access their own task
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        # Step 3: User A uploads a file to S3
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content="User A's secret data",
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        # Step 4: User B attempts to access User A's S3 file
+        self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.other_valid_user,
+            expected_status=403,
+        )
+
+        # Verify that User A can access their own S3 file
+        self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+    def test_create_task_format_error(self):
+        """
+        Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
+        - Attempt to create a TES task with missing required fields and invalid command format
+        - Verify that the response status is 400 Bad Request
+        """
+        # Note: These tests are a part of integration tests instead of unit tests,
+        # since the error is thrown by funnel and not gen3-workflow,
+        # and we want to verify that the error is properly propagated through gen3-workflow's API.
+
+        # Missing required 'executors' field
+        invalid_payload_1 = {
+            "name": "Invalid Task 1",
+            "description": "This task is missing the 'executors' field.",
+            "tags": {"user": self.valid_user},
+        }
+        self.gen3_workflow.create_tes_task(
+            request_body=invalid_payload_1,
+            user=self.valid_user,
+            expected_status=400,
+        )
+
+        # Invalid command format (should be a list of strings)
+        invalid_payload_2 = {
+            "name": "Invalid Task 2",
+            "description": "This task has an invalid command format.",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": "not_a_list",  # Invalid command format
+                }
+            ],
+            "tags": {"user": self.valid_user},
+        }
+        self.gen3_workflow.create_tes_task(
+            request_body=invalid_payload_2,
+            user=self.valid_user,
+            expected_status=400,
+        )
+
+    # TODO:
+    # * Test the POST /ga4gh/tes/v1/tasks:cancel with a task id that is not present in the system, and expect a 404 from gen3-workflow
+    # * Test the GET /ga4gh/tes/v1/tasks/<task_id> endpoint with a task id that is not present in the system, and expect a 404 from gen3-workflow
+    # * Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
+    #   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
+    # * Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
+    # * Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
