@@ -639,11 +639,16 @@ wait_for_pods_ready() {
   echo "❌ Timeout: Pods' containers not ready"
 
   echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
-    echo "=======> describing $pod":
+    echo "=======> describing $pod:"
     kubectl describe pod $pod -n "${namespace}"
-    echo "=======> logs for $pod":
+    echo "=======> logs for $pod:"
     kubectl logs $pod -n "${namespace}"
   done
+
+  echo "=======> get secrets:"
+  kubectl get secrets
+  echo "=======> get secrets -n $namespace:"
+  kubectl get secrets -n "${namespace}"
 
   echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
