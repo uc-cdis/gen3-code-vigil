@@ -638,8 +638,11 @@ wait_for_pods_ready() {
 
   echo "❌ Timeout: Pods' containers not ready"
 
+  echo 'describing arborist:'
   kubectl describe pods -l app=arborist
+  echo 'describing fence:'
   kubectl describe pods -l app=fence
+  echo 'describing gen3-workflow:'
   kubectl describe pods -l app=gen3-workflow
 
   echo "$not_ready_json" | jq -r '.[] |
