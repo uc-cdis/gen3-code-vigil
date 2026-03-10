@@ -458,10 +458,10 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$ci_default_manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# Move portal block out of values.yaml into portal.yaml
-touch $ci_default_manifest_portal_yaml
-yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
-yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+# # Move portal block out of values.yaml into portal.yaml
+# touch $ci_default_manifest_portal_yaml
+# yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
+# yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
 
 # TODO: Delete this after nightly-build teardown is working properly with helm-ci-cleanup
 if [[ "$namespace" == nightly-build* ]]; then
@@ -597,13 +597,14 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=180 #900
+  export timeout=300 #900
   export interval=20
 
   end=$((SECONDS + timeout))
   while [ $SECONDS -lt $end ]; do
     # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
+    not_ready_json=$(kubectl get pods -n "${namespace}" -o json | \
+    # not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]
         | select(
             (.metadata.deletionTimestamp == null) and
@@ -626,7 +627,7 @@ wait_for_pods_ready() {
       n_pods=$(kubectl get pods -l app!=gen3job -o json | jq '[.items[]]' | jq 'length')
       if [ "$n_pods" -eq 0 ]; then
         echo "❌ No running pods!"
-        return 1  # TODO remove this return
+        return 1
       fi
       echo "✅ All pods containers are Ready"
       return 0
