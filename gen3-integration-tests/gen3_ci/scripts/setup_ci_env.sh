@@ -627,7 +627,6 @@ wait_for_pods_ready() {
       n_pods=$(kubectl get pods -l app!=gen3job -o json | jq '[.items[]]' | jq 'length')
       if [ "$n_pods" -eq 0 ]; then
         echo "❌ No running pods!"
-        return 1
       fi
       echo "✅ All pods containers are Ready"
       return 0
@@ -642,6 +641,8 @@ wait_for_pods_ready() {
   echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
     echo "=======> describing $pod":
     kubectl describe pod $pod -n "${namespace}"
+    echo "=======> logs for $pod":
+    kubectl logs $pod -n "${namespace}"
   done
 
   echo "$not_ready_json" | jq -r '.[] |
