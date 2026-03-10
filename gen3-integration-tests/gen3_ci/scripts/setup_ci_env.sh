@@ -550,7 +550,7 @@ install_helm_chart() {
 
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate
-    # support support for removing "-f $ci_default_manifest_portal_yaml"
+    # support flag to remove "-f $ci_default_manifest_portal_yaml"
     if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
@@ -638,12 +638,10 @@ wait_for_pods_ready() {
 
   echo "❌ Timeout: Pods' containers not ready"
 
-  echo 'describing arborist:'
-  kubectl describe pods -l app=arborist
-  echo 'describing fence:'
-  kubectl describe pods -l app=fence
-  echo 'describing gen3-workflow:'
-  kubectl describe pods -l app=gen3-workflow
+  echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
+    echo "=======> describing $pod":
+    kubectl describe pod $pod -n "${namespace}"
+  done
 
   echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
