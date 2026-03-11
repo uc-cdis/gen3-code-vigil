@@ -1,10 +1,8 @@
 import os
 import time
 
-from utils import logger
-from filelock import Timeout, FileLock
-
-from utils import TEST_DATA_PATH_OBJECT
+from filelock import FileLock, Timeout
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 
 def one_worker_only(wait_secs=3, max_wait_minutes=1):
