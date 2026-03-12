@@ -52,7 +52,11 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     echo "Processing user: $username - $email ..."
 
     # Generate an access token
+    echo "Before generating token"
+    kubectl -n "$NAMESPACE" exec -c fence "$FENCE_POD" -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account --type access_token --username "$email"
     ACCESS_TOKEN=$(kubectl -n "$NAMESPACE" exec -c fence "$FENCE_POD" -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account --type access_token --username "$email" 2>/dev/null | tail -1)
+    echo "After generating token"
+    echo $ACCESS_TOKEN
 
     # Validate access token
     if [[ -z "$ACCESS_TOKEN" ]]; then
@@ -61,10 +65,13 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     fi
 
     # Request API key
+    echo "Before generating API key"
     RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
+    echo "After generating API key"
+    echo $RESPONSE
 
     # Validate API response
     if [[ "$RESPONSE" -ne 200 ]]; then

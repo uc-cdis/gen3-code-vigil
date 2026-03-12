@@ -177,7 +177,9 @@ def generate_api_keys_for_test_users(namespace):
         return "SUCCESS"
     else:
         logger.info(result.stdout)
-        raise Exception(f"Got error: {result.stderr}")
+        raise Exception(
+            f"[generate_api_keys_for_test_users] Got error: {result.stderr}"
+        )
 
 
 def prepare_ci_environment(namespace):
