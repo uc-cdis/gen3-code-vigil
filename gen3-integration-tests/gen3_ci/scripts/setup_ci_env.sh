@@ -597,14 +597,14 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=300 #900
+  export timeout=900
   export interval=20
 
   end=$((SECONDS + timeout))
   while [ $SECONDS -lt $end ]; do
     # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -n "${namespace}" -o json | \
-    # not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
+    # not_ready_json=$(kubectl get pods -n "${namespace}" -o json | \
+    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]
         | select(
             (.metadata.deletionTimestamp == null) and
@@ -646,8 +646,6 @@ wait_for_pods_ready() {
   done
 
   echo "=======> get secrets:"
-  kubectl get secrets
-  echo "=======> get secrets -n $namespace:"
   kubectl get secrets -n "${namespace}"
 
   echo "$not_ready_json" | jq -r '.[] |
