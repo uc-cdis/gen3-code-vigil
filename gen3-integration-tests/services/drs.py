@@ -1,8 +1,8 @@
+from uuid import uuid4
+
 import pytest
 import requests
-
 from gen3.auth import Gen3Auth
-from uuid import uuid4
 from utils import logger
 
 
