@@ -114,8 +114,8 @@ jobs:
             run:  |
               echo "Current repo: ${{ github.event.repository.full_name }}"
               echo "Head Repo: ${{ github.event.pull_request.head.repo.full_name }}"
-              echo "Skipping integration tests for external PRs"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+              echo "::error::External PRs cannot run integration tests"
+              exit 1
 
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
