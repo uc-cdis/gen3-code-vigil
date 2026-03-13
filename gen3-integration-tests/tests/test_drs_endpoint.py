@@ -21,6 +21,20 @@ indexd_files = {
         "acl": ["jenkins"],
         "size": 9,
     },
+    "with_spaces": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/test data"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "size": 9,
+    },
+    "with_spaces_encoded": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/test%20data"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "size": 9,
+    },
     "not_allowed": {
         "file_name": "test_not_allowed",
         "urls": ["s3://cdis-presigned-url-test/testdata"],
