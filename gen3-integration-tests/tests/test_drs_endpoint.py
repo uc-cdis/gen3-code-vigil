@@ -21,6 +21,20 @@ indexd_files = {
         "acl": ["jenkins"],
         "size": 9,
     },
+    "with_spaces": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/test data"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "size": 9,
+    },
+    "with_spaces_encoded": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/test%20data"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "size": 9,
+    },
     "not_allowed": {
         "file_name": "test_not_allowed",
         "urls": ["s3://cdis-presigned-url-test/testdata"],
@@ -95,11 +109,13 @@ class TestDrsEndpoints:
             1. Get the drs presgined url for indexd record (allowed).
             2. Validate the content of the file checkout.
         """
-        signed_url_res = self.drs.get_drs_signed_url(file=indexd_files["allowed"])
-        self.fence.check_file_equals(
-            signed_url_res=signed_url_res.json(),
-            file_content="Hi Zac!\ncdis-data-client uploaded this!\n",
-        )
+        to_test = ["allowed", "with_spaces", "with_spaces_encoded"]
+        for test_case in to_test:
+            signed_url_res = self.drs.get_drs_signed_url(file=indexd_files[test_case])
+            self.fence.check_file_equals(
+                signed_url_res=signed_url_res.json(),
+                file_content="Hi Zac!\ncdis-data-client uploaded this!\n",
+            )
 
     def test_get_drs_invalid_access_id(self):
         """
