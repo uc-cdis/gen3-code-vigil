@@ -646,8 +646,8 @@ wait_for_pods_ready() {
     kubectl logs $pod -n "${namespace}"
   done
 
-  echo "=======> get secrets:"
-  kubectl get secrets -n "${namespace}"
+  # echo "=======> get secrets:"
+  # kubectl get secrets -n "${namespace}"
 
   echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
@@ -682,12 +682,17 @@ echo "Running usersync..."
 kubectl delete job usersync-manual -n ${namespace}
 kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
 kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
+echo "----- cronjobs"
+kubectl get cronjob -n ${namespace}
+echo "----- pods"
 kubectl get pods -n ${namespace}
 echo "-----"
-kubectl get pods | grep usersync
+kubectl get pods -n ${namespace} | grep user
+echo "-----"
 
-usersync_pod=$(kubectl get pods | grep usersync | awk '{print $1}')
+usersync_pod=$(kubectl get pods -n ${namespace} | grep usersync | awk '{print $1}')
 echo usersync_pod: $usersync_pod
-kubectl logs $usersync_pod -n ${namespace}
+# kubectl logs $usersync_pod -n ${namespace} -c awshelper
+# kubectl logs $usersync_pod -n ${namespace} -c usersync
 
 echo "YAY!!! Env is up..."
