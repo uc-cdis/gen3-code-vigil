@@ -307,8 +307,6 @@ class TestGen3Workflow(object):
             task_id=task_id,
             user=self.valid_user,
             expected_final_state="COMPLETE",
-            max_retries=10,
-            poll_interval=30,
         )
 
         # Step 5: Validate task logs
@@ -720,7 +718,7 @@ class TestGen3Workflow(object):
         Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
         - Create a TES task with a command that exits with code 1
         - Poll until the task fails
-        - Verify the task status is 'EXECUTOR_ERROR' and exit code is non-zero
+        - Verify the exit code and that the task status is 'EXECUTOR_ERROR' (if the provided command returns a non-0 exit code) or 'SYSTEM_ERROR' (if the provided task cannot be run)
         - Validate that the logs capture the error message
         """
 
@@ -891,8 +889,8 @@ class TestGen3Workflow(object):
     # TODO:
     # * Test the GET /ga4gh/tes/v1/tasks/<task_id> endpoint with a task id that is not present in the system, and expect a 404 from gen3-workflow
     # * Test the POST /ga4gh/tes/v1/tasks:cancel with a task id that is not present in the system, and expect a 404 from gen3-workflow
-    #   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
     # * Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
+    #   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
     # * Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
     # * Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
     # * Test the multi-user setup, where User A has access to User B's tasks, but not their storage.
