@@ -166,12 +166,12 @@ spec:
                         elif [[ "$teardown" == "true" ]]; then
                             echo "CI environment $env has successfully passed all suites. Performing teardown..."
                             teardown_environment $env
-                        # Check if it's older than 90 minutes.
-                        elif (( age_minutes > 90 )); then
-                            echo "CI environment $env is older than 90 minutes. Performing teardown..."
+                        # Check if it's older than 120 minutes.
+                        elif (( age_minutes > 120 )); then
+                            echo "CI environment $env is older than 120 minutes. Performing teardown..."
                             teardown_environment $env
                         else
-                            echo "CI environment $env is not older than 90 minutes. Skipping..."
+                            echo "CI environment $env is not older than 120 minutes. Skipping..."
                         fi
                     elif (( $(date +%s) - $(date -d "$(kubectl get ns "$env" -o jsonpath='{.metadata.creationTimestamp}')" +%s) > 10800 )); then
                         echo "No Helm installation found... Deleting namespace $env."
