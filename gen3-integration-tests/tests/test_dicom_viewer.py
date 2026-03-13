@@ -18,7 +18,8 @@ NOTE: To setup the index data for image study follow setup under
     reason="Orthanc service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "ohif-viewer" not in pytest.deployed_services,
+    "ohif-viewer" not in pytest.deployed_services
+    or "dicom-server" not in pytest.deployed_services,
     reason="OHIF service is not running on this environment",
 )
 @pytest.mark.skipif(

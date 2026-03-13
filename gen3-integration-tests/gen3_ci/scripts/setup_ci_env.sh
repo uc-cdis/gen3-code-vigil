@@ -221,6 +221,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
       else
+        echo "Updating ${key} service enabled value"
+        yq eval ".${key}.enabled = \"$service_enabled_value\"" -i $ci_default_manifest_values_yaml
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
@@ -412,6 +414,7 @@ common_param_updates=(
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
   ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".dicom-server.externalSecrets.orthancG3Auto|${namespace}-orthanc-g3auto"
 )
 
 for item in "${common_param_updates[@]}"; do
