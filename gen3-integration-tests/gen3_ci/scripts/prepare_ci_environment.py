@@ -74,17 +74,14 @@ def setup_env_for_helm(arguments):
             logger.info(line)
         return "failure"
 
-    if result.returncode == 0:
-        logger.info(f"{file_name} script executed successfully. Logs:")
-        logger.info(result.stdout)
-        return "SUCCESS"
-    else:
-        logger.info(f"{file_name} script execution failed. Logs (stderr):")
-        logger.info(result.stderr)
-        logger.info("------------------------")
-        logger.info(f"{file_name} script execution failed. Logs (stdout):")
-        logger.info(result.stdout)
-        return "failure"
+    msg = "executed successfully" if result.returncode == 0 else "execution failed"
+    logger.info(f"{file_name} script {msg}. Logs (stderr):")
+    logger.info(result.stderr)
+    logger.info("------------------------")
+    logger.info(f"{file_name} script {msg}. Logs (stdout):")
+    logger.info(result.stdout)
+
+    return "SUCCESS" if result.returncode == 0 else "failure"
 
 
 def modify_env_for_service_pr(namespace, service, tag):

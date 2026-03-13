@@ -8,6 +8,8 @@
 # setup_type - type of setup being performed
 # helm_branch - gen3 helm branch to bring up the env
 
+# set -euo pipefail  # TODO reenable once errors in this file are fixed
+
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
@@ -24,6 +26,9 @@ for file in "$ci_default_manifest_dir"/*.yaml; do
   if [[ -f "$file" ]]; then
     echo "" >> "$master_values_yaml"
     cat "$file" >> "$master_values_yaml"
+    echo "----------"
+    echo $file
+    cat $file
   fi
 done
 
@@ -44,7 +49,7 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
-        if [[ "$service" == "etl" ]]; then
+        if [[ "$service_name" == "etl" ]]; then
           yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         else
           yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
