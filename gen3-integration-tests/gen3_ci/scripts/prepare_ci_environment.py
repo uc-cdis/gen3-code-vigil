@@ -161,7 +161,7 @@ def modify_env_for_test_repo_pr(namespace):
     return setup_env_for_helm(arguments)
 
 
-@retry(times=6, delay=30, exceptions=(Exception))
+@retry(times=1, delay=2, exceptions=(Exception))
 def generate_api_keys_for_test_users(namespace):
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),

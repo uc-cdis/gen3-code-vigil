@@ -678,8 +678,16 @@ else
   exit 1
 fi
 
+echo "Running usersync..."
 kubectl delete job usersync-manual -n ${namespace}
 kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
 kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
+kubectl get pods -n ${namespace}
+echo "-----"
+kubectl get pods | grep usersync
+
+usersync_pod=$(kubectl get pods | grep usersync | awk '{print $1}')
+echo usersync_pod: $usersync_pod
+kubectl logs $usersync_pod -n ${namespace}
 
 echo "YAY!!! Env is up..."
