@@ -114,8 +114,8 @@ jobs:
             run:  |
               echo "Current repo: ${{ github.event.repository.full_name }}"
               echo "Head Repo: ${{ github.event.pull_request.head.repo.full_name }}"
-              echo "Skipping integration tests for external PRs"
-              echo "SKIP_TESTS=true" >> $GITHUB_ENV
+              echo "::error::External PRs cannot run integration tests"
+              exit 1
 
           # Skip integration tests when the following PR labels are present:
           # not-ready-for-ci / decommission-environment
@@ -405,6 +405,12 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
+          - name: Helm uninstall environment
+            id: helm_uninstall_env
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              helm uninstall $NAMESPACE -n $NAMESPACE
+
           - name: Merge report.md if failed tests were rerun
             id: merge_report_md_on_rerun
             if: ${{ env.SKIP_TESTS != 'true' && env.FAILED_TEST_SUITES != '' }}
@@ -445,9 +451,9 @@ jobs:
               echo -e "\n\n******* Upload reports to S3 *******" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
-                aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
+                aws s3 sync ./allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
                 if [ -n "$FAILED_TEST_SUITES" ]; then
-                  aws s3 sync ./rerun-allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE-rerun >> logs/gh_action_logs.txt 2>&1
+                  aws s3 sync ./rerun-allure-report s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE-rerun/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
                 fi
               else
                 aws s3 sync ./allure-report s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
@@ -459,21 +465,46 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
 
+          - name: Analyze Failures using AI agent
+            id: analyze_failures_using_ai_agent
+            if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'failure' || ((steps.run_service_tests.outcome == 'failure' || steps.run_tests.outcome == 'failure') && steps.rerun_failed_tests.outcome != 'success')) }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              echo -e "\n\n****** Running Analyze Failures using AI agent ******" >>  logs/gh_action_logs.txt
+              poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent >> logs/gh_action_logs.txt 2>&1
+
+          - name: Upload failure analysis to S3
+            id: upload_analyze_failure_file
+            if: ${{ env.SKIP_TESTS != 'true' && steps.analyze_failures_using_ai_agent.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              echo -e "\n\n******** Upload analyze failure file to S3 ********" >> logs/gh_action_logs.txt
+              if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                DATE=$(date +%Y%m%d)
+                aws s3 cp logs/failure_analysis.txt s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE/$RUN_NUM/$ATTEMPT_NUM/failure_analysis.txt >> logs/gh_action_logs.txt 2>&1
+              else
+                aws s3 cp logs/failure_analysis.txt s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/failure_analysis.txt >> logs/gh_action_logs.txt 2>&1
+              fi
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to upload failure analysis file to s3 bucket" >> $GITHUB_ENV
+              fi
+
           - name: Upload logs to S3
             id: upload_gh_action_logs
             if: ${{ env.SKIP_TESTS != 'true' && (steps.prep_ci_env.outcome == 'success' || steps.prep_ci_env.outcome == 'failure') }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo -e "\n\n******** Upload logs to S3 ********" >> logs/gh_action_logs.txt
+              echo -e "\n\n******** Upload GH action logs to S3 ********" >> logs/gh_action_logs.txt
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 DATE=$(date +%Y%m%d)
-                aws s3 sync ./logs s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE >> logs/gh_action_logs.txt 2>&1
+                aws s3 cp logs/gh_action_logs.txt s3://ci-allure-reports/nightly-run-$CI_ENV/$DATE/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt >> logs/gh_action_logs.txt 2>&1
               else
-                aws s3 sync ./logs s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM >> logs/gh_action_logs.txt 2>&1
+                aws s3 cp logs/gh_action_logs.txt s3://ci-allure-reports/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt >> logs/gh_action_logs.txt 2>&1
               fi
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
+
 
           - name: Generate markdown report
             id: generate_md_report
@@ -491,9 +522,9 @@ jobs:
               if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
-                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/index.html)" >> output/report.md
+                  echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
                   if [ -n "$FAILED_TEST_SUITES" ]; then
-                    echo -e "\nPlease find the detailed integration test report after rerunning failed tests [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE-rerun/index.html)" >> output/report.md
+                    echo -e "\nPlease find the detailed integration test report after rerunning failed tests [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE-rerun/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
                   fi
                 else
                   echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/index.html)" >> output/report.md
@@ -505,9 +536,17 @@ jobs:
               if [ "${{ steps.upload_gh_action_logs.outcome }}" == "success" ]; then
                 if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                   DATE=$(date +%Y%m%d)
-                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/gh_action_logs.txt)" >> output/report.md
+                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt)" >> output/report.md
                 else
                   echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/gh_action_logs.txt)" >> output/report.md
+                fi
+              fi
+              if [ "${{ steps.upload_analyze_failure_file_logs.outcome }}" == "success" ]; then
+                if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
+                  DATE=$(date +%Y%m%d)
+                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/nightly-run-$CI_ENV/$DATE/$RUN_NUM/$ATTEMPT_NUM/failure_analysis.txt)" >> output/report.md
+                else
+                  echo -e "\nPlease find the Github Action logs [here](https://allure.ci.planx-pla.net/$REPO/$PR_NUM/$RUN_NUM/$ATTEMPT_NUM/failure_analysis.txt)" >> output/report.md
                 fi
               fi
 

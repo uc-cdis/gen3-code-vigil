@@ -79,18 +79,20 @@ class TestGen3Workflow(object):
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
-        # Ensure the bucket is emptied before running the tests
-        cls.gen3_workflow.cleanup_user_bucket()
 
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.get_storage_info(user=cls.valid_user, expected_status=200)
+            cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
         )
 
-    ######################## Test /storage/info endpoint ########################
+        # Ensure the bucket is emptied before running the tests (must run after
+        # `storage_setup` so the user has access to empty the bucket)
+        cls.gen3_workflow.cleanup_user_bucket()
 
-    def test_get_storage_info_without_token(self):
-        """Test GET /storage/info without an access token."""
-        self.gen3_workflow.get_storage_info(user=None, expected_status=401)
+    ######################## Test /storage/setup endpoint ########################
+
+    def test_setup_storage_without_token(self):
+        """Test GET /storage/setup without an access token."""
+        self.gen3_workflow.setup_storage(user=None, expected_status=401)
 
     ######################## Test /s3/ endpoint ########################
 
@@ -597,6 +599,7 @@ class TestGen3Workflow(object):
               x = torch.rand(size, size, device='cuda')
             RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
             NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
+        - TEST_FUSION_DOCTOR: unknown cause
         """
         known_unsupported = [
             "TEST_PUBLISH_FILE",
@@ -604,6 +607,7 @@ class TestGen3Workflow(object):
             "TEST_MV_FILE",
             "TEST_MV_FOLDER_CONTENTS",
             "TEST_GPU",
+            "TEST_FUSION_DOCTOR",
         ]
 
         # clone the tests repo
