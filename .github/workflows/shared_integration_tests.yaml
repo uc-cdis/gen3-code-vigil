@@ -19,7 +19,7 @@ on:
       HELM_BRANCH:
         required: false
         type: string
-        default: master
+        default: feat/dicom-db-update
       CI_ENV:
         required: false
         type: string
