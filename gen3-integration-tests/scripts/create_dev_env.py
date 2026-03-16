@@ -28,7 +28,7 @@ def prep_dev_env(namespace):
     Roll the environment
     Run usersync
     """
-    helm_branch = "master"
+    helm_branch = "feat/dicom-db-update"
     ci_default_manifest = (
         f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/dev_env/values"
     )
