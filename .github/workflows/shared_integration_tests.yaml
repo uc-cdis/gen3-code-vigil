@@ -405,11 +405,11 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
-          - name: Helm uninstall environment
-            id: helm_uninstall_env
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: |
-              helm uninstall $NAMESPACE -n $NAMESPACE
+          # - name: Helm uninstall environment
+          #   id: helm_uninstall_env
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   run: |
+          #     helm uninstall $NAMESPACE -n $NAMESPACE
 
           - name: Merge report.md if failed tests were rerun
             id: merge_report_md_on_rerun
