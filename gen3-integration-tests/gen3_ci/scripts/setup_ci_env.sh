@@ -318,6 +318,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       echo "Current change is in ci/default, removing frontend-framework config"
       yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
     fi
+
+    # To handle ohif-viewer APP_CONFIG for dicom-server
+    ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
+    if [[ "$ohif_appconfig_block" != "key not found" ]]; then
+      yq eval-all 'select(fileIndex == 0) * {"ohif-viewer":(select(fileIndex == 0).["ohif-viewer"] *{"APP_CONFIG": select(fileIndex == 1).["ohif-viewer"].APP_CONFIG})}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+    fi
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
@@ -474,12 +480,6 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
   else
     yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
   fi
-fi
-
-# To handle ohif-viewer APP_CONFIG for dicom-server
-ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
-if [[ "$ohif_appconfig_block" != "key not found" ]]; then
-  yq eval-all 'select(fileIndex == 0) * {"ohif-viewer":(select(fileIndex == 0).["ohif-viewer"] *{"APP_CONFIG": select(fileIndex == 1).["ohif-viewer"].APP_CONFIG})}' "$ci_default_manifest_values_yaml" "${ci_default_manifest_dir}/etl.yaml" -i
 fi
 
 echo $HOSTNAME
