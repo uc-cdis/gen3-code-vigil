@@ -322,7 +322,13 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # To handle ohif-viewer APP_CONFIG for dicom-server
     ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
     if [[ "$ohif_appconfig_block" != "key not found" ]]; then
-      yq eval-all 'select(fileIndex == 0) * {"ohif-viewer":(select(fileIndex == 0).["ohif-viewer"] *{"APP_CONFIG": select(fileIndex == 1).["ohif-viewer"].APP_CONFIG})}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+      yq eval-all '
+        select(fileIndex == 0) as $dest |
+        select(fileIndex == 1) as $src |
+        $dest * {
+          "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
+        }
+      ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     fi
 fi
 
