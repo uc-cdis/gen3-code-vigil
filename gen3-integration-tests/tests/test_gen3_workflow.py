@@ -713,7 +713,7 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
-    pytest.parametrize(
+    @pytest.mark.parametrize(
         "test_case",
         [
             {
@@ -728,7 +728,6 @@ class TestGen3Workflow(object):
             },
         ],
     )
-
     def test_command_failure_in_tes_task(self, test_case):
         """
         Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
