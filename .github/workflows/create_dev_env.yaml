@@ -37,7 +37,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: uc-cdis/gen3-gitops
-          ref: 'chore/update_ci_dicom_server'
           path: gen3-gitops
 
       - name: Set up Python
