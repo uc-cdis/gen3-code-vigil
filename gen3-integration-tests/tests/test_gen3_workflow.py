@@ -713,16 +713,9 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
-    def test_command_failure_in_tes_task(self):
-        """
-        Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
-        - Create a TES task with a command that exits with code 1
-        - Poll until the task fails
-        - Verify the exit code and that the task status is 'EXECUTOR_ERROR' (if the provided command returns a non-0 exit code) or 'SYSTEM_ERROR' (if the provided task cannot be run)
-        - Validate that the logs capture the error message
-        """
-
-        test_cases = [
+    pytest.parametrize(
+        "test_case",
+        [
             {
                 "command": ["echo 'This will fail' && exit 123"],
                 "expected_exit_code": 123,  # This is to ensure response's error code matches the executor command's exit code
@@ -733,51 +726,54 @@ class TestGen3Workflow(object):
                 "expected_exit_code": 0,  # This is current funnel's behavior issue #53
                 "expected_state": "SYSTEM_ERROR",
             },
-        ]
+        ],
+    )
 
-        # TODO: Make this test faster by creating tasks in parallel and polling them in parallel,
-        # instead of running the test cases sequentially.
-        for test_case in test_cases:
-            # Step 1: Create a TES task
-            tes_task_payload = {
-                "name": f"Task with failing command: {test_case['command']}",
-                "description": f"This task is expected to fail due to a non-zero exit code: {test_case['command']}",
-                "executors": [
-                    {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
-                        "command": test_case["command"],
-                    }
-                ],
-                "tags": {"user": self.valid_user},
-            }
-            task_response = self.gen3_workflow.create_tes_task(
-                request_body=tes_task_payload,
-                user=self.valid_user,
-                expected_status=200,
-            )
+    def test_command_failure_in_tes_task(self, test_case):
+        """
+        Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
+        - Create a TES task with a command from the test case
+        - Poll until the task fails
+        - Verify the exit code and that the task status is 'EXECUTOR_ERROR' (if the provided command returns a non-0 exit code) or 'SYSTEM_ERROR' (if the provided task cannot be run)
+        - Validate that the logs capture the error message
+        """
 
-            task_id = task_response.get("id", None)
-            assert task_id, f"Expected 'id' in response, but got: {task_response}"
+        # Step 1: Create a TES task
+        tes_task_payload = {
+            "name": f"Task with failing command: {test_case['command']}",
+            "description": f"This task is expected to fail due to a non-zero exit code: {test_case['command']}",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": test_case["command"],
+                }
+            ],
+            "tags": {"user": self.valid_user},
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
 
-            # Step 2: Poll until the TES task fails with a known status
-            task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
-                task_id=task_id,
-                user=self.valid_user,
-                expected_final_state=test_case["expected_state"],
-            )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
-            task_exit_code = None
-            task_logs = task_info.get("logs", [])
-            if (
-                task_logs
-                and len(task_logs) > 0
-                and len(task_logs[0].get("logs", [])) > 0
-            ):
-                task_exit_code = task_logs[0]["logs"][0].get("exit_code")
+        # Step 2: Poll until the TES task fails with a known status
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state=test_case["expected_state"],
+        )
 
-            assert (
-                task_exit_code == test_case["expected_exit_code"]
-            ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
+        task_exit_code = None
+        task_logs = task_info.get("logs", [])
+        if task_logs and len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0:
+            task_exit_code = task_logs[0]["logs"][0].get("exit_code")
+
+        assert (
+            task_exit_code == test_case["expected_exit_code"]
+        ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
 
     def test_multi_user_task_isolation(self):
         """
