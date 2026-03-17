@@ -414,7 +414,6 @@ common_param_updates=(
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
   ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
-  ".dicom-server.externalSecrets.orthancG3Auto|${namespace}-orthanc-g3auto"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -478,10 +477,10 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
 fi
 
 # To handle ohif-viewer APP_CONFIG for dicom-server
-ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG' "$new_manifest_values_file_path")
-if [[ "$ohif_appconfig_block" != "null" ]]; then
-  yq eval-all 'select(fileIndex == 0) * {"ohif-viewer":(select(fileIndex == 0).["ohif-viewer"] *{"APP_CONFIG": select(fileIndex == 1).["ohif-viewer"].APP_CONFIG})}' "$ci_default_manifest_values_yaml" "${ci_default_manifest_dir}/etl.yaml" -i
-fi
+# ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG' "$new_manifest_values_file_path")
+# if [[ "$ohif_appconfig_block" != "null" ]]; then
+#   yq eval-all 'select(fileIndex == 0) * {"ohif-viewer":(select(fileIndex == 0).["ohif-viewer"] *{"APP_CONFIG": select(fileIndex == 1).["ohif-viewer"].APP_CONFIG})}' "$ci_default_manifest_values_yaml" "${ci_default_manifest_dir}/etl.yaml" -i
+# fi
 
 echo $HOSTNAME
 install_helm_chart() {
