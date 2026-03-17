@@ -15,7 +15,7 @@ NOTE: To setup the index data for image study follow setup under
 
 @pytest.mark.skipif(
     "orthanc" not in pytest.deployed_services
-    or "dicom-server" not in pytest.deployed_services,
+    and "dicom-server" not in pytest.deployed_services,
     reason="Orthanc/dicom-server service is not running on this environment",
 )
 @pytest.mark.skipif(
