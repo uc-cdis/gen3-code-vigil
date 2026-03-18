@@ -321,7 +321,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # TODO: Remove once dicom-server is removed from midrc prod
     ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
     if [[ "$ohif_appconfig_block" != "key not found" ]]; then
-      yq eval ".["dicom-server"].enabled = true" -i "$ci_default_manifest_values_yaml"
+      yq eval '.["dicom-server"].enabled = true' -i "$ci_default_manifest_values_yaml"
       yq eval-all '
         select(fileIndex == 0) as $dest |
         select(fileIndex == 1) as $src |
