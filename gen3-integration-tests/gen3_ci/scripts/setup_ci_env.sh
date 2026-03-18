@@ -181,8 +181,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # of values.yaml in new_manifest_values_file_path.
     ####################################################################################
     # Get all the top-level keys from both files
-    keys_ci=$(yq eval 'keys' $ci_default_manifest_values_yaml -o=json | jq -r '.[]')
-    keys_manifest=$(yq eval 'keys' $new_manifest_values_file_path -o=json | jq -r '.[]')
+    keys_ci=$(yq eval 'keys' "$ci_default_manifest_values_yaml" -o=json | jq -r '.[]' | xargs -n1)
+    keys_manifest=$(yq eval 'keys' "$new_manifest_values_file_path" -o=json | jq -r '.[]' | xargs -n1)
 
     # Remove blocks from $ci_default_manifest_values_yaml that are not present in new_manifest_values_file_path
     echo "###################################################################################"
