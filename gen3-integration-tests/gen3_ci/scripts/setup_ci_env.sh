@@ -213,6 +213,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     for key in $keys_manifest; do
     if [ "$key" != "global" ]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
+      ci_enabled=$(yq eval ".${key}.enabled" "$ci_default_manifest_values_yaml")
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
@@ -221,6 +222,13 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
       else
+        if [[ "$new_enabled" == "true" && "$ci_enabled" == "false" ]]; then
+          echo "Updating ${key}.enabled from false -> true"
+
+          yq eval ".${key}.enabled = true" -i "$ci_default_manifest_values_yaml"
+        fi
+        echo "Updating ${key} service enabled value"
+        yq eval ".${key}.enabled = \"$service_enabled_value\"" -i $ci_default_manifest_values_yaml
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
@@ -315,6 +323,18 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ $UPDATED_FOLDERS == "ci/default" ]]; then
       echo "Current change is in ci/default, removing frontend-framework config"
       yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
+    fi
+
+    # To handle ohif-viewer APP_CONFIG for dicom-server
+    ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
+    if [[ "$ohif_appconfig_block" != "key not found" ]]; then
+      yq eval-all '
+        select(fileIndex == 0) as $dest |
+        select(fileIndex == 1) as $src |
+        $dest * {
+          "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
+        }
+      ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     fi
 fi
 
