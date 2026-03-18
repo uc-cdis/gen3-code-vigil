@@ -316,6 +316,20 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       echo "Current change is in ci/default, removing frontend-framework config"
       yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
     fi
+
+    # To handle ohif-viewer APP_CONFIG for dicom-server and enable dicom-server
+    # TODO: Remove once dicom-server is removed from midrc prod
+    ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
+    if [[ "$ohif_appconfig_block" != "key not found" ]]; then
+      yq eval ".["dicom-server"].enabled = true" -i "$ci_default_manifest_values_yaml"
+      yq eval-all '
+        select(fileIndex == 0) as $dest |
+        select(fileIndex == 1) as $src |
+        $dest * {
+          "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
+        }
+      ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+    fi
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
