@@ -303,8 +303,8 @@ jobs:
             run: |
               if [[ "$IS_NIGHTLY_RUN" == "true" ]]; then
                 if [[ "$CI_ENV" == "gen3ff" ]]; then
-                  NAMESPACE=nightly-build-ff
-                  HOSTNAME=nightly-build-ff.ci.planx-pla.net
+                  NAMESPACE=nightly-build
+                  HOSTNAME=nightly-build.ci.planx-pla.net
                 else
                   NAMESPACE=nightly-build
                   HOSTNAME=nightly-build.ci.planx-pla.net
