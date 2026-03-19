@@ -332,7 +332,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
     fi
 
-    # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying them
+    # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard")' -i "$ci_default_manifest_values_yaml"
 fi
 
