@@ -13,9 +13,17 @@ def install_gen3_client(path):
     Path(f"{path}/src/github.com/uc-cdis/").mkdir(mode=777, parents=True, exist_ok=True)
     os.chmod(f"{path}/src/github.com/uc-cdis", int("777", base=8))
     os.chdir(f"{path}/src/github.com/uc-cdis/")
-    subprocess.run(
-        ["git clone https://github.com/uc-cdis/cdis-data-client.git"], shell=True
-    )
+    if os.getenv("REPO") == "cdis-data-client":
+        subprocess.run(
+            [
+                f"git clone -b {os.getenv("BRANCH")} https://github.com/uc-cdis/cdis-data-client.git"
+            ],
+            shell=True,
+        )
+    else:
+        subprocess.run(
+            ["git clone https://github.com/uc-cdis/cdis-data-client.git"], shell=True
+        )
     os.rename("cdis-data-client", "gen3-client")
     if Path(f"{path}/src/github.com/uc-cdis/gen3-client").exists():
         os.chdir("gen3-client/")
