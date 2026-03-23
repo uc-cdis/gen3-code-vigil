@@ -321,16 +321,16 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # # To handle ohif-viewer APP_CONFIG for dicom-server and enable dicom-server
     # # TODO: Remove once dicom-server is removed from midrc prod
-    # ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // \"key not found\"' "$new_manifest_values_file_path")
-    # if [[ "$ohif_appconfig_block" != "key not found" ]]; then
-    #   yq eval-all '
-    #     select(fileIndex == 0) as $dest |
-    #     select(fileIndex == 1) as $src |
-    #     $dest * {
-    #       "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
-    #     }
-    #   ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
-    # fi
+    ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // "key not found"' "$new_manifest_values_file_path")
+    if [[ "$ohif_appconfig_block" != "key not found" ]]; then
+      yq eval-all '
+        select(fileIndex == 0) as $dest |
+        select(fileIndex == 1) as $src |
+        $dest * {
+          "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
+        }
+      ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+    fi
 
     # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard")' -i "$ci_default_manifest_values_yaml"
