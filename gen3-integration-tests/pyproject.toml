@@ -81,6 +81,7 @@ markers = [
   # features
   "agg_mds: tests for aggregate metadata service",
   "client_credentials: tests for fence client credentials",
+  "drs: tests for DRS (Data Repository Service) endpoints",
   "etl: tests for etl",
   "data_upload: tests for data upload",
   "gen3sdk: tests for gen3sdk",

@@ -95,6 +95,29 @@ def get_fence_clients():
     setup.get_rotated_client_id_secret()
 
 
+@pytest.fixture(scope="session")
+def drs_version():
+    """
+    Fetch DRS version from service-info for conditional test gating.
+
+    Returns the DRS spec version from the service-info endpoint.
+    Falls back to 1.2.
+    """
+    from services.drs import Drs
+
+    drs = Drs()
+    try:
+        resp = drs.get_service_info()
+        if resp.status_code == 200:
+            svc = resp.json()
+            return svc.get("type", {}).get("version", "1.2")
+    except Exception as e:
+        logger.error(
+            f"Could not fetch DRS service-info: {e}. Defaulting to DRS 1.2. DRS 1.5 tests will be skipped."
+        )
+    return "1.2"
+
+
 def pytest_configure(config):
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
