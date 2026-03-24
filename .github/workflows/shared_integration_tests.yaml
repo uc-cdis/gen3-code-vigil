@@ -473,6 +473,8 @@ jobs:
             run: |
               echo -e "\n\n****** Running Analyze Failures using AI agent ******" >>  logs/gh_action_logs.txt
               poetry run python -m gen3_ci.scripts.analyze_failed_tests_using_ai_agent >> logs/gh_action_logs.txt 2>&1
+            env:
+              OLLAMA_HOST: http://localhost:11434/
 
           - name: Upload failure analysis to S3
             id: upload_analyze_failure_file

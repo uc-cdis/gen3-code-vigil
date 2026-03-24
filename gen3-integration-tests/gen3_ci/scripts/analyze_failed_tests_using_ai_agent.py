@@ -174,6 +174,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        timeout=300,
     )
     if not helm_install_result.returncode == 0:
         raise Exception(
