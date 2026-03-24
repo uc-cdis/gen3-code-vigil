@@ -166,21 +166,21 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "--model",
         "gemma3:4b",
         "--enable-tool-use-shim",
-        f"Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs",
+        f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
     ]
 
-    helm_install_result = subprocess.run(
+    kubectl_ai_result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
-        timeout=300,
+        timeout=600,
     )
-    if not helm_install_result.returncode == 0:
+    if not kubectl_ai_result.returncode == 0:
         raise Exception(
-            f"Unable to uninstall ollama. Error: {helm_install_result.stderr.strip()}"
+            f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
         )
-    return helm_install_result.stdout.strip()
+    return kubectl_ai_result.stdout.strip()
 
 
 def analyze_failed_tests() -> str:
