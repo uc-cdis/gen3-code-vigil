@@ -509,6 +509,385 @@ class TestDrsMetadata:
 
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services or "indexd" not in pytest.deployed_services,
+    reason="DRS bulk endpoint tests require both fence and indexd",
+)
+@pytest.mark.fence
+@pytest.mark.drs
+class TestDrsBulkEndpoints:
+    """DRS 1.4/1.5 bulk endpoint tests."""
+
+    @classmethod
+    def setup_class(cls):
+        cls.drs = Drs()
+        cls.indexd = Indexd()
+        cls.variables = {"created_indexd_dids": []}
+
+        # bulk endpoints require DRS >= 1.4
+        try:
+            resp = cls.drs.get_service_info()
+            if resp.status_code == 200:
+                cls.service_info = resp.json()
+                version_str = cls.service_info.get("type", {}).get("version", "1.2")
+            else:
+                version_str = "1.2"
+                cls.service_info = {}
+        except Exception:
+            version_str = "1.2"
+            cls.service_info = {}
+        if Version(version_str) < Version("1.4"):
+            pytest.skip("DRS bulk endpoints not deployed (requires >= 1.4)")
+
+        cls.max_bulk = cls.service_info.get("drs", {}).get(
+            "maxBulkRequestLength",
+            cls.service_info.get("maxBulkRequestLength", 100),
+        )
+
+        # Create DRS 1.5 test records
+        auth = Gen3Auth(
+            refresh_token=pytest.api_keys["indexing_account"],
+            endpoint=pytest.root_url,
+        )
+        access_token = auth.get_access_token()
+        headers = {
+            "Authorization": f"bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+        for key, val in drs_15_indexd_files.items():
+            val.setdefault("did", str(uuid4()))
+            resp = requests.post(
+                f"{pytest.root_url}/index/index/",
+                json=val,
+                headers=headers,
+            )
+            assert resp.status_code == 200, (
+                f"Failed to create indexd record '{key}': "
+                f"{resp.status_code} {resp.text}"
+            )
+            cls.variables["created_indexd_dids"].append(resp.json()["did"])
+
+    @classmethod
+    def teardown_class(cls):
+        if hasattr(cls, "variables") and cls.variables.get("created_indexd_dids"):
+            cls.indexd.delete_records(cls.variables["created_indexd_dids"])
+
+    def test_bulk_drs_objects_include_metadata(self):
+        """
+        Scenario: Verify bulk DRS objects include DRS 1.5 metadata fields
+        Steps:
+            1. POST /objects with multiple valid GUIDs.
+            2. Verify each resolved DrsObject has cloud, region, available,
+               and authorizations on every access method.
+        """
+        object_ids = [
+            drs_15_indexd_files["s3_available"]["did"],
+            drs_15_indexd_files["gs_record"]["did"],
+            drs_15_indexd_files["default_available"]["did"],
+        ]
+        resp = self.drs.get_bulk_drs_objects(object_ids=object_ids)
+        assert (
+            resp.status_code == 200
+        ), f"Expected 200 from bulk objects, got {resp.status_code}"
+        data = resp.json()
+
+        summary = data.get("summary", {})
+        assert summary.get("requested") == len(object_ids), (
+            f"Expected summary.requested={len(object_ids)}, "
+            f"got {summary.get('requested')}"
+        )
+        assert summary.get("resolved") == len(
+            object_ids
+        ), f"Expected all objects resolved, got resolved={summary.get('resolved')}"
+
+        resolved = data.get("resolved_drs_object", [])
+        assert len(resolved) == len(
+            object_ids
+        ), f"Expected {len(object_ids)} resolved objects, got {len(resolved)}"
+
+        for drs_obj in resolved:
+            assert (
+                "access_methods" in drs_obj
+            ), f"DrsObject {drs_obj.get('id')} missing access_methods"
+            for method in drs_obj["access_methods"]:
+                assert (
+                    "cloud" in method
+                ), f"access_method missing 'cloud' in object {drs_obj.get('id')}"
+                assert (
+                    "available" in method
+                ), f"access_method missing 'available' in object {drs_obj.get('id')}"
+                assert "authorizations" in method, (
+                    f"access_method missing 'authorizations' in object "
+                    f"{drs_obj.get('id')}"
+                )
+
+    def test_bulk_drs_objects_partial_resolution(self):
+        """
+        Scenario: Verify partial resolution with mix of valid and invalid GUIDs
+        Steps:
+            1. POST /objects with valid GUIDs and a non-existent GUID.
+            2. Verify summary.resolved + summary.unresolved == summary.requested.
+            3. Verify unresolved list contains the invalid GUID.
+        """
+        valid_id = drs_15_indexd_files["s3_available"]["did"]
+        fake_id = str(uuid4())
+        object_ids = [valid_id, fake_id]
+
+        resp = self.drs.get_bulk_drs_objects(object_ids=object_ids)
+        assert (
+            resp.status_code == 200
+        ), f"Expected 200 from bulk objects, got {resp.status_code}"
+        data = resp.json()
+
+        summary = data.get("summary", {})
+        assert (
+            summary.get("requested") == 2
+        ), f"Expected summary.requested=2, got {summary.get('requested')}"
+        assert summary.get("resolved", 0) + summary.get("unresolved", 0) == 2, (
+            f"resolved ({summary.get('resolved')}) + "
+            f"unresolved ({summary.get('unresolved')}) != requested (2)"
+        )
+        assert (
+            summary.get("resolved") == 1
+        ), f"Expected 1 resolved, got {summary.get('resolved')}"
+        assert (
+            summary.get("unresolved") == 1
+        ), f"Expected 1 unresolved, got {summary.get('unresolved')}"
+
+        # Verify the fake ID appears in the unresolved list
+        unresolved_ids = []
+        for entry in data.get("unresolved_drs_objects", []):
+            unresolved_ids.extend(entry.get("object_ids", []))
+        assert (
+            fake_id in unresolved_ids
+        ), f"Expected '{fake_id}' in unresolved object IDs, got {unresolved_ids}"
+
+    def test_bulk_drs_objects_request_too_large(self):
+        """
+        Scenario: Verify 413 when bulk request exceeds maxBulkRequestLength
+        Steps:
+            1. Get maxBulkRequestLength from service-info.
+            2. POST /objects with more GUIDs than the limit.
+            3. Verify response status is 413.
+        """
+        oversized_ids = [str(uuid4()) for _ in range(self.max_bulk + 1)]
+        resp = self.drs.get_bulk_drs_objects(object_ids=oversized_ids)
+        assert resp.status_code == 413, (
+            f"Expected 413 for oversized bulk request "
+            f"({self.max_bulk + 1} IDs, limit {self.max_bulk}), "
+            f"got {resp.status_code}"
+        )
+
+    def test_bulk_authorizations_returns_per_object_auth(self):
+        """
+        Scenario: Verify bulk OPTIONS returns per-object authorization info
+        Steps:
+            1. OPTIONS /objects with multiple valid GUIDs.
+            2. Verify each resolved entry has drs_object_id and supported_types.
+        """
+        object_ids = [
+            drs_15_indexd_files["s3_available"]["did"],
+            drs_15_indexd_files["default_available"]["did"],
+        ]
+        resp = self.drs.get_bulk_object_authorizations(object_ids=object_ids)
+        assert (
+            resp.status_code == 200
+        ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
+        data = resp.json()
+
+        summary = data.get("summary", {})
+        assert summary.get("requested") == len(object_ids), (
+            f"Expected summary.requested={len(object_ids)}, "
+            f"got {summary.get('requested')}"
+        )
+
+        resolved = data.get("resolved_drs_object", [])
+        assert len(resolved) == len(
+            object_ids
+        ), f"Expected {len(object_ids)} resolved auth entries, got {len(resolved)}"
+
+        for auth_entry in resolved:
+            assert (
+                "drs_object_id" in auth_entry
+            ), "Bulk auth entry missing 'drs_object_id'"
+            assert "supported_types" in auth_entry, (
+                f"Bulk auth entry for '{auth_entry.get('drs_object_id')}' "
+                f"missing 'supported_types'"
+            )
+
+    def test_bulk_authorizations_mixed_auth_types(self):
+        """
+        Scenario: Verify bulk OPTIONS returns different auth for different authz paths
+        Steps:
+            1. OPTIONS /objects with a protected GUID and an open-access GUID.
+            2. Verify protected record has BearerAuth in supported_types.
+            3. Verify open-access record has 'None' in supported_types.
+        """
+        protected_id = drs_15_indexd_files["s3_available"]["did"]
+        open_id = drs_15_indexd_files["open_access"]["did"]
+        object_ids = [protected_id, open_id]
+
+        resp = self.drs.get_bulk_object_authorizations(object_ids=object_ids)
+        assert (
+            resp.status_code == 200
+        ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
+        data = resp.json()
+
+        resolved = data.get("resolved_drs_object", [])
+
+        # Build a lookup by drs_object_id
+        auth_by_id = {
+            entry["drs_object_id"]: entry
+            for entry in resolved
+            if "drs_object_id" in entry
+        }
+
+        # Protected record should have BearerAuth
+        assert (
+            protected_id in auth_by_id
+        ), f"Protected record '{protected_id}' not found in resolved auth entries"
+        protected_types = auth_by_id[protected_id].get("supported_types", [])
+        assert (
+            "BearerAuth" in protected_types
+        ), f"Expected 'BearerAuth' for protected record, got {protected_types}"
+
+        # Open-access record should have 'None'
+        assert (
+            open_id in auth_by_id
+        ), f"Open-access record '{open_id}' not found in resolved auth entries"
+        open_types = auth_by_id[open_id].get("supported_types", [])
+        assert (
+            "None" in open_types
+        ), f"Expected 'None' for open-access record, got {open_types}"
+
+    def test_bulk_authorizations_request_too_large(self):
+        """
+        Scenario: Verify 413 when bulk OPTIONS exceeds maxBulkRequestLength
+        Steps:
+            1. OPTIONS /objects with more GUIDs than the limit.
+            2. Verify response status is 413.
+        """
+        oversized_ids = [str(uuid4()) for _ in range(self.max_bulk + 1)]
+        resp = self.drs.get_bulk_object_authorizations(object_ids=oversized_ids)
+        assert resp.status_code == 413, (
+            f"Expected 413 for oversized bulk OPTIONS "
+            f"({self.max_bulk + 1} IDs, limit {self.max_bulk}), "
+            f"got {resp.status_code}"
+        )
+
+    def test_bulk_signed_urls_success(self):
+        """
+        Scenario: Verify bulk presigned URL generation for authorized GUIDs
+        Steps:
+            1. Get DRS objects for authorized records to discover access IDs.
+            2. POST /objects/access with the object_id/access_id pairs.
+            3. Verify each resolved entry has a 'url' field.
+        """
+        # Get access IDs from the DRS objects
+        s3_obj = self.drs.get_drs_object(file=drs_15_indexd_files["s3_available"])
+        assert s3_obj.status_code == 200
+        s3_methods = s3_obj.json().get("access_methods", [])
+        assert len(s3_methods) > 0, "s3_available has no access methods"
+
+        default_obj = self.drs.get_drs_object(
+            file=drs_15_indexd_files["default_available"]
+        )
+        assert default_obj.status_code == 200
+        default_methods = default_obj.json().get("access_methods", [])
+        assert len(default_methods) > 0, "default_available has no access methods"
+
+        bulk_access_ids = [
+            {
+                "bulk_object_id": drs_15_indexd_files["s3_available"]["did"],
+                "bulk_access_ids": [s3_methods[0]["access_id"]],
+            },
+            {
+                "bulk_object_id": drs_15_indexd_files["default_available"]["did"],
+                "bulk_access_ids": [default_methods[0]["access_id"]],
+            },
+        ]
+
+        resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
+        assert (
+            resp.status_code == 200
+        ), f"Expected 200 from bulk signed URLs, got {resp.status_code}"
+        data = resp.json()
+
+        summary = data.get("summary", {})
+        assert (
+            summary.get("requested") == 2
+        ), f"Expected summary.requested=2, got {summary.get('requested')}"
+        assert (
+            summary.get("resolved") == 2
+        ), f"Expected 2 resolved URLs, got {summary.get('resolved')}"
+
+        resolved = data.get("resolved_drs_object_access_urls", [])
+        assert (
+            len(resolved) == 2
+        ), f"Expected 2 resolved access URL entries, got {len(resolved)}"
+
+        for entry in resolved:
+            assert "url" in entry, (
+                f"Bulk access URL entry for '{entry.get('drs_object_id')}' "
+                f"missing 'url'"
+            )
+            assert entry[
+                "url"
+            ], f"Bulk access URL for '{entry.get('drs_object_id')}' is empty"
+
+    def test_bulk_signed_urls_partial_auth(self):
+        """
+        Scenario: Verify partial auth — authorized and unauthorized GUIDs
+        Steps:
+            1. Get access ID from an authorized record.
+            2. POST /objects/access with authorized + unauthorized object/access pairs.
+            3. Verify authorized GUID is resolved, unauthorized is in unresolved.
+        """
+        # Get access ID from an authorized record
+        s3_obj = self.drs.get_drs_object(file=drs_15_indexd_files["s3_available"])
+        assert s3_obj.status_code == 200
+        s3_methods = s3_obj.json().get("access_methods", [])
+        assert len(s3_methods) > 0, "s3_available has no access methods"
+
+        # Use a non-existent object ID for the unauthorized case
+        fake_id = str(uuid4())
+        bulk_access_ids = [
+            {
+                "bulk_object_id": drs_15_indexd_files["s3_available"]["did"],
+                "bulk_access_ids": [s3_methods[0]["access_id"]],
+            },
+            {
+                "bulk_object_id": fake_id,
+                "bulk_access_ids": ["s3"],
+            },
+        ]
+
+        resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
+        assert (
+            resp.status_code == 200
+        ), f"Expected 200 from bulk signed URLs, got {resp.status_code}"
+        data = resp.json()
+
+        summary = data.get("summary", {})
+        assert (
+            summary.get("requested") == 2
+        ), f"Expected summary.requested=2, got {summary.get('requested')}"
+        assert (
+            summary.get("resolved") == 1
+        ), f"Expected 1 resolved, got {summary.get('resolved')}"
+        assert (
+            summary.get("unresolved") == 1
+        ), f"Expected 1 unresolved, got {summary.get('unresolved')}"
+
+        # Verify the fake ID is in unresolved
+        unresolved_ids = []
+        for entry in data.get("unresolved_drs_objects", []):
+            unresolved_ids.extend(entry.get("object_ids", []))
+        assert (
+            fake_id in unresolved_ids
+        ), f"Expected '{fake_id}' in unresolved, got {unresolved_ids}"
+
+
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services or "indexd" not in pytest.deployed_services,
     reason="DRS service info tests require both fence and indexd",
 )
 @pytest.mark.fence
