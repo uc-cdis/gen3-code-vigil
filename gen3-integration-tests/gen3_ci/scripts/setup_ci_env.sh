@@ -556,7 +556,7 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=1800
+  export timeout=600
   export interval=20
 
   end=$((SECONDS + timeout))

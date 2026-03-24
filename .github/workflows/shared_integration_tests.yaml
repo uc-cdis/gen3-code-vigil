@@ -249,6 +249,7 @@ jobs:
               poetry show
               sudo apt update && poetry run playwright install-deps && poetry run playwright install --with-deps chromium
               sudo apt install openjdk-11-jre -y
+              sudo wget -qO- https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh | bash
 
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials

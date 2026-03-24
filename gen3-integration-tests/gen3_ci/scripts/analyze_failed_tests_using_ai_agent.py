@@ -158,6 +158,30 @@ def analyze_env_setup_failure() -> str:
     return response.content
 
 
+def analyze_env_setup_failure_using_kubectl_ai() -> str:
+    cmd = [
+        "kubectl-ai",
+        "--llm-provider",
+        "ollama",
+        "--model",
+        "gemma3:4b",
+        "--enable-tool-use-shim",
+        f"Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs",
+    ]
+
+    helm_install_result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if not helm_install_result.returncode == 0:
+        raise Exception(
+            f"Unable to uninstall ollama. Error: {helm_install_result.stderr.strip()}"
+        )
+    return helm_install_result.stdout.strip()
+
+
 def analyze_failed_tests() -> str:
     """Analyze the failed tests and provide fixes"""
     if Path("rerun-allure-report").exists():
@@ -218,7 +242,9 @@ def analyze_failed_tests() -> str:
 
 def run_test_failure_analysis():
     if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
-        response = analyze_env_setup_failure()
+        # response = analyze_env_setup_failure()
+        response = analyze_env_setup_failure_using_kubectl_ai()
+        logger.info(response)
     else:
         response = analyze_failed_tests()
     if response is None:
