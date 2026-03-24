@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -57,6 +58,17 @@ def setup_ollama_helm_chart():
         )
 
 
+def wait_for_port(host="localhost", port=11434, timeout=60):
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return True
+        except OSError:
+            time.sleep(1)
+    raise TimeoutError("Port-forward did not become ready")
+
+
 def setup_port_forwarding():
     cmd = [
         "kubectl",
@@ -69,10 +81,10 @@ def setup_port_forwarding():
 
     process = subprocess.Popen(
         cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
-    time.sleep(30)
+    wait_for_port("localhost", 11434, timeout=60)
     return process
 
 
@@ -111,16 +123,14 @@ def analyze_env_setup_failure() -> str:
         logger.info(f"{log_file_path} path doesn't exists")
         return None
     with open(log_file_path, "r") as f:
-        logfile_content = f.read()
-    pattern = re.compile(r"\b(error|failed|exception|traceback)\b", re.IGNORECASE)
+        logfile_content = f.read().split("Upload reports to S3", 1)[0]
 
-    error_lines = "\n".join(
-        [line for line in logfile_content.splitlines() if pattern.search(line)]
-    )
     debug_prompt = f"""
+    All output MUST be in English. Do not use any other language.
+
     You are a senior DevOps engineer.
 
-    Analyze the log snippet below.
+    Find all errors and exceptions in the logfile content and analyze them.
 
     Return output sctrictly in this format for each error:
 
@@ -129,19 +139,22 @@ def analyze_env_setup_failure() -> str:
     Potential Fix:
     <actionable remediation steps>
 
-    Keep all explanations very brief—just a summary, no long paragraphs.
+    Start with an "Executive Summary" (2–3 sentences).
+    After that, keep all explanations very brief—summary style only, no long paragraphs.
 
     Log:
-    {error_lines}
+    {logfile_content}
     """
     messages = [
         {"role": "system", "content": debug_prompt},
-        {"role": "user", "content": "analyse the errors"},
+        {"role": "user", "content": "analyse the errors from this logfile"},
     ]
     payload = {"model": "gemma3:4b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        logger.info(f"API call failed. Response: {response.text}")
     return response.content
 
 
@@ -169,6 +182,8 @@ def analyze_failed_tests() -> str:
                     },
                 )
         debug_prompt = f"""
+        All output MUST be in English. Do not use any other language.
+
         You are a senior DevOps engineer.
 
         Analyze each status message below.
@@ -194,9 +209,11 @@ def analyze_failed_tests() -> str:
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
+        if response.status_code != 200:
+            logger.info(f"API call failed. Response: {response.text}")
         return response.content
     logger.info("No allure report folder found")
-    return None
+    return analyze_env_setup_failure()
 
 
 def run_test_failure_analysis():

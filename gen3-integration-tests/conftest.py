@@ -230,11 +230,12 @@ def pytest_runtest_makereport(item):
         if page and page.video:
             video_path = page.video.path()
 
-            allure.attach.file(
-                video_path,
-                name="Test execution video",
-                attachment_type=allure.attachment_type.MP4,
-            )
+            if os.path.exists(video_path):
+                allure.attach.file(
+                    video_path,
+                    name="Test execution video",
+                    attachment_type=allure.attachment_type.MP4,
+                )
 
 
 def pytest_unconfigure(config):

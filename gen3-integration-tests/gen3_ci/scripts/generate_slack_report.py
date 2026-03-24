@@ -90,10 +90,10 @@ def get_test_result_and_metrics(
 def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
-        report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/index.html"
-        rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/index.html"
-        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/gh_action_logs.txt"
-        failure_analysis_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/failure_analysis.txt"
+        report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
+        failure_analysis_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/failure_analysis.txt"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
@@ -194,6 +194,18 @@ def generate_slack_report():
         failed_suites_block = get_failed_suites()
         if failed_suites_block:
             slack_report_json["blocks"].append(failed_suites_block)
+
+    # Add replay message if CI env setup fails
+    if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
+        replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')}`"
+        replay_block = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": replay_message,
+            },
+        }
+        slack_report_json["blocks"].append(replay_block)
 
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
