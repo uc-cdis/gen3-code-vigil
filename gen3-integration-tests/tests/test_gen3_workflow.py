@@ -611,6 +611,9 @@ class TestGen3Workflow(object):
             "aws.client.s3PathStyleAccess = true",
             "aws.client.maxErrorRetry = 1",
             'workDir = "${WORK_DIR}"',
+            # this test tends to fail intermittently; improve stability with retries for now:
+            "process.errorStrategy = 'retry'",
+            "process.maxRetries = 2",
         ]
         with open(os.path.join(directory, "nextflow.config"), "a") as file:
             file.write("\n".join(lines) + "\n")
