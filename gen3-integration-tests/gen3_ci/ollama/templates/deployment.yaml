@@ -12,7 +12,7 @@ spec:
       labels:
         app: ollama
     spec:
-      serviceAccountName: kubectl-access
+      serviceAccountName: kubectl-access-ollama
       containers:
         - name: ollama
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
