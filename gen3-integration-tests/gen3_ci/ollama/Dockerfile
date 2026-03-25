@@ -7,7 +7,8 @@ RUN dnf install -y --allowerasing \
     curl \
     findutils \
     zstd \
-    tar
+    tar \
+    gzip
 
 # Create model directory
 WORKDIR /models
@@ -37,7 +38,9 @@ RUN bash -c "\
 "
 
 # Install kubectl-ai
-RUN curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh | bash
+RUN curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh -o install.sh \
+    && sed -i 's/sudo //g' install.sh \
+    && bash install.sh
 
 # Expose the port 11434
 EXPOSE 11434
