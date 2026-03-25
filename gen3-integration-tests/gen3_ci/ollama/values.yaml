@@ -16,8 +16,3 @@ resources:
 service:
   type: ClusterIP
   port: 11434
-
-serviceAccount:
-  create: true
-  name: ollama-kubectl
-  iamRoleArn: arn:aws:iam::707767160287:role/devplanetv2-qabot
