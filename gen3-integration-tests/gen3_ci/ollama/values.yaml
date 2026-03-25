@@ -1,6 +1,6 @@
 image:
   repository: quay.io/cdis/ollama
-  tag: chore/add_kubectl_ai
+  tag: chore_add_kubectl_ai
   pullPolicy: IfNotPresent
 
 pdb: true
@@ -16,3 +16,8 @@ resources:
 service:
   type: ClusterIP
   port: 11434
+
+serviceAccount:
+  create: true
+  name: ollama-kubectl
+  iamRoleArn: arn:aws:iam::707767160287:role/devplanetv2-qabot
