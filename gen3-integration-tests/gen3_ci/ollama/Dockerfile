@@ -37,7 +37,7 @@ RUN bash -c "\
 "
 
 # Install kubectl-ai
-RUN curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh | sh
+RUN curl -sSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh | bash
 
 # Expose the port 11434
 EXPOSE 11434
