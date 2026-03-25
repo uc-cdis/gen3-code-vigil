@@ -36,6 +36,9 @@ RUN bash -c "\
     ollama show gemma3:4b \
 "
 
+# Install kubectl-ai
+RUN curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh | sh
+
 # Expose the port 11434
 EXPOSE 11434
 
