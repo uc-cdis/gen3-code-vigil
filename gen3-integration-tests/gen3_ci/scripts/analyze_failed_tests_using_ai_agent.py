@@ -182,7 +182,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
             f"Failed to get ollama pod. Error: {ollama_pod_result.stderr.strip()}"
         )
     ollama_pod_name = ollama_pod_result.stdout.strip()
-    cmd = [
+    kubectl_ai_cmd = [
         "kubectl",
         "-n",
         os.getenv("NAMESPACE"),
@@ -198,9 +198,9 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "--skip-permissions",
         f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
     ]
-
+    logger.info(kubectl_ai_cmd)
     kubectl_ai_result = subprocess.run(
-        cmd,
+        kubectl_ai_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
