@@ -208,6 +208,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
     )
     if not kubectl_ai_result.returncode == 0:
         raise Exception(
+            f"kubectl-ai command output. Error: {kubectl_ai_result.stdout.strip()}"
             f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
         )
     return kubectl_ai_result.stdout.strip()
