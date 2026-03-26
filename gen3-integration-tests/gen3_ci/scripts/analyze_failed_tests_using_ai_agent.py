@@ -160,6 +160,33 @@ def analyze_env_setup_failure() -> str:
 
 def analyze_env_setup_failure_using_kubectl_ai() -> str:
     cmd = [
+        "kubectl",
+        "-n",
+        os.getenv("NAMESPACE"),
+        "get",
+        "pods",
+        "-l",
+        "app=ollama",
+        "-o",
+        "jsonpath='{.items[0].metadata.name}'",
+    ]
+    ollama_pod_result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not ollama_pod_result.returncode == 0:
+        raise Exception(
+            f"Failed to get ollama pod. Error: {ollama_pod_result.stderr.strip()}"
+        )
+    ollama_pod_name = ollama_pod_result.stdout.strip()
+    cmd = [
+        "kubectl",
+        "exec",
+        ollama_pod_name,
+        "--",
         "kubectl-ai",
         "--llm-provider",
         "ollama",

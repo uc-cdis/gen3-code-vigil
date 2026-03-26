@@ -561,9 +561,9 @@ wait_for_pods_ready() {
 
   SECONDS = 0
 
-  end=$((SECONDS + timeout))
-  while [ $SECONDS -lt $end ]; do
-    echo "SECONDS=$SECONDS"
+  end=$(( $(date +%s) + timeout ))
+  while [ "$(date +%s)" -lt "$end" ]; do
+    echo "Running at $(date)"
     # Get JSON for not-ready, non-terminating pods
     not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]
