@@ -333,7 +333,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 
     # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
-    yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard")' -i "$ci_default_manifest_values_yaml"
+    yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
