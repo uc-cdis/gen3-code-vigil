@@ -648,7 +648,7 @@ wait_for_pods_ready() {
     echo "=======> describing $pod:"
     kubectl describe pod $pod -n "${namespace}"
     echo "=======> logs for $pod:"
-    kubectl logs $pod -n "${namespace}"
+    kubectl logs $pod -n "${namespace}" --all-containers
   done
 
   # echo "=======> get secrets:"
@@ -683,21 +683,19 @@ else
   exit 1
 fi
 
-echo "Running usersync..."
-kubectl delete job usersync-manual -n ${namespace}
-kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
-kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
-echo "----- cronjobs"
-kubectl get cronjob -n ${namespace}
-echo "----- pods"
-kubectl get pods -n ${namespace}
-echo "-----"
-kubectl get pods -n ${namespace} | grep user
-echo "-----"
-
-usersync_pod=$(kubectl get pods -n ${namespace} | grep usersync | awk '{print $1}')
-echo usersync_pod: $usersync_pod
-# kubectl logs $usersync_pod -n ${namespace} -c awshelper
-# kubectl logs $usersync_pod -n ${namespace} -c usersync
+# echo "Running usersync..."
+# kubectl delete job usersync-manual -n ${namespace}
+# kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
+# kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=1m
+# if [ $? -eq 0 ]; then
+#   echo "usersync completed successfully"
+# else
+#   echo "usersync did not complete successfully:"
+#   echo "=======> describing usersync-manual:"
+#   kubectl describe pod -l job-name=usersync-manual -n "${namespace}"
+#   echo "=======> logs for usersync-manual:"
+#   kubectl logs -l job-name=usersync-manual -n "${namespace}" --all-containers
+#   exit 1
+# fi
 
 echo "YAY!!! Env is up..."
