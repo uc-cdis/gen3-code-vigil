@@ -195,6 +195,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "--model",
         "gemma3:4b",
         "--enable-tool-use-shim",
+        "--skip-permissions",
         f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
     ]
 
