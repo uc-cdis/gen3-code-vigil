@@ -181,7 +181,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         raise Exception(
             f"Failed to get ollama pod. Error: {ollama_pod_result.stderr.strip()}"
         )
-    ollama_pod_name = ollama_pod_result.stdout.strip()
+    ollama_pod_name = ollama_pod_result.stdout.strip().replace("'", "")
     kubectl_ai_cmd = [
         "kubectl",
         "-n",
