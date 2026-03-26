@@ -184,6 +184,8 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
     ollama_pod_name = ollama_pod_result.stdout.strip()
     cmd = [
         "kubectl",
+        "-n",
+        os.getenv("NAMESPACE"),
         "exec",
         ollama_pod_name,
         "--",
