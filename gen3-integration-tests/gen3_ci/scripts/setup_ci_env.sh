@@ -26,9 +26,9 @@ for file in "$ci_default_manifest_dir"/*.yaml; do
   if [[ -f "$file" ]]; then
     echo "" >> "$master_values_yaml"
     cat "$file" >> "$master_values_yaml"
-    echo "----------"
-    echo $file
-    cat $file
+    # echo "----------"
+    # echo $file
+    # cat $file
   fi
 done
 
@@ -548,10 +548,10 @@ install_helm_chart() {
 
 
     # yq eval ".postgresql = null" -i "$ci_default_manifest_values_yaml"
-    echo "=========="
-    echo ci_default_manifest_values_yaml:
-    cat $ci_default_manifest_values_yaml
-    echo "=========="
+    # echo "=========="
+    # echo ci_default_manifest_values_yaml:
+    # cat $ci_default_manifest_values_yaml
+    # echo "=========="
 
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate

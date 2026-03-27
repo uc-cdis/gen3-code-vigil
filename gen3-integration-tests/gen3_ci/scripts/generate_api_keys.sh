@@ -61,6 +61,17 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
+    echo '----- kubectl cluster-info'
+    kubectl cluster-info
+    echo '----- port-forward'
+    kubectl get service -n "${NAMESPACE}"
+    kubectl port-forward -n "${NAMESPACE}" service/revproxy-service 80:80
+    echo '----- _status'
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
+    cat $OUTPUT_DIR/status
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost:80/user/_status
+    cat $OUTPUT_DIR/status
+
     # Request API key
     RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
@@ -74,13 +85,15 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     curl -o "$OUTPUT_DIR/version" -w "%{http_code}" https://$HOSTNAME/user/_version
     cat $OUTPUT_DIR/version
 
-    kubectl get pods -n $NAMESPACE
+    # kubectl get pods -n $NAMESPACE
+
 
     # Validate API response
     if [[ "$RESPONSE" -ne 200 ]]; then
         echo "Error: Failed to generate API key for $email (HTTP status: $RESPONSE). Fence logs (all replicas):"
         kubectl logs -l app=fence -n "${NAMESPACE}" --tail 30
         echo "Revproxy logs (all replicas):"
+        kubectl get pods -l app=revproxy -n "${NAMESPACE}"
         kubectl logs -l app=revproxy -n "${NAMESPACE}" --tail 30
         exit 1
     fi
