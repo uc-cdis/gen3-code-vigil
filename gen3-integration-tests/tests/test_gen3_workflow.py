@@ -560,11 +560,6 @@ class TestGen3Workflow(object):
         TODO (MIDRC-1203): fix infra to support the following tests:
         - TEST_MV_FILE and TEST_MV_FOLDER_CONTENTS. Error:
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
-        - TEST_PUBLISH_FILE and TEST_PUBLISH_FOLDER. Error:
-            Failed to publish file: s3://gen3wf-pauline-planx-pla-net-16/ga4gh-tes/33/
-            ab32810279415c8067b64a73518812/test; to: s3://gen3wf-pauline-planx-pla-net-16/ga4gh-tes/
-            outputs/test [copy] -- attempt: 1; reason: Failed to parse XML document with handler
-            class com.amazonaws.services.s3.model.transform.
         - TEST_GPU (only runs with param `gpu: true`). Reported successful but fails with:
             CUDA is not available on this system.
             [...]
