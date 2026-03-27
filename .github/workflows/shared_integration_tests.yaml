@@ -345,7 +345,18 @@ jobs:
               mkdir logs
               echo "****** Prepare CI Environment ******" > logs/gh_action_logs.txt
               if ! poetry run python -m gen3_ci.scripts.prepare_ci_environment >> logs/gh_action_logs.txt 2>&1; then
-                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+                if [[ -n "$CRASHLOOP_PODS" ]]; then
+                  {
+                    echo "PR_ERROR_MSG<<EOF"
+                    echo "Failed to Prepare CI environment."
+                    echo ""
+                    echo "The following pods are in CrashLoopBackOff:"
+                    echo "$CRASHLOOP_PODS"
+                    echo "EOF"
+                  } >> "$GITHUB_ENV"
+                else
+                  echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> "$GITHUB_ENV"
+                fi
                 exit 1
               fi
 
