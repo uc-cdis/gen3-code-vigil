@@ -419,7 +419,7 @@ common_param_updates=(
   ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
   ".revproxy.ingress.hosts[0].host|$HOSTNAME"
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
-  ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
+  ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|${HOSTNAME_PROTOCOL}://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
@@ -437,7 +437,7 @@ for item in "${common_param_updates[@]}"; do
   fi
 done
 
-sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
+sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: ${HOSTNAME_PROTOCOL}://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
 # Remove aws-es-proxy block
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
@@ -446,14 +446,14 @@ yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$sheepdog_fence_url" != "key not found" ]; then
     echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+    yq eval ".sheepdog.fenceUrl = \"${HOSTNAME_PROTOCOL}://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
 manifest_global_extra_values_fence_url=$(yq eval ".global.fenceURL // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
     echo "Key global.fenceURL found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".global.fenceURL = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+    yq eval ".global.fenceURL = \"${HOSTNAME_PROTOCOL}://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.

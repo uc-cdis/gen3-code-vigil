@@ -14,6 +14,7 @@ fi
 USERS_FILE=$1
 HOSTNAME=$2
 NAMESPACE=$3
+HOSTNAME_PROTOCOL=$4
 
 # Check if the users file exists
 if [[ ! -f "$USERS_FILE" ]]; then
@@ -65,24 +66,28 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     kubectl cluster-info
     echo '----- port-forward'
     kubectl get service -n "${NAMESPACE}"
-    kubectl port-forward -n "${NAMESPACE}" service/revproxy-service 80:80
+    kubectl port-forward -n "${NAMESPACE}" service/revproxy-service 8000:80 &
     echo '----- _status'
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
+    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
+    # cat $OUTPUT_DIR/status
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost:8000/user/_status
     cat $OUTPUT_DIR/status
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost:80/user/_status
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
     cat $OUTPUT_DIR/status
 
+    # exit 1
+
     # Request API key
-    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
+    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "$HOSTNAME_PROTOCOL://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
     echo $HOSTNAME
     echo $RESPONSE
 
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" https://$HOSTNAME/user/_status
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
     cat $OUTPUT_DIR/status
-    curl -o "$OUTPUT_DIR/version" -w "%{http_code}" https://$HOSTNAME/user/_version
+    curl -o "$OUTPUT_DIR/version" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_version
     cat $OUTPUT_DIR/version
 
     # kubectl get pods -n $NAMESPACE

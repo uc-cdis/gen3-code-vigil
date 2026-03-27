@@ -165,6 +165,7 @@ def generate_api_keys_for_test_users(namespace):
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
         os.getenv("HOSTNAME"),
         os.getenv("NAMESPACE"),
+        os.getenv("HOSTNAME_PROTOCOL"),
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
