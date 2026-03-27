@@ -52,11 +52,8 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     echo "Processing user: $username - $email ..."
 
     # Generate an access token
-    echo "Before generating token"
     kubectl -n "$NAMESPACE" exec -c fence "$FENCE_POD" -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account --type access_token --username "$email"
     ACCESS_TOKEN=$(kubectl -n "$NAMESPACE" exec -c fence "$FENCE_POD" -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account --type access_token --username "$email" 2>/dev/null | tail -1)
-    echo "After generating token"
-    echo $ACCESS_TOKEN
 
     # Validate access token
     if [[ -z "$ACCESS_TOKEN" ]]; then
@@ -65,17 +62,26 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     fi
 
     # Request API key
-    echo "Before generating API key"
     RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
-    echo "After generating API key"
+    echo $HOSTNAME
     echo $RESPONSE
+
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" https://$HOSTNAME/user/_status
+    cat $OUTPUT_DIR/status
+    curl -o "$OUTPUT_DIR/version" -w "%{http_code}" https://$HOSTNAME/user/_version
+    cat $OUTPUT_DIR/version
+
+    kubectl get pods -n $NAMESPACE
 
     # Validate API response
     if [[ "$RESPONSE" -ne 200 ]]; then
-        echo "Error: Failed to generate API key for $email (HTTP status: $RESPONSE)"
+        echo "Error: Failed to generate API key for $email (HTTP status: $RESPONSE). Fence logs (all replicas):"
+        kubectl logs -l app=fence -n "${NAMESPACE}" --tail 30
+        echo "Revproxy logs (all replicas):"
+        kubectl logs -l app=revproxy -n "${NAMESPACE}" --tail 30
         exit 1
     fi
 

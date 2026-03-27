@@ -696,4 +696,6 @@ fi
 #   exit 1
 # fi
 
+kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
+
 echo "YAY!!! Env is up..."
