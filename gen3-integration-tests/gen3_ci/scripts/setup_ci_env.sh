@@ -417,7 +417,9 @@ common_param_updates=(
   ".ssjdispatcher.ssjcreds.jobPattern|s3://gen3-helm-data-upload-bucket/${ENV_PREFIX}/*"
   ".ssjdispatcher.ssjcreds.jobPassword|$EKS_CLUSTER_NAME"
   ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
-  ".revproxy.ingress.hosts[0].host|$HOSTNAME"
+  # Error: `spec.rules[0].host: Invalid value: \"localhost:8000\"`
+  # ".revproxy.ingress.hosts[0].host|$HOSTNAME"
+  ".revproxy.ingress.hosts[0].host|localhost"
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|${HOSTNAME_PROTOCOL}://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
@@ -496,7 +498,10 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    # Error: `spec.template.labels: Invalid value: "localhost:8000"`
+    # label `hostname: {{ .Values.global.hostname }}` is injected through `_labels_setup.tpl`
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="localhost" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    # if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -556,7 +561,8 @@ install_helm_chart() {
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate
     # support flag to remove "-f $ci_default_manifest_portal_yaml"
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="localhost" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
+    # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
