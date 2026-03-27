@@ -575,8 +575,6 @@ class TestGen3Workflow(object):
         - TEST_FUSION_DOCTOR: unknown cause
         """
         known_unsupported = [
-            "TEST_PUBLISH_FILE",
-            "TEST_PUBLISH_FOLDER",
             "TEST_MV_FILE",
             "TEST_MV_FOLDER_CONTENTS",
             "TEST_GPU",
