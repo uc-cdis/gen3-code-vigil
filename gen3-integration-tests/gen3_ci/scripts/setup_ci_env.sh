@@ -580,6 +580,12 @@ wait_for_pods_ready() {
 
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
+
+    crash_loop_pods=$(kubectl get pods -n "${namespace}" -o jsonpath="{.items[?(@.status.containerStatuses[*].state.waiting.reason=='CrashLoopBackOff')].metadata.name}")
+    if [[ -n "$crash_loop_pods" ]]; then
+      echo "CRASHLOOP_PODS=$crash_loop_pods" >> "$GITHUB_ENV"
+      return 1
+    fi
   done
 
   echo "❌ Timeout: Pods' containers not ready"

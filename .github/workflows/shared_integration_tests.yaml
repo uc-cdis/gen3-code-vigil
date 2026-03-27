@@ -131,7 +131,7 @@ jobs:
           # Checkout current repo
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
 
 
           # Skip tests when there are only markdown files
@@ -152,7 +152,7 @@ jobs:
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
@@ -161,7 +161,7 @@ jobs:
           # Checkout gen3-gitops repo
           - name: Checkout gen3-gitops repo
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
             with:
               repository: uc-cdis/gen3-gitops
               ref: 'master'
@@ -347,6 +347,22 @@ jobs:
               if ! poetry run python -m gen3_ci.scripts.prepare_ci_environment >> logs/gh_action_logs.txt 2>&1; then
                 echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
                 exit 1
+              fi
+
+          - name: Check for crashloop pods from Prepare CI environment
+            id: check_crashloop_pods
+            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome != 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps1
+            run: |
+              if [[ -n "$CRASHLOOP_PODS" ]]; then
+                  {
+                    echo "PR_ERROR_MSG<<EOF"
+                    echo "Failed to Prepare CI environment."
+                    echo ""
+                    echo "The following pods are in CrashLoopBackOff:"
+                    echo "$CRASHLOOP_PODS"
+                    echo "EOF"
+                  } >> "$GITHUB_ENV"
               fi
 
           # This is used for running specific test suites by labeling the PR with the test class
