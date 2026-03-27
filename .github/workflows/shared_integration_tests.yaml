@@ -131,7 +131,7 @@ jobs:
           # Checkout current repo
           - name: Checkout current repo
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
 
 
           # Skip tests when there are only markdown files
@@ -152,7 +152,7 @@ jobs:
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' && github.event.repository.name  != 'gen3-code-vigil' }}
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
             with:
               repository: uc-cdis/gen3-code-vigil
               ref: ${{ inputs.TEST_REPO_BRANCH }}
@@ -161,7 +161,7 @@ jobs:
           # Checkout gen3-gitops repo
           - name: Checkout gen3-gitops repo
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/checkout@v4
+            uses: actions/checkout@v6
             with:
               repository: uc-cdis/gen3-gitops
               ref: 'master'
