@@ -62,11 +62,6 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
-    echo '----- kubectl cluster-info'
-    kubectl cluster-info
-    echo '----- port-forward'
-    kubectl get service -n "${NAMESPACE}"
-    kubectl port-forward -n "${NAMESPACE}" service/revproxy-service 8000:80 &
     echo '----- _status'
     # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
     # cat $OUTPUT_DIR/status
