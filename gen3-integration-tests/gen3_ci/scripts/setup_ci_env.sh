@@ -704,4 +704,10 @@ fi
 
 kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
 
+echo '----- kubectl cluster-info'
+kubectl cluster-info
+echo '----- port-forward'
+kubectl get service -n "${namespace}"
+kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 &
+
 echo "YAY!!! Env is up..."
