@@ -580,6 +580,21 @@ wait_for_pods_ready() {
 
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
+
+    failure_pods=$(kubectl get pods -n "${namespace}" -o json | jq -r '
+      .items[]
+      | select(
+          any(.status.containerStatuses[]?;
+            .state.waiting.reason == "ImagePullBackOff"
+            or .state.waiting.reason == "ErrImagePull"
+            or .state.waiting.reason == "CrashLoopBackOff"
+          )
+        )
+      | .metadata.name')
+    if [[ -n "$failure_pods" ]]; then
+      echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
+      return 1
+    fi
   done
 
   echo "❌ Timeout: Pods' containers not ready"
