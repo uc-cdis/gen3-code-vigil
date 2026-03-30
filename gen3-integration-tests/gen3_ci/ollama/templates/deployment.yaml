@@ -21,6 +21,15 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
             - containerPort: 11434
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - |
+                    sleep 5
+                    curl http://localhost:11434/api/generate -d '{"model":"gemma3:4b","prompt":"hi"}'
           env:
             - name: OLLAMA_LOG_LEVEL
               value: "debug"
@@ -28,3 +37,5 @@ spec:
               value: http://localhost:11434/
             - name: OLLAMA_KEEP_ALIVE
               value: "-1"
+            - name: KUBECTL_AI_TIMEOUT
+              value: "300"
