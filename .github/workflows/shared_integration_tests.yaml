@@ -354,13 +354,13 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome != 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps1
             run: |
-              if [[ -n "$CRASHLOOP_PODS" ]]; then
+              if [[ -n "$FAILURE_PODS" ]]; then
                   {
                     echo "PR_ERROR_MSG<<EOF"
                     echo "Failed to Prepare CI environment."
                     echo ""
-                    echo "The following pods are in CrashLoopBackOff:"
-                    echo "$CRASHLOOP_PODS"
+                    echo "The following pods are not in healthy state:"
+                    echo "$FAILURE_PODS"
                     echo "EOF"
                   } >> "$GITHUB_ENV"
               fi
