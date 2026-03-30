@@ -20,7 +20,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama pull gemma3:4b \
+    ollama pull llama3.1:8b \
 "
 
 # List ollama model
