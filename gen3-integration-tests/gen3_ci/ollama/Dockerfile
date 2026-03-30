@@ -34,7 +34,7 @@ RUN bash -c "\
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama show gemma3:4b \
+    ollama show llama3.1:8b \
 "
 
 # Install kubectl-ai
