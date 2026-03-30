@@ -26,3 +26,5 @@ spec:
               value: "debug"
             - name: OLLAMA_HOST
               value: http://localhost:11434/
+            - name: OLLAMA_KEEP_ALIVE
+              value: -1
