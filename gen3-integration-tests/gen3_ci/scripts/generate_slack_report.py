@@ -20,6 +20,7 @@ def get_failed_suites():
         / "widgets"
         / "summary.json"
     )
+    use_previous_failed_test_labels = False
     if os.path.isfile(rerun_summary_report_path):
         with open(rerun_summary_report_path) as f:
             data = json.load(f)
