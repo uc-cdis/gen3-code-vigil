@@ -452,3 +452,10 @@ class Fence(object):
         )
         response = requests.delete(url=url, auth=auth)
         return response
+
+    def activate_fence_user(self, username, user="main_account"):
+        """activates a username using fence admin endpoint"""
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        url = f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/reactivate"
+        response = requests.post(url=url, auth=auth)
+        return response

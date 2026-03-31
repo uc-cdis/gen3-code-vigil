@@ -72,7 +72,7 @@ class TestUserLoginActivation:
         expect(
             page.get_by_text("User is known but not authorized/activated in the system")
         ).to_be_visible()
-        gat.activate_fence_user(username="authorized_user_1")
+        self.fence.activate_fence_user(username="authorized_user_1")
         logger.info("Verifying authorized_user_1 user is present")
         response = self.fence.verify_authorized_username(
             verify_username="authorized_user_1"
