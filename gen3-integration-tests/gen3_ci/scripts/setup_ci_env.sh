@@ -154,7 +154,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Found customConfig enabled for Portal. Updating repo and branch..."
-          yq eval '.portal.customConfig.dir = strenv(UPDATED_FOLDERS) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.dir = strenv(SOURCE_CONFIG) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
           yq eval '.portal.customConfig.repo = "https://github.com/" + strenv(REPO_FN) + ".git"' -i "$ci_default_manifest_values_yaml"
           yq eval '.portal.customConfig.branch = strenv(BRANCH)' -i "$ci_default_manifest_values_yaml"
         else
@@ -314,7 +314,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 
     # This is to make sure any changes for ci/default are run with portal for now
-    if [[ $UPDATED_FOLDERS == "ci/default" ]]; then
+    if [[ $SOURCE_CONFIG == "ci/default" ]]; then
       echo "Current change is in ci/default, removing frontend-framework config"
       yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
     fi
@@ -482,8 +482,9 @@ fi
 
 
 # For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
+# For manifest-env-setup where target manifest is also ci/default, we will use portal and switch in future
 # so env doesnt need portal configuration
-if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" ]]; then
+if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" || ("$setup_type" == "manifest-env-setup"  && "$SOURCE_CONFIG" == "ci/default") ]]; then
   if [[ "$CI_ENV" == "gen3ff" ]]; then
     yq eval 'del(.portal)' --inplace "$ci_default_manifest_values_yaml"
     yq eval '.global.frontendRoot = "gen3ff"' --inplace "$ci_default_manifest_values_yaml"

@@ -180,7 +180,7 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa", "gen3-gitops"):  # Manifest repos
-        updated_folders = os.getenv("UPDATED_FOLDERS", "").split(",")
+        updated_folders = os.getenv("SOURCE_CONFIG", "").split(",")
         updated_folder = updated_folders[0] if updated_folders else ""
         if len(updated_folders) == 1 and updated_folders[0] == "":
             logger.info("No folders were updated. Skipping tests...")
