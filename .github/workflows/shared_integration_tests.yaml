@@ -330,8 +330,8 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               PR_FILES=$(gh api repos/$REPO_FN/pulls/$PR_NUM/files --jq '.[].filename')
-              UPDATED_FOLDERS=$(echo "$PR_FILES" | grep -v "^.github/" | awk -F'/' '{if ($1 != ".github" && NF > 1) print $1"/"$2}' | sort -u | tr '\n' ',' | sed 's/,$//')
-              echo "UPDATED_FOLDERS=$UPDATED_FOLDERS" >> $GITHUB_ENV
+              SOURCE_CONFIG=$(echo "$PR_FILES" | grep -v "^.github/" | awk -F'/' '{if ($1 != ".github" && NF > 1) print $1"/"$2}' | sort -u | tr '\n' ',' | sed 's/,$//')
+              echo "SOURCE_CONFIG=$SOURCE_CONFIG" >> $GITHUB_ENV
 
           # Apply the changes to the manifest of the selected CI environment, roll the pods and run usersync
           # Generate API keys for test users for the environment
@@ -340,7 +340,7 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' && (steps.create_ns.outcome == 'success' || steps.select_ci_env.outcome == 'success') }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo $UPDATED_FOLDERS
+              echo $SOURCE_CONFIG
               mkdir $HOME/.gen3
               mkdir logs
               echo "****** Prepare CI Environment ******" > logs/gh_action_logs.txt
