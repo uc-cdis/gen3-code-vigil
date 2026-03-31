@@ -56,7 +56,7 @@ class TestUserLoginActivation:
             2. Use main_account user to make an existing authorized_user_1 user active status to inactive using /admin/user/{username}/soft endpoint
             3. Login with inactive user.
             4. Verify login fails with 401 error.
-            5. Activate authorized_user_1 user again
+            5. Reactivate authorized_user_1 user again
             6. Login using a authorized_user_1 user
             7. Verify authorized_user_1 user is able to login
         """
@@ -72,7 +72,7 @@ class TestUserLoginActivation:
         expect(
             page.get_by_text("User is known but not authorized/activated in the system")
         ).to_be_visible()
-        self.fence.activate_fence_user(username="authorized_user_1")
+        self.fence.reactivate_fence_user(username="authorized_user_1")
         logger.info("Verifying authorized_user_1 user is present")
         response = self.fence.verify_authorized_username(
             verify_username="authorized_user_1"

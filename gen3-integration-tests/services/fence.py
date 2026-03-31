@@ -423,6 +423,7 @@ class Fence(object):
 
     def verify_authorized_username(self, verify_username, user="main_account"):
         """verifies a username using fence admin endpoint"""
+        logger.info(f"Verifying {verify_username} is authorized")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = auth.curl(
             path=f"{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[verify_username]}"
@@ -431,6 +432,7 @@ class Fence(object):
 
     def create_user(self, username, user="main_account"):
         """creates a username using fence admin endpoint"""
+        logger.info(f"Creating {username} is authorized")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         headers = {
             "Content-Type": "application/json",
@@ -446,6 +448,7 @@ class Fence(object):
 
     def deactivate_user(self, username, user="main_account"):
         """deactivates a username using fence admin endpoint"""
+        logger.info(f"Deactivating {username} is authorized")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         url = (
             f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/soft"
@@ -453,8 +456,9 @@ class Fence(object):
         response = requests.delete(url=url, auth=auth)
         return response
 
-    def activate_fence_user(self, username, user="main_account"):
+    def reactivate_fence_user(self, username, user="main_account"):
         """activates a username using fence admin endpoint"""
+        logger.info(f"Reactivaing {username} is authorized")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         url = f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/reactivate"
         response = requests.post(url=url, auth=auth)
