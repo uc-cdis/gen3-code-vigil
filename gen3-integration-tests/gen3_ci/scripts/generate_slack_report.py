@@ -13,6 +13,19 @@ def get_failed_suites():
         if os.environ.get("FAILED_TEST_SUITES")
         else "allure-report"
     )
+    # Handle replay command when no tests are run in Rerun failed tests step
+    rerun_summary_report_path = (
+        Path(__file__).parent.parent.parent
+        / "rerun-allure-report"
+        / "widgets"
+        / "summary.json"
+    )
+    if os.path.isfile(rerun_summary_report_path):
+        with open(rerun_summary_report_path) as f:
+            data = json.load(f)
+        if data.get("statistic", {}).get("total", 0) == 0:
+            use_previous_failed_test_labels = True
+
     suite_report_path = (
         Path(__file__).parent.parent.parent / allure_folder / "data" / "suites.csv"
     )
@@ -25,6 +38,10 @@ def get_failed_suites():
                 if row["STATUS"] not in ("passed", "skipped"):
                     failed_suites.add(row["SUB SUITE"])
         failed_test_labels = ",".join(failed_suites)
+        if use_previous_failed_test_labels:
+            failed_test_labels = (os.environ.get("FAILED_TEST_SUITES")).replace(
+                " or ", ","
+            )
         if os.getenv("IS_NIGHTLY_RUN") == "true":
             if os.getenv("CI_ENV") == "gen3ff":
                 replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run-gen3ff {failed_test_labels}`"
