@@ -8,8 +8,12 @@ from utils import TEST_DATA_PATH_OBJECT, logger
 class Dicom(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}"
-        self.DICOM_INSTANCES = "/orthanc/instances"
-        self.DICOM_STUDIES = "/orthanc/studies"
+        if "orthanc" in pytest.deployed_services:
+            self.DICOM_INSTANCES = "/orthanc/instances"
+            self.DICOM_STUDIES = "/orthanc/studies"
+        else:
+            self.DICOM_INSTANCES = "/dicom-server/instances"
+            self.DICOM_STUDIES = "/dicom-server/studies"
 
     def submit_dicom_file(self, user="main_account", expected_status=200):
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)

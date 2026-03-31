@@ -4,7 +4,7 @@
 Please refer to [gen3-helm](https://github.com/uc-cdis/gen3-helm) repo
 
 ## 2. Generate API keys for all test users
-*Note: This assumes that USERYAML block is correctly set up in the values.yaml used to start the instance.*
+*Note: This assumes that USERYAML block is correctly set up in the values.yaml using the data [here](https://github.com/uc-cdis/gen3-code-vigil/blob/master/gen3-integration-tests/test_data/test_setup/user.yaml)*
 
 Switch to `gen3-integration-tests` directory and execute:
 
@@ -22,6 +22,7 @@ The API keys should be saved to `~/.gen3` directory
     HOSTNAME="<hostname>"
     NAMESPACE="<namespace>"
     ```
+Note: Please make sure the usersync job is configured on the environment, as the usersync job is run during pytest setup.
 1. Run tests with pytest
     ```
     poetry run pytest --video=retain-on-failure --alluredir allure-results -n auto --dist loadscope

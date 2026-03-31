@@ -120,8 +120,11 @@ class TestDataUpload:
     def teardown_method(self, method):
         os.remove(file_path)
         os.remove(big_file_path)
-        # Delete all test records at the end of each test
-        self.sd_tools.delete_all_records()
+        try:
+            # Delete all test records at the end of each test
+            self.sd_tools.delete_all_records()
+        except Exception as e:
+            logger.error(f"Exception occured while deleting records: {e}")
         # Delete all guids
         self.indexd.delete_records(self.created_guids)
         self.created_guids = []

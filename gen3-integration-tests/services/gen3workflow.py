@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple
@@ -139,13 +140,63 @@ class Gen3Workflow:
         ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Response: {response}"
         return response
 
+    def poll_until_task_reaches_expected_state(
+        self, task_id, user, expected_final_state, max_retries=10, poll_interval=30
+    ):
+        """
+        Polls the TES task status until it reaches a final state or exceeds max retries.
+
+        :param task_id: ID of the TES task to poll.
+        :param user: User credentials for authentication.
+        :param expected_final_state: Final state, which this task is expected to return (e.g., {"COMPLETE", "FAILED"}).
+        :param max_retries: Maximum number of polling attempts before giving up.
+        :param poll_interval: Time in seconds between polling attempts.
+        :return: Final task information if completed successfully.
+        :raises Exception: If the task fails or does not complete in time.
+        """
+        transient_states = {"QUEUED", "INITIALIZING", "RUNNING"}
+        final_states = {
+            "COMPLETE",
+            "FAILED",
+            "EXECUTOR_ERROR",
+            "CANCELED",
+            "SYSTEM_ERROR",
+        }
+        for attempt in range(1, max_retries + 1):
+            task_info = self.get_tes_task(
+                task_id=task_id,
+                user=user,
+                expected_status=200,
+            )
+            state = task_info.get("state")
+
+            if state == expected_final_state:
+                logger.info(f"TES task reached final state '{state}'")
+                return task_info
+
+            assert (
+                state not in final_states
+            ), f"TES task reached a final state, that is not '{expected_final_state}'. Final state: {state}, Response: {task_info}"
+            assert (
+                state in transient_states
+            ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
+
+            logger.debug(
+                f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
+            )
+            time.sleep(poll_interval)
+
+        raise Exception(
+            f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
+        )
+
     #############################
     ##### /storage endpoint #####
     #############################
 
-    def get_storage_info(self, user: str = "main_account", expected_status=200) -> Dict:
-        """Makes a GET request to the `/storage/info` endpoint."""
-        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/info"
+    def setup_storage(self, user: str = "main_account", expected_status=200) -> Dict:
+        """Makes a GET request to the `/storage/setup` endpoint."""
+        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/setup"
         headers = (
             {
                 "Authorization": f"bearer {self._get_access_token(user)}",
@@ -162,21 +213,31 @@ class Gen3Workflow:
         assert isinstance(storage_info, dict), "Expected a valid JSON response"
         return storage_info
 
-    def delete_user_bucket(
-        self, user: str = "main_account", ignore_missing=True, expected_status=204
+    def cleanup_user_bucket(
+        self,
+        user: str = "main_account",
+        ignore_missing=True,
+        delete_bucket=False,
+        expected_status=204,
     ) -> None:
         """
-        Makes a DELETE request to the `/storage/user-bucket` endpoint.
-        This endpoint is used to delete the user's bucket in the Gen3 Workflow service.
+        Makes a DELETE request to the `/storage/user-bucket/objects` endpoint.
+        This endpoint is used to delete the objects in a user's bucket in the Gen3 Workflow service.
         Args:
             user (str): The user whose bucket is to be deleted. Defaults to "main_account".
             ignore_missing (bool): If True, suppress error when the bucket does not exist (i.e., 404).
+            delete_bucket(bool): If True, the s3 bucket is also deleted along with the object by making a request to DELETE /storage/user-bucket
             expected_status (int): Expected successful status code (default: 204 No Content).
         Raises:
             AssertionError: If the response status code does not match the expected status.
 
         """
-        delete_bucket_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
+
+        cleanup_url = (
+            f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
+            if delete_bucket
+            else f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket/objects"
+        )
         headers = (
             {
                 "Authorization": f"bearer {self._get_access_token(user)}",
@@ -184,7 +245,7 @@ class Gen3Workflow:
             if user
             else {}
         )
-        response = requests.delete(url=delete_bucket_url, headers=headers)
+        response = requests.delete(url=cleanup_url, headers=headers)
 
         # If ignore_missing is True, we allow 404 as a valid response status
         allowed_statuses = (
@@ -193,7 +254,7 @@ class Gen3Workflow:
 
         assert (
             response.status_code in allowed_statuses
-        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {delete_bucket_url}"
+        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {cleanup_url}"
 
     ###############################################
     ###### /s3 endpoint and boto3 functions #######
