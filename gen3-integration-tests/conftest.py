@@ -170,7 +170,7 @@ def pytest_configure(config):
 def pytest_runtest_logreport(report):
     test_nodeid = report.nodeid
     if test_nodeid not in test_results:
-        test_results[test_nodeid] = []
+        test_results[test_nodeid] = {}
 
     test_results[test_nodeid][report.when] = report.outcome
 
