@@ -174,10 +174,8 @@ def pytest_runtest_logreport(report):
 
     test_results[test_nodeid][report.when] = report.outcome
 
-    phase_outcomes = test_results[test_nodeid].values()
-    if all(
-        phase in test_results[test_nodeid] for phase in ("setup", "call", "teardown")
-    ):
+    if "setup" in test_results[test_nodeid] and "call" in test_results[test_nodeid]:
+        phase_outcomes = test_results[test_nodeid].values()
         if "failed" in phase_outcomes:
             final_test_result = "failed"
         elif "skipped" in phase_outcomes:
