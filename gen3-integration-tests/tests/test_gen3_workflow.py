@@ -676,7 +676,7 @@ class TestGen3Workflow(object):
             "description": "Tries to reach arborist-service before saying HelloWorld!",
             "executors": [
                 {
-                    "image": "curlimages/curl:latest",
+                    "image": "quay.io/curl/curl:latest",
                     "command": [
                         # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
                         # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
