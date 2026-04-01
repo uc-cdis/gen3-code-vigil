@@ -23,6 +23,7 @@ requires_google_bucket_marker_present = False
 
 collect_ignore = ["test_setup.py", "gen3_admin_tasks.py"]
 failed_test_suites = []
+test_results = {}
 
 
 class XDistCustomPlugin:
@@ -167,36 +168,52 @@ def pytest_configure(config):
 
 
 def pytest_runtest_logreport(report):
-    if report.when != "call":
-        return
-
     test_nodeid = report.nodeid
-    start_time = datetime.fromtimestamp(report.start)
-    message = {
-        "run_date": str(start_time.date()),
-        "repo_name": os.getenv("REPO"),
-        "pr_num": os.getenv("PR_NUM"),
-        "run_num": os.getenv("RUN_NUM"),
-        "attempt_num": os.getenv("ATTEMPT_NUM"),
-        "test_suite": test_nodeid.split("::")[1],
-        "test_case": test_nodeid.split("::")[-1],
-        "result": report.outcome,
-        "duration": str(timedelta(seconds=report.duration)),
-    }
-    # Collect test suite failures for re-run
-    if (
-        report.outcome == "failed"
-        and test_nodeid.split("::")[1] not in failed_test_suites
+    if test_nodeid not in test_results:
+        test_results[test_nodeid] = []
+
+    test_results[test_nodeid][report.when] = report.outcome
+
+    phase_outcomes = test_results[test_nodeid].values()
+    if all(
+        phase in test_results[test_nodeid] for phase in ("setup", "call", "teardown")
     ):
-        failed_test_suites.append(test_nodeid.split("::")[1])
-    # Add data to the queue
-    try:
-        sqs = boto3.client("sqs")
-        queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
-        response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
-        logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
-    except Exception as e:
-        logger.error(f"[SQS SEND ERROR] {e}")
+        if "failed" in phase_outcomes:
+            final_test_result = "failed"
+        elif "skipped" in phase_outcomes:
+            final_test_result = "skipped"
+        else:
+            final_test_result = "passed"
+        start_time = datetime.fromtimestamp(report.start)
+        message = {
+            "run_date": str(start_time.date()),
+            "repo_name": os.getenv("REPO"),
+            "pr_num": os.getenv("PR_NUM"),
+            "run_num": os.getenv("RUN_NUM"),
+            "attempt_num": os.getenv("ATTEMPT_NUM"),
+            "test_suite": test_nodeid.split("::")[1],
+            "test_case": test_nodeid.split("::")[-1],
+            "result": final_test_result,
+            "duration": str(timedelta(seconds=report.duration)),
+        }
+        # Collect test suite failures for re-run
+        if (
+            final_test_result == "failed"
+            and test_nodeid.split("::")[1] not in failed_test_suites
+        ):
+            failed_test_suites.append(test_nodeid.split("::")[1])
+        # Add data to the queue
+        try:
+            sqs = boto3.client("sqs")
+            queue_url = (
+                "https://sqs.us-east-1.amazonaws.com/707767160287/ci-metrics-sqs"
+            )
+            response = sqs.send_message(
+                QueueUrl=queue_url, MessageBody=json.dumps(message)
+            )
+            logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
+        except Exception as e:
+            logger.error(f"[SQS SEND ERROR] {e}")
 
 
 @pytest.hookimpl(hookwrapper=True)
