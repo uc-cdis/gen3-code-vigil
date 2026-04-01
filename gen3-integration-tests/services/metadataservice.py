@@ -51,7 +51,7 @@ class MetadataService(object):
         )
         logger.info(f"Creation request status code - {res.status_code}")
         assert (
-            res.status_code == 200
+            res.status_code == 201
         ), f"Response status code was {res.status_code}: {res.text}"
 
     def update_metadata(self, study_id, study_json, user="main_account"):
