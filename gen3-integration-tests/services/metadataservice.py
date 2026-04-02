@@ -46,7 +46,7 @@ class MetadataService(object):
         logger.info(f"Creating study with id {study_id}")
         res = requests.post(
             f"{self.MDS_ENDPOINT}/{study_id}",
-            data=json.dumps(study_json),
+            json=study_json,
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Creation request status code - {res.status_code}")
@@ -62,7 +62,7 @@ class MetadataService(object):
         logger.info(f"Updating study with id {study_id}")
         res = requests.put(
             f"{self.MDS_ENDPOINT}/{study_id}",
-            data=json.dumps(study_json),
+            json=study_json,
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Update request status code - {res.status_code}")
