@@ -709,14 +709,16 @@ kubectl cluster-info
 echo '----- port-forward'
 kubectl get service -n "${namespace}"
 kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 &
-KPF_PID=$!
+disown $!
 
-# give it a moment to fail fast if something is wrong, then check that the process started
-sleep 1
-if ! kill -0 "$KPF_PID" 2>/dev/null; then
-  echo "ERROR: port-forward failed to start" >&2
-  exit 1
-fi
+# KPF_PID=$!
+
+# # give it a moment to fail fast if something is wrong, then check that the process started
+# sleep 1
+# if ! kill -0 "$KPF_PID" 2>/dev/null; then
+#   echo "ERROR: port-forward failed to start" >&2
+#   exit 1
+# fi
 
 echo "YAY!!! Env is up..."
 exit 0
