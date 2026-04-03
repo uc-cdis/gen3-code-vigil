@@ -708,8 +708,14 @@ echo '----- kubectl cluster-info'
 kubectl cluster-info
 echo '----- port-forward'
 kubectl get service -n "${namespace}"
-kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 &
+# kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 &
+# disown $!
+
+kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 > /tmp/pf.log 2>&1 &
 disown $!
+
+# Wait until port is actually accepting connections
+timeout 30 bash -c 'until nc -z localhost 8000; do sleep 0.5; done'
 
 # KPF_PID=$!
 
