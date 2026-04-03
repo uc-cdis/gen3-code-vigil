@@ -80,6 +80,7 @@ def setup_env_for_helm(arguments):
     logger.info("------------------------")
     logger.info(f"{file_name} script {msg}. Logs (stdout):")
     logger.info(result.stdout)
+    logger.info(f"------------------------ result.returncode: {result.returncode}")
 
     return "SUCCESS" if result.returncode == 0 else "failure"
 
