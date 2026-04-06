@@ -62,13 +62,13 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
-    echo '----- _status'
-    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
+    # echo '----- _status'
+    # # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
+    # # cat $OUTPUT_DIR/status
+    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost:8000/user/_status
     # cat $OUTPUT_DIR/status
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost:8000/user/_status
-    cat $OUTPUT_DIR/status
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
-    cat $OUTPUT_DIR/status
+    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
+    # cat $OUTPUT_DIR/status
 
     # exit 1
 
@@ -77,8 +77,8 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
-    echo $HOSTNAME
-    echo $RESPONSE
+    # echo $HOSTNAME
+    # echo $RESPONSE
 
     curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
     cat $OUTPUT_DIR/status

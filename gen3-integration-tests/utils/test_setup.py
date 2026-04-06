@@ -102,9 +102,13 @@ def get_client_id_secret():
 
 def run_usersync():
     gen3_admin_tasks.run_gen3_job(
-        "usersync",
+        "useryaml",
         test_env_namespace=pytest.namespace,
     )
+    # gen3_admin_tasks.run_gen3_job(
+    #     "usersync",
+    #     test_env_namespace=pytest.namespace,
+    # )
 
 
 def setup_google_buckets():

@@ -626,9 +626,9 @@ wait_for_pods_ready() {
 
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
 
-    echo '-----------'
+    echo '----------- Pods:'
     kubectl get pods -n ${namespace}
-    echo '-----------'
+    echo '----------- Jobs:'
     kubectl get jobs -n ${namespace}
     echo '-----------'
 
