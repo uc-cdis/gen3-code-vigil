@@ -77,7 +77,8 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
-    # echo $HOSTNAME
+
+    echo '$HOSTNAME =' $HOSTNAME
     # echo $RESPONSE
 
     curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status

@@ -53,6 +53,51 @@ class WorkflowStorageConfig:
         )
 
 
+import base64
+import json
+from urllib.parse import urlparse
+
+
+def decode_token(token_str):
+    """
+    jq -r '.api_key' < ~/.gen3/qa-covid19.planx-pla.net.json | awk -F . '{ print $2 }' | base64 --decode | jq -r .
+    """
+    tokenParts = token_str.split(".")
+    if len(tokenParts) < 3:
+        raise Exception("Invalid JWT. Could not split into parts.")
+    padding = "===="
+    infoStr = tokenParts[1] + padding[0 : len(tokenParts[1]) % 4]
+    jsonStr = base64.urlsafe_b64decode(infoStr)
+    return json.loads(jsonStr)
+
+
+def remove_trailing_whitespace_and_slashes_in_url(url):
+    """
+    Given a url, remove any whitespace and then slashes at the end and return url
+    """
+    if url:
+        return url.rstrip().rstrip("/")
+
+    logger.info(f"url = {url}")
+    return url
+
+
+def endpoint_from_token(token_str):
+    """
+    Extract the endpoint from a JWT issue ("iss" property)
+    """
+    info = decode_token(token_str)
+    logger.info(f"info = {info}")
+    urlparts = urlparse(info["iss"])
+    logger.info(f"urlparts = {urlparts}")
+    endpoint = urlparts.scheme + "://" + urlparts.hostname
+    logger.info(f"urlparts.port = {urlparts.port}")
+    if urlparts.port:
+        endpoint += ":" + str(urlparts.port)
+    logger.info(f"endpoint = {endpoint}")
+    return remove_trailing_whitespace_and_slashes_in_url(endpoint)
+
+
 class Gen3Workflow:
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}"
@@ -68,6 +113,8 @@ class Gen3Workflow:
         """Helper function to retrieve an access token."""
         logger.info(f"_get_access_token endpoint = {self.BASE_URL}")
         logger.info(f"pytest.api_keys[user] = {pytest.api_keys[user]}")
+        endpoint = endpoint_from_token(pytest.api_keys[user]["api_key"])
+        logger.info(f"final endpoint = {endpoint}")
 
         if not user:
             return None
