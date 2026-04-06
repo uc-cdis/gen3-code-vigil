@@ -66,12 +66,18 @@ class Gen3Workflow:
 
     def _get_access_token(self, user: str = "main_account") -> str:
         """Helper function to retrieve an access token."""
+        logger.info(f"_get_access_token endpoint = {self.BASE_URL}")
+        logger.info(f"pytest.api_keys[user] = {pytest.api_keys[user]}")
 
         if not user:
             return None
 
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        return auth.get_access_token()
+        try:
+            return auth.get_access_token()
+        except Exception:
+            logger.info("Failed to get access token with Gen3Auth")
+            raise
 
     def _get_s3_client(
         self, access_token: str, s3_storage_config: WorkflowStorageConfig

@@ -154,29 +154,29 @@ def run_gen3_job(
             job_name,
         ]
     logger.info(f"Running command: {cmd}")
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
     if result.returncode == 0:
         logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
     else:
-        logger.info(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
-        logger.info("-------- run_gen3_job retrying with new syntax")
-        cmd = (
-            f"kubectl -n {test_env_namespace} get job {job_name} -o json "
-            "| jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' "
-            f"> /tmp/{job_name}.json "
-            f"&& kubectl -n {test_env_namespace} delete -f /tmp/{job_name}.json "
-            f"&& kubectl -n {test_env_namespace} apply -f /tmp/{job_name}.json"
-        )
-        logger.info(f"Running command: {cmd}")
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        if result.returncode == 0:
-            logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
-        else:
-            raise Exception(
-                f"{job_name} failed to start - {result.stderr.decode('utf-8')}"
-            )
+        # logger.info(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
+        # logger.info("-------- run_gen3_job retrying with new syntax")
+        # cmd = (
+        #     f"kubectl -n {test_env_namespace} get job {job_name} -o json "
+        #     "| jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' "
+        #     f"> /tmp/{job_name}.json "
+        #     f"&& kubectl -n {test_env_namespace} delete -f /tmp/{job_name}.json "
+        #     f"&& kubectl -n {test_env_namespace} apply -f /tmp/{job_name}.json"
+        # )
+        # logger.info(f"Running command: {cmd}")
+        # result = subprocess.run(
+        #     cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        # )
+        # if result.returncode == 0:
+        #     logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
+        # else:
+        raise Exception(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
     # TODO fix this...need job_name
     # check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
     import time

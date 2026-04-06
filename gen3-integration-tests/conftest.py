@@ -105,7 +105,8 @@ def pytest_configure(config):
     if not pytest.tested_env:
         pytest.tested_env = pytest.namespace
     # Compute root_url
-    pytest.root_url = f"https://{pytest.hostname}"
+    pytest.root_url = f"{os.getenv("HOSTNAME_PROTOCOL")}://{pytest.hostname}"
+    logger.info(f"pytest.root_url = {pytest.root_url}")
 
     # Clients used for testing
     pytest.clients = {}
