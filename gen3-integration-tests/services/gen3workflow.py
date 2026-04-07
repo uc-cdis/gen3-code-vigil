@@ -210,7 +210,7 @@ class Gen3Workflow:
         response = requests.get(url=storage_url, headers=headers)
         assert (
             response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}"
+        ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
         storage_info = response.json()
         assert isinstance(storage_info, dict), "Expected a valid JSON response"
         return storage_info
@@ -256,7 +256,7 @@ class Gen3Workflow:
 
         assert (
             response.status_code in allowed_statuses
-        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {cleanup_url}"
+        ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {cleanup_url}: {response.text}"
 
     ###############################################
     ###### /s3 endpoint and boto3 functions #######
@@ -272,7 +272,7 @@ class Gen3Workflow:
         response = requests.get(url=s3_url, headers=headers)
         assert (
             response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an unsigned GET request to {s3_url}"
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an unsigned GET request to {s3_url}: {response.text}"
 
     def get_bucket_object_with_boto3(
         self,
@@ -355,7 +355,7 @@ class Gen3Workflow:
         )
         assert (
             response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}"
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}: {response.text}"
         return response.json()
 
     def list_tes_tasks(self, user: str = "main_account", expected_status=200):
@@ -370,7 +370,7 @@ class Gen3Workflow:
         )
         assert (
             response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}"
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
         return response.json()
 
     def get_tes_task(
@@ -388,7 +388,7 @@ class Gen3Workflow:
         )
         assert (
             response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}"
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
         return response.json()
 
     def cancel_tes_task(
@@ -406,7 +406,7 @@ class Gen3Workflow:
         )
         assert (
             response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}"
+        ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}: {response.text}"
         return response.json()
 
     def run_nextflow_task(
