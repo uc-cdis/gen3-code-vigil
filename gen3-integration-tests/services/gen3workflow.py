@@ -55,7 +55,8 @@ class WorkflowStorageConfig:
 
 import base64
 import json
-from urllib.parse import urlparse
+
+# from urllib.parse import urlparse
 
 
 def decode_token(token_str):
@@ -71,30 +72,30 @@ def decode_token(token_str):
     return json.loads(jsonStr)
 
 
-def remove_trailing_whitespace_and_slashes_in_url(url):
-    """
-    Given a url, remove any whitespace and then slashes at the end and return url
-    """
-    logger.info(f"url = {url}")
-    if url:
-        return url.rstrip().rstrip("/")
-    return url
+# def remove_trailing_whitespace_and_slashes_in_url(url):
+#     """
+#     Given a url, remove any whitespace and then slashes at the end and return url
+#     """
+#     logger.info(f"url = {url}")
+#     if url:
+#         return url.rstrip().rstrip("/")
+#     return url
 
 
-def endpoint_from_token(token_str):
-    """
-    Extract the endpoint from a JWT issue ("iss" property)
-    """
-    info = decode_token(token_str)
-    logger.info(f"info = {info}")
-    urlparts = urlparse(info["iss"])
-    logger.info(f"urlparts = {urlparts}")
-    endpoint = urlparts.scheme + "://" + urlparts.hostname
-    logger.info(f"urlparts.port = {urlparts.port}")
-    if urlparts.port:
-        endpoint += ":" + str(urlparts.port)
-    logger.info(f"endpoint = {endpoint}")
-    return remove_trailing_whitespace_and_slashes_in_url(endpoint)
+# def endpoint_from_token(token_str):
+#     """
+#     Extract the endpoint from a JWT issue ("iss" property)
+#     """
+#     info = decode_token(token_str)
+#     logger.info(f"info = {info}")
+#     urlparts = urlparse(info["iss"])
+#     logger.info(f"urlparts = {urlparts}")
+#     endpoint = urlparts.scheme + "://" + urlparts.hostname
+#     logger.info(f"urlparts.port = {urlparts.port}")
+#     if urlparts.port:
+#         endpoint += ":" + str(urlparts.port)
+#     logger.info(f"endpoint = {endpoint}")
+#     return remove_trailing_whitespace_and_slashes_in_url(endpoint)
 
 
 class Gen3Workflow:
@@ -110,10 +111,10 @@ class Gen3Workflow:
 
     def _get_access_token(self, user: str = "main_account") -> str:
         """Helper function to retrieve an access token."""
-        logger.info(f"_get_access_token self.BASE_URL = {self.BASE_URL}")
-        logger.info(f"pytest.api_keys[user] = {pytest.api_keys[user]}")
-        endpoint = endpoint_from_token(pytest.api_keys[user]["api_key"])
-        logger.info(f"final endpoint = {endpoint}")
+        # logger.info(f"_get_access_token self.BASE_URL = {self.BASE_URL}")
+        # logger.info(f"pytest.api_keys[user] = {pytest.api_keys[user]}")
+        # endpoint = endpoint_from_token(pytest.api_keys[user]["api_key"])
+        # logger.info(f"final endpoint = {endpoint}")
 
         if not user:
             return None
@@ -121,7 +122,10 @@ class Gen3Workflow:
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         logger.info(f"auth.endpoint = {auth.endpoint}")
         try:
-            return auth.get_access_token()
+            t = auth.get_access_token()
+            logger.info(f"token = {t}")
+            logger.info(f"token info = {decode_token(t)}")
+            return t
         except Exception:
             logger.info("Failed to get access token with Gen3Auth")
             raise
@@ -253,6 +257,67 @@ class Gen3Workflow:
         allowed_statuses = (
             [expected_status, 404] if ignore_missing else [expected_status]
         )
+
+        import subprocess
+
+        logger.info("===================== Getting gen3-workflow logs...")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            "-l",
+            "app=gen3-workflow",
+            "--tail",
+            "300",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        def get_keys_url(issuer, force_issuer=None):
+            """
+            Prefer OIDC discovery doc, but fall back on Fence-specific /jwt/keys for backwards compatibility (or if `force_issuer` is True)
+            """
+            jwt_keys_url = "/".join([issuer.strip("/"), "jwt", "keys"])
+            logger.info(f"jwt_keys_url = {jwt_keys_url}")
+            if force_issuer:
+                return jwt_keys_url
+
+            openid_cfg_path = "/".join(
+                [issuer.strip("/"), ".well-known", "openid-configuration"]
+            )
+            logger.info(f"openid_cfg_path = {openid_cfg_path}")
+            try:
+                r = requests.get(openid_cfg_path)
+                logger.info(f"r = {r.status_code} {r.text}")
+                jwks_uri = r.json().get("jwks_uri", "")
+                logger.info(f"jwks_uri = {jwks_uri}")
+                return jwks_uri
+            except Exception:
+                logger.info(f"returning jwt_keys_url = {jwt_keys_url}")
+                return jwt_keys_url
+
+        logger.info("===================== Reproduce error...")
+        issuer = "http://localhost:8000/user"
+        force_issuer = None
+        try:
+            u = get_keys_url(issuer, force_issuer)
+            logger.info(f"keys url = {u}")
+            resp = requests.get(u)
+            logger.info(f"resp = {resp.status_code} {resp.text}")
+            resp.raise_for_status()
+            print(resp.json())
+        except Exception as e:
+            print("Cannot fetch pubkey from issuer {}: {}".format(issuer, str(e)))
+
+        url = "http://localhost:8000/user/.well-known/openid-configuration"
+        r = requests.get(url)
+        logger.info(f"{url}, {r.status_code}, {r.text}")
 
         assert (
             response.status_code in allowed_statuses
