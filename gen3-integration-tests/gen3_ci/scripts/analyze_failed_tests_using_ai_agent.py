@@ -149,7 +149,7 @@ def analyze_env_setup_failure() -> str:
         {"role": "system", "content": debug_prompt},
         {"role": "user", "content": "analyse the errors from this logfile"},
     ]
-    payload = {"model": "gemma3:4b", "messages": messages, "temperature": 0}
+    payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
@@ -205,7 +205,7 @@ def analyze_failed_tests() -> str:
             {"role": "system", "content": debug_prompt},
             {"role": "user", "content": "analyse the failed tests"},
         ]
-        payload = {"model": "gemma3:4b", "messages": messages, "temperature": 0}
+        payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
@@ -233,7 +233,7 @@ if __name__ == "__main__":
     try:
         setup_ollama_helm_chart()
         process = setup_port_forwarding()
-        assert "gemma3:4b" in str(validate_ollama_model())
+        assert "gemma4:e4b" in str(validate_ollama_model())
         response = run_test_failure_analysis()
         with open("logs/failure_analysis.txt", "w") as f:
             f.write(response)
