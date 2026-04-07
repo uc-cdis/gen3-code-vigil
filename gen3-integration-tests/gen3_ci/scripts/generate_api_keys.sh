@@ -61,13 +61,10 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
-    # echo '----- _status'
-    # # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost/user/_status
-    # # cat $OUTPUT_DIR/status
-    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" http://localhost:8000/user/_status
-    # cat $OUTPUT_DIR/status
-    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
-    # cat $OUTPUT_DIR/status
+    url="$HOSTNAME_PROTOCOL://$HOSTNAME/user/_status"
+    echo "----- _status at $url"
+    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $url
+    cat $OUTPUT_DIR/status
 
     # exit 1
 

@@ -257,18 +257,18 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.42.84"
+version = "1.42.85"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.42.84-py3-none-any.whl", hash = "sha256:4d03ad3211832484037337292586f71f48707141288d9ac23049c04204f4ab03"},
-    {file = "boto3-1.42.84.tar.gz", hash = "sha256:6a84b3293a5d8b3adf827a54588e7dcffcf0a85410d7dadca615544f97d27579"},
+    {file = "boto3-1.42.85-py3-none-any.whl", hash = "sha256:4f6ac066e41d18ec33f532253fac0f35e0fdca373724458f983ce3d531340b7a"},
+    {file = "boto3-1.42.85.tar.gz", hash = "sha256:1cd3dcbfaba85c6071ba9397c1804b6a94a1a97031b8f1993fdba27c0c5d6eba"},
 ]
 
 [package.dependencies]
-botocore = ">=1.42.84,<1.43.0"
+botocore = ">=1.42.85,<1.43.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.16.0,<0.17.0"
 
@@ -277,14 +277,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.42.84"
+version = "1.42.85"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.42.84-py3-none-any.whl", hash = "sha256:15f3fe07dfa6545e46a60c4b049fe2bdf63803c595ae4a4eec90e8f8172764f3"},
-    {file = "botocore-1.42.84.tar.gz", hash = "sha256:234064604c80d9272a5e9f6b3566d260bcaa053a5e05246db90d7eca1c2cf44b"},
+    {file = "botocore-1.42.85-py3-none-any.whl", hash = "sha256:828b67722caeb7e240eefedee74050e803d1fa102958ead9c4009101eefd5381"},
+    {file = "botocore-1.42.85.tar.gz", hash = "sha256:2ee61f80b7724a143e16d0a85408ef5fa20b99dce7a3c8ec5d25cc8dced164c1"},
 ]
 
 [package.dependencies]
@@ -857,35 +857,39 @@ name = "gen3"
 version = "4.27.6"
 description = "Gen3 CLI and Python SDK"
 optional = false
-python-versions = "<4,>=3.9"
+python-versions = ">=3.9, <4"
 groups = ["main"]
-files = [
-    {file = "gen3-4.27.6-py3-none-any.whl", hash = "sha256:8ac3ed317a03a8e7de2142ce0fcccf027943a4d5c156fd36e8609925f09343e5"},
-    {file = "gen3-4.27.6.tar.gz", hash = "sha256:00fdddf79e636cd7dff87818fa1338f2b21c9fdf207465f2524c299baf487480"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 aiofiles = "*"
 aiohttp = "*"
 backoff = "*"
-cdislogging = ">=1.1.0,<2.0.0"
+cdislogging = "^1.1.0"
 click = "*"
 dataclasses-json = "<=0.5.9"
 drsclient = ">=0.3.0"
 gen3users = "*"
 humanfriendly = "*"
 importlib_metadata = ">=8,<9"
-indexclient = ">=2.3.0,<3.0.0"
+indexclient = "^2.3.0"
 jsonschema = "*"
 pandas = ">=1.4.2"
 pypfb = ">=0.6.2"
 python-dateutil = "*"
 requests = "*"
-tqdm = ">=4.61.2,<5.0.0"
-xmltodict = ">=0.13.0,<0.14.0"
+tqdm = "^4.61.2"
+xmltodict = "^0.13.0"
 
 [package.extras]
 fhir = ["fhirclient"]
+
+[package.source]
+type = "git"
+url = "https://github.com/uc-cdis/gen3sdk-python"
+reference = "api-key-force-endpoint"
+resolved_reference = "56fe5743b28558ff8e417d743095a408c67051fe"
 
 [[package]]
 name = "gen3datamodel"
@@ -2229,14 +2233,14 @@ six = ">=1.5"
 
 [[package]]
 name = "python-discovery"
-version = "1.2.1"
+version = "1.2.2"
 description = "Python interpreter discovery"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "python_discovery-1.2.1-py3-none-any.whl", hash = "sha256:b6a957b24c1cd79252484d3566d1b49527581d46e789aaf43181005e56201502"},
-    {file = "python_discovery-1.2.1.tar.gz", hash = "sha256:180c4d114bff1c32462537eac5d6a332b768242b76b69c0259c7d14b1b680c9e"},
+    {file = "python_discovery-1.2.2-py3-none-any.whl", hash = "sha256:e1ae95d9af875e78f15e19aed0c6137ab1bb49c200f21f5061786490c9585c7a"},
+    {file = "python_discovery-1.2.2.tar.gz", hash = "sha256:876e9c57139eb757cb5878cbdd9ae5379e5d96266c99ef731119e04fffe533bb"},
 ]
 
 [package.dependencies]
@@ -3065,4 +3069,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "cdfcf11f8d7848c96d5b30cb46a714d2a6f271a8a4c9ed6159cb2cdf01a91f37"
+content-hash = "2f7d205ac0506e4f166f2f26ae3faa383d34250158edad880f01e6bcf5445b98"
