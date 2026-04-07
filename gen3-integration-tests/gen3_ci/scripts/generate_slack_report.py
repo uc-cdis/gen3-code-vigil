@@ -215,7 +215,13 @@ def generate_slack_report():
 
     # Add replay message if CI env setup fails
     if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
-        replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')}`"
+        if os.getenv("IS_NIGHTLY_RUN") == "true":
+            if os.getenv("CI_ENV") == "gen3ff":
+                replay_message = "To label & retry, just send the following message:\n `@qa-bot replay-nightly-run-gen3ff`"
+            else:
+                replay_message = "To label & retry, just send the following message:\n `@qa-bot replay-nightly-run`"
+        else:
+            replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')}`"
         replay_block = {
             "type": "section",
             "text": {
