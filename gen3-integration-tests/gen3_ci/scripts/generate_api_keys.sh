@@ -53,7 +53,6 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     echo "Processing user: $username - $email ..."
 
     # Generate an access token
-    kubectl -n "$NAMESPACE" exec -c fence "$FENCE_POD" -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account --type access_token --username "$email"
     ACCESS_TOKEN=$(kubectl -n "$NAMESPACE" exec -c fence "$FENCE_POD" -- fence-create token-create --scopes openid,user,fence,data,credentials,google_service_account --type access_token --username "$email" 2>/dev/null | tail -1)
 
     # Validate access token
@@ -80,11 +79,12 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
 
     echo '$HOSTNAME =' $HOSTNAME
     # echo $RESPONSE
+    kubectl -n "$NAMESPACE" logs -l app=fence
 
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
-    cat $OUTPUT_DIR/status
-    curl -o "$OUTPUT_DIR/version" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_version
-    cat $OUTPUT_DIR/version
+    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
+    # cat $OUTPUT_DIR/status
+    # curl -o "$OUTPUT_DIR/version" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_version
+    # cat $OUTPUT_DIR/version
 
     # kubectl get pods -n $NAMESPACE
 

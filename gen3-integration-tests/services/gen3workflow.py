@@ -75,10 +75,9 @@ def remove_trailing_whitespace_and_slashes_in_url(url):
     """
     Given a url, remove any whitespace and then slashes at the end and return url
     """
+    logger.info(f"url = {url}")
     if url:
         return url.rstrip().rstrip("/")
-
-    logger.info(f"url = {url}")
     return url
 
 
@@ -111,7 +110,7 @@ class Gen3Workflow:
 
     def _get_access_token(self, user: str = "main_account") -> str:
         """Helper function to retrieve an access token."""
-        logger.info(f"_get_access_token endpoint = {self.BASE_URL}")
+        logger.info(f"_get_access_token self.BASE_URL = {self.BASE_URL}")
         logger.info(f"pytest.api_keys[user] = {pytest.api_keys[user]}")
         endpoint = endpoint_from_token(pytest.api_keys[user]["api_key"])
         logger.info(f"final endpoint = {endpoint}")
@@ -120,6 +119,7 @@ class Gen3Workflow:
             return None
 
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        logger.info(f"auth.endpoint = {auth.endpoint}")
         try:
             return auth.get_access_token()
         except Exception:
