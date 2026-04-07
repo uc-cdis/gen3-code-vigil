@@ -1,6 +1,6 @@
 image:
   repository: quay.io/cdis/ollama
-  tag: chore_update_ollama_gemma_model
+  tag: master
   pullPolicy: IfNotPresent
 
 pdb: true
