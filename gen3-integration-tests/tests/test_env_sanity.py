@@ -44,10 +44,7 @@ class TestEnvSanity:
                     logger.info(
                         f"Service {service_name} found, checking service version"
                     )
-                    auth = Gen3Auth(
-                        refresh_token=pytest.api_keys["main_account"],
-                        endpoint=pytest.root_url,
-                    )
+                    auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"])
                     url = service_endpoints[service_name]
                     response = auth.curl(path=url)
                     assert (

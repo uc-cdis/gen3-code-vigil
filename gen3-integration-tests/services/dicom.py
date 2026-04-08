@@ -16,7 +16,7 @@ class Dicom(object):
             self.DICOM_STUDIES = "/dicom-server/studies"
 
     def submit_dicom_file(self, user="main_account", expected_status=200):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         access_token = auth.get_access_token()
         url = self.BASE_URL + self.DICOM_INSTANCES
         with (TEST_DATA_PATH_OBJECT / "dicom/test_file.dcm").open("rb") as file:
@@ -34,7 +34,7 @@ class Dicom(object):
             return response.json()
 
     def get_studies(self, study_instance, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = self.DICOM_STUDIES + "/" + study_instance
         response = auth.curl(path=url)
         assert (
@@ -43,7 +43,7 @@ class Dicom(object):
         return response.json()
 
     def get_dicom_file(self, dicom_file_id, user="main_account", expected_status=200):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = self.DICOM_INSTANCES + "/" + dicom_file_id
         response = auth.curl(path=url)
         assert (

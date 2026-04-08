@@ -71,7 +71,7 @@ class Gen3Workflow:
         if not user:
             return None
 
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         return auth.get_access_token()
 
     def _get_s3_client(

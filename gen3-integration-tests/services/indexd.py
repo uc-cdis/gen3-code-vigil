@@ -54,7 +54,7 @@ class Indexd(object):
     ):
         """Update indexd record"""
         if not access_token:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
             access_token = auth.get_access_token()
         headers = {
             "Authorization": f"bearer {access_token}",
@@ -73,7 +73,7 @@ class Indexd(object):
     ):
         """Delete indexd record if upload is not happening through gen3-sdk"""
         if not access_token:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
             access_token = auth.get_access_token()
         headers = {
             "Authorization": f"bearer {access_token}",
@@ -127,7 +127,7 @@ class Indexd(object):
 
     def clear_previous_upload_files(self, user="main_account"):
         """Delete indexd record if upload is not happening through gen3-sdk"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = f"/index/index/?acl=null&authz=null&uploader={pytest.users[user]}"
         response = auth.curl(path=url)
         logger.info(response.json())

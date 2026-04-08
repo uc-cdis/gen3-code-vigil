@@ -385,7 +385,7 @@ class GWASPage(object):
         url = (
             f"{self.GWAS_WORKFLOW_API_ENDPOINT}?team_projects=/gwas_projects/{project}"
         )
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         response = auth.curl(path=url)
         return response.json()
 
@@ -395,7 +395,7 @@ class GWASPage(object):
         url = f"{self.GWAS_WORKFLOW_STATUS_API_ENDPOINT}/{job_id}?uid={uid_value}"
         while counter < 20:
             time.sleep(30)
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
             response = auth.curl(path=url)
             wf_status = response.json()["phase"]
             if wf_status == "Succeeded":

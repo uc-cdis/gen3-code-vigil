@@ -112,9 +112,7 @@ class TestUserToken:
         api_key_res, access_token = self.fence.create_api_key(scope=scope, page=page)
 
         # Generate access_token using the api_key
-        auth = Gen3Auth(
-            refresh_token=api_key_res.json(), endpoint=f"{pytest.root_url}/user"
-        )
+        auth = Gen3Auth(refresh_token=api_key_res.json())
         auth.get_access_token()
 
         # Delete the api key and logout
@@ -132,7 +130,7 @@ class TestUserToken:
         gen3_sdk_error_msg = "string indices must be integers"
 
         # Refresh access token using invalid api_key
-        auth = Gen3Auth(refresh_token="invalid", endpoint=f"{pytest.root_url}/user")
+        auth = Gen3Auth(refresh_token="invalid")
         try:
             auth.refresh_access_token()
         except Exception as e:
@@ -154,7 +152,7 @@ class TestUserToken:
 
         # Refresh access token using no api_key
         try:
-            auth = Gen3Auth(refresh_token=None, endpoint=f"{pytest.root_url}/user")
+            auth = Gen3Auth(refresh_token=None)
             auth.refresh_access_token()
         except Exception as e:
             expection_content = str(e)

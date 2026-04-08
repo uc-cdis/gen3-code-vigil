@@ -18,7 +18,7 @@ class Guppy(object):
         user - pick one from conftest.py - main_account / indexing_account / dummy_one /
             smarty_two / user0_account
         """
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = self.BASE_ENDPOINT + "/_status"
         response = auth.curl(path=url)
         logger.info("Guppy status code : " + str(response.status_code))
@@ -56,7 +56,7 @@ class Guppy(object):
         )
         queryToSubmit = "".join(queryFile.split("\n"))
         logger.info(queryToSubmit)
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = self.BASE_ENDPOINT + endpoint
         headers = {
             "Content-Type": "application/json",

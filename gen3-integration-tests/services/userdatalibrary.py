@@ -13,7 +13,7 @@ class UserDataLibrary(object):
     def create_list(self, user, data, expected_status=201):
         """helper function to create list in data library"""
         logger.info("Creating Data Library List")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}"
         headers = {
             "Content-Type": "application/json",
@@ -36,7 +36,7 @@ class UserDataLibrary(object):
         reads all lists if list_id is not passed
         """
         logger.info("Reading Data Library List")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         if list_id:
             url = f"{self.LISTS_ENDPOINT}/{list_id}"
         else:
@@ -52,7 +52,7 @@ class UserDataLibrary(object):
     def update_list(self, user, list_id, data, expected_status=200):
         """helper function to update list in data library"""
         logger.info("Updating Data Library List")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         headers = {
             "Authorization": f"bearer {auth.get_access_token()}",
             "Content-Type": "application/json",
@@ -74,7 +74,7 @@ class UserDataLibrary(object):
         deletes all lists if list_id is None
         """
         logger.info("Deleting Data Library List")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         if list_id:
             url = f"{pytest.root_url}/{self.LISTS_ENDPOINT}/{list_id}"
         else:

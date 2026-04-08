@@ -21,7 +21,7 @@ class Audit(object):
             "start={}".format(timestamp),
             "username={}".format(pytest.users[user]),
         ]
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
         url = url + "?" + "&".join(params)
         response = auth.curl(path=url)
@@ -35,7 +35,7 @@ class Audit(object):
         url = self.AUDIT_LOG_ENDPOINT + "/" + log_category
         url = url + "?" + "&".join(params)
         counter = 0
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
 
         while counter < 40:
             time.sleep(30)

@@ -51,7 +51,7 @@ class Fence(object):
         if len(params) > 0:
             url = url + "?" + "&".join(params)
         if user:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
             response = auth.curl(path=url)
         elif access_token:
             response = requests.get(
@@ -74,7 +74,7 @@ class Fence(object):
 
     def get_url_for_data_upload(self, file_name: str, user: str) -> dict:
         """Generate the url for uploading the data"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         headers = {
             "Content-Type": "application/json",
         }
@@ -87,7 +87,7 @@ class Fence(object):
         return response
 
     def get_url_for_data_upload_for_existing_file(self, guid: str, user: str) -> dict:
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         response = auth.curl(path=f"{self.DATA_UPLOAD_ENDPOINT}/{guid}")
         return response
 
@@ -110,7 +110,7 @@ class Fence(object):
 
     def delete_file(self, guid: str, user: str) -> int:
         """Deletes the file based on guid"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         url = f"{self.BASE_URL}{self.DATA_ENDPOINT}/{guid}"
         response = requests.delete(url=url, auth=auth)
         return response.status_code
@@ -128,7 +128,7 @@ class Fence(object):
                 },
             )
         else:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user])
             access_token = auth.get_access_token()
             user_info_response = auth.curl(path=f"{self.USER_ENDPOINT}")
         assert (
@@ -269,7 +269,7 @@ class Fence(object):
         return page.url
 
     def initialize_multipart_upload(self, file_name, user):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         headers = {
             "Content-Type": "application/json",
         }
@@ -285,7 +285,7 @@ class Fence(object):
         return response.json()
 
     def get_url_for_multipart_upload(self, key, upload_id, part_number, user):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         headers = {
             "Content-Type": "application/json",
         }
@@ -306,7 +306,7 @@ class Fence(object):
         headers = {
             "Content-Type": "application/json",
         }
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         response = requests.post(
             url=f"{self.BASE_URL}{self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT}",
             data=json.dumps({"key": key, "uploadId": upload_id, "parts": parts}),
@@ -380,7 +380,7 @@ class Fence(object):
 
     def get_version(self, user="main_account"):
         """Get fence version"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         response = auth.curl(path=f"{self.VERSION_ENDPOINT}")
         assert (
             response.status_code == 200

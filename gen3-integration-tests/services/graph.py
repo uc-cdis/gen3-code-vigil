@@ -525,7 +525,7 @@ class GraphDataTools:
         min_monthly_release = "2023.04.0"
         monthly_release_cutoff = "2020"
 
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user])
         response = auth.curl(path=self.GRAPHQL_VERSION_ENDPOINT)
         peregrine_version = response.json()["version"]
         url = f"{pytest.root_url}/api/search/coremetadata/"
