@@ -11,7 +11,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/update_integration_tests
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/publish_test_report_before_analysis
     with:
       WORKING_DIR: gen3-integration-tests
     secrets:
