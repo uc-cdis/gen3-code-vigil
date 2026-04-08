@@ -15,6 +15,14 @@ setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
 
+echo "=========================== http://minio:9000/health/live"
+curl -o "status" -w "%{http_code}" http://minio:9000/health/live
+cat status
+echo "=========================== http://minio:9000/health/ready"
+curl -o "status" -w "%{http_code}" http://minio:9000/health/ready
+cat status
+# exit 1
+
 mkdir -p $ci_default_manifest_dir
 ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
 ci_default_manifest_portal_yaml="${ci_default_manifest_dir}/portal.yaml"
@@ -649,6 +657,8 @@ wait_for_pods_ready() {
     kubectl get pods -n ${namespace}
     echo '----------- Jobs:'
     kubectl get jobs -n ${namespace}
+    echo '----------- Services:'
+    kubectl get svc -n ${namespace}
     echo '-----------'
 
     if [ "$not_ready_count" -eq 0 ]; then
