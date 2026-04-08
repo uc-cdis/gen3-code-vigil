@@ -675,7 +675,10 @@ wait_for_pods_ready() {
         )
       | .metadata.name')
     if [[ -n "$failure_pods" ]]; then
+      echo "❌ Giving up! Failed pods: $failure_pods"
       echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
+      echo "=======> describing failed pods:"
+      echo $failure_pods | kubectl describe pod $failure_pods
       return 1
     fi
   done
