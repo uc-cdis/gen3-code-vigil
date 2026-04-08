@@ -119,4 +119,4 @@ class TestAggregateMDS:
         # gat.run_gen3_job(pytest.namespace, "metadata-aggregate-sync")
         # for i in range(len(study_ids)):
         #     response = gen3auth.curl(f"/mds/aggregate/metadata/guid/{study_ids[i]}")
-        #     assert response.status_code == 404, f"Response status code was {res.status_code}"
+        #     assert response.status_code == 404, f"Response status code was {res.status_code}: {res.text}"

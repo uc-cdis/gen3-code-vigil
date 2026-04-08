@@ -8,10 +8,10 @@ pdb: true
 resources:
   requests:
     cpu: 4
-    memory: "8Gi"
+    memory: "10Gi"
   limits:
     cpu: 6
-    memory: "10Gi"
+    memory: "12Gi"
 
 service:
   type: ClusterIP
