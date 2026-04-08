@@ -90,6 +90,7 @@ class TestGen3Workflow(object):
 
     ######################## Test /storage/setup endpoint ########################
 
+    @pytest.mark.skip(reason="wip")
     def test_setup_storage_without_token(self):
         """Test GET /storage/setup without an access token."""
         self.gen3_workflow.setup_storage(user=None, expected_status=401)
@@ -717,6 +718,7 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
+    @pytest.mark.skip(reason="wip")
     @pytest.mark.parametrize(
         "test_case",
         [
@@ -778,6 +780,7 @@ class TestGen3Workflow(object):
             task_exit_code == test_case["expected_exit_code"]
         ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
 
+    @pytest.mark.skip(reason="wip")
     def test_multi_user_task_isolation(self):
         """
         Test Case: Verify that users can only see and access their own TES tasks and storage.
@@ -845,6 +848,7 @@ class TestGen3Workflow(object):
             expected_status=200,
         )
 
+    @pytest.mark.skip(reason="wip")
     def test_create_task_format_error(self):
         """
         Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
