@@ -80,6 +80,13 @@ class TestGen3Workflow(object):
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
 
+        import requests
+
+        logger.info("=========================== http://minio:9000/health/live")
+        print(requests.get("http://minio:9000/health/live").text)
+        logger.info("=========================== http://minio:9000/health/ready")
+        print(requests.get("http://minio:9000/health/ready").text)
+
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
             cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
         )

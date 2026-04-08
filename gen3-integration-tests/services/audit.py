@@ -28,7 +28,7 @@ class Audit(object):
         logger.info(audit_category + " status code : " + str(response.status_code))
         assert (
             expected_status == response.status_code
-        ), f"Expected {expected_status} but got {response.status_code}"
+        ), f"Expected {expected_status} but got {response.status_code}: {response.text}"
         return True
 
     def check_query_results(self, log_category, user, params, expected_results):
@@ -41,6 +41,7 @@ class Audit(object):
             time.sleep(30)
             try:
                 response = auth.curl(path=url)
+                assert response.status_code == 200, response.text
                 # Get the first record from api json data
                 data = response.json()
                 logger.info(data)
