@@ -1,9 +1,9 @@
 # Home page
 import os
-import pytest
 
-from utils import logger
+import pytest
 from playwright.sync_api import Page
+from utils import logger
 
 
 class HomePage(object):

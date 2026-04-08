@@ -1,9 +1,8 @@
 import os
+
 import pytest
-
-from utils import logger
 from playwright.sync_api import Page
-
+from utils import logger
 from utils.test_execution import screenshot
 
 

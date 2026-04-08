@@ -39,6 +39,10 @@ boto3 = "^1.38.20"
 # Expected 96 from C header, got 88 from PyObject
 # This is caused by a tertiary dependency conflict between newer versions of NumPy, Pandas, and Gen3.
 # numpy = "<2"
+langchain = "^1.2.10"
+langchain-ollama = "^1.0.1"
+langchain-mcp-adapters = "^0.2.1"
+langchain-core = "^1.2.14"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"

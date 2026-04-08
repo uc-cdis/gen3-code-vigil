@@ -160,7 +160,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Found customConfig enabled for Portal. Updating repo and branch..."
-          yq eval '.portal.customConfig.dir = strenv(UPDATED_FOLDERS) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.dir = strenv(SOURCE_CONFIG) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
           yq eval '.portal.customConfig.repo = "https://github.com/" + strenv(REPO_FN) + ".git"' -i "$ci_default_manifest_values_yaml"
           yq eval '.portal.customConfig.branch = strenv(BRANCH)' -i "$ci_default_manifest_values_yaml"
         else
@@ -205,10 +205,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "###################################################################################"
     for key in $keys_manifest; do
     if ! echo "$keys_ci" | grep -q "^$key$"; then
-      if [[ "$key" != "mutatingWebhook" && "$key" != "neuvector" && "$key" != "dashboard" ]]; then
-        echo "Adding ${key} section in default ci manifest as its present in target manifest"
-        yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
-      fi
+      echo "Adding ${key} section in default ci manifest as its present in target manifest"
+      yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
     fi
     done
 
@@ -219,6 +217,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     for key in $keys_manifest; do
     if [ "$key" != "global" ]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
+      ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
@@ -227,6 +226,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
       else
+        if [[ "$ci_enabled_value" == "false" && "$service_enabled_value" == "true" ]]; then
+          yq eval ".${key}.enabled = true" -i $ci_default_manifest_values_yaml
+        fi
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
@@ -318,10 +320,26 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     fi
 
     # This is to make sure any changes for ci/default are run with portal for now
-    if [[ $UPDATED_FOLDERS == "ci/default" ]]; then
+    if [[ $SOURCE_CONFIG == "ci/default" ]]; then
       echo "Current change is in ci/default, removing frontend-framework config"
       yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
     fi
+
+    # # To handle ohif-viewer APP_CONFIG for dicom-server and enable dicom-server
+    # # TODO: Remove once dicom-server is removed from midrc prod
+    ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // "key not found"' "$new_manifest_values_file_path")
+    if [[ "$ohif_appconfig_block" != "key not found" ]]; then
+      yq eval-all '
+        select(fileIndex == 0) as $dest |
+        select(fileIndex == 1) as $src |
+        $dest * {
+          "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
+        }
+      ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+    fi
+
+    # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
+    yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
 fi
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
@@ -478,8 +496,9 @@ fi
 
 
 # For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
+# For manifest-env-setup where target manifest is also ci/default, we will use portal and switch in future
 # so env doesnt need portal configuration
-if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" ]]; then
+if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" || ("$setup_type" == "manifest-env-setup"  && "$SOURCE_CONFIG" == "ci/default") ]]; then
   if [[ "$CI_ENV" == "gen3ff" ]]; then
     yq eval 'del(.portal)' --inplace "$ci_default_manifest_values_yaml"
     yq eval '.global.frontendRoot = "gen3ff"' --inplace "$ci_default_manifest_values_yaml"
@@ -608,7 +627,7 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=900
+  export timeout=1800
   export interval=20
 
   end=$((SECONDS + timeout))
@@ -644,6 +663,21 @@ wait_for_pods_ready() {
 
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
+
+    failure_pods=$(kubectl get pods -n "${namespace}" -o json | jq -r '
+      .items[]
+      | select(
+          any(.status.containerStatuses[]?;
+            .state.waiting.reason == "ImagePullBackOff"
+            or .state.waiting.reason == "ErrImagePull"
+            or .state.waiting.reason == "CrashLoopBackOff"
+          )
+        )
+      | .metadata.name')
+    if [[ -n "$failure_pods" ]]; then
+      echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
+      return 1
+    fi
   done
 
   echo "❌ Timeout: Pods' containers not ready"
