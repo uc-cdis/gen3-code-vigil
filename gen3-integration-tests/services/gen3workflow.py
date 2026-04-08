@@ -262,6 +262,28 @@ class Gen3Workflow:
         )
 
         response = requests.get(url=storage_url, headers=headers)
+
+        import subprocess
+
+        logger.info("===================== Getting gen3-workflow logs...")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            "-l",
+            "app=gen3-workflow",
+            "--tail",
+            "100",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
