@@ -274,7 +274,7 @@ class Gen3Workflow:
             "-l",
             "app=gen3-workflow",
             "--tail",
-            "100",
+            "300",
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
@@ -372,26 +372,26 @@ class Gen3Workflow:
             [expected_status, 404] if ignore_missing else [expected_status]
         )
 
-        # import subprocess
+        import subprocess
 
-        # logger.info("===================== Getting gen3-workflow logs...")
-        # cmd = [
-        #     "kubectl",
-        #     "-n",
-        #     pytest.namespace,
-        #     "logs",
-        #     "-l",
-        #     "app=gen3-workflow",
-        #     "--tail",
-        #     "100",
-        # ]
-        # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # if result.returncode == 0:
-        #     logger.info(f"success - {result.stdout.decode('utf-8')}")
-        # else:
-        #     logger.info(
-        #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-        #     )
+        logger.info("===================== Getting gen3-workflow logs...")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            "-l",
+            "app=gen3-workflow",
+            "--tail",
+            "300",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
 
         assert (
             response.status_code in allowed_statuses
