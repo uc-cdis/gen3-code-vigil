@@ -34,7 +34,7 @@ spec:
             - name: OLLAMA_LOG_LEVEL
               value: "debug"
             - name: OLLAMA_HOST
-              value: http://localhost:11434/
+              value: "0.0.0.0:11434"
             - name: OLLAMA_KEEP_ALIVE
               value: "-1"
             - name: KUBECTL_AI_TIMEOUT
