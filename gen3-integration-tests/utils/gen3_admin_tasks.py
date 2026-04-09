@@ -183,6 +183,16 @@ def run_gen3_job(
 
     time.sleep(60)
 
+    print("Pods after run_gen3_job:")
+    cmd = ["kubectl", "-n", pytest.namespace, "get", "pods"]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        logger.info(f"success - {result.stdout}")
+    else:
+        logger.info(f"failure - {result.returncode} - {result.stderr}")
+
 
 def fence_delete_expired_clients():
     cmd = ["kubectl", "-n", pytest.namespace, "get", "pods", "-l", "app=fence"]

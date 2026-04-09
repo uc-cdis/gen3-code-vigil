@@ -15,12 +15,12 @@ setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
 
-echo "=========================== http://minio:9000/health/live"
-curl -o "status" -w "%{http_code}" http://minio:9000/health/live
-cat status
-echo "=========================== http://minio:9000/health/ready"
-curl -o "status" -w "%{http_code}" http://minio:9000/health/ready
-cat status
+# echo "=========================== http://minio:9000/health/live"
+# curl -o "status" -w "%{http_code}" http://minio:9000/health/live
+# cat status
+# echo "=========================== http://minio:9000/health/ready"
+# curl -o "status" -w "%{http_code}" http://minio:9000/health/ready
+# cat status
 # exit 1
 
 mkdir -p $ci_default_manifest_dir

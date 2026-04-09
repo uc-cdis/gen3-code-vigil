@@ -134,6 +134,7 @@ class Gen3Workflow:
         self, access_token: str, s3_storage_config: WorkflowStorageConfig
     ):
         """Creates and returns an S3 client."""
+        print("self.S3_ENDPOINT_URL =", self.S3_ENDPOINT_URL)
         return boto3.client(
             service_name="s3",
             aws_access_key_id=access_token,
@@ -181,6 +182,27 @@ class Gen3Workflow:
             logger.debug(f"S3 {action.upper()} response:  {response}")
 
         except botocore.exceptions.ClientError as e:
+            import subprocess
+
+            logger.info("===================== Getting gen3-workflow logs...")
+            cmd = [
+                "kubectl",
+                "-n",
+                pytest.namespace,
+                "logs",
+                "-l",
+                "app=gen3-workflow",
+                "--tail",
+                "300",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code == "NoSuchKey":
                 response_status = 404
@@ -191,6 +213,30 @@ class Gen3Workflow:
                     f"Received an error from s3_client when expected_status is {expected_status}. Error: {e.response}"
                 )
                 raise  # Reraise for other errors
+        except Exception as e:
+            import subprocess
+
+            logger.info("===================== Getting gen3-workflow logs...")
+            cmd = [
+                "kubectl",
+                "-n",
+                pytest.namespace,
+                "logs",
+                "-l",
+                "app=gen3-workflow",
+                "--tail",
+                "300",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+
+            logger.error(f"Received an error from s3_client. Error: {e}")
+            raise  # Reraise for other errors
         assert (
             response_status == expected_status
         ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Response: {response}"
@@ -263,26 +309,26 @@ class Gen3Workflow:
 
         response = requests.get(url=storage_url, headers=headers)
 
-        import subprocess
+        # import subprocess
 
-        logger.info("===================== Getting gen3-workflow logs...")
-        cmd = [
-            "kubectl",
-            "-n",
-            pytest.namespace,
-            "logs",
-            "-l",
-            "app=gen3-workflow",
-            "--tail",
-            "300",
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            logger.info(f"success - {result.stdout.decode('utf-8')}")
-        else:
-            logger.info(
-                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-            )
+        # logger.info("===================== Getting gen3-workflow logs...")
+        # cmd = [
+        #     "kubectl",
+        #     "-n",
+        #     pytest.namespace,
+        #     "logs",
+        #     "-l",
+        #     "app=gen3-workflow",
+        #     "--tail",
+        #     "300",
+        # ]
+        # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # if result.returncode == 0:
+        #     logger.info(f"success - {result.stdout.decode('utf-8')}")
+        # else:
+        #     logger.info(
+        #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+        #     )
 
         assert (
             response.status_code == expected_status
@@ -372,26 +418,26 @@ class Gen3Workflow:
             [expected_status, 404] if ignore_missing else [expected_status]
         )
 
-        import subprocess
+        # import subprocess
 
-        logger.info("===================== Getting gen3-workflow logs...")
-        cmd = [
-            "kubectl",
-            "-n",
-            pytest.namespace,
-            "logs",
-            "-l",
-            "app=gen3-workflow",
-            "--tail",
-            "300",
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            logger.info(f"success - {result.stdout.decode('utf-8')}")
-        else:
-            logger.info(
-                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-            )
+        # logger.info("===================== Getting gen3-workflow logs...")
+        # cmd = [
+        #     "kubectl",
+        #     "-n",
+        #     pytest.namespace,
+        #     "logs",
+        #     "-l",
+        #     "app=gen3-workflow",
+        #     "--tail",
+        #     "300",
+        # ]
+        # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # if result.returncode == 0:
+        #     logger.info(f"success - {result.stdout.decode('utf-8')}")
+        # else:
+        #     logger.info(
+        #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+        #     )
 
         assert (
             response.status_code in allowed_statuses
@@ -492,6 +538,68 @@ class Gen3Workflow:
             headers=headers,
             json=request_body,
         )
+
+        if response.status_code != expected_status:
+            import subprocess
+
+            logger.info("===================== Getting gen3-workflow logs...")
+            cmd = [
+                "kubectl",
+                "-n",
+                pytest.namespace,
+                "logs",
+                "-l",
+                "app=gen3-workflow",
+                "--tail",
+                "300",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+
+            logger.info("===================== Getting arborist logs...")
+            cmd = [
+                "kubectl",
+                "-n",
+                pytest.namespace,
+                "logs",
+                "-l",
+                "app=arborist",
+                "--tail",
+                "300",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+
+            logger.info("===================== Getting useryaml logs...")
+            cmd = [
+                "kubectl",
+                "-n",
+                pytest.namespace,
+                "logs",
+                "-l",
+                "job-name=useryaml",
+                "--tail",
+                "300",
+                "--all-containers",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}: {response.text}"
