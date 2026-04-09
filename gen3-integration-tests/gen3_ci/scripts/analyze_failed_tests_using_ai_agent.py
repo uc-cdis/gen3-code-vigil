@@ -250,7 +250,6 @@ def generate_slack_report():
     else:
         logger.info("No failure_analysis.txt file found")
         return
-    slack_report_json["blocks"].append(header_block)
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
     else:
