@@ -11,7 +11,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/add_failure_analysis_slack_thread
     with:
       WORKING_DIR: gen3-integration-tests
     secrets:
