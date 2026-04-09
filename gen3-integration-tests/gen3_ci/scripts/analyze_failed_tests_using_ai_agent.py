@@ -228,6 +228,36 @@ def run_test_failure_analysis():
     return reasoning
 
 
+def generate_slack_report():
+    if os.getenv("IS_NIGHTLY_RUN") == "true":
+        failure_analysis_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/failure_analysis.txt"
+    else:
+        failure_analysis_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/failure_analysis.txt"
+    slack_report_json = {}
+    slack_report_json["blocks"] = []
+    failure_analysis_path = (
+        Path(__file__).parent.parent.parent / "logs" / "failure_analysis.txt"
+    )
+    if failure_analysis_path.exists():
+        failure_analysis_block = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Failure Analysis*: <{failure_analysis_link}|click here>",
+            },
+        }
+        slack_report_json["blocks"].append(failure_analysis_block)
+    else:
+        logger.info("No failure_analysis.txt file found")
+        return
+    if os.getenv("IS_NIGHTLY_RUN") == "true":
+        slack_report_json["channel"] = "#nightly-builds"
+    else:
+        slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
+    slack_report_json["thread_ts"] = os.getenv("THREAD_TS")
+    json.dump(slack_report_json, open("test_analysis_slack_report.json", "w"))
+
+
 if __name__ == "__main__":
     process = None
     try:
@@ -237,6 +267,7 @@ if __name__ == "__main__":
         response = run_test_failure_analysis()
         with open("logs/failure_analysis.txt", "w") as f:
             f.write(response)
+        generate_slack_report()
     except Exception as e:
         logger.info(f"Failed to run inference: {e}")
     finally:
