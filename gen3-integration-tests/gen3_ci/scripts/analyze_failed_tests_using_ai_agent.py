@@ -235,14 +235,6 @@ def generate_slack_report():
         failure_analysis_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/failure_analysis.txt"
     slack_report_json = {}
     slack_report_json["blocks"] = []
-    header_block = {
-        "type": "header",
-        "text": {
-            "type": "plain_text",
-            "text": "Failed Test Analysis",
-            "emoji": True,
-        },
-    }
     failure_analysis_path = (
         Path(__file__).parent.parent.parent / "logs" / "failure_analysis.txt"
     )
