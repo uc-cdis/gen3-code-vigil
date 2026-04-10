@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -162,7 +163,7 @@ class Gen3Workflow:
         access_token = self._get_access_token(user)
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
-        logger.debug(
+        logger.info(
             f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and {content=}"
         )
         response = None
@@ -179,11 +180,9 @@ class Gen3Workflow:
                 raise ValueError(f"Unsupported S3 action: {action}")
 
             response_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            logger.debug(f"S3 {action.upper()} response:  {response}")
+            logger.info(f"S3 {action.upper()} response:  {response}")
 
         except botocore.exceptions.ClientError as e:
-            import subprocess
-
             logger.info("===================== Getting gen3-workflow logs...")
             cmd = [
                 "kubectl",
@@ -214,8 +213,6 @@ class Gen3Workflow:
                 )
                 raise  # Reraise for other errors
         except Exception as e:
-            import subprocess
-
             logger.info("===================== Getting gen3-workflow logs...")
             cmd = [
                 "kubectl",
@@ -243,7 +240,7 @@ class Gen3Workflow:
         return response
 
     def poll_until_task_reaches_expected_state(
-        self, task_id, user, expected_final_state, max_retries=10, poll_interval=30
+        self, task_id, user, expected_final_state, max_retries=5, poll_interval=30
     ):
         """
         Polls the TES task status until it reaches a final state or exceeds max retries.
@@ -283,10 +280,94 @@ class Gen3Workflow:
                 state in transient_states
             ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
 
-            logger.debug(
+            logger.info(
                 f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
             )
-            time.sleep(poll_interval)
+            if attempt <= max_retries:
+                time.sleep(poll_interval)
+
+        logger.info("===================== kubectl get priorityclass")
+        cmd = [
+            "kubectl",
+            "get",
+            "priorityclass",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        logger.info("===================== kubectl get nodepool")
+        cmd = [
+            "kubectl",
+            "get",
+            "nodepool",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        logger.info("===================== kubectl get node")
+        cmd = [
+            "kubectl",
+            "get",
+            "node",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        logger.info(
+            "===================== kubectl get pod -n workflow-pods-funnel-pr-1"
+        )
+        cmd = [
+            "kubectl",
+            "get",
+            "pod",
+            "-n",
+            "workflow-pods-funnel-pr-1",
+            "-o",
+            "name",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
+        logger.info(
+            f"===================== kubectl get pod -n workflow-pods-funnel-pr-1: {pods}"
+        )
+        for pod in pods:
+            logger.info(f"===================== kubectl describe pod {pod}")
+            cmd = [
+                "kubectl",
+                "describe",
+                pod,
+                "-n",
+                "workflow-pods-funnel-pr-1",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
 
         raise Exception(
             f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
@@ -308,8 +389,6 @@ class Gen3Workflow:
         )
 
         response = requests.get(url=storage_url, headers=headers)
-
-        # import subprocess
 
         # logger.info("===================== Getting gen3-workflow logs...")
         # cmd = [
@@ -417,8 +496,6 @@ class Gen3Workflow:
         allowed_statuses = (
             [expected_status, 404] if ignore_missing else [expected_status]
         )
-
-        # import subprocess
 
         # logger.info("===================== Getting gen3-workflow logs...")
         # cmd = [
@@ -540,8 +617,6 @@ class Gen3Workflow:
         )
 
         if response.status_code != expected_status:
-            import subprocess
-
             logger.info("===================== Getting gen3-workflow logs...")
             cmd = [
                 "kubectl",
