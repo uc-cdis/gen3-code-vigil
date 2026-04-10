@@ -29,7 +29,7 @@ spec:
                   - -c
                   - |
                     sleep 5
-                    curl http://localhost:11434/api/generate -d '{"model":"gemma4:e4b","prompt":"hi"}'
+                    curl http://localhost:11434/api/generate -d '{"model":"llama3.1:8b","prompt":"hi"}'
           env:
             - name: OLLAMA_LOG_LEVEL
               value: "debug"

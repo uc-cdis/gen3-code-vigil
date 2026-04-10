@@ -149,7 +149,7 @@ def analyze_env_setup_failure() -> str:
         {"role": "system", "content": debug_prompt},
         {"role": "user", "content": "analyse the errors from this logfile"},
     ]
-    payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
+    payload = {"model": "llama3.1:8b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
@@ -193,7 +193,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "--llm-provider",
         "ollama",
         "--model",
-        "gemma4:e4b",
+        "llama3.1:8b",
         "--enable-tool-use-shim",
         "--skip-permissions",
         f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
@@ -261,7 +261,7 @@ def analyze_failed_tests() -> str:
             {"role": "system", "content": debug_prompt},
             {"role": "user", "content": "analyse the failed tests"},
         ]
-        payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
+        payload = {"model": "llama3.1:8b", "messages": messages, "temperature": 0}
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
@@ -291,7 +291,7 @@ if __name__ == "__main__":
     try:
         setup_ollama_helm_chart()
         process = setup_port_forwarding()
-        assert "gemma4:e4b" in str(validate_ollama_model())
+        assert "llama3.1:8b" in str(validate_ollama_model())
         response = run_test_failure_analysis()
         with open("logs/failure_analysis.txt", "w") as f:
             f.write(response)
