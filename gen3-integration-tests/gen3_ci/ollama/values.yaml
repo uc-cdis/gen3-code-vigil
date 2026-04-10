@@ -1,7 +1,7 @@
 image:
   repository: quay.io/cdis/ollama
   tag: chore_add_kubectl_ai
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 pdb: true
 
