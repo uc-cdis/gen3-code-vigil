@@ -1,6 +1,6 @@
 image:
-  repository: quay.io/cdis/ollama
-  tag: master
+  repository: quay.io/cdis/kubectl_ai
+  tag: chore_add_kubectl_ai
   pullPolicy: Always
 
 pdb: true

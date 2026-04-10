@@ -1,18 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama
+  name: kubectl-ai
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ollama
+      app: kubectl-ai
   template:
     metadata:
       labels:
-        app: ollama
+        app: kubectl-ai
     spec:
-      serviceAccountName: kubectl-access-ollama
+      serviceAccountName: kubectl-access-kubectl-ai
       containers:
         - name: ollama
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

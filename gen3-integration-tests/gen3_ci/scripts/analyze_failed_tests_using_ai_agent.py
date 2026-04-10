@@ -13,12 +13,12 @@ from utils import logger
 load_dotenv()
 
 
-def setup_ollama_helm_chart():
+def setup_helm_chart(service):
     cmd = [
         "helm",
         "install",
-        "ollama",
-        "gen3_ci/ollama",
+        service,
+        f"gen3_ci/{service}",
         "-n",
         os.getenv("NAMESPACE"),
     ]
@@ -31,7 +31,7 @@ def setup_ollama_helm_chart():
     )
     if not helm_install_result.returncode == 0:
         raise Exception(
-            f"Unable to install ollama. Error: {helm_install_result.stderr.strip()}"
+            f"Unable to install {service}. Error: {helm_install_result.stderr.strip()}"
         )
 
     cmd = [
@@ -40,21 +40,21 @@ def setup_ollama_helm_chart():
         "--for=condition=ready",
         "pod",
         "-l",
-        "app=ollama",
+        f"app={service}",
         "--timeout=10m",
         "-n",
         os.getenv("NAMESPACE"),
     ]
 
-    ollama_pod_ready_result = subprocess.run(
+    service_pod_ready_result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
-    if not ollama_pod_ready_result.returncode == 0:
+    if not service_pod_ready_result.returncode == 0:
         raise Exception(
-            f"Ollama pod hasn't started yet. Error: {ollama_pod_ready_result.stderr.strip()}"
+            f"{service} pod hasn't started yet. Error: {service_pod_ready_result.stderr.strip()}"
         )
 
 
@@ -69,11 +69,11 @@ def wait_for_port(host="localhost", port=11434, timeout=60):
     raise TimeoutError("Port-forward did not become ready")
 
 
-def setup_port_forwarding():
+def setup_port_forwarding(service):
     cmd = [
         "kubectl",
         "port-forward",
-        "svc/ollama",
+        f"svc/{service}",
         "11434:11434",
         "-n",
         os.getenv("NAMESPACE"),
@@ -88,11 +88,11 @@ def setup_port_forwarding():
     return process
 
 
-def uninstall_ollama_helm_chart():
+def uninstall_helm_chart(service):
     cmd = [
         "helm",
         "uninstall",
-        "ollama",
+        service,
         "-n",
         os.getenv("NAMESPACE"),
     ]
@@ -105,7 +105,7 @@ def uninstall_ollama_helm_chart():
     )
     if not helm_install_result.returncode == 0:
         raise Exception(
-            f"Unable to uninstall ollama. Error: {helm_install_result.stderr.strip()}"
+            f"Unable to uninstall {service}. Error: {helm_install_result.stderr.strip()}"
         )
 
 
@@ -166,35 +166,34 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "get",
         "pods",
         "-l",
-        "app=ollama",
+        "app=kubectl-ai",
         "-o",
         "jsonpath='{.items[0].metadata.name}'",
     ]
-    ollama_pod_result = subprocess.run(
+    kubeclt_ai_pod_result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         timeout=600,
     )
-    if not ollama_pod_result.returncode == 0:
+    if not kubeclt_ai_pod_result.returncode == 0:
         raise Exception(
-            f"Failed to get ollama pod. Error: {ollama_pod_result.stderr.strip()}"
+            f"Failed to get kubectl-ai pod. Error: {kubeclt_ai_pod_result.stderr.strip()}"
         )
-    ollama_pod_name = ollama_pod_result.stdout.strip().replace("'", "")
+    kubeclt_ai_pod_name = kubeclt_ai_pod_result.stdout.strip().replace("'", "")
     kubectl_ai_cmd = [
         "kubectl",
         "-n",
         os.getenv("NAMESPACE"),
         "exec",
-        ollama_pod_name,
+        kubeclt_ai_pod_name,
         "--",
         "kubectl-ai",
         "--llm-provider",
         "ollama",
         "--model",
         "qwen3.5:9b",
-        "--enable-tool-use-shim",
         "--skip-permissions",
         f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
     ]
@@ -274,25 +273,39 @@ def analyze_failed_tests() -> str:
 
 def run_test_failure_analysis():
     if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
-        # response = analyze_env_setup_failure()
-        response = analyze_env_setup_failure_using_kubectl_ai()
-        logger.info(response)
+        try:
+            setup_helm_chart(service="kubectl-ai")
+            process = setup_port_forwarding(service="kubectl-ai")
+            assert "qwen3.5:9b" in str(validate_ollama_model())
+            # response = analyze_env_setup_failure()
+            response = analyze_env_setup_failure_using_kubectl_ai()
+        except Exception as e:
+            logger.info(
+                f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}"
+            )
+        finally:
+            uninstall_helm_chart(service="kubectl-ai")
     else:
-        response = analyze_failed_tests()
+        try:
+            setup_helm_chart(service="ollama")
+            process = setup_port_forwarding(service="ollama")
+            assert "gemma4:e4b" in str(validate_ollama_model())
+            response = analyze_failed_tests()
+        except Exception as e:
+            logger.info(f"Failed to run analyze_failed_tests: {e}")
+        finally:
+            uninstall_helm_chart(service="ollama")
     if response is None:
         return "No logs found to analyze"
     data = json.loads(response.decode("utf-8"))
     reasoning = data["choices"][0]["message"].get("content")
-    return reasoning
+    return reasoning, process
 
 
 if __name__ == "__main__":
     process = None
     try:
-        setup_ollama_helm_chart()
-        process = setup_port_forwarding()
-        assert "qwen3.5:9b" in str(validate_ollama_model())
-        response = run_test_failure_analysis()
+        response, process = run_test_failure_analysis()
         with open("logs/failure_analysis.txt", "w") as f:
             f.write(response)
     except Exception as e:
@@ -301,4 +314,3 @@ if __name__ == "__main__":
         if process and process.poll() is None:
             process.terminate()
             process.wait()
-    # uninstall_ollama_helm_chart()
