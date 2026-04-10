@@ -149,7 +149,7 @@ def analyze_env_setup_failure() -> str:
         {"role": "system", "content": debug_prompt},
         {"role": "user", "content": "analyse the errors from this logfile"},
     ]
-    payload = {"model": "qwen3.5:9b", "messages": messages, "temperature": 0}
+    payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
@@ -193,7 +193,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "--llm-provider",
         "ollama",
         "--model",
-        "qwen3.5:9b",
+        "qwen3.5:2b",
         "--skip-permissions",
         f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
     ]
@@ -260,7 +260,7 @@ def analyze_failed_tests() -> str:
             {"role": "system", "content": debug_prompt},
             {"role": "user", "content": "analyse the failed tests"},
         ]
-        payload = {"model": "qwen3.5:9b", "messages": messages, "temperature": 0}
+        payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
@@ -276,7 +276,7 @@ def run_test_failure_analysis():
         try:
             setup_helm_chart(service="kubectl-ai")
             process = setup_port_forwarding(service="kubectl-ai")
-            assert "qwen3.5:9b" in str(validate_ollama_model())
+            assert "qwen3.5:2b" in str(validate_ollama_model())
             # response = analyze_env_setup_failure()
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
