@@ -20,7 +20,7 @@ RUN curl -fsSL https://ollama.com/install.sh | sh
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama pull qwen3.5:9b \
+    ollama pull qwen3.5:2b \
 "
 
 
@@ -35,7 +35,7 @@ RUN bash -c "\
 RUN bash -c "\
     ollama serve & \
     sleep 5 && \
-    ollama show qwen3.5:9b \
+    ollama show qwen3.5:2b \
 "
 
 # Install kubectl-ai
