@@ -23,6 +23,19 @@ RUN bash -c "\
     ollama pull llama3.1:8b \
 "
 
+RUN bash -c "\
+    ollama serve & \
+    sleep 5 && \
+    ollama pull gemma4:e4b \
+"
+
+RUN bash -c "\
+    ollama serve & \
+    sleep 5 && \
+    ollama pull qwen3.5:0.8b \
+"
+
+
 # List ollama model
 RUN bash -c "\
     ollama serve & \
