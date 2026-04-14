@@ -10,33 +10,8 @@ RUN dnf install -y --allowerasing \
     tar \
     gzip
 
-# Create model directory
-WORKDIR /models
-
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
-
-# Have ollama create/build the model
-RUN bash -c "\
-    ollama serve & \
-    sleep 5 && \
-    ollama pull qwen3.5:2b \
-"
-
-
-# List ollama model
-RUN bash -c "\
-    ollama serve & \
-    sleep 5 && \
-    ollama list \
-"
-
-# Show ollama model
-RUN bash -c "\
-    ollama serve & \
-    sleep 5 && \
-    ollama show qwen3.5:2b \
-"
+# Create kubectl directory
+WORKDIR /kubectl
 
 # Install kubectl-ai
 RUN curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/main/install.sh -o install.sh \
@@ -46,9 +21,3 @@ RUN curl -fsSL https://raw.githubusercontent.com/GoogleCloudPlatform/kubectl-ai/
 # Install Kubectl
 RUN curl -LO https://dl.k8s.io/release/v1.33.0/bin/linux/amd64/kubectl && \
     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Expose the port 11434
-EXPOSE 11434
-
-# Run ollama serve command
-CMD ["ollama", "serve"]
