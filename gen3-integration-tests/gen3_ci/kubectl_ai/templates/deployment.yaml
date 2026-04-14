@@ -15,11 +15,6 @@ spec:
     metadata:
       labels:
         app: kubectl-ai
-      annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
-      {{- with .Values.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
     spec:
       serviceAccountName: kubectl-access-kubectl-ai
       containers:
