@@ -2,10 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubectl-ai
-  annotations:
-  {{- with .Values.podAnnotations }}
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
 spec:
   replicas: 1
   selector:
@@ -25,3 +21,8 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
             - containerPort: 80
+          env:
+            - name: OLLAMA_KEEP_ALIVE
+              value: "-1"
+            - name: KUBECTL_AI_TIMEOUT
+              value: "300"
