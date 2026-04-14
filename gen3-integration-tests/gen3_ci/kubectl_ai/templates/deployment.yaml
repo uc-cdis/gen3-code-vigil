@@ -14,19 +14,10 @@ spec:
     spec:
       serviceAccountName: kubectl-access-kubectl-ai
       containers:
-        - name: ollama
+        - name: kubectl-ai
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
-            - containerPort: 11434
-          env:
-            - name: OLLAMA_LOG_LEVEL
-              value: "debug"
-            - name: OLLAMA_HOST
-              value: "0.0.0.0:11434"
-            - name: OLLAMA_KEEP_ALIVE
-              value: "-1"
-            - name: KUBECTL_AI_TIMEOUT
-              value: "300"
+            - containerPort: 80
