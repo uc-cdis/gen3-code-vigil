@@ -19,6 +19,5 @@ service:
 
 # Service account for accessing S3 bedrock access
 serviceAccount:
-  create: true
   name: s3-bedrock-access
   iamRoleArn: arn:aws:iam::707767160287:role/kubectl-ai-irsa
