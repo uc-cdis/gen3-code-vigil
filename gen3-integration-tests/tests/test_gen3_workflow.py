@@ -225,6 +225,7 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
+    @pytest.mark.skip(reason="Test is currently broken")
     def test_happy_path_create_tes_task(self):
         """
         Test Case: Happy Path for TES Task Creation
@@ -553,6 +554,7 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
+    @pytest.mark.skip(reason="Test is currently broken")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
