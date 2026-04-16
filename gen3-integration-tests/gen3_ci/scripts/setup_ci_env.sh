@@ -582,7 +582,7 @@ wait_for_pods_ready() {
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
 
-    failure_pods=$(kubectl get pods -n "${namespace}" -o json | jq -r '
+    failure_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq -r '
       .items[]
       | select(
           any(.status.containerStatuses[]?;
