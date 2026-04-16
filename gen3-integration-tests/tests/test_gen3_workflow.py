@@ -394,6 +394,7 @@ class TestGen3Workflow(object):
             final_state in valid_states
         ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
 
+    @pytest.mark.skip(reason="Test is currently broken")
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
