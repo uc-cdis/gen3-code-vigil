@@ -76,7 +76,7 @@ class TestFenceAdmin:
             3. Perform the delete request using /admin/user/{username}/soft endpoint to deactivate fence_admin_1
             4. Perform a get request using /admin/user/{username} endpoint and verify fence_admin_1 user is deactivated
             5. Again perform the delete request for inactive user using /admin/user/{username}/soft endpoint
-            6. Verify the request fails
+            6. Verify the request passes (deactivating a deactivated user will just make no change)
             7. Perform the delete request using /admin/user/{username}/soft endpoint for a fence_admin_2 user that doesn't exists
             8. Verify the request fails
         """
