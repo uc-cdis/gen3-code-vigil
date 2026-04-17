@@ -33,7 +33,7 @@ class TestFenceAdmin:
             2. Verify the endpoint is not accessible by indexing_account (403 error) as it doesn't have fence admin permission
             3. Using main_account user perform get request on /admin/user/{username} endpoint
             4. Verify the endpoint is accessible by main_account as it has fence admin permission
-            5. Perform a post request for /admin/user, it should fail with duplicate user error (500 error)
+            5. Perform a post request for /admin/user, it should fail with duplicate user error (400 error)
         """
         logger.info("Logging in using fence_admin_1 user")
         self.login_page.go_to(page)
