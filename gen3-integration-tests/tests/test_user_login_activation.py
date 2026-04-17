@@ -33,6 +33,13 @@ class TestUserLoginActivation:
             2. Login using authorized_user_1 user
             3. Verify authorized_user_1 user is able to login and can be accessed by main_account user using /admin/user endpoint
         """
+        logger.info("Verifying authorized_user_1 user does not yet exist")
+        response = self.fence.verify_authorized_username(
+            verify_username="authorized_user_1"
+        )
+        assert (
+            response.status_code == 404
+        ), f"Expected status to be 404, but got {response.status_code}"
         logger.info("Logging in using authorized_user_1 user")
         self.login_page.go_to(page)
         self.login_page.login(page, user="authorized_user_1")
