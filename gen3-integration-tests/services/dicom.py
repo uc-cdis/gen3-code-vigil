@@ -16,6 +16,8 @@ class Dicom(object):
             self.DICOM_STUDIES = "/dicom-server/studies"
 
     def submit_dicom_file(self, user="main_account", expected_status=200):
+        logger.info(self.DICOM_INSTANCES)
+        logger.info(self.DICOM_STUDIES)
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         access_token = auth.get_access_token()
         url = self.BASE_URL + self.DICOM_INSTANCES
