@@ -722,8 +722,8 @@ class TestGen3Workflow(object):
             },
             {
                 "command": ["False"],
-                "expected_exit_code": 0,  # This is current funnel's behavior issue #53
-                "expected_state": "SYSTEM_ERROR",
+                "expected_exit_code": 127,
+                "expected_state": "EXECUTOR_ERROR",
             },
         ],
     )
