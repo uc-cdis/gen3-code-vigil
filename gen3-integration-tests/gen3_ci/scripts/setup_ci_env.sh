@@ -534,35 +534,35 @@ install_helm_chart() {
       return 1
     fi
   else
-    helm repo add gen3 https://helm.gen3.org
-    helm repo add external-secrets https://charts.external-secrets.io
-    helm repo update
+    # helm repo add gen3 https://helm.gen3.org
+    # helm repo add external-secrets https://charts.external-secrets.io
+    # helm repo update
 
-    helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace --set installCRDs=true --version 0.8.5
-    # echo "--------"
-    # kubectl get crd | grep external-secrets
-    # echo "--------"
-    # kubectl get pods -n external-secrets
+    # helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace --set installCRDs=true --version 0.8.5
+    # # echo "--------"
+    # # kubectl get crd | grep external-secrets
+    # # echo "--------"
+    # # kubectl get pods -n external-secrets
 
-    max_retries=10
-    delay=10
-    for attempt in $(seq 1 $max_retries); do
-      echo "Attempt $attempt..."
-      kubectl get pods -n external-secrets
-      if kubectl get pods -n external-secrets | grep -q '0/'; then
-        echo "external-secrets pods are not ready"
-      else
-        echo "external-secrets pods are ready"
-        break
-      fi
-      if [ "$attempt" -lt "$max_retries" ]; then
-        echo "Retrying in $delay seconds..."
-        sleep "$delay"
-      else
-        echo "external-secrets pods still not ready after $max_retries attempts. Giving up"
-        return 1
-      fi
-    done
+    # max_retries=10
+    # delay=10
+    # for attempt in $(seq 1 $max_retries); do
+    #   echo "Attempt $attempt..."
+    #   kubectl get pods -n external-secrets
+    #   if kubectl get pods -n external-secrets | grep -q '0/'; then
+    #     echo "external-secrets pods are not ready"
+    #   else
+    #     echo "external-secrets pods are ready"
+    #     break
+    #   fi
+    #   if [ "$attempt" -lt "$max_retries" ]; then
+    #     echo "Retrying in $delay seconds..."
+    #     sleep "$delay"
+    #   else
+    #     echo "external-secrets pods still not ready after $max_retries attempts. Giving up"
+    #     return 1
+    #   fi
+    # done
 
     # # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
     # git clone https://github.com/uc-cdis/gen3-helm.git
