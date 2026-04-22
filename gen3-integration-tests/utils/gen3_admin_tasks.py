@@ -177,21 +177,21 @@ def run_gen3_job(
         #     logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
         # else:
         raise Exception(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
-    # TODO fix this...need job_name
+    # TODO fix this... need job_name
     # check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
     import time
 
     time.sleep(60)
 
-    print("Pods after run_gen3_job:")
-    cmd = ["kubectl", "-n", pytest.namespace, "get", "pods"]
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    )
-    if result.returncode == 0:
-        logger.info(f"success - {result.stdout}")
-    else:
-        logger.info(f"failure - {result.returncode} - {result.stderr}")
+    # print("Pods after run_gen3_job:")
+    # cmd = ["kubectl", "-n", pytest.namespace, "get", "pods"]
+    # result = subprocess.run(
+    #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    # )
+    # if result.returncode == 0:
+    #     logger.info(f"success - {result.stdout}")
+    # else:
+    #     logger.info(f"failure - {result.returncode} - {result.stderr}")
 
 
 def fence_delete_expired_clients():

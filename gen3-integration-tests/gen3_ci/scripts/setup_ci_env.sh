@@ -655,11 +655,11 @@ wait_for_pods_ready() {
 
     echo '----------- Pods:'
     kubectl get pods -n ${namespace}
-    echo '----------- Jobs:'
-    kubectl get jobs -n ${namespace}
-    echo '----------- Services:'
-    kubectl get svc -n ${namespace}
-    echo '-----------'
+    # echo '----------- Jobs:'
+    # kubectl get jobs -n ${namespace}
+    # echo '----------- Services:'
+    # kubectl get svc -n ${namespace}
+    # echo '-----------'
 
     if [ "$not_ready_count" -eq 0 ]; then
       n_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq '[.items[]]' | jq 'length')
