@@ -240,7 +240,7 @@ class Gen3Workflow:
         return response
 
     def poll_until_task_reaches_expected_state(
-        self, task_id, user, expected_final_state, max_retries=5, poll_interval=30
+        self, task_id, user, expected_final_state, max_retries=5, poll_interval=5  # 30
     ):
         """
         Polls the TES task status until it reaches a final state or exceeds max retries.
@@ -360,6 +360,59 @@ class Gen3Workflow:
                 pod,
                 "-n",
                 "workflow-pods-funnel-pr-1",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+
+        logger.info("===================== kubectl get pod -n mount-s3")
+        cmd = [
+            "kubectl",
+            "get",
+            "pod",
+            "-n",
+            "mount-s3",
+            "-o",
+            "name",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
+        logger.info(f"===================== kubectl get pod -n mount-s3: {pods}")
+        for pod in pods:
+            logger.info(f"===================== kubectl logs {pod}")
+            cmd = [
+                "kubectl",
+                "logs",
+                pod,
+                "-n",
+                "mount-s3",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+        for pod in pods:
+            logger.info(f"===================== kubectl describe pod {pod}")
+            cmd = [
+                "kubectl",
+                "describe",
+                pod,
+                "-n",
+                "mount-s3",
             ]
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             if result.returncode == 0:
