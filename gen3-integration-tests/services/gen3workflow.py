@@ -376,6 +376,22 @@ class Gen3Workflow:
             "pod",
             "-n",
             "mount-s3",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
+
+        logger.info("===================== kubectl get pod -n mount-s3 -o name")
+        cmd = [
+            "kubectl",
+            "get",
+            "pod",
+            "-n",
+            "mount-s3",
             "-o",
             "name",
         ]
@@ -421,6 +437,118 @@ class Gen3Workflow:
                 logger.info(
                     f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
                 )
+
+            try:
+                cmd = f"kubectl exec -n mount-s3 {pod} -- env"
+                logger.info(f"===================== {cmd}")
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                )
+                if result.returncode == 0:
+                    logger.info(f"success - {result.stdout}")
+                else:
+                    logger.info(f"failure - {result.returncode} - {result.stderr}")
+            except Exception as e:
+                print(e)
+
+            try:
+                cmd = f"kubectl get pod -n mount-s3 {pod} -o yaml | grep -A 30 env"
+                logger.info(f"===================== {cmd}")
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                )
+                if result.returncode == 0:
+                    logger.info(f"success - {result.stdout}")
+                else:
+                    logger.info(f"failure - {result.returncode} - {result.stderr}")
+            except Exception as e:
+                print(e)
+
+        try:
+            logger.info(
+                "===================== kubectl get pv -n workflow-pods-funnel-pr-1 -l app=funnel"
+            )
+            cmd = [
+                "kubectl",
+                "get",
+                "pv",
+                "-n",
+                "workflow-pods-funnel-pr-1",
+                "-l",
+                "app=funnel",
+            ]
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout.decode('utf-8')}")
+            else:
+                logger.info(
+                    f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+                )
+        except Exception as e:
+            print(e)
+
+        try:
+            cmd = "kubectl get pv -n workflow-pods-funnel-pr-1 -l app=funnel -o yaml | grep -A 30 mountOptions"
+            logger.info(f"===================== {cmd}")
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout}")
+            else:
+                logger.info(f"failure - {result.returncode} - {result.stderr}")
+        except Exception as e:
+            print(e)
+
+        try:
+            # kubectl run -it --rm debug -n mount-s3 --image=curlimages/curl --restart=Never \
+            #   --overrides='{
+            #     "spec": {
+            #       "containers": [{
+            #         "name": "debug",
+            #         "image": "curlimages/curl",
+            #         "args": ["curl", "-v", "http://minio.funnel-pr-1.svc.cluster.local:9000/minio/health/live"],
+            #         "securityContext": {
+            #           "allowPrivilegeEscalation": false,
+            #           "runAsNonRoot": true,
+            #           "runAsUser": 1000,
+            #           "capabilities": {"drop": ["ALL"]},
+            #           "seccompProfile": {"type": "RuntimeDefault"}
+            #         }
+            #       }],
+            #       "restartPolicy": "Never"
+            #     }
+            #   }'
+
+            # kubectl run -it --rm debug -n funnel-pr-1 --image=curlimages/curl --restart=Never -- \
+            #   curl -v http://minio.funnel-pr-1.svc.cluster.local:9000/minio/health/live
+            cmd = "kubectl run -it --rm debug -n mount-s3 --image=curlimages/curl --restart=Never -- curl -v http://minio.funnel-pr-1.svc.cluster.local:9000/minio/health/live"
+            logger.info(f"===================== {cmd}")
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                logger.info(f"success - {result.stdout}")
+            else:
+                logger.info(f"failure - {result.returncode} - {result.stderr}")
+        except Exception as e:
+            print(e)
 
         raise Exception(
             f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
