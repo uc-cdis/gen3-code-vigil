@@ -61,10 +61,10 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
-    url="$HOSTNAME_PROTOCOL://$HOSTNAME/user/_status"
-    echo "----- _status at $url"
-    curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $url
-    cat $OUTPUT_DIR/status
+    # url="$HOSTNAME_PROTOCOL://$HOSTNAME/user/_status"
+    # echo "----- _status at $url"
+    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $url
+    # cat $OUTPUT_DIR/status
 
     # exit 1
 
@@ -74,9 +74,9 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
 
-    echo '$HOSTNAME =' $HOSTNAME
+    # echo '$HOSTNAME =' $HOSTNAME
     # echo $RESPONSE
-    kubectl -n "$NAMESPACE" logs -l app=fence
+    # kubectl -n "$NAMESPACE" logs -l app=fence
 
     # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
     # cat $OUTPUT_DIR/status

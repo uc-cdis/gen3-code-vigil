@@ -534,9 +534,9 @@ install_helm_chart() {
       return 1
     fi
   else
-    # helm repo add gen3 https://helm.gen3.org
+    helm repo add gen3 https://helm.gen3.org
     # helm repo add external-secrets https://charts.external-secrets.io
-    # helm repo update
+    helm repo update
 
     # helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace --set installCRDs=true --version 0.8.5
     # # echo "--------"

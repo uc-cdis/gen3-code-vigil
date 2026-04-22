@@ -300,33 +300,33 @@ class Gen3Workflow:
                 f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
             )
 
-        logger.info("===================== kubectl get nodepool")
-        cmd = [
-            "kubectl",
-            "get",
-            "nodepool",
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            logger.info(f"success - {result.stdout.decode('utf-8')}")
-        else:
-            logger.info(
-                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-            )
+        # logger.info("===================== kubectl get nodepool")
+        # cmd = [
+        #     "kubectl",
+        #     "get",
+        #     "nodepool",
+        # ]
+        # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # if result.returncode == 0:
+        #     logger.info(f"success - {result.stdout.decode('utf-8')}")
+        # else:
+        #     logger.info(
+        #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+        #     )
 
-        logger.info("===================== kubectl get node")
-        cmd = [
-            "kubectl",
-            "get",
-            "node",
-        ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            logger.info(f"success - {result.stdout.decode('utf-8')}")
-        else:
-            logger.info(
-                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-            )
+        # logger.info("===================== kubectl get node")
+        # cmd = [
+        #     "kubectl",
+        #     "get",
+        #     "node",
+        # ]
+        # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # if result.returncode == 0:
+        #     logger.info(f"success - {result.stdout.decode('utf-8')}")
+        # else:
+        #     logger.info(
+        #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+        #     )
 
         logger.info(
             "===================== kubectl get pod -n workflow-pods-funnel-pr-1"
@@ -390,24 +390,24 @@ class Gen3Workflow:
 
         response = requests.get(url=storage_url, headers=headers)
 
-        # logger.info("===================== Getting gen3-workflow logs...")
-        # cmd = [
-        #     "kubectl",
-        #     "-n",
-        #     pytest.namespace,
-        #     "logs",
-        #     "-l",
-        #     "app=gen3-workflow",
-        #     "--tail",
-        #     "300",
-        # ]
-        # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # if result.returncode == 0:
-        #     logger.info(f"success - {result.stdout.decode('utf-8')}")
-        # else:
-        #     logger.info(
-        #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-        #     )
+        logger.info("===================== Getting gen3-workflow logs...")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            "-l",
+            "app=gen3-workflow",
+            "--tail",
+            "300",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(f"success - {result.stdout.decode('utf-8')}")
+        else:
+            logger.info(
+                f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+            )
 
         assert (
             response.status_code == expected_status
