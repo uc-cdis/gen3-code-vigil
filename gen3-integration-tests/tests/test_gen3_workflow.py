@@ -290,7 +290,6 @@ class TestGen3Workflow(object):
                     ],
                 }
             ],
-            "tags": {"user": self.valid_user},
         }
         task_response = self.gen3_workflow.create_tes_task(
             request_body=tes_task_payload,
@@ -374,7 +373,6 @@ class TestGen3Workflow(object):
                     "command": ["echo", "hello beautiful world!"],
                 }
             ],
-            "tags": {"user": "bar"},
         }
         # Step 1: Create a TES task
         task_info = self.gen3_workflow.create_tes_task(
@@ -488,7 +486,6 @@ class TestGen3Workflow(object):
                     "command": test_case["command"],
                 }
             ],
-            "tags": {"user": self.valid_user},
         }
         task_response = self.gen3_workflow.create_tes_task(
             request_body=tes_task_payload,
@@ -532,7 +529,6 @@ class TestGen3Workflow(object):
                     "command": ["echo", "Hello from User A!"],
                 }
             ],
-            "tags": {"user": self.valid_user},
         }
         task_response = self.gen3_workflow.create_tes_task(
             request_body=tes_task_payload,
@@ -596,7 +592,6 @@ class TestGen3Workflow(object):
         invalid_payload_1 = {
             "name": "Invalid Task 1",
             "description": "This task is missing the 'executors' field.",
-            "tags": {"user": self.valid_user},
         }
         self.gen3_workflow.create_tes_task(
             request_body=invalid_payload_1,
@@ -614,7 +609,6 @@ class TestGen3Workflow(object):
                     "command": "not_a_list",  # Invalid command format
                 }
             ],
-            "tags": {"user": self.valid_user},
         }
         self.gen3_workflow.create_tes_task(
             request_body=invalid_payload_2,
