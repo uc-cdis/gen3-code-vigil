@@ -103,13 +103,12 @@ class TestGen3Workflow(object):
 
     ######################## Test /storage/setup endpoint ########################
 
-    @pytest.mark.skip(reason="wip")
     def test_setup_storage_without_token(self):
         """Test GET /storage/setup without an access token."""
         self.gen3_workflow.setup_storage(user=None, expected_status=401)
 
     ######################## Test /s3/ endpoint ########################
-    @pytest.mark.skip(reason="wip")
+
     def test_any_user_cannot_get_s3_file_with_unsigned_request(self):
         """Unsigned requests should receive 401 even if the user is authorized to get data."""
         self.gen3_workflow.get_bucket_object_with_unsigned_request(
@@ -118,7 +117,6 @@ class TestGen3Workflow(object):
             expected_status=401,
         )
 
-    @pytest.mark.skip(reason="wip")
     def test_unauthorized_user_cannot_post_s3_file(self):
         """Unauthorized user should receive 403 when posting a S3 file."""
         self.gen3_workflow.put_bucket_object_with_boto3(
@@ -129,7 +127,6 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
-    @pytest.mark.skip(reason="wip")
     def test_unauthorized_user_cannot_get_s3_file(self):
         """Unauthorized user should receive 403 when trying to GET a S3 file."""
         self.gen3_workflow.get_bucket_object_with_boto3(
@@ -139,7 +136,6 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
-    @pytest.mark.skip(reason="wip")
     def test_happy_path_upload_and_get_s3_file(self):
         """
         POST an S3 file in a `directoy/filename` format,
@@ -184,7 +180,6 @@ class TestGen3Workflow(object):
             input_content in response_contents
         ), "Stored and retrieved content should match"
 
-    @pytest.mark.skip(reason="wip")
     def test_happy_path_delete_s3_file(self):
         """
         POST an S3 file in a `directoy/filename` format,
@@ -216,7 +211,7 @@ class TestGen3Workflow(object):
         )
 
     ######################## Test /ga4gh/tes/v1/tasks endpoint ########################
-    @pytest.mark.skip(reason="wip")
+
     def test_unauthorized_user_cannot_list_tes_tasks(self):
         """
         Ensure that an unauthorized user cannot list TES tasks.
@@ -230,7 +225,6 @@ class TestGen3Workflow(object):
         tasks = response.get("tasks", None)
         assert tasks == [], f"Expected an empty task list, but got: {tasks}"
 
-    @pytest.mark.skip(reason="wip")
     def test_unauthorized_user_cannot_create_tes_task(self):
         """
         Ensure that an unauthorized user cannot create TES task.
@@ -366,7 +360,6 @@ class TestGen3Workflow(object):
                 input_file_contents == output_file_contents
             ), f"File '{file_name}' does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
 
-    @pytest.mark.skip(reason="wip")
     def test_happy_path_cancel_tes_task(self):
         """
         Verify that an authorized user can cancel a TES task.
@@ -412,7 +405,6 @@ class TestGen3Workflow(object):
             final_state in valid_states
         ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
 
-    @pytest.mark.skip(reason="wip")
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -573,7 +565,6 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
-    @pytest.mark.skip(reason="wip")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
@@ -684,7 +675,7 @@ class TestGen3Workflow(object):
     # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
     #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
     #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
-    @pytest.mark.skip(reason="wip")
+
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
@@ -731,7 +722,6 @@ class TestGen3Workflow(object):
         #     "Could not resolve host: arborist-service" in stdout
         # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
-    @pytest.mark.skip(reason="wip")
     @pytest.mark.parametrize(
         "test_case",
         [
@@ -793,7 +783,6 @@ class TestGen3Workflow(object):
             task_exit_code == test_case["expected_exit_code"]
         ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
 
-    @pytest.mark.skip(reason="wip")
     def test_multi_user_task_isolation(self):
         """
         Test Case: Verify that users can only see and access their own TES tasks and storage.
@@ -861,7 +850,6 @@ class TestGen3Workflow(object):
             expected_status=200,
         )
 
-    @pytest.mark.skip(reason="wip")
     def test_create_task_format_error(self):
         """
         Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
