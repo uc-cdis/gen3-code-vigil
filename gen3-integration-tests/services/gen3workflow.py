@@ -240,7 +240,7 @@ class Gen3Workflow:
         return response
 
     def poll_until_task_reaches_expected_state(
-        self, task_id, user, expected_final_state, max_retries=5, poll_interval=5  # 30
+        self, task_id, user, expected_final_state, max_retries=5, poll_interval=30
     ):
         """
         Polls the TES task status until it reaches a final state or exceeds max retries.
@@ -456,7 +456,26 @@ class Gen3Workflow:
                 print(e)
 
             try:
-                cmd = f"kubectl get pod -n mount-s3 {pod} -o yaml | grep -A 30 env"
+                cmd = (
+                    f'kubectl get -n mount-s3 {pod} -o yaml | grep -A 50 "containers:"'
+                )
+                logger.info(f"===================== {cmd}")
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    shell=True,
+                    text=True,
+                )
+                if result.returncode == 0:
+                    logger.info(f"success - {result.stdout}")
+                else:
+                    logger.info(f"failure - {result.returncode} - {result.stderr}")
+            except Exception as e:
+                print(e)
+
+            try:
+                cmd = f"kubectl get -n mount-s3 {pod} -o yaml | grep -A 30 env"
                 logger.info(f"===================== {cmd}")
                 result = subprocess.run(
                     cmd,
