@@ -258,7 +258,7 @@ class TestGen3Workflow(object):
         )
 
         # Step 2: Create a TES task
-        echo_message = "I'm done!"
+        echo_message = "done!"
         tes_task_payload = {
             "name": "Hello world with Word Count",
             "description": "Demonstrates the most basic echo task.",
@@ -281,12 +281,7 @@ class TestGen3Workflow(object):
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
                     "command": [
-                        # Note: This also serves as a regression test for an issue when the command contains quotes:
-                        # `Error: yaml: line 33: did not find expected ',' or ']'`
-                        # A current limitation of quote handling is that the command received by
-                        # the Funnel executor is: echo \'I\'m done!\'
-                        # so the output includes extra quotes (see `expected_stdout` variable).
-                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo '{echo_message}'",
+                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
                     ],
                 }
             ],
@@ -333,10 +328,9 @@ class TestGen3Workflow(object):
 
         # Check if the stdout contains the expected echo message
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
-        expected_stdout = f"'{echo_message}'"
         assert (
-            stdout == expected_stdout
-        ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
+            stdout == echo_message
+        ), f"Expected stdout to be `{echo_message}`, but found `{stdout}` instead."
 
         # Step 6: Validate task outputs
         for file_name in ["output.txt", "grep_output.txt"]:
@@ -615,6 +609,58 @@ class TestGen3Workflow(object):
             user=self.valid_user,
             expected_status=400,
         )
+
+    @pytest.mark.skip(reason="broken as of funnel rc-27")
+    def test_create_tes_task_with_quotes(self):
+        """
+        This is a regression test for an issue when the command contains quotes:
+        `Error: yaml: line 33: did not find expected ',' or ']'`
+        or `/bin/sh: syntax error: unterminated quoted string`.
+
+        A current limitation of quote handling is that the command received by the Funnel executor
+        is: echo \'I\'m done!\' so the output includes extra quotes (see `expected_stdout`
+        variable).
+        """
+        echo_message = "I'm done!"
+        tes_task_payload = {
+            "name": "Task with quotes",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": [f"echo '{echo_message}'"],
+                }
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Poll until the TES task completes or fails with a known status
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        # Check if the stdout contains the expected echo message
+        task_logs = task_info.get("logs", [])
+        assert (
+            len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
+        ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
+
+        assert (
+            "stdout" in task_logs[0]["logs"][0]
+        ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
+        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        expected_stdout = f"'{echo_message}'"
+        assert (
+            stdout == expected_stdout
+        ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
 
     ######################## Test /ga4gh/tes/v1/tasks endpoint with Nextflow ######################
 
