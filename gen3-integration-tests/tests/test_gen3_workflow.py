@@ -675,7 +675,6 @@ class TestGen3Workflow(object):
     # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
     #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
     #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
-
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted

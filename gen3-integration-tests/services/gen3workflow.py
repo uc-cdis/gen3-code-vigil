@@ -956,6 +956,7 @@ class Gen3Workflow:
         access_token = self._get_access_token(user)
         os.environ["GEN3_TOKEN"] = access_token
         os.environ["HOSTNAME"] = pytest.hostname
+        os.environ["HOSTNAME_PROTOCOL"] = os.getenv("HOSTNAME_PROTOCOL")
         os.environ["WORK_DIR"] = s3_working_directory
 
         original_cwd = Path.cwd()
