@@ -1,31 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama
+  name: kubectl-ai
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ollama
+      app: kubectl-ai
   template:
     metadata:
       labels:
-        app: ollama
+        app: kubectl-ai
     spec:
-      serviceAccountName: kubectl-access-ollama
+      serviceAccountName: kubectl-access-kubectl-ai
       containers:
-        - name: ollama
+        - name: kubectl-ai
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
-            - containerPort: 11434
+            - containerPort: 80
           env:
-            - name: OLLAMA_LOG_LEVEL
-              value: "debug"
-            - name: OLLAMA_HOST
-              value: "0.0.0.0:11434"
             - name: OLLAMA_KEEP_ALIVE
               value: "-1"
             - name: KUBECTL_AI_TIMEOUT
