@@ -9,7 +9,7 @@ Please refer to [gen3-helm](https://github.com/uc-cdis/gen3-helm) repo
 Switch to `gen3-integration-tests` directory and execute:
 
     ```
-    ./gen3_ci/scripts/generate_api_keys.sh test_data/test_setup/users.csv <hostname> <namespace>
+    ./gen3_ci/scripts/generate_api_keys.sh test_data/test_setup/users.csv <hostname protocol> <hostname> <namespace>
     ```
 *Note: you might need to run `chmod +x ./gen3_ci/scripts/generate_api_keys.sh` once*
 

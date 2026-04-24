@@ -1,5 +1,5 @@
 #!/bin/bash
-# ./generate_api_keys.sh path/to/user.csv hostname
+# ./generate_api_keys.sh path/to/user.csv hostname-protocol hostname namespace
 # Script to generate API keys for all test users.
 # Generates an access token from the fence pod and uses that to generate an API key.
 
@@ -7,14 +7,14 @@ set -euo pipefail  # Exit on errors, undefined variables, and failed pipes.
 
 # Validate arguments
 if [[ $# -ne 4 ]]; then
-    echo "Usage: $0 <path-to-user.csv> <hostname> <namespace> <hostname protocol>"
+    echo "Usage: $0 <path-to-user.csv> <hostname protocol> <hostname> <namespace>"
     exit 1
 fi
 
 USERS_FILE=$1
-HOSTNAME=$2
-NAMESPACE=$3
-HOSTNAME_PROTOCOL=$4
+HOSTNAME_PROTOCOL=$2
+HOSTNAME=$3
+NAMESPACE=$4
 
 # Check if the users file exists
 if [[ ! -f "$USERS_FILE" ]]; then
@@ -26,19 +26,6 @@ fi
 OUTPUT_DIR="$HOME/.gen3"
 mkdir -p "$OUTPUT_DIR"
 chmod -R 755 "$OUTPUT_DIR"
-
-# echo "NAMESPACE:" $NAMESPACE
-# # echo "kubectl get namespaces:"
-# # kubectl get namespaces
-# echo "============"
-# echo "kubectl get pods -n default:"
-# echo "1============"
-# kubectl get pods -n default
-# echo "1============"
-# echo "kubectl get pods -n $NAMESPACE:"
-# echo "2============"
-# kubectl get pods -n "$NAMESPACE"
-# echo "2============"
 
 # Get running fence pod
 FENCE_POD=$(kubectl get pods -l app=fence -o json -n "$NAMESPACE" | jq -r '.items[0].metadata.name // empty')
@@ -61,38 +48,16 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
         exit 1
     fi
 
-    # url="$HOSTNAME_PROTOCOL://$HOSTNAME/user/_status"
-    # echo "----- _status at $url"
-    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $url
-    # cat $OUTPUT_DIR/status
-
-    # exit 1
-
     # Request API key
     RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "$HOSTNAME_PROTOCOL://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
 
-    # echo '$HOSTNAME =' $HOSTNAME
-    # echo $RESPONSE
-    # kubectl -n "$NAMESPACE" logs -l app=fence
-
-    # curl -o "$OUTPUT_DIR/status" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_status
-    # cat $OUTPUT_DIR/status
-    # curl -o "$OUTPUT_DIR/version" -w "%{http_code}" $HOSTNAME_PROTOCOL://$HOSTNAME/user/_version
-    # cat $OUTPUT_DIR/version
-
-    # kubectl get pods -n $NAMESPACE
-
-
     # Validate API response
     if [[ "$RESPONSE" -ne 200 ]]; then
         echo "Error: Failed to generate API key for $email (HTTP status: $RESPONSE). Fence logs (all replicas):"
         kubectl logs -l app=fence -n "${NAMESPACE}" --tail 30
-        echo "Revproxy logs (all replicas):"
-        kubectl get pods -l app=revproxy -n "${NAMESPACE}"
-        kubectl logs -l app=revproxy -n "${NAMESPACE}" --tail 30
         exit 1
     fi
 

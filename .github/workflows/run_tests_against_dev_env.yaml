@@ -121,6 +121,7 @@ jobs:
             HOSTNAME=${NAMESPACE}.ci.planx-pla.net
             echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
             echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+            echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
 
       - name: Prepare CI environment
         id: prep_ci_env

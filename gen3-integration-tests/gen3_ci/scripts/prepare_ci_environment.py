@@ -26,14 +26,22 @@ def wait_for_quay_build(repo, tag):
     found = False
     i = 0
     repo_list = repo.split(",")
-    logger.info(f"Repo - {repo}, image - {tag}")
+    logger.info(f"[wait_for_quay_build] Repo - {repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
-            logger.info(f"Waiting for image '{repo_item}:{tag}' to be built in quay")
+            logger.info(
+                f"[wait_for_quay_build] Waiting for image '{repo_item}:{tag}' to be built in quay"
+            )
             # TODO why does this work for funnel:ci
             res = requests.get(f"{quay_url_org}/{repo_item}/tag")
+            print(
+                "wait_for_quay_build",
+                f"{quay_url_org}/{repo_item}/tag",
+                res.status_code,
+            )
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
+                print("branch_images", branch_images)
                 if len(branch_images) >= 1:
                     image = branch_images[0]
                     image_time = datetime.utcfromtimestamp(image["start_ts"])
@@ -44,14 +52,17 @@ def wait_for_quay_build(repo, tag):
                         repo_image_status[repo_item] = False
             else:
                 repo_image_status[repo_item] = False
+            print("repo_image_status", repo_image_status)
         i += 1
         time.sleep(60)
         found = all(repo_image_status.values())
     if found:
-        logger.info(f"Found image '{repo_item}:{tag}'")
+        logger.info(f"[wait_for_quay_build] Found image '{repo_item}:{tag}'")
         return "success"
     if not found:
-        logger.error(f"Image with tag '{tag}' was not found in repo '{repo}'")
+        logger.error(
+            f"[wait_for_quay_build] Image with tag '{tag}' was not found in repo '{repo}'"
+        )
         return "failure"
 
 
@@ -80,9 +91,6 @@ def setup_env_for_helm(arguments):
     logger.info("------------------------")
     logger.info(f"{file_name} script {msg}. Logs (stdout):")
     logger.info(result.stdout)
-    logger.info(
-        f"------------------------ setup_env_for_helm result.returncode: {result.returncode}"
-    )
 
     return "SUCCESS" if result.returncode == 0 else "failure"
 
@@ -94,11 +102,8 @@ def modify_env_for_service_pr(namespace, service, tag):
     Run usersync
     """
     helm_branch = os.getenv("HELM_BRANCH")
-    print("CI_ENV:", os.getenv("CI_ENV"))
     ci_default_manifest = (
-        # f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
-        # TODO CI_ENV should be "default" but it's "None"; fix that
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
     )
     helm_service_names = {
         "audit-service": "audit",
@@ -161,14 +166,14 @@ def modify_env_for_test_repo_pr(namespace):
     return setup_env_for_helm(arguments)
 
 
-@retry(times=1, delay=2, exceptions=(Exception))
+@retry(times=6, delay=30, exceptions=(Exception))
 def generate_api_keys_for_test_users(namespace):
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
+        os.getenv("HOSTNAME_PROTOCOL"),
         os.getenv("HOSTNAME"),
         os.getenv("NAMESPACE"),
-        os.getenv("HOSTNAME_PROTOCOL"),
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
