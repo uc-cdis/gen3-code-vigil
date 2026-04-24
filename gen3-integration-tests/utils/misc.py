@@ -92,7 +92,7 @@ def retry(times, delay, exceptions):
                     return func(*args, **kwargs)
                 except exceptions:
                     print(
-                        f"Errored when trying to run {func.__name__}, attempt {attempt} of {times}"
+                        f"Errored when trying to run '{func.__name__}', attempt {attempt} of {times}"
                     )
                     attempt += 1
             return func(*args, **kwargs)
