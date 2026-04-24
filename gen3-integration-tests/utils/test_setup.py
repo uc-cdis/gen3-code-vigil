@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -101,14 +102,29 @@ def get_client_id_secret():
 
 
 def run_usersync():
+    # check which job to run: if there are "useryaml" pods, then the "useryaml" job is deployed and
+    # should be used. If not, the "useryaml" job is not deployed, but the "usersync" cronjob is.
+    cmd = [
+        "kubectl",
+        "get",
+        "pod",
+        "-n",
+        pytest.namespace,
+        "--selector=job-name=useryaml",
+        "-o",
+        "name",
+    ]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        raise Exception(f"[run_usersync] unable to get pods with 'job-name=useryaml'")
+
+    pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
+    job_name = "useryaml" if pods else "usersync"
+
     gen3_admin_tasks.run_gen3_job(
-        "useryaml",
+        job_name,
         test_env_namespace=pytest.namespace,
     )
-    # gen3_admin_tasks.run_gen3_job(
-    #     "usersync",
-    #     test_env_namespace=pytest.namespace,
-    # )
 
 
 def setup_google_buckets():

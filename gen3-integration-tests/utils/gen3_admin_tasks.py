@@ -110,35 +110,16 @@ def get_env_configurations(test_env_namespace: str = ""):
 def run_gen3_job(
     job_name: str,
     test_env_namespace: str = "",
+    job_type: str = "cronjob",
 ):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     """
-
-    logger.info("-------- run_gen3_job useryaml")
-    cmd = ["kubectl", "-n", test_env_namespace, "get", "job", job_name]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode == 0:
-        logger.info(f"success - {result.stdout.decode('utf-8')}")
-    else:
-        logger.info(f"failure - {result.returncode} - {result.stderr.decode('utf-8')}")
-
-    # logger.info("-------- run_gen3_job useryaml")
-    # cmd = [
-    #     f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)'"
-    # ]
-    # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # if result.returncode == 0:
-    #     logger.info(f"success - {result.stdout.decode('utf-8')}")
-    # else:
-    #     logger.info(f"failure - {result.returncode} - {result.stderr.decode('utf-8')}")
-    # logger.info("-------- run_gen3_job useryaml")
-
-    if job_name == "useryaml":  # this is a job, not a cronjob
+    if job_type == "job":
         cmd = [
-            f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' | kubectl -n {test_env_namespace} replace --force -f -"  # TODO try without force
+            f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' | kubectl -n {test_env_namespace} replace -f -"
         ]
-    else:
+    elif job_type == "cronjob":
         cronjob_name = job_name
         if job_name == "etl":
             cronjob_name = "etl-cronjob"
@@ -154,35 +135,67 @@ def run_gen3_job(
             f"--from=cronjob/{cronjob_name}",
             job_name,
         ]
-    logger.info(f"Running command: {cmd}")
+    else:
+        raise Exception(f"[run_gen3_job] Job type '{job_type}' unknown")
+    logger.info(f"[run_gen3_job] Running command: {cmd}")
     result = subprocess.run(
         cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     if result.returncode == 0:
-        logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
+        logger.info(
+            f"[run_gen3_job] '{job_name}' job triggered - {result.stdout.decode('utf-8')}"
+        )
     else:
-        # logger.info(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
-        # logger.info("-------- run_gen3_job retrying with new syntax")
-        # cmd = (
-        #     f"kubectl -n {test_env_namespace} get job {job_name} -o json "
-        #     "| jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' "
-        #     f"> /tmp/{job_name}.json "
-        #     f"&& kubectl -n {test_env_namespace} delete -f /tmp/{job_name}.json "
-        #     f"&& kubectl -n {test_env_namespace} apply -f /tmp/{job_name}.json"
-        # )
-        # logger.info(f"Running command: {cmd}")
-        # result = subprocess.run(
-        #     cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        # )
-        # if result.returncode == 0:
-        #     logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
-        # else:
-        raise Exception(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
+        raise Exception(
+            f"[run_gen3_job] '{job_name}' failed to start - {result.stderr.decode('utf-8')}"
+        )
     # TODO fix this... need job_name
-    # check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
-    import time
+    check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
+    # import time
 
-    time.sleep(60)
+    # time.sleep(60)
+
+    # logger.info(
+    #     "===================== kubectl get pod -n workflow-pods-funnel-pr-1"
+    # )
+    # cmd = [
+    #     "kubectl",
+    #     "get",
+    #     "pod",
+    #     "-n",
+    #     "workflow-pods-funnel-pr-1",
+    #     f"--selector=job-name={job_name}",
+    #     "-o",
+    #     "name",
+    # ]
+    # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # if result.returncode == 0:
+    #     logger.info(f"success - {result.stdout.decode('utf-8')}")
+    # else:
+    #     logger.info(
+    #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+    #     )
+
+    # pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
+    # logger.info(
+    #     f"===================== kubectl get pod -n workflow-pods-funnel-pr-1: {pods}"
+    # )
+    # for pod in pods:
+    #     logger.info(f"===================== kubectl describe pod {pod}")
+    #     cmd = [
+    #         "kubectl",
+    #         "describe",
+    #         pod,
+    #         "-n",
+    #         "workflow-pods-funnel-pr-1",
+    #     ]
+    #     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #     if result.returncode == 0:
+    #         logger.info(f"success - {result.stdout.decode('utf-8')}")
+    #     else:
+    #         logger.info(
+    #             f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
+    #         )
 
     # print("Pods after run_gen3_job:")
     # cmd = ["kubectl", "-n", pytest.namespace, "get", "pods"]
