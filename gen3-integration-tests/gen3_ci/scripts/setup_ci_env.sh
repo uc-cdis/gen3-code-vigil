@@ -14,16 +14,6 @@ namespace="$1"
 setup_type="$2"
 helm_branch="$3"
 ci_default_manifest_dir="$4"
-
-# echo "=========================== http://minio:9000/health/live"
-# curl -o "status" -w "%{http_code}" http://minio:9000/health/live
-# cat status
-# echo "=========================== http://minio:9000/health/ready"
-# curl -o "status" -w "%{http_code}" http://minio:9000/health/ready
-# cat status
-# exit 1
-
-mkdir -p $ci_default_manifest_dir
 ci_default_manifest_values_yaml="${ci_default_manifest_dir}/values.yaml"
 ci_default_manifest_portal_yaml="${ci_default_manifest_dir}/portal.yaml"
 master_values_yaml="master_values.yaml"
@@ -34,9 +24,6 @@ for file in "$ci_default_manifest_dir"/*.yaml; do
   if [[ -f "$file" ]]; then
     echo "" >> "$master_values_yaml"
     cat "$file" >> "$master_values_yaml"
-    # echo "----------"
-    # echo $file
-    # cat $file
   fi
 done
 
@@ -357,13 +344,15 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
 fi
 
+# Check whether specific services are enabled in the final manifest
+audit_disabled=$(yq eval '.audit.enabled == false' $ci_default_manifest_values_yaml)
+portal_disabled=$(yq eval '.portal.enabled == false' $ci_default_manifest_values_yaml)
+ssjdispatcher_disabled=$(yq eval '.ssjdispatcher.enabled == false' $ci_default_manifest_values_yaml)
+
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
 random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
-
-audit_disabled="true" # TODO support disabling this when "setup_type" == "service-env-setup"
-ssjdispatcher_disabled="true" # TODO support this
 
 # Create audit sqs queue and save to var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
@@ -436,6 +425,12 @@ EOF
   fi
 fi
 
+HOSTNAME_WITHOUT_PORT=$HOSTNAME
+if [[ "$HOSTNAME_WITHOUT_PORT" == *":"* ]]; then
+  # Strip the port from the hostname to avoid `Invalid value: "localhost:8000"` errors in
+  # some templates
+  HOSTNAME_WITHOUT_PORT="${HOSTNAME_WITHOUT_PORT%%:*}"
+fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
@@ -450,8 +445,7 @@ common_param_updates=(
   ".ssjdispatcher.ssjcreds.jobPattern|s3://gen3-helm-data-upload-bucket/${ENV_PREFIX}/*"
   ".ssjdispatcher.ssjcreds.jobPassword|$EKS_CLUSTER_NAME"
   ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
-  # Error: `spec.rules[0].host: Invalid value: \"localhost:8000\"`
-  # ".revproxy.ingress.hosts[0].host|$HOSTNAME"
+  ".revproxy.ingress.hosts[0].host|$HOSTNAME_WITHOUT_PORT"
   ".revproxy.ingress.hosts[0].host|localhost"
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|${HOSTNAME_PROTOCOL}://${HOSTNAME}/user"
@@ -498,10 +492,12 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$ci_default_manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# # Move portal block out of values.yaml into portal.yaml
-# touch $ci_default_manifest_portal_yaml
-# yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
-# yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+# Move portal block out of values.yaml into portal.yaml
+touch $ci_default_manifest_portal_yaml
+if [[ $portal_disabled != "true" ]]; then
+  yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
+  yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+fi
 
 # TODO: Delete this after nightly-build teardown is working properly with helm-ci-cleanup
 if [[ "$namespace" == nightly-build* ]]; then
@@ -522,9 +518,8 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
   fi
 fi
 
-echo $HOSTNAME
 install_helm_chart() {
-  #For custom helm branch
+  # For custom helm branch
   if [ "$helm_branch" != "master" ]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
     echo "dependency update"
@@ -532,71 +527,19 @@ install_helm_chart() {
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
     echo "installing helm chart"
-    # Error: `spec.template.labels: Invalid value: "localhost:8000"`
-    # label `hostname: {{ .Values.global.hostname }}` is injected through `_labels_setup.tpl`
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="localhost" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
-    # if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
     fi
   else
     helm repo add gen3 https://helm.gen3.org
-    # helm repo add external-secrets https://charts.external-secrets.io
     helm repo update
-
-    # helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace --set installCRDs=true --version 0.8.5
-    # # echo "--------"
-    # # kubectl get crd | grep external-secrets
-    # # echo "--------"
-    # # kubectl get pods -n external-secrets
-
-    # max_retries=10
-    # delay=10
-    # for attempt in $(seq 1 $max_retries); do
-    #   echo "Attempt $attempt..."
-    #   kubectl get pods -n external-secrets
-    #   if kubectl get pods -n external-secrets | grep -q '0/'; then
-    #     echo "external-secrets pods are not ready"
-    #   else
-    #     echo "external-secrets pods are ready"
-    #     break
-    #   fi
-    #   if [ "$attempt" -lt "$max_retries" ]; then
-    #     echo "Retrying in $delay seconds..."
-    #     sleep "$delay"
-    #   else
-    #     echo "external-secrets pods still not ready after $max_retries attempts. Giving up"
-    #     return 1
-    #   fi
-    # done
-
-    # # This is temporary until the karpenter-template configmap change is merged to main gen3-helm
-    # git clone https://github.com/uc-cdis/gen3-helm.git
-    # cd gen3-helm/helm/
-    # git checkout remove-funnel-mongodb
-    # cd gen3 && helm dependency update && cd ..
-    # # helm upgrade --install gen3 gen3/ -f ../../.github/values.yaml
-
-    # helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug
-
-    # echo "======= helm template..."
-    # helm template ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug | grep postgresql
-    # echo "======= helm template..."
-
-
-
-    # yq eval ".postgresql = null" -i "$ci_default_manifest_values_yaml"
-    # echo "=========="
-    # echo ci_default_manifest_values_yaml:
-    # cat $ci_default_manifest_values_yaml
-    # echo "=========="
 
     # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
     # or use `--force` to force StatefulSets delete+recreate
     # support flag to remove "-f $ci_default_manifest_portal_yaml"
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="localhost" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
-    # if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -n "${namespace}" --debug; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -647,8 +590,10 @@ wait_for_pods_ready() {
 
   end=$((SECONDS + timeout))
   while [ $SECONDS -lt $end ]; do
+    echo '[wait_for_pods_ready] Pods:'
+    kubectl get pods -n ${namespace}
+
     # Get JSON for not-ready, non-terminating pods
-    # not_ready_json=$(kubectl get pods -n "${namespace}" -o json | \
     not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]
         | select(
@@ -659,14 +604,6 @@ wait_for_pods_ready() {
       ]')
 
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
-
-    echo '----------- Pods:'
-    kubectl get pods -n ${namespace}
-    # echo '----------- Jobs:'
-    # kubectl get jobs -n ${namespace}
-    # echo '----------- Services:'
-    # kubectl get svc -n ${namespace}
-    # echo '-----------'
 
     if [ "$not_ready_count" -eq 0 ]; then
       n_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq '[.items[]]' | jq 'length')
@@ -694,23 +631,21 @@ wait_for_pods_ready() {
     if [[ -n "$failure_pods" ]]; then
       echo "❌ Giving up! Failed pods: $failure_pods"
       echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
-      echo "=======> describing failed pods:"
+      echo "[wait_for_pods_ready] Describing failed pods:"
       echo $failure_pods | kubectl describe pod
-      # return 1
+      return 1
     fi
   done
 
   echo "❌ Timeout: Pods' containers not ready"
 
   echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
-    echo "=======> describing $pod:"
+    echo "[wait_for_pods_ready] Describing pods that are not ready:"
+    echo "======= Describing $pod:"
     kubectl describe pod $pod -n "${namespace}"
-    echo "=======> logs for $pod:"
+    echo "======= Logs for $pod:"
     kubectl logs $pod -n "${namespace}" --all-containers
   done
-
-  # echo "=======> get secrets:"
-  # kubectl get secrets -n "${namespace}"
 
   echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
@@ -741,6 +676,8 @@ else
   exit 1
 fi
 
+# TODO change this to useryaml job for this case
+# TODO can i push a user.yaml file to minio s3?
 # echo "Running usersync..."
 # kubectl delete job usersync-manual -n ${namespace}
 # kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
@@ -756,29 +693,13 @@ fi
 #   exit 1
 # fi
 
-kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
+# kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
 
-echo '----- kubectl cluster-info'
-kubectl cluster-info
-echo '----- port-forward'
-kubectl get service -n "${namespace}"
-# kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 &
-# disown $!
-
+# TODO move this to a 3rd script after env preparation
 kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 > /tmp/pf.log 2>&1 &
 disown $!
-
 # Wait until port is actually accepting connections
 timeout 30 bash -c 'until nc -z localhost 8000; do sleep 0.5; done'
-
-# KPF_PID=$!
-
-# # give it a moment to fail fast if something is wrong, then check that the process started
-# sleep 1
-# if ! kill -0 "$KPF_PID" 2>/dev/null; then
-#   echo "ERROR: port-forward failed to start" >&2
-#   exit 1
-# fi
 
 echo "YAY!!! Env is up..."
 exit 0

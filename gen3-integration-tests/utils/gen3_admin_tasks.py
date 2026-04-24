@@ -117,7 +117,7 @@ def run_gen3_job(
     """
     if job_type == "job":
         cmd = [
-            f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' | kubectl -n {test_env_namespace} replace -f -"
+            f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' | kubectl -n {test_env_namespace} replace --force -f -"
         ]
     elif job_type == "cronjob":
         cronjob_name = job_name
