@@ -32,27 +32,27 @@ def wait_for_quay_build(repo, tag):
             logger.info(
                 f"[wait_for_quay_build] Waiting for image '{repo_item}:{tag}' to be built in quay"
             )
-            # TODO why does this work for funnel:ci
-            res = requests.get(f"{quay_url_org}/{repo_item}/tag")
-            print(
-                "wait_for_quay_build",
-                f"{quay_url_org}/{repo_item}/tag",
-                res.status_code,
-            )
+            url = f"{quay_url_org}/{repo_item}/tag"
+            res = requests.get(url)
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
-                print("branch_images", branch_images)
                 if len(branch_images) >= 1:
                     image = branch_images[0]
                     image_time = datetime.utcfromtimestamp(image["start_ts"])
-                    print(image_time)
                     if image_time > commit_time:
                         repo_image_status[repo_item] = True
                     else:
+                        # the tag exists but is too old
                         repo_image_status[repo_item] = False
+                # TODO: reenable this once waiting for the image works for funnel
+                # else:
+                #     # the tag does not exist
+                #     repo_image_status[repo_item] = False
             else:
+                logger.error(
+                    f"[wait_for_quay_build] Got an error response from '{url}': {res.status_code} {res.text}"
+                )
                 repo_image_status[repo_item] = False
-            print("repo_image_status", repo_image_status)
         i += 1
         time.sleep(60)
         found = all(repo_image_status.values())
