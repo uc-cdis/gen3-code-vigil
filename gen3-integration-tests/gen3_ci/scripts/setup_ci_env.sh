@@ -46,6 +46,9 @@ mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."
+    echo "Explicitly enabling gen3-workflow service for test PR env setup"
+    yq eval ".gen3-workflow.enabled = true" -i "$ci_default_manifest_values_yaml"
+
 elif [ "$setup_type" == "service-env-setup" ]; then
     # If PR is under a service repository, then update the image for the given service
     echo "Setting Up Service PR Env..."
@@ -60,6 +63,10 @@ elif [ "$setup_type" == "service-env-setup" ]; then
         if [[ "$service_name" == "etl" ]]; then
           yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         else
+          if [[ "$service_name" == "gen3-workflow" ]]; then
+            echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
+            yq eval ".${service_name}.enabled = true" -i "$ci_default_manifest_values_yaml"
+          fi
           yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         fi
     elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
@@ -674,7 +681,7 @@ wait_for_pods_ready() {
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
 
-    failure_pods=$(kubectl get pods -n "${namespace}" -o json | jq -r '
+    failure_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq -r '
       .items[]
       | select(
           any(.status.containerStatuses[]?;

@@ -902,7 +902,7 @@ class Gen3Workflow:
         Takes in a request body and returns a task object
         """
         access_token = self._get_access_token(user)
-        tes_task_url = f"{self.TES_URL}/tasks/{task_id}"
+        tes_task_url = f"{self.TES_URL}/tasks/{task_id}?view=FULL"
 
         response = requests.get(
             url=tes_task_url,
