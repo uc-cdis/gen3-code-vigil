@@ -119,11 +119,12 @@ def run_usersync():
         raise Exception(f"[run_usersync] unable to get pods with 'job-name=useryaml'")
 
     pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
-    job_name = "useryaml" if pods else "usersync"
+    job_name, job_type = "useryaml", "job" if pods else "usersync", "cronjob"
 
     gen3_admin_tasks.run_gen3_job(
         job_name,
         test_env_namespace=pytest.namespace,
+        job_type=job_type,
     )
 
 

@@ -137,6 +137,7 @@ def run_gen3_job(
         ]
     else:
         raise Exception(f"[run_gen3_job] Job type '{job_type}' unknown")
+
     logger.info(f"[run_gen3_job] Running command: {cmd}")
     result = subprocess.run(
         cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
