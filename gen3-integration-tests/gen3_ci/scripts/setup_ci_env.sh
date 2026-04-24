@@ -216,7 +216,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
-    if [ "$key" != "global" ]; then
+    if [ "$key" != "global" || "$key" != "ambassador" ]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
