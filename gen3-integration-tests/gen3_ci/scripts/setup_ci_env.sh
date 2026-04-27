@@ -676,22 +676,23 @@ else
   exit 1
 fi
 
+echo "Running usersync..."
 # TODO change this to useryaml job for this case
 # TODO can i push a user.yaml file to minio s3?
-# echo "Running usersync..."
-# kubectl delete job usersync-manual -n ${namespace}
-# kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
-# kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=1m
-# if [ $? -eq 0 ]; then
-#   echo "usersync completed successfully"
-# else
-#   echo "usersync did not complete successfully:"
-#   echo "=======> describing usersync-manual:"
-#   kubectl describe pod -l job-name=usersync-manual -n "${namespace}"
-#   echo "=======> logs for usersync-manual:"
-#   kubectl logs -l job-name=usersync-manual -n "${namespace}" --all-containers
-#   exit 1
-# fi
+jobName="usersync-manual"
+kubectl delete job $jobName -n ${namespace}
+kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
+kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=1m
+if [ $? -eq 0 ]; then
+  echo "usersync completed successfully"
+else
+  echo "usersync did not complete successfully:"
+  echo "======= Describing $jobName:"
+  kubectl describe pod -l job-name=$jobName -n "${namespace}"
+  echo "======= Logs for $jobName:"
+  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers
+  exit 1
+fi
 
 # kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
 
