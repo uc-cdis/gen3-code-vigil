@@ -180,10 +180,13 @@ class TestGuppyService:
             2. Validate API response against data in test_response9.json
         """
         guppy = Guppy()
+        queryFile = "test_query9.json"
+        responseFile = "test_response9.json"
+        queryType = "data"
         assert guppy.validate_guppy_query(
-            "test_query9.json",
-            "test_response9.json",
-            "data",
+            queryFile,
+            responseFile,
+            queryType,
             "main_account",
             200,
         )
@@ -194,10 +197,13 @@ class TestGuppyService:
         Verify EXCLUDES_ANY removes records with matching values.
         """
         guppy = Guppy()
+        queryFile = "test_query10.json"
+        responseFile = "test_response10.json"
+        queryType = "data"
         assert guppy.validate_guppy_query(
-            "test_query10.json",
-            "test_response10.json",
-            "data",
+            queryFile,
+            responseFile,
+            queryType,
             "main_account",
             200,
         )
@@ -208,10 +214,13 @@ class TestGuppyService:
         Verify filter operators are case insensitive.
         """
         guppy = Guppy()
+        queryFile = "test_query11.json"
+        responseFile = "test_respons11.json"
+        queryType = "data"
         assert guppy.validate_guppy_query(
-            "test_query11.json",
-            "test_response11.json",
-            "data",
+            queryFile,
+            responseFile,
+            queryType,
             "main_account",
             200,
         )
