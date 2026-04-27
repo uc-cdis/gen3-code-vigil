@@ -1,0 +1,3 @@
+{
+  "query": "query { subject (filter: { contains_any: { gender: [\"Male\"] } }) { gender } }"
+}

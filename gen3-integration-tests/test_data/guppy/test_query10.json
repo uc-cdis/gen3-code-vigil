@@ -1,0 +1,3 @@
+{
+  "query": "query { subject (filter: { EXCLUDES_ANY: { gender: [\"Male\"] } }) { gender } }"
+}

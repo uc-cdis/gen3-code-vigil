@@ -169,3 +169,60 @@ class TestGuppyService:
             200,
             endpoint="/download",
         )
+
+    def test_guppy_test_query_9(self):
+        """
+        Scenario:
+        Verify CONTAINS_ANY behaves like IN operator.
+    
+        Steps:
+            1. Call API guppy/graphql using Query in test_query9.json
+            2. Validate API response against data in test_response9.json
+        """
+        guppy = Guppy()
+        queryFile = "test_query9.json"
+        responseFile = "test_response9.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+    def test_guppy_test_query_10(self):
+        """
+        Scenario:
+        Verify EXCLUDES_ANY removes records with matching values.
+        """
+        guppy = Guppy()
+        queryFile = "test_query10.json"
+        responseFile = "test_response10.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+    def test_guppy_test_query_11(self):
+        """
+        Scenario:
+        Verify filter operators are case insensitive.
+        """
+        guppy = Guppy()
+        queryFile = "test_query11.json"
+        responseFile = "test_respons11.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+
