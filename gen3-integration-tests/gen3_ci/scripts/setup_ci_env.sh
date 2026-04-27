@@ -682,6 +682,7 @@ echo "Running usersync..."
 jobName="usersync-manual"
 kubectl delete job $jobName -n ${namespace}
 kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
+kubectl get pods -n "${namespace}"  # TODO remove
 kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=5m
 if [ $? -eq 0 ]; then
   echo "usersync completed successfully"
@@ -691,10 +692,10 @@ else
   kubectl describe pod -l job-name=$jobName -n "${namespace}"
   echo "======= Logs for $jobName:"
   kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers
+  echo "======= Logs for $jobName awshelper:"
+  kubectl logs -l job-name=$jobName -n "${namespace}" -c awshelper
   exit 1
 fi
-
-# kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
 
 echo "YAY!!! Env is up..."
 exit 0
