@@ -188,4 +188,32 @@ class TestGuppyService:
             200,
         )
 
+    def test_guppy_test_query_10(self):
+        """
+        Scenario:
+        Verify EXCLUDES_ANY removes records with matching values.
+        """
+        guppy = Guppy()
+        assert guppy.validate_guppy_query(
+            "test_query10.json",
+            "test_response10.json",
+            "data",
+            "main_account",
+            200,
+        )
+
+    def test_guppy_test_query_11(self):
+        """
+        Scenario:
+        Verify filter operators are case insensitive.
+        """
+        guppy = Guppy()
+        assert guppy.validate_guppy_query(
+            "test_query11.json",
+            "test_response11.json",
+            "data",
+            "main_account",
+            200,
+        )
+
 
