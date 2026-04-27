@@ -682,7 +682,7 @@ echo "Running usersync..."
 jobName="usersync-manual"
 kubectl delete job $jobName -n ${namespace}
 kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
-kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=1m
+kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=5m
 if [ $? -eq 0 ]; then
   echo "usersync completed successfully"
 else
@@ -695,12 +695,6 @@ else
 fi
 
 # kubectl logs -l job-name=useryaml -n "${namespace}" --all-containers
-
-# TODO move this to a 3rd script after env preparation
-kubectl port-forward -n "${namespace}" service/revproxy-service 8000:80 > /tmp/pf.log 2>&1 &
-disown $!
-# Wait until port is actually accepting connections
-timeout 30 bash -c 'until nc -z localhost 8000; do sleep 0.5; done'
 
 echo "YAY!!! Env is up..."
 exit 0
