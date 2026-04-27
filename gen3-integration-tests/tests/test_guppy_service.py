@@ -169,3 +169,23 @@ class TestGuppyService:
             200,
             endpoint="/download",
         )
+
+    def test_guppy_test_query_9(self):
+        """
+        Scenario:
+        Verify CONTAINS_ANY behaves like IN operator.
+    
+        Steps:
+            1. Call API guppy/graphql using Query in test_query9.json
+            2. Validate API response against data in test_response9.json
+        """
+        guppy = Guppy()
+        assert guppy.validate_guppy_query(
+            "test_query9.json",
+            "test_response9.json",
+            "data",
+            "main_account",
+            200,
+        )
+
+
