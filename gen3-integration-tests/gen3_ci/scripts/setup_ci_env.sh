@@ -45,16 +45,21 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     service_name="$5"
     image_name="$6"
     service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
+    echo "Looking for '$service_name' (tag '$image_name') in ci_default_manifest_values_yaml. Result: $service_values_block"
     if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
         if [[ "$service_name" == "etl" ]]; then
           yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
-        else
-          if [[ "$service_name" == "gen3-workflow" ]]; then
-            echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
-            yq eval ".${service_name}.enabled = true" -i "$ci_default_manifest_values_yaml"
-          fi
-          yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        elif [[ "$service_name" == "gen3-workflow" ]]; then
+          echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
+          yq eval ".${service_name}.enabled = true" -i "$ci_default_manifest_values_yaml"
+        if [[ "$service_name" == "funnel" ]]; then
+          yq eval ".${service_name}.funnel.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+          echo "========= Updated image for Funnel. Printing ci_default_manifest_values_yaml:"
+          cat $ci_default_manifest_values_yaml
+          echo "========="
+        fi
+        yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         fi
     elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
     then
