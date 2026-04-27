@@ -19,8 +19,12 @@ def wait_for_quay_build(repo, tag):
     Wait for the branch image to be ready for testing.
     Used in service PRs.
     """
+    if os.getenv("QUAY_ORG"):
+        quay_org = os.getenv("QUAY_ORG").replace('"', "")
+    else:
+        quay_org = repo
     repo_image_status = {}
-    quay_url_org = "https://quay.io/api/v1/repository/cdis"
+    quay_url_org = f"https://quay.io/api/v1/repository/{quay_org}"
     commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
     max_tries = 30  # Minutes to wait for image
     found = False
@@ -44,24 +48,24 @@ def wait_for_quay_build(repo, tag):
                     else:
                         # the tag exists but is too old
                         repo_image_status[repo_item] = False
-                # TODO: reenable this once waiting for the image works for funnel
-                # else:
-                #     # the tag does not exist
-                #     repo_image_status[repo_item] = False
+                else:
+                    # the tag does not exist
+                    repo_image_status[repo_item] = False
             else:
                 logger.error(
                     f"[wait_for_quay_build] Got an error response from '{url}': {res.status_code} {res.text}"
                 )
                 repo_image_status[repo_item] = False
         i += 1
-        time.sleep(60)
+        if i < max_tries:
+            time.sleep(60)
         found = all(repo_image_status.values())
     if found:
         logger.info(f"[wait_for_quay_build] Found image '{repo_item}:{tag}'")
         return "success"
     if not found:
         logger.error(
-            f"[wait_for_quay_build] Image with tag '{tag}' was not found in repo '{repo}'"
+            f"[wait_for_quay_build] Image with tag '{tag}' was not found in repo '{repo}' after {max_tries * 60}s"
         )
         return "failure"
 
@@ -196,6 +200,7 @@ def prepare_ci_environment(namespace):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
         quay_repo = repo
+
     if repo in ("gen3-code-vigil"):  # Test repos
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"

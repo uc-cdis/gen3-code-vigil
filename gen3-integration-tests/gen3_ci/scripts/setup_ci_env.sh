@@ -8,7 +8,7 @@
 # setup_type - type of setup being performed
 # helm_branch - gen3 helm branch to bring up the env
 
-# set -euo pipefail  # TODO reenable once errors in this file are fixed
+# set -euo pipefail  # TODO enable once errors in this file are fixed
 
 namespace="$1"
 setup_type="$2"
@@ -690,10 +690,10 @@ else
   echo "usersync did not complete successfully:"
   echo "======= Describing $jobName:"
   kubectl describe pod -l job-name=$jobName -n "${namespace}"
-  echo "======= Logs for $jobName:"
-  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers
   echo "======= Logs for $jobName awshelper:"
   kubectl logs -l job-name=$jobName -n "${namespace}" -c awshelper
+  echo "======= Logs for $jobName:"
+  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers
   exit 1
 fi
 
