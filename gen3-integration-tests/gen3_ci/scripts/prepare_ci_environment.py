@@ -37,9 +37,7 @@ def wait_for_quay_build(repo, tag):
                 f"[wait_for_quay_build] Waiting for image '{repo_item}:{tag}' to be built in quay"
             )
             url = f"{quay_url_org}/{repo_item}/tag/?specificTag={tag}"
-            print("wait_for_quay_build url", url)
             res = requests.get(url)
-            print("wait_for_quay_build res", res, res.text)
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
                 if len(branch_images) >= 1:
@@ -84,7 +82,9 @@ def setup_env_for_helm(arguments):
         # )
         result = subprocess.run(
             ["stdbuf", "-oL", "-eL", file_path] + arguments,
-            capture_output=True, text=True, timeout=2100
+            capture_output=True,
+            text=True,
+            timeout=2100,
         )
     except subprocess.TimeoutExpired as e:
         logger.info(f"{file_name} script timed out. Logs (stderr):")

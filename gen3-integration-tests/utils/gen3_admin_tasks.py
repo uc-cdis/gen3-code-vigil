@@ -150,63 +150,7 @@ def run_gen3_job(
         raise Exception(
             f"[run_gen3_job] '{job_name}' failed to start - {result.stderr.decode('utf-8')}"
         )
-    # TODO fix this... need job_name
     check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
-    # import time
-
-    # time.sleep(60)
-
-    # logger.info(
-    #     "===================== kubectl get pod -n workflow-pods-funnel-pr-1"
-    # )
-    # cmd = [
-    #     "kubectl",
-    #     "get",
-    #     "pod",
-    #     "-n",
-    #     "workflow-pods-funnel-pr-1",
-    #     f"--selector=job-name={job_name}",
-    #     "-o",
-    #     "name",
-    # ]
-    # result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # if result.returncode == 0:
-    #     logger.info(f"success - {result.stdout.decode('utf-8')}")
-    # else:
-    #     logger.info(
-    #         f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-    #     )
-
-    # pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
-    # logger.info(
-    #     f"===================== kubectl get pod -n workflow-pods-funnel-pr-1: {pods}"
-    # )
-    # for pod in pods:
-    #     logger.info(f"===================== kubectl describe pod {pod}")
-    #     cmd = [
-    #         "kubectl",
-    #         "describe",
-    #         pod,
-    #         "-n",
-    #         "workflow-pods-funnel-pr-1",
-    #     ]
-    #     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    #     if result.returncode == 0:
-    #         logger.info(f"success - {result.stdout.decode('utf-8')}")
-    #     else:
-    #         logger.info(
-    #             f"failure - {result.returncode} - {result.stderr.decode('utf-8')}"
-    #         )
-
-    # print("Pods after run_gen3_job:")
-    # cmd = ["kubectl", "-n", pytest.namespace, "get", "pods"]
-    # result = subprocess.run(
-    #     cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-    # )
-    # if result.returncode == 0:
-    #     logger.info(f"success - {result.stdout}")
-    # else:
-    #     logger.info(f"failure - {result.returncode} - {result.stderr}")
 
 
 def fence_delete_expired_clients():
