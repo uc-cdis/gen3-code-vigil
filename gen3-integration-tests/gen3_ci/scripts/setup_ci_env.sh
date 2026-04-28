@@ -617,6 +617,7 @@ wait_for_pods_ready() {
         return 1
       fi
       echo "✅ All pods containers are Ready"
+      kubectl logs -l app=funnel --all-containers
       return 0
     fi
 
