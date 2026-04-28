@@ -37,7 +37,9 @@ def wait_for_quay_build(repo, tag):
                 f"[wait_for_quay_build] Waiting for image '{repo_item}:{tag}' to be built in quay"
             )
             url = f"{quay_url_org}/{repo_item}/tag/?specificTag={tag}"
+            print("wait_for_quay_build url", url)
             res = requests.get(url)
+            print("wait_for_quay_build res", res, res.text)
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
                 if len(branch_images) >= 1:
@@ -45,9 +47,10 @@ def wait_for_quay_build(repo, tag):
                     image_time = datetime.utcfromtimestamp(image["start_ts"])
                     if image_time > commit_time:
                         repo_image_status[repo_item] = True
-                    else:
-                        # the tag exists but is too old
-                        repo_image_status[repo_item] = False
+                    # TODO: implement skip wait for quay label
+                    # else:
+                    #     # the tag exists but is too old
+                    #     repo_image_status[repo_item] = False
                 else:
                     # the tag does not exist
                     repo_image_status[repo_item] = False
