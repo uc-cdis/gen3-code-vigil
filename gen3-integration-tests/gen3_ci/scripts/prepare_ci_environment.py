@@ -26,7 +26,7 @@ def wait_for_quay_build(repo, tag):
     repo_image_status = {}
     quay_url_org = f"https://quay.io/api/v1/repository/{quay_org}"
     commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
-    max_tries = 30  # Minutes to wait for image
+    max_tries = 2  # 30  # Minutes to wait for image
     found = False
     i = 0
     repo_list = repo.split(",")
@@ -36,7 +36,7 @@ def wait_for_quay_build(repo, tag):
             logger.info(
                 f"[wait_for_quay_build] Waiting for image '{repo_item}:{tag}' to be built in quay"
             )
-            url = f"{quay_url_org}/{repo_item}/tag"
+            url = f"{quay_url_org}/{repo_item}/tag/?specificTag={tag}"
             res = requests.get(url)
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
