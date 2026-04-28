@@ -10,6 +10,7 @@ import pytest
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
+from gen3_ci.scripts.prepare_ci_environment import generate_api_keys_for_test_users
 from utils import TEST_DATA_PATH_OBJECT
 from utils import gen3_admin_tasks as gat
 from utils import logger
@@ -96,6 +97,10 @@ def get_fence_clients():
 
 
 def pytest_configure(config):
+    # generate api keys for test users for the ci env
+    result = generate_api_keys_for_test_users()
+    assert result.lower() == "success"
+
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
     pytest.namespace = os.getenv("NAMESPACE")

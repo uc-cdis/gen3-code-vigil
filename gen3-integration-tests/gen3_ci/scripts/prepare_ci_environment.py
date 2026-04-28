@@ -178,7 +178,7 @@ def modify_env_for_test_repo_pr(namespace):
 
 
 @retry(times=6, delay=30, exceptions=(Exception))
-def generate_api_keys_for_test_users(namespace):
+def generate_api_keys_for_test_users():
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
@@ -258,10 +258,6 @@ def prepare_ci_environment(namespace):
             assert result.lower() == "success"
         result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
         assert result.lower() == "success"
-    # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users(namespace)
-    assert result.lower() == "success"
-    return result
 
 
 if __name__ == "__main__":
