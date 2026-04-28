@@ -651,7 +651,7 @@ wait_for_pods_ready() {
     echo "======= Describing $pod:"
     kubectl describe pod $pod -n "${namespace}"
     echo "======= Logs for $pod:"
-    kubectl logs $pod -n "${namespace}" --all-containers
+    kubectl logs $pod -n "${namespace}" --all-containers --tail 300
   done
 
   echo "$not_ready_json" | jq -r '.[] |
@@ -698,9 +698,9 @@ else
   echo "======= Describing $jobName:"
   kubectl describe pod -l job-name=$jobName -n "${namespace}"
   echo "======= Logs for $jobName awshelper:"
-  kubectl logs -l job-name=$jobName -n "${namespace}" -c awshelper
+  kubectl logs -l job-name=$jobName -n "${namespace}" -c awshelper --tail 300
   echo "======= Logs for $jobName:"
-  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers
+  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail 300
   exit 1
 fi
 
