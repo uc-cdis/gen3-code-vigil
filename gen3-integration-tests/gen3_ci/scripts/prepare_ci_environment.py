@@ -19,6 +19,9 @@ def wait_for_quay_build(repo, tag):
     Wait for the branch image to be ready for testing.
     Used in service PRs.
     """
+    if os.getenv("SKIP_QUAY_BUILD") == "true":
+        logger.info("[wait_for_quay_build] Skipped")
+        return "success"
     if os.getenv("QUAY_ORG"):
         quay_org = os.getenv("QUAY_ORG").replace('"', "")
     else:
@@ -45,10 +48,9 @@ def wait_for_quay_build(repo, tag):
                     image_time = datetime.utcfromtimestamp(image["start_ts"])
                     if image_time > commit_time:
                         repo_image_status[repo_item] = True
-                    # TODO: implement skip wait for quay label
-                    # else:
-                    #     # the tag exists but is too old
-                    #     repo_image_status[repo_item] = False
+                    else:
+                        # the tag exists but is too old
+                        repo_image_status[repo_item] = False
                 else:
                     # the tag does not exist
                     repo_image_status[repo_item] = False
