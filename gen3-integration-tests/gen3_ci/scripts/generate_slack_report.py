@@ -111,7 +111,6 @@ def generate_slack_report():
         report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
         rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
-        failure_analysis_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/failure_analysis.txt"
     else:
         pr_link = (
             f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
@@ -119,7 +118,6 @@ def generate_slack_report():
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
         rerun_report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
-        failure_analysis_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/failure_analysis.txt"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
@@ -195,18 +193,6 @@ def generate_slack_report():
             },
         }
     slack_report_json["blocks"].append(gh_logs_block)
-    failure_analysis_path = (
-        Path(__file__).parent.parent.parent / "logs" / "failure_analysis.txt"
-    )
-    if failure_analysis_path.exists():
-        failure_analysis_block = {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Failure Analysis*: <{failure_analysis_link}|click here>",
-            },
-        }
-        slack_report_json["blocks"].append(failure_analysis_block)
     # qa-bot replay command with failed suites labeled in the PR
     if test_result == "Failed":
         failed_suites_block = get_failed_suites()
