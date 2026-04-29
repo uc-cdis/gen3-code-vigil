@@ -127,13 +127,7 @@ def run_gen3_job(
             random.choices(string.ascii_lowercase + string.digits, k=4)
         )
         cmd = [
-            "kubectl",
-            "-n",
-            test_env_namespace,
-            "create",
-            "job",
-            f"--from=cronjob/{cronjob_name}",
-            job_name,
+            f"kubectl -n {test_env_namespace} create job --from=cronjob/{cronjob_name} {job_name}"
         ]
     else:
         raise Exception(f"[run_gen3_job] Job type '{job_type}' unknown")
@@ -191,6 +185,7 @@ def check_job_pod(
     job_name: str,
     test_env_namespace: str = "",
 ):
+    timeout = "30m"
     cmd = [
         "kubectl",
         "-n",
@@ -198,7 +193,7 @@ def check_job_pod(
         "wait",
         "--for=condition=complete",
         f"job/{job_name}",
-        "--timeout=30m",
+        f"--timeout={timeout}",
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -207,7 +202,7 @@ def check_job_pod(
         logger.info(f"Job {job_name} completed successfully")
     else:
         raise Exception(
-            f"Job {job_name} failed to complete in 20 minutes. Info: {result.stderr.strip()}"
+            f"Job {job_name} failed to complete in {timeout}. Info: {result.stderr.strip()}"
         )
 
 

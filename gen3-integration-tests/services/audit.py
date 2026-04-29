@@ -64,5 +64,5 @@ class Audit(object):
             except JSONDecodeError:
                 pass
             counter += 1
-        logger.error("Waited for 20 minutes but data was not recieved")
+        logger.error("Waited for 20 minutes but data was not received")
         return False

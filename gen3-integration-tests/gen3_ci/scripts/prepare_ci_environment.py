@@ -259,6 +259,8 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
         assert result.lower() == "success"
 
+    return result
+
 
 if __name__ == "__main__":
     result = prepare_ci_environment(os.getenv("NAMESPACE"))
