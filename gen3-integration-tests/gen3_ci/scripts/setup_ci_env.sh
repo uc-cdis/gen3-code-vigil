@@ -525,13 +525,26 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
 fi
 
 install_helm_chart() {
+  [[ "$REPO_FN" == "ohsu-comp-bio/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
+  install_custom_funnel_helm_chart=$?
+
   # For custom helm branch
-  if [ "$helm_branch" != "master" ]; then
+  if [[ "$helm_branch" != "master" || $install_custom_funnel_helm_chart -eq 0 ]]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
+
+    if [[ $install_custom_funnel_helm_chart -eq 0 ]]; then
+      echo "installing custom funnel helm chart"
+      git clone --branch "$BRANCH" https://github.com/$REPO_FN.git gen3-helm/helm/ohsu-funnel
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel"' gen3-helm/helm/funnel/Chart.yaml
+      helm dependency update gen3-helm/helm/ohsu-funnel
+      helm dependency update gen3-helm/helm/funnel
+    fi
+
     echo "dependency update"
     helm dependency update gen3-helm/helm/gen3
     echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
+
     echo "installing helm chart"
     if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
