@@ -1,0 +1,32 @@
+name: Integration Tests on Kind
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/integration_tests_on_kind.yaml
+      - gen3-integration-tests/gen3_ci/scripts/**
+      - gen3-integration-tests/services/gen3workflow.py
+      - gen3-integration-tests/tests/test_gen3_workflow.py
+
+jobs:
+  integration_tests:
+    name: Integration tests
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@support-kind  # TODO remove pin
+    with:
+      EXTERNAL_TO_CTDS: "true"
+      SERVICE_TO_TEST: gen3_workflow
+      # TODO replace `integration_tests_on_kind` with `master`
+      SETUP_SCRIPT_1: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/integration_tests_on_kind/.github/workflows/integration_tests_on_kind/ci_start_kind_cluster.sh
+      SETUP_SCRIPT_2: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/integration_tests_on_kind/.github/workflows/integration_tests_on_kind/ci_override_config_and_start_minio.sh
+      SETUP_SCRIPT_3: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/integration_tests_on_kind/.github/workflows/integration_tests_on_kind/ci_expose_kind_cluster.sh
+      # TODO remove:
+      TEST_REPO_BRANCH: support-kind
+    secrets:
+      CI_TEST_ORCID_USERID: ""
+      CI_TEST_ORCID_PASSWORD: ""
+      CI_TEST_RAS_EMAIL: ""
+      CI_TEST_RAS_PASSWORD: ""
+      CI_TEST_RAS_2_EMAIL: ""
+      CI_TEST_RAS_2_PASSWORD: ""
+      CI_SLACK_BOT_TOKEN: ""
+      CI_SLACK_CHANNEL_ID: ""
