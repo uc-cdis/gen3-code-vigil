@@ -204,6 +204,7 @@ def generate_api_keys_for_test_users():
 def prepare_ci_environment(namespace):
     """Calls other functions in this module depending on the type of repo under test"""
     repo = os.getenv("REPO")
+    repo_full_name = os.getenv("REPO_FN")
     # if quay repo name is different from github repo name
     if os.getenv("QUAY_REPO"):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
@@ -213,7 +214,11 @@ def prepare_ci_environment(namespace):
     if repo in ("gen3-code-vigil"):  # Test repos
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
-    elif repo in ("gen3-helm"):  # Helm charts - test with master branch of all services
+    # Helm charts - test with master branch of all services
+    elif repo in ("gen3-helm") or repo_full_name in (
+        "ohsu-comp-bio/helm-charts",
+        "uc-cdis/ohsu-funnel-helm-charts",
+    ):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("data-simulator", "gen3sdk-python"):
