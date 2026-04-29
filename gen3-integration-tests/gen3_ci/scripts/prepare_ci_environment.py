@@ -58,6 +58,15 @@ def wait_for_quay_build(repo, tag):
                 logger.error(
                     f"[wait_for_quay_build] Got an error response from '{url}': {res.status_code} {res.text}"
                 )
+
+                # TODO remove block below
+                res = requests.get(f"{quay_url_org}/{repo_item}/tag")
+                print(
+                    f"[wait_for_quay_build] DEBUG: with old url: {res.status_code} {res.text}"
+                )
+
+                if res.status_code == 401 or res.status_code >= 500:
+                    return "failure"
                 repo_image_status[repo_item] = False
         i += 1
         if i < max_tries:

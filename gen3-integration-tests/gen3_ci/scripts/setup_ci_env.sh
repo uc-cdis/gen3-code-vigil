@@ -527,6 +527,7 @@ fi
 install_helm_chart() {
   [[ "$REPO_FN" == "ohsu-comp-bio/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_custom_funnel_helm_chart=$?
+  echo install_helm_chart: REPO_FN=$REPO_FN install_custom_funnel_helm_chart=$install_custom_funnel_helm_chart
 
   # For custom helm branch
   if [[ "$helm_branch" != "master" || $install_custom_funnel_helm_chart -eq 0 ]]; then
@@ -540,9 +541,7 @@ install_helm_chart() {
       helm dependency update gen3-helm/helm/funnel
     fi
 
-    echo "dependency update"
     helm dependency update gen3-helm/helm/gen3
-    echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
 
     echo "installing helm chart"
