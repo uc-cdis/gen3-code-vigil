@@ -600,7 +600,7 @@ class TestDataUpload:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
+        "midrc" in os.getenv("SOURCE_CONFIG", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
     )
     # TODO: GFF - Remove once submission page functionality is implemented
@@ -671,7 +671,7 @@ class TestDataUpload:
         reason="Submission Page functionality is not implemented in frontend-framework",
     )
     @pytest.mark.skipif(
-        "midrc" in os.getenv("UPDATED_FOLDERS", "") or "midrc" in pytest.hostname,
+        "midrc" in os.getenv("SOURCE_CONFIG", "") or "midrc" in pytest.hostname,
         reason="data upload UI test cases don't work in midrc environment",
     )
     def test_cannot_see_files_uploaded_by_other_users(self, page: Page):
