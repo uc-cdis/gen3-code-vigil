@@ -52,9 +52,6 @@ elif [ "$setup_type" == "service-env-setup" ]; then
           yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         elif [[ "$service_name" == "funnel" ]]; then
           yq eval ".${service_name}.funnel.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
-          echo "========= Updated image for Funnel. Printing ci_default_manifest_values_yaml:"
-          cat $ci_default_manifest_values_yaml
-          echo "========="
         else
           if [[ "$service_name" == "gen3-workflow" ]]; then
             echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
@@ -452,7 +449,6 @@ common_param_updates=(
   ".ssjdispatcher.ssjcreds.jobPassword|$EKS_CLUSTER_NAME"
   ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
   ".revproxy.ingress.hosts[0].host|$HOSTNAME_WITHOUT_PORT"
-  ".revproxy.ingress.hosts[0].host|localhost"
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
   ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|${HOSTNAME_PROTOCOL}://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
@@ -527,7 +523,6 @@ fi
 install_helm_chart() {
   [[ "$REPO_FN" == "ohsu-comp-bio/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_custom_funnel_helm_chart=$?
-  echo install_helm_chart: REPO_FN=$REPO_FN install_custom_funnel_helm_chart=$install_custom_funnel_helm_chart
 
   # For custom helm branch
   if [[ "$helm_branch" != "master" || $install_custom_funnel_helm_chart -eq 0 ]]; then
@@ -553,10 +548,6 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-
-    # do not use `upgrade --install` for a first installation in ephemeral clusters to avoid issues with immutable fields
-    # or use `--force` to force StatefulSets delete+recreate
-    # support flag to remove "-f $ci_default_manifest_portal_yaml"
     if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
@@ -630,7 +621,6 @@ wait_for_pods_ready() {
         return 1
       fi
       echo "✅ All pods containers are Ready"
-      kubectl logs -l app=funnel --all-containers
       return 0
     fi
 

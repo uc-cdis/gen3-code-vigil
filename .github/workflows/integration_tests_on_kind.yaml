@@ -8,6 +8,12 @@ on:
       - gen3-integration-tests/services/gen3workflow.py
       - gen3-integration-tests/tests/test_gen3_workflow.py
 
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   integration_tests:
     name: Integration tests
