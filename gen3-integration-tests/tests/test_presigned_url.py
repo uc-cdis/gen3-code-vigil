@@ -226,3 +226,42 @@ class TestPresignedURL:
             logger.error(f"{msg} not found")
             logger.error(signed_url_res.content.decode())
             raise
+
+    def test_get_bulk_presigned_urls(self):
+        """
+        Scenario: Get bulk presigned-urls
+        Steps:
+            1. Use multiple indexd records created in setup
+            2. Request bulk signed urls
+            3. Validate urls are returned for each GUID
+            4. Validate file contents match expected values
+        """
+        allowed_record = indexd_files["allowed"]
+        not_allowed_record = indexd_files["not_allowed"]
+
+        guids = [
+            allowed_record["did"],
+            not_allowed_record["did"],
+        ]
+
+        res = self.fence.create_bulk_signed_urls(
+            guids=guids,
+            user="main_account",
+            expected_status=200,
+        )
+
+        assert "urls" in res, f"'urls' missing in response: {res}"
+        assert "failed_file_ids" in res, f"'failed_file_ids' missing in response: {res}"
+
+        # Validate success case
+        assert allowed_record["did"] in res["urls"], "Allowed GUID missing from urls"
+
+        signed_url_res = res["urls"][allowed_record["did"]]
+        self.fence.check_file_equals(
+            signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
+        )
+
+        # Validate failure case
+        assert (
+            not_allowed_record["did"] in res["failed_file_ids"]
+        ), "Unauthorized GUID should be in failed_file_ids"
