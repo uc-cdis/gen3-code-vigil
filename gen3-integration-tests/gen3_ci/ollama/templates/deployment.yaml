@@ -23,3 +23,5 @@ spec:
           env:
             - name: OLLAMA_LOG_LEVEL
               value: "debug"
+            - name: OLLAMA_HOST
+              value: "0.0.0.0:11434"
