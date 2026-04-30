@@ -4,6 +4,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple
+from unittest.mock import patch
 
 import boto3
 import botocore.exceptions
@@ -11,7 +12,11 @@ import nextflow
 import pytest
 import requests
 from botocore.config import Config
-from gen3.auth import Gen3Auth
+from gen3.auth import (
+    Gen3Auth,
+    endpoint_from_token,
+    remove_trailing_whitespace_and_slashes_in_url,
+)
 from utils import logger
 
 
@@ -87,13 +92,37 @@ class Gen3Workflow:
     ##### Helper Functions #####
     ############################
 
-    def _get_access_token(self, user: str = "main_account") -> str:
+    @patch("gen3.auth.endpoint_from_token")
+    def _get_access_token(
+        self, user: str = "main_account", endpoint_from_token_mock=None
+    ) -> str:
         """Helper function to retrieve an access token."""
 
         if not user:
             return None
 
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+
+        # When running the tests in a Kind cluster:
+        # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
+        #   API keys and access tokens have that as their issuer. This allows other pods in the
+        #   cluster to reach Fence to validate tokens.
+        # - However, the tests cannot reach this URL from outside the cluster. The cluster is
+        #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
+        #   access tokens.
+        # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
+        #   this method to return `http://localhost:8000` instead of `http://fence-service.
+        #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
+        # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
+        #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
+        #   (because within a container, localhost refers to the container itself).
+        if "localhost" in self.BASE_URL:
+            endpoint_from_token_mock.return_value = (
+                remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
+            )
+        else:  # otherwise, no mocking
+            endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
+
         try:
             return auth.get_access_token()
         except Exception:
