@@ -25,7 +25,7 @@ def wait_for_quay_build(repo, tag):
     if os.getenv("QUAY_ORG"):
         quay_org = os.getenv("QUAY_ORG").replace('"', "")
     else:
-        quay_org = repo
+        quay_org = "cdis"
     repo_image_status = {}
     quay_url_org = f"https://quay.io/api/v1/repository/{quay_org}"
     commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
@@ -58,13 +58,6 @@ def wait_for_quay_build(repo, tag):
                 logger.error(
                     f"[wait_for_quay_build] Got an error response from '{url}': {res.status_code} {res.text}"
                 )
-
-                # TODO remove block below
-                res = requests.get(f"{quay_url_org}/{repo_item}/tag")
-                print(
-                    f"[wait_for_quay_build] DEBUG: with old url: {res.status_code} {res.text}"
-                )
-
                 if res.status_code == 401 or res.status_code >= 500:
                     return "failure"
                 repo_image_status[repo_item] = False
