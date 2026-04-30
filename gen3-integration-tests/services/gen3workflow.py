@@ -61,7 +61,7 @@ class WorkflowStorageConfig:
 
 
 def _print_gen3_workflow_logs():
-    logger.info("========== gen3-workflow logs ==========")
+    logger.info("========== gen3-workflow logs begin ==========")
     cmd = [
         "kubectl",
         "-n",
@@ -79,6 +79,7 @@ def _print_gen3_workflow_logs():
         logger.info(
             f"Unable to get gen3-workflow logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
         )
+    logger.info("========== gen3-workflow logs end ==========")
 
 
 class Gen3Workflow:
@@ -432,6 +433,8 @@ class Gen3Workflow:
             url=tes_task_url,
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
+        if response.status_code != expected_status:
+            _print_gen3_workflow_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
@@ -450,6 +453,8 @@ class Gen3Workflow:
             url=tes_task_url,
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
+        if response.status_code != expected_status:
+            _print_gen3_workflow_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
@@ -468,6 +473,8 @@ class Gen3Workflow:
             url=tes_task_url,
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
+        if response.status_code != expected_status:
+            _print_gen3_workflow_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}: {response.text}"
