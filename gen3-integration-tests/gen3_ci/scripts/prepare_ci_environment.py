@@ -108,7 +108,7 @@ def modify_env_for_manifest_pr(namespace, updated_folder, repo):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
     target_manifest_path = f"{os.getenv('GH_WORKSPACE')}/{updated_folder}/values"
 
@@ -131,7 +131,7 @@ def modify_env_for_test_repo_pr(namespace):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
     arguments = [
         namespace,
@@ -180,7 +180,7 @@ def prepare_ci_environment(namespace):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("cdis-manifest", "gitops-qa", "gen3-gitops"):  # Manifest repos
-        updated_folders = os.getenv("UPDATED_FOLDERS", "").split(",")
+        updated_folders = os.getenv("SOURCE_CONFIG", "").split(",")
         updated_folder = updated_folders[0] if updated_folders else ""
         if len(updated_folders) == 1 and updated_folders[0] == "":
             logger.info("No folders were updated. Skipping tests...")

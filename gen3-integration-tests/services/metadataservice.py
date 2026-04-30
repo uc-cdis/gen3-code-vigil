@@ -21,7 +21,9 @@ class MetadataService(object):
             f"{self.MDS_ENDPOINT}/{study_id}",
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
-        assert res.status_code == 200, f"Response status code was {res.status_code}"
+        assert (
+            res.status_code == 200
+        ), f"Response status code was {res.status_code}: {res.text}"
         return res.json()
 
     @retry(times=8, delay=30, exceptions=(AssertionError))
@@ -31,7 +33,9 @@ class MetadataService(object):
             f"{self.AGG_MDS_ENDPOINT}/guid/{study_id}",
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
-        assert res.status_code == 200, f"Response status code was {res.status_code}"
+        assert (
+            res.status_code == 200
+        ), f"Response status code was {res.status_code}: {res.text}"
         return res.json()
 
     def create_metadata(self, study_id, study_json, user="main_account"):
@@ -42,11 +46,13 @@ class MetadataService(object):
         logger.info(f"Creating study with id {study_id}")
         res = requests.post(
             f"{self.MDS_ENDPOINT}/{study_id}",
-            data=json.dumps(study_json),
+            json=study_json,
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Creation request status code - {res.status_code}")
-        assert res.status_code == 201, f"Response status code was {res.status_code}"
+        assert (
+            res.status_code == 201
+        ), f"Response status code was {res.status_code}: {res.text}"
 
     def update_metadata(self, study_id, study_json, user="main_account"):
         """
@@ -56,11 +62,13 @@ class MetadataService(object):
         logger.info(f"Updating study with id {study_id}")
         res = requests.put(
             f"{self.MDS_ENDPOINT}/{study_id}",
-            data=json.dumps(study_json),
+            json=study_json,
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Update request status code - {res.status_code}")
-        assert res.status_code == 200, f"Response status code was {res.status_code}"
+        assert (
+            res.status_code == 200
+        ), f"Response status code was {res.status_code}: {res.text}"
 
     @retry(times=1, delay=30, exceptions=(AssertionError))
     def delete_metadata(self, study_id, user="main_account"):
@@ -74,4 +82,6 @@ class MetadataService(object):
             auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
         logger.info(f"Deletion request status code - {res.status_code}")
-        assert res.status_code == 200, f"Response status code was {res.status_code}"
+        assert (
+            res.status_code == 200
+        ), f"Response status code was {res.status_code}: {res.text}"

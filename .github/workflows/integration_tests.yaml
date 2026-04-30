@@ -1,17 +1,17 @@
-# Uses the shared workflow from this repo for ease of maintenance
 name: Integration Tests
 
-on:
-  pull_request:
-    paths:
-      - .github/workflows/integration_tests.yaml
-      - .github/workflows/shared_integration_tests.yaml
-      - gen3-integration-tests/**
+on: pull_request
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+  issues: write
 
 jobs:
   integration_tests:
     name: Integration tests
-    uses: ./.github/workflows/shared_integration_tests.yaml
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
     with:
       WORKING_DIR: gen3-integration-tests
     secrets:
@@ -23,4 +23,4 @@ jobs:
       CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
       CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
       CI_SLACK_CHANNEL_ID: ${{ secrets.CI_SLACK_CHANNEL_ID }}
-      EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
+      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}

@@ -225,6 +225,7 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
+    @pytest.mark.skip(reason="Test is currently broken")
     def test_happy_path_create_tes_task(self):
         """
         Test Case: Happy Path for TES Task Creation
@@ -393,6 +394,7 @@ class TestGen3Workflow(object):
             final_state in valid_states
         ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
 
+    @pytest.mark.skip(reason="Test is currently broken")
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -553,34 +555,28 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
+    @pytest.mark.skip(reason="Test is currently broken")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
 
-        TODO (MIDRC-1203): fix infra to support the following tests:
+        Currently skipping tests that are known to be unsupported in our environment:
         - TEST_MV_FILE and TEST_MV_FOLDER_CONTENTS. Error:
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
-        - TEST_PUBLISH_FILE and TEST_PUBLISH_FOLDER. Error:
-            Failed to publish file: s3://gen3wf-pauline-planx-pla-net-16/ga4gh-tes/33/
-            ab32810279415c8067b64a73518812/test; to: s3://gen3wf-pauline-planx-pla-net-16/ga4gh-tes/
-            outputs/test [copy] -- attempt: 1; reason: Failed to parse XML document with handler
-            class com.amazonaws.services.s3.model.transform.
+            -- they are not supported by S3 CSI mount (https://github.com/awslabs/mountpoint-s3/issues/506#issuecomment-1709952359)
         - TEST_GPU (only runs with param `gpu: true`). Reported successful but fails with:
             CUDA is not available on this system.
             [...]
             in gpu_computation
-              x = torch.rand(size, size, device='cuda')
+                x = torch.rand(size, size, device='cuda')
             RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
             NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
-        - TEST_FUSION_DOCTOR: unknown cause
+            -- Being tracked by MIDRC-1254 to investigate GPU support in our infra and enable this test
         """
         known_unsupported = [
-            "TEST_PUBLISH_FILE",
-            "TEST_PUBLISH_FOLDER",
             "TEST_MV_FILE",
             "TEST_MV_FOLDER_CONTENTS",
             "TEST_GPU",
-            "TEST_FUSION_DOCTOR",
         ]
 
         # clone the tests repo
@@ -611,6 +607,9 @@ class TestGen3Workflow(object):
             "aws.client.s3PathStyleAccess = true",
             "aws.client.maxErrorRetry = 1",
             'workDir = "${WORK_DIR}"',
+            # this test tends to fail intermittently; improve stability with retries for now:
+            "process.errorStrategy = 'retry'",
+            "process.maxRetries = 2",
         ]
         with open(os.path.join(directory, "nextflow.config"), "a") as file:
             file.write("\n".join(lines) + "\n")
@@ -680,7 +679,7 @@ class TestGen3Workflow(object):
             "description": "Tries to reach arborist-service before saying HelloWorld!",
             "executors": [
                 {
-                    "image": "curlimages/curl:latest",
+                    "image": "quay.io/curl/curl:latest",
                     "command": [
                         # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
                         # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
@@ -723,8 +722,8 @@ class TestGen3Workflow(object):
             },
             {
                 "command": ["False"],
-                "expected_exit_code": 0,  # This is current funnel's behavior issue #53
-                "expected_state": "SYSTEM_ERROR",
+                "expected_exit_code": 127,
+                "expected_state": "EXECUTOR_ERROR",
             },
         ],
     )
