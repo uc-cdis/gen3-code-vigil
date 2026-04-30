@@ -564,11 +564,14 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=1800
+  export timeout=600
   export interval=20
 
-  end=$((SECONDS + timeout))
-  while [ $SECONDS -lt $end ]; do
+  SECONDS = 0
+
+  end=$(( $(date +%s) + timeout ))
+  while [ "$(date +%s)" -lt "$end" ]; do
+    echo "Running at $(date)"
     # Get JSON for not-ready, non-terminating pods
     not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]

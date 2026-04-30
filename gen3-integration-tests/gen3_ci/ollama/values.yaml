@@ -1,17 +1,17 @@
 image:
   repository: quay.io/cdis/ollama
   tag: master
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 pdb: true
 
 resources:
   requests:
     cpu: 4
-    memory: "10Gi"
+    memory: "8Gi"
   limits:
     cpu: 6
-    memory: "12Gi"
+    memory: "10Gi"
 
 service:
   type: ClusterIP
