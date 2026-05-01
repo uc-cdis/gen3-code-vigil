@@ -197,6 +197,7 @@ drs_15_indexd_files = {
 )
 @pytest.mark.fence
 @pytest.mark.drs
+@pytest.mark.indexd
 class TestDrsMetadata:
     """DRS 1.5 metadata field tests"""
 
