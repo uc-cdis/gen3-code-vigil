@@ -522,18 +522,30 @@ fi
 
 install_helm_chart() {
   [[ "$REPO_FN" == "ohsu-comp-bio/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
-  install_custom_funnel_helm_chart=$?
+  install_funnel_chart_branch=$?
 
   # For custom helm branch
-  if [[ "$helm_branch" != "master" || $install_custom_funnel_helm_chart -eq 0 ]]; then
+  if [[ "$helm_branch" != "master" || $install_funnel_chart_branch -eq 0 ]]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
 
-    if [[ $install_custom_funnel_helm_chart -eq 0 ]]; then
-      echo "installing custom funnel helm chart - branch: $BRANCH"
-      git clone --branch "$BRANCH" https://github.com/$REPO_FN.git gen3-helm/helm/ohsu-funnel
-      yq eval -i '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel"' gen3-helm/helm/funnel/Chart.yaml
-      helm dependency update gen3-helm/helm/ohsu-funnel
+    if [[ $install_funnel_chart_branch -eq 0 ]]; then
+      echo "manually installing funnel helm chart (branch: $BRANCH)"
+
+      # clone the modified OHSU Funnel chart repo, and call it version 999.0.0
+      git clone --branch "$BRANCH" https://github.com/$REPO_FN.git gen3-helm/helm/ohsu-funnel-chart
+      yq -iy '.version = "999.0.0"' gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
+      helm dependency update gen3-helm/helm/ohsu-funnel-chart/charts/funnel
+
+      # update the Gen3 Funnel chart to point to the above (path to directory + matching version),
+      # and call it version 999.0.0
+      yq -iy '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel-chart/charts/funnel"' gen3-helm/helm/funnel/Chart.yaml
+      yq -iy '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
+      yq -iy '.version = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
       helm dependency update gen3-helm/helm/funnel
+
+      # update the Gen3 chart to point to the above, and call it version 999.0.0
+      yq -iy '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
+      yq -iy '.version = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
     fi
 
     helm dependency update gen3-helm/helm/gen3
