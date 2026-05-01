@@ -47,6 +47,7 @@ indexd_files = {
 )
 @pytest.mark.fence
 @pytest.mark.drs
+@pytest.mark.indexd
 class TestDrsEndpoints:
     @classmethod
     def setup_class(cls):
@@ -514,6 +515,7 @@ class TestDrsMetadata:
 )
 @pytest.mark.fence
 @pytest.mark.drs
+@pytest.mark.indexd
 class TestDrsBulkEndpoints:
     """DRS 1.4/1.5 bulk endpoint tests."""
 
