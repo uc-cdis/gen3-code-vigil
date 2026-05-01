@@ -19,6 +19,7 @@ def wait_for_quay_build(repo, tag):
     Wait for the branch image to be ready for testing.
     Used in service PRs.
     """
+    print('os.getenv("SKIP_QUAY_BUILD")', os.getenv("SKIP_QUAY_BUILD"))
     if os.getenv("SKIP_QUAY_BUILD") == "true":
         logger.info("[wait_for_quay_build] Skipped")
         return "success"
