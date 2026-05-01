@@ -529,7 +529,7 @@ install_helm_chart() {
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
 
     if [[ $install_custom_funnel_helm_chart -eq 0 ]]; then
-      echo "installing custom funnel helm chart"
+      echo "installing custom funnel helm chart - branch: $BRANCH"
       git clone --branch "$BRANCH" https://github.com/$REPO_FN.git gen3-helm/helm/ohsu-funnel
       yq eval -i '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel"' gen3-helm/helm/funnel/Chart.yaml
       helm dependency update gen3-helm/helm/ohsu-funnel
