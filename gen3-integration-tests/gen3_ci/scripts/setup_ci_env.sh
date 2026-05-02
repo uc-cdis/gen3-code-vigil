@@ -533,19 +533,27 @@ install_helm_chart() {
 
       # clone the modified OHSU Funnel chart repo, and call it version 999.0.0
       git clone --branch "$BRANCH" https://github.com/$REPO_FN.git gen3-helm/helm/ohsu-funnel-chart
-      yq -iy '.version = "999.0.0"' gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
+      yq eval -i '.version = "999.0.0"' gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
       helm dependency update gen3-helm/helm/ohsu-funnel-chart/charts/funnel
 
       # update the Gen3 Funnel chart to point to the above (path to directory + matching version),
       # and call it version 999.0.0
-      yq -iy '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel-chart/charts/funnel"' gen3-helm/helm/funnel/Chart.yaml
-      yq -iy '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
-      yq -iy '.version = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel-chart/charts/funnel"' gen3-helm/helm/funnel/Chart.yaml
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
+      yq eval -i '.version = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
       helm dependency update gen3-helm/helm/funnel
 
       # update the Gen3 chart to point to the above, and call it version 999.0.0
-      yq -iy '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
-      yq -iy '.version = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
+      yq eval -i '.version = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
+
+      # TODO remove
+      echo gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
+      cat gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
+      echo gen3-helm/helm/funnel/Chart.yaml
+      cat gen3-helm/helm/funnel/Chart.yaml
+      echo gen3-helm/helm/gen3/Chart.yaml
+      cat gen3-helm/helm/gen3/Chart.yaml
     fi
 
     helm dependency update gen3-helm/helm/gen3
@@ -653,6 +661,7 @@ wait_for_pods_ready() {
       echo "❌ Giving up! Failed pods: $failure_pods"
       echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
       echo "[wait_for_pods_ready] Describing failed pods:"
+      # TODO fix: this describes all the pods
       echo $failure_pods | kubectl describe pod -n "${namespace}"
       return 1
     fi
