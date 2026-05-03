@@ -137,9 +137,11 @@ drs_15_indexd_files = {
         "acl": ["jenkins"],
         "authz": ["/programs/jenkins"],
         "size": 9,
-        "available": True,
         "urls_metadata": {
-            "s3://cdis-presigned-url-test/testdata": {"region": "us-east-1"}
+            "s3://cdis-presigned-url-test/testdata": {
+                "region": "us-east-1",
+                "available": True,
+            }
         },
     },
     # S3 record with available=false
@@ -150,7 +152,9 @@ drs_15_indexd_files = {
         "acl": ["jenkins"],
         "authz": ["/programs/jenkins"],
         "size": 9,
-        "available": False,
+        "urls_metadata": {
+            "s3://cdis-presigned-url-test/testdata": {"available": False}
+        },
     },
     # GCS record for cloud testing
     "gs_record": {
@@ -160,7 +164,7 @@ drs_15_indexd_files = {
         "acl": ["jenkins"],
         "authz": ["/programs/jenkins"],
         "size": 9,
-        "available": True,
+        "urls_metadata": {"gs://some-gs-bucket/testdata": {"available": True}},
     },
     # S3 record without available (should default to true)
     "default_available": {
