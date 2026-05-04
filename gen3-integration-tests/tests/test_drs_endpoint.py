@@ -235,18 +235,10 @@ class TestDrsMetadata:
             "Authorization": f"bearer {access_token}",
             "Content-Type": "application/json",
         }
+        # Adding indexd files
         for key, val in drs_15_indexd_files.items():
-            val.setdefault("did", str(uuid4()))
-            resp = requests.post(
-                f"{pytest.root_url}/index/index/",
-                json=val,
-                headers=headers,
-            )
-            assert resp.status_code == 200, (
-                f"Failed to create indexd record '{key}': "
-                f"{resp.status_code} {resp.text}"
-            )
-            cls.variables["created_indexd_dids"].append(resp.json()["did"])
+            indexd_record = cls.indexd.create_records(records={key: val})
+            cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
     @classmethod
     def teardown_class(cls):
