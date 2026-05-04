@@ -28,6 +28,8 @@ jobs:
 
           gh repo clone uc-cdis/${REPO}
           cd ${REPO}
+          # To deal with internally forked repos, e.g.: FEF repos
+          gh repo set-default uc-cdis/${REPO}
 
           gh pr checkout ${PR_NUM}
           git log -1
