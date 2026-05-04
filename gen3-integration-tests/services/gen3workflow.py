@@ -60,26 +60,27 @@ class WorkflowStorageConfig:
         )
 
 
-def _print_gen3_workflow_logs():
-    logger.info("========== gen3-workflow logs begin ==========")
-    cmd = [
-        "kubectl",
-        "-n",
-        pytest.namespace,
-        "logs",
-        "-l",
-        "app=gen3-workflow",
-        "--tail",
-        "300",
-    ]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode == 0:
-        logger.info(result.stdout.decode("utf-8"))
-    else:
-        logger.info(
-            f"Unable to get gen3-workflow logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
-        )
-    logger.info("========== gen3-workflow logs end ==========")
+def _print_tes_apps_logs():
+    for app in ["gen3-workflow", "funnel"]:
+        logger.info(f"========== {app} logs begin ==========")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            "-l",
+            f"app={app}",
+            "--tail",
+            "100",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+        logger.info(f"========== {app} logs end ==========")
 
 
 class Gen3Workflow:
@@ -181,7 +182,7 @@ class Gen3Workflow:
             logger.info(f"S3 {action.upper()} response:  {response}")
 
         except botocore.exceptions.ClientError as e:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
             error_code = e.response.get("Error", {}).get("Code", "")
             if error_code == "NoSuchKey":
                 response_status = 404
@@ -193,7 +194,7 @@ class Gen3Workflow:
                 )
                 raise  # Reraise for other errors
         except Exception as e:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
             logger.error(f"Received an error from s3_client. Error: {e}")
             raise
         assert (
@@ -269,7 +270,7 @@ class Gen3Workflow:
 
         response = requests.get(url=storage_url, headers=headers)
         if response.status_code != expected_status:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
@@ -316,7 +317,7 @@ class Gen3Workflow:
             [expected_status, 404] if ignore_missing else [expected_status]
         )
         if response.status_code not in allowed_statuses:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
         assert (
             response.status_code in allowed_statuses
         ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {cleanup_url}: {response.text}"
@@ -417,7 +418,7 @@ class Gen3Workflow:
             json=request_body,
         )
         if response.status_code != expected_status:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}: {response.text}"
@@ -434,7 +435,7 @@ class Gen3Workflow:
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
         if response.status_code != expected_status:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
@@ -454,7 +455,7 @@ class Gen3Workflow:
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
         if response.status_code != expected_status:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
@@ -474,7 +475,7 @@ class Gen3Workflow:
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
         if response.status_code != expected_status:
-            _print_gen3_workflow_logs()
+            _print_tes_apps_logs()
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}: {response.text}"
