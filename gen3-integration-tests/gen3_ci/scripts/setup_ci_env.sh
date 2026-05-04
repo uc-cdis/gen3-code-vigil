@@ -546,14 +546,6 @@ install_helm_chart() {
       # update the Gen3 chart to point to the above, and call it version 999.0.0
       yq eval -i '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
       yq eval -i '.version = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
-
-      # TODO remove
-      echo gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
-      cat gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
-      echo gen3-helm/helm/funnel/Chart.yaml
-      cat gen3-helm/helm/funnel/Chart.yaml
-      echo gen3-helm/helm/gen3/Chart.yaml
-      cat gen3-helm/helm/gen3/Chart.yaml
     fi
 
     helm dependency update gen3-helm/helm/gen3
@@ -661,8 +653,7 @@ wait_for_pods_ready() {
       echo "❌ Giving up! Failed pods: $failure_pods"
       echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
       echo "[wait_for_pods_ready] Describing failed pods:"
-      # TODO fix: this describes all the pods
-      echo $failure_pods | kubectl describe pod -n "${namespace}"
+      kubectl describe pod $failure_pods -n "${namespace}"
       return 1
     fi
   done
