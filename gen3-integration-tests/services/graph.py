@@ -527,6 +527,7 @@ class GraphDataTools:
 
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         response = auth.curl(path=self.GRAPHQL_VERSION_ENDPOINT)
+        assert response.status_code == 200, response.text
         peregrine_version = response.json()["version"]
         url = f"{pytest.root_url}/api/search/coremetadata/"
 
