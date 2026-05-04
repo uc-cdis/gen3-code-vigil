@@ -661,8 +661,7 @@ wait_for_pods_ready() {
       echo "❌ Giving up! Failed pods: $failure_pods"
       echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
       echo "[wait_for_pods_ready] Describing failed pods:"
-      # TODO fix: this describes all the pods
-      echo $failure_pods | kubectl describe pod -n "${namespace}"
+      kubectl describe pod $failure_pods -n "${namespace}"
       return 1
     fi
   done
