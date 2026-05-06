@@ -17,11 +17,11 @@ def setup_env_for_helm(arguments):
         [file_path] + arguments, capture_output=True, text=True, timeout=1200
     )
     if result.returncode == 0:
-        logger.info("Script executed successfully. Output:")
+        logger.info("Script executed successfully. Logs:")
         logger.info(result.stdout)
         return "SUCCESS"
     else:
-        logger.info("Script execution failed. Error:")
+        logger.info("Script execution failed. Logs:")
         logger.info(result.stderr)
         logger.info(result.stdout)
         return "failure"
@@ -59,7 +59,9 @@ def generate_api_keys_for_test_users(namespace):
         return "SUCCESS"
     else:
         logger.info(result.stdout)
-        raise Exception(f"Got error: {result.stderr}")
+        raise Exception(
+            f"[generate_api_keys_for_test_users] Got error: {result.stderr}"
+        )
 
 
 def prepare_ci_environment(namespace):

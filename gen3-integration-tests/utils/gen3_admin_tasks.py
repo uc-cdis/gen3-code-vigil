@@ -110,32 +110,40 @@ def get_env_configurations(test_env_namespace: str = ""):
 def run_gen3_job(
     job_name: str,
     test_env_namespace: str = "",
+    job_type: str = "cronjob",
 ):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     """
-    # job_pod = f"{job_name}-{uuid.uuid4()}"
-    cronjob_name = job_name
-    if job_name == "etl":
-        cronjob_name = "etl-cronjob"
-    job_name += "-" + "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=4)
-    )
-    cmd = [
-        "kubectl",
-        "-n",
-        test_env_namespace,
-        "create",
-        "job",
-        f"--from=cronjob/{cronjob_name}",
-        job_name,
-    ]
-    logger.info(cmd)
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode == 0:
-        logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
+    if job_type == "job":
+        cmd = [
+            f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' | kubectl -n {test_env_namespace} replace --force -f -"
+        ]
+    elif job_type == "cronjob":
+        cronjob_name = job_name
+        if job_name == "etl":
+            cronjob_name = "etl-cronjob"
+        job_name += "-" + "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=4)
+        )
+        cmd = [
+            f"kubectl -n {test_env_namespace} create job --from=cronjob/{cronjob_name} {job_name}"
+        ]
     else:
-        raise Exception(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
+        raise Exception(f"[run_gen3_job] Job type '{job_type}' unknown")
+
+    logger.info(f"[run_gen3_job] Running command: {cmd}")
+    result = subprocess.run(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    if result.returncode == 0:
+        logger.info(
+            f"[run_gen3_job] '{job_name}' job triggered - {result.stdout.decode('utf-8')}"
+        )
+    else:
+        raise Exception(
+            f"[run_gen3_job] '{job_name}' failed to start - {result.stderr.decode('utf-8')}"
+        )
     check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
 
 
@@ -177,6 +185,7 @@ def check_job_pod(
     job_name: str,
     test_env_namespace: str = "",
 ):
+    timeout = "30m"
     cmd = [
         "kubectl",
         "-n",
@@ -184,7 +193,7 @@ def check_job_pod(
         "wait",
         "--for=condition=complete",
         f"job/{job_name}",
-        "--timeout=30m",
+        f"--timeout={timeout}",
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -193,7 +202,7 @@ def check_job_pod(
         logger.info(f"Job {job_name} completed successfully")
     else:
         raise Exception(
-            f"Job {job_name} failed to complete in 20 minutes. Info: {result.stderr.strip()}"
+            f"Job {job_name} failed to complete in {timeout}. Info: {result.stderr.strip()}"
         )
 
 
