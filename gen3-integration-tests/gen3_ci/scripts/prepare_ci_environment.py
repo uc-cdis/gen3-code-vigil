@@ -212,7 +212,7 @@ def prepare_ci_environment(namespace):
         assert result.lower() == "success"
     # Helm charts - test with master branch of all services
     elif repo in ("gen3-helm") or repo_full_name in (
-        "ohsu-comp-bio/helm-charts",
+        "calypr/helm-charts",
         "uc-cdis/ohsu-funnel-helm-charts",
     ):
         result = modify_env_for_test_repo_pr(namespace)
