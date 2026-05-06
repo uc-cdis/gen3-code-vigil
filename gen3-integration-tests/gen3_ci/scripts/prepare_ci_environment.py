@@ -33,11 +33,11 @@ def wait_for_quay_build(repo, tag):
     found = False
     i = 0
     repo_list = repo.split(",")
-    logger.info(f"[wait_for_quay_build] Repo - {repo}, image - {tag}")
+    logger.info(f"[wait_for_quay_build] Repo - {quay_org}/{repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
             logger.info(
-                f"[wait_for_quay_build] Waiting for image '{repo_item}:{tag}' to be built in quay"
+                f"[wait_for_quay_build] Waiting for image '{quay_org}/{repo_item}:{tag}' to be built in quay"
             )
             url = f"{quay_url_org}/{repo_item}/tag/?specificTag={tag}"
             res = requests.get(url)
@@ -50,6 +50,9 @@ def wait_for_quay_build(repo, tag):
                         repo_image_status[repo_item] = True
                     else:
                         # the tag exists but is too old
+                        logger.info(
+                            f"[wait_for_quay_build] Found an older '{quay_org}/{repo_item}:{tag}' image, waiting..."
+                        )
                         repo_image_status[repo_item] = False
                 else:
                     # the tag does not exist
@@ -66,11 +69,11 @@ def wait_for_quay_build(repo, tag):
             time.sleep(60)
         found = all(repo_image_status.values())
     if found:
-        logger.info(f"[wait_for_quay_build] Found image '{repo_item}:{tag}'")
+        logger.info(f"[wait_for_quay_build] Found image '{quay_org}/{repo_item}:{tag}'")
         return "success"
     if not found:
         logger.error(
-            f"[wait_for_quay_build] Image with tag '{tag}' was not found in repo '{repo}' after {max_tries} min"
+            f"[wait_for_quay_build] Image with tag '{tag}' was not found in repo '{quay_org}/{repo}' after {max_tries} min"
         )
         return "failure"
 

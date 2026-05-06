@@ -60,7 +60,7 @@ class WorkflowStorageConfig:
         )
 
 
-def _print_tes_apps_logs():
+def _print_tes_apps_logs(describe_task_pods=False):
     for app in ["gen3-workflow", "funnel"]:
         logger.info(f"========== {app} logs begin ==========")
         cmd = [
@@ -81,6 +81,58 @@ def _print_tes_apps_logs():
                 f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
             )
         logger.info(f"========== {app} logs end ==========")
+
+    if describe_task_pods:
+        # list the jobs in the JobsNamespace
+        cmd = [
+            "kubectl",
+            "-n",
+            f"workflow-pods-{pytest.namespace}",
+            "get",
+            "jobs",
+        ]
+        logger.info(f"========== {" ".join(cmd)} ==========")
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+
+        # list the pods in the JobsNamespace
+        cmd = [
+            "kubectl",
+            "-n",
+            f"workflow-pods-{pytest.namespace}",
+            "get",
+            "pods",
+        ]
+        logger.info(f"========== {" ".join(cmd)} ==========")
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+
+        # describe all the pods in the JobsNamespace
+        cmd = [
+            "kubectl",
+            "-n",
+            f"workflow-pods-{pytest.namespace}",
+            "describe",
+            "pod",
+        ]
+        logger.info(f"========== {" ".join(cmd)} ==========")
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
 
 
 class Gen3Workflow:
@@ -224,34 +276,38 @@ class Gen3Workflow:
             "CANCELED",
             "SYSTEM_ERROR",
         }
-        for attempt in range(1, max_retries + 1):
-            task_info = self.get_tes_task(
-                task_id=task_id,
-                user=user,
-                expected_status=200,
+        try:
+            for attempt in range(1, max_retries + 1):
+                task_info = self.get_tes_task(
+                    task_id=task_id,
+                    user=user,
+                    expected_status=200,
+                )
+                state = task_info.get("state")
+
+                if state == expected_final_state:
+                    logger.info(f"TES task reached final state '{state}'")
+                    return task_info
+
+                assert (
+                    state not in final_states
+                ), f"TES task reached a final state, that is not '{expected_final_state}'. Final state: {state}, Response: {task_info}"
+                assert (
+                    state in transient_states
+                ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
+
+                logger.info(
+                    f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
+                )
+                if attempt <= max_retries:
+                    time.sleep(poll_interval)
+
+            raise Exception(
+                f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
             )
-            state = task_info.get("state")
-
-            if state == expected_final_state:
-                logger.info(f"TES task reached final state '{state}'")
-                return task_info
-
-            assert (
-                state not in final_states
-            ), f"TES task reached a final state, that is not '{expected_final_state}'. Final state: {state}, Response: {task_info}"
-            assert (
-                state in transient_states
-            ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
-
-            logger.info(
-                f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
-            )
-            if attempt <= max_retries:
-                time.sleep(poll_interval)
-
-        raise Exception(
-            f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
-        )
+        except Exception:
+            _print_tes_apps_logs(describe_task_pods=True)
+            raise
 
     #############################
     ##### /storage endpoint #####
