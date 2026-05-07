@@ -521,7 +521,7 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
 fi
 
 install_helm_chart() {
-  [[ "$REPO_FN" == "ohsu-comp-bio/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
+  [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_funnel_chart_branch=$?
 
   # For custom helm branch
