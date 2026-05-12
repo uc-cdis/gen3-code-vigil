@@ -386,9 +386,9 @@ class TestGen3Workflow(object):
             final_state in valid_states
         ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
 
-    # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
-    #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
-    #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
+    @pytest.mark.skip(
+        reason="This test relies on having network policies enabled in CI environments to run"
+    )
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
@@ -404,9 +404,7 @@ class TestGen3Workflow(object):
                 {
                     "image": "quay.io/curl/curl:latest",
                     "command": [
-                        # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
-                        # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
-                        "sleep 10 && curl http://arborist-service/user"
+                        "curl http://arborist-service.qa-midrc-test/user --connect-timeout 3s"
                     ],
                 }
             ],
