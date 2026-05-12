@@ -253,7 +253,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ############################################################################################################################
     keys=("global.dictionaryUrl"
       "global.portalApp"
-      "global.netpolicy"
+      "global.netPolicy"
       "global.environment"
       "global.frontendRoot"
       "ssjdispatcher.indexing"
