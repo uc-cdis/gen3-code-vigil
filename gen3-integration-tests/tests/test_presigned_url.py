@@ -267,7 +267,7 @@ class TestPresignedURL:
         for drs_obj in res.get("urls"):
             dids.append(drs_obj["drs_object_id"])
             if drs_obj["drs_object_id"] == allowed_record["did"]:
-                signed_url_res = drs_obj["url"]
+                signed_url_res = {"url": drs_obj["url"]}
         # Validate success case
         assert allowed_record["did"] in dids, "Allowed GUID missing from urls"
 
