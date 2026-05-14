@@ -20,6 +20,13 @@ indexd_files = {
         "acl": ["jenkins"],
         "size": 9,
     },
+    "allowed2": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "size": 9,
+    },
     "not_allowed": {
         "file_name": "test_not_allowed",
         "urls": ["s3://cdis-presigned-url-test/testdata"],
@@ -237,10 +244,12 @@ class TestPresignedURL:
             4. Validate file contents match expected values
         """
         allowed_record = indexd_files["allowed"]
+        allowed_record2 = indexd_files["allowed2"]
         not_allowed_record = indexd_files["not_allowed"]
 
         guids = [
             allowed_record["did"],
+            allowed_record2["did"],
             not_allowed_record["did"],
         ]
 
@@ -253,15 +262,25 @@ class TestPresignedURL:
         assert "urls" in res, f"'urls' missing in response: {res}"
         assert "failed_file_ids" in res, f"'failed_file_ids' missing in response: {res}"
 
+        dids = []
+        signed_url_res = None
+        for drs_obj in res.get("urls"):
+            dids.append(drs_obj["drs_object_id"])
+            if drs_obj["drs_object_id"] == allowed_record["did"]:
+                signed_url_res = drs_obj["url"]
         # Validate success case
-        assert allowed_record["did"] in res["urls"], "Allowed GUID missing from urls"
+        assert allowed_record["did"] in dids, "Allowed GUID missing from urls"
 
-        signed_url_res = res["urls"][allowed_record["did"]]
         self.fence.check_file_equals(
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+        failed_ids = []
+        for failure in res.get("failed_file_ids"):
+            for id in failure.get("object_ids", []):
+                failed_ids.append(id)
+
         # Validate failure case
         assert (
-            not_allowed_record["did"] in res["failed_file_ids"]
+            not_allowed_record["did"] in failed_ids
         ), "Unauthorized GUID should be in failed_file_ids"
