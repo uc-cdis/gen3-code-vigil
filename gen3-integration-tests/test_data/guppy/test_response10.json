@@ -2,7 +2,7 @@
   "data": {
     "subject": [
       {
-        "gender": null
+        "gender": None
       },
       {
         "gender": "female"
