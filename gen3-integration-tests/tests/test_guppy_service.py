@@ -215,7 +215,7 @@ class TestGuppyService:
         """
         guppy = Guppy()
         queryFile = "test_query11.json"
-        responseFile = "test_respons11.json"
+        responseFile = "test_response11.json"
         queryType = "data"
         assert guppy.validate_guppy_query(
             queryFile,
