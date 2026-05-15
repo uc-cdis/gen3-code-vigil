@@ -1,7 +1,17 @@
 {
   "data": {
     "subject": [
-      { "gender": "Male" }
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" },
+      { "gender": "male" }
     ]
   }
 }
