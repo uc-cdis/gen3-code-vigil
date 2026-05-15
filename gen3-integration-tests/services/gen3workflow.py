@@ -72,7 +72,7 @@ def _print_tes_apps_logs(describe_task_pods=False):
             f"app={app}",
             "--all-containers",
             "--tail",
-            "-1",  # all the logs
+            "200",
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
