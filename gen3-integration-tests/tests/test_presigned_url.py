@@ -32,7 +32,7 @@ indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["programs/jenkins"],
+        "authz": ["/programs/jenkins"],
         "size": 9,
     },
     "not_allowed": {
