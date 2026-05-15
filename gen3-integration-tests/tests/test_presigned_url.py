@@ -27,6 +27,14 @@ indexd_files = {
         "acl": ["jenkins"],
         "size": 9,
     },
+    "allowed_authz": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "authz": ["programs/jenkins"],
+        "size": 9,
+    },
     "not_allowed": {
         "file_name": "test_not_allowed",
         "urls": ["s3://cdis-presigned-url-test/testdata"],
@@ -246,10 +254,12 @@ class TestPresignedURL:
         allowed_record = indexd_files["allowed"]
         allowed_record2 = indexd_files["allowed2"]
         not_allowed_record = indexd_files["not_allowed"]
+        allowed_authz_record = indexd_files["allowed_authz"]
 
         guids = [
             allowed_record["did"],
             allowed_record2["did"],
+            allowed_authz_record["did"],
             not_allowed_record["did"],
         ]
 
@@ -270,6 +280,10 @@ class TestPresignedURL:
                 signed_url_res = {"url": drs_obj["url"]}
         # Validate success case
         assert allowed_record["did"] in dids, "Allowed GUID missing from urls"
+        assert allowed_record2["did"] in dids, "Allowed GUID missing from urls"
+        assert (
+            allowed_authz_record["did"] in dids
+        ), "Allowed with authz GUID missing from urls"
 
         self.fence.check_file_equals(
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
