@@ -27,7 +27,7 @@ def get_portal_config(json_file_name=None):
             Path(__file__).parent.parent
             / pytest.frontend_commons_name
             / "config"
-            / "gen3"
+            / "ci"
             / f"{json_file_name}.json"
         )
         if not json_path.exists():
