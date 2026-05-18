@@ -514,9 +514,11 @@ fi
 # so env doesnt need portal configuration
 if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" || ("$setup_type" == "manifest-env-setup"  && "$SOURCE_CONFIG" == "ci/default") ]]; then
   if [[ "$CI_ENV" == "gen3ff" ]]; then
+    echo "Deleting portal service"
     yq eval 'del(.portal)' --inplace "$ci_default_manifest_values_yaml"
     yq eval '.global.frontendRoot = "gen3ff"' --inplace "$ci_default_manifest_values_yaml"
   else
+    echo "Deleting frontend service"
     yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
   fi
 fi
