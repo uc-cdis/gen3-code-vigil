@@ -23,11 +23,15 @@ def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
     deployed_services = get_list_of_services_deployed()
     if pytest.frontend_url:
+        if os.getenv("REPO") == "commons-frontend-app":
+            folder_name = "ci"
+        else:
+            folder_name = "gen3"
         json_path = (
             Path(__file__).parent.parent
             / pytest.frontend_commons_name
             / "config"
-            / "ci"
+            / folder_name
             / f"{json_file_name}.json"
         )
         if not json_path.exists():
