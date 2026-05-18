@@ -1118,8 +1118,9 @@ def get_ff_commons_info():
             .replace("_", "/", 1)
             .strip()
             .replace("'", "")
+            .replace("_test", "")
         )
-        target_dir = "ci-data-commons"
+        target_dir = "commons-frontend-app"
         return repo_name, branch_name, target_dir
     else:
         raise Exception("Unable to get frontend-framework image name")
