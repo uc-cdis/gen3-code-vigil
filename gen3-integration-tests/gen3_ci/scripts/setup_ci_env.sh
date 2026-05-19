@@ -523,6 +523,17 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
   fi
 fi
 
+# Update job container images using flags in global section
+# .global.fence_container_image
+# .global.awshelper_container_image
+yq -i '
+  .global.fence_container_image =
+    .fence.image.repository + ":" + .fence.image.tag |
+
+  .global.awshelper_container_image =
+    .awshelper.image.repository + ":" + .awshelper.image.tag
+' "$ci_default_manifest_values_yaml"
+
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_funnel_chart_branch=$?
