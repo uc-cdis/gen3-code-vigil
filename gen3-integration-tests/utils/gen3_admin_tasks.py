@@ -1119,10 +1119,10 @@ def get_ff_commons_info():
             result.stdout.strip()
             .split("/")[-1]
             .split(":")[-1]
+            .replace("_test", "")
             .replace("_", "/", 1)
             .strip()
             .replace("'", "")
-            .replace("_test", "")
         )
         target_dir = "commons-frontend-app"
         return repo_name, branch_name, target_dir
