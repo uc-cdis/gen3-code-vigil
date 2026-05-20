@@ -16,8 +16,10 @@ python = "^3.13"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
-gen3 = "^4.27.3"
-nextflow = "^24.10.3"
+gen3 = "*"
+nextflow = "*"
+# nextflowpy >0.11 is broken, see https://github.com/goodwright/nextflow.py/issues/14
+nextflowpy = "0.11.0"
 pandas = "<3"
 pytest = "^7.4.0"
 pytest-md-report = "^0.5.0"
@@ -29,7 +31,6 @@ pypfb = ">=0.5.29"
 fastavro = "^1.8.2"
 psutil = "^5.9.8"
 allure-pytest = "^2.16.0"
-nextflowpy = "^0.11.0"
 boto3 = "^1.38.20"
 
 # NOTE: NumPy version is pinned to <2.0.0

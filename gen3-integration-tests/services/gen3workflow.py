@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import time
@@ -292,10 +293,10 @@ class Gen3Workflow:
 
                 assert (
                     state not in final_states
-                ), f"TES task reached a final state, that is not '{expected_final_state}'. Final state: {state}, Response: {task_info}"
+                ), f"TES task reached a final state that is not the expected '{expected_final_state}'. Final state: {state}, Response: {json.dumps(task_info, indent=2)}"
                 assert (
                     state in transient_states
-                ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
+                ), f"Unexpected TES task state '{state}' encountered. Response: {json.dumps(task_info, indent=2)}"
 
                 logger.info(
                     f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
@@ -304,7 +305,7 @@ class Gen3Workflow:
                     time.sleep(poll_interval)
 
             raise Exception(
-                f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
+                f"TES task did not reach a final state in time. Last known state: '{state}', Response: {json.dumps(task_info, indent=2)}"
             )
         except Exception:
             _print_tes_apps_logs(describe_task_pods=True)
@@ -538,7 +539,7 @@ class Gen3Workflow:
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}: {response.text}"
         return response.json()
 
-    def run_nextflow_task(
+    def run_nextflow_workflow(
         self,
         workflow_dir: str,
         workflow_script: str,

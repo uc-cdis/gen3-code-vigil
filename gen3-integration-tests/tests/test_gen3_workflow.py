@@ -1,5 +1,5 @@
 """
-The `TestGen3Workflow` class includes common setup and test selecting/skipping flags.
+The `TestGen3Workflow` class includes common setup and test selecting flags.
 The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
 """
 
@@ -175,7 +175,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=403,
         )
 
-    # @pytest.mark.skip(reason="Test is currently broken")
     def test_happy_path_create_tes_task(self):
         """
         Test Case: Happy Path for TES Task Creation
@@ -292,7 +291,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 input_file_contents == output_file_contents
             ), f"File '{file_name}' does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
 
-    # @pytest.mark.skip(reason="Test is currently broken")
     def test_happy_path_cancel_tes_task(self):
         """
         Verify that an authorized user can cancel a TES task.
@@ -444,7 +442,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         assert (
             task_exit_code == test_case["expected_exit_code"]
-        ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {task_info}"
+        ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {json.dumps(task_info, indent=2)}"
 
     def test_multi_user_task_isolation(self):
         """
@@ -550,7 +548,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=400,
         )
 
-    # @pytest.mark.skip(reason="broken as of funnel rc-27")
+    @pytest.mark.skip(
+        reason="broken as of funnel rc-27, should be fixed in next release"
+    )
     def test_create_tes_task_with_quotes(self):
         """
         This is a regression test for an issue when the command contains quotes:
@@ -655,7 +655,6 @@ def _nextflow_parse_completed_line(log_line):
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
-    # @pytest.mark.skip(reason="Test is currently broken")
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -674,7 +673,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             },
         }
         workflow_dir = "test_data/gen3_workflow/"
-        workflow_log = self.gen3_workflow.run_nextflow_task(
+        workflow_log = self.gen3_workflow.run_nextflow_workflow(
             workflow_dir=workflow_dir,
             workflow_script="main.nf",
             nextflow_config_file="nextflow.config",
@@ -816,7 +815,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     f"Actual content: `{file_contents}`"
                 }
 
-    # @pytest.mark.skip(reason="Test is currently broken")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
@@ -859,15 +857,16 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             "process.executor = 'tes'",
             # for some reason using `plugins.id` here throws `UnsupportedOperationException`
             "plugins {id 'nf-ga4gh'}",
-            'tes.endpoint = "https://${HOSTNAME}/ga4gh/tes"',
-            'tes.oauthToken = "${GEN3_TOKEN}"',
-            'aws.accessKey = "${GEN3_TOKEN}"',
+            "endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
+            "tes.oauthToken = \"env('GEN3_TOKEN')",
+            "tes.timeout = 30",
+            "aws.accessKey = \"env('GEN3_TOKEN')",
             "aws.secretKey = 'N/A'",
             f"aws.region = '{self.s3_storage_config.bucket_region}'",
-            'aws.client.endpoint = "https://${HOSTNAME}/workflows/s3"',
+            "aws.client.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/workflows/s3\"",
             "aws.client.s3PathStyleAccess = true",
             "aws.client.maxErrorRetry = 1",
-            'workDir = "${WORK_DIR}"',
+            "workDir = env('WORK_DIR')",
             # this test tends to fail intermittently; improve stability with retries for now:
             "process.errorStrategy = 'retry'",
             "process.maxRetries = 2",
@@ -876,7 +875,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             file.write("\n".join(lines) + "\n")
 
         # run the test nextflow workflow
-        workflow_log = self.gen3_workflow.run_nextflow_task(
+        workflow_log = self.gen3_workflow.run_nextflow_workflow(
             workflow_dir=directory,
             workflow_script="main.nf",
             nextflow_config_file="nextflow.config",
