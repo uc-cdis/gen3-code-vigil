@@ -1,64 +1,17 @@
+"""
+The `TestGen3Workflow` class includes common setup and test selecting/skipping flags.
+The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
+"""
+
 import json
 import os
 import re
 import shutil
 import subprocess
-import time
 
 import pytest
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from utils import logger
-
-
-def _nextflow_parse_completed_line(log_line):
-    """
-    Parses a line from the nextflow log that indicates a completed task.
-    Extracts: task name, work directory (and protocol), exit code, and status.
-
-    :param str log_line: A line from the Nextflow log file.
-    :return: Dictionary with extracted task information.
-    :rtype: dict
-
-    Example log line:
-    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
-    Example return value:
-    {
-        "process_name": "extract_metadata (1)",
-        "workDir": "bucket-name/work-dir",
-        "workDirProtocol": "s3",
-        "exit_code": "0",
-        "status": "COMPLETED"
-    }
-    """
-
-    task_info = {
-        "process_name": "-",
-        "workDir": "-",
-        "workDirProtocol": "-",
-        "exit_code": "-",
-        "status": "-",
-    }
-    log_regex = (
-        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
-        r"Task completed > TaskHandler\[.*?"
-        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
-        r"exit: (?P<exit_code>-?\d+); "
-        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
-    )
-
-    match = re.match(log_regex, log_line)
-
-    if match:
-        task_info["process_name"] = match.group("name")
-        task_info["workDir"] = match.group("workDir")
-        task_info["workDirProtocol"] = match.group("workDirProtocol")
-        task_info["exit_code"] = match.group("exit_code")
-        task_info["status"] = match.group("status") or "-"
-
-        if task_info["workDirProtocol"]:
-            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
-
-    return task_info
 
 
 @pytest.mark.skipif(
@@ -88,13 +41,11 @@ class TestGen3Workflow(object):
         # `storage_setup` so the user has access to empty the bucket)
         cls.gen3_workflow.cleanup_user_bucket()
 
-    ######################## Test /storage/setup endpoint ########################
 
+class TestGen3WorkflowService(TestGen3Workflow):
     def test_setup_storage_without_token(self):
         """Test GET /storage/setup without an access token."""
         self.gen3_workflow.setup_storage(user=None, expected_status=401)
-
-    ######################## Test /s3/ endpoint ########################
 
     def test_any_user_cannot_get_s3_file_with_unsigned_request(self):
         """Unsigned requests should receive 401 even if the user is authorized to get data."""
@@ -197,8 +148,8 @@ class TestGen3Workflow(object):
             expected_status=404,
         )
 
-    ######################## Test /ga4gh/tes/v1/tasks endpoint ########################
 
+class TestGen3WorkflowTES(TestGen3Workflow):
     def test_unauthorized_user_cannot_list_tes_tasks(self):
         """
         Ensure that an unauthorized user cannot list TES tasks.
@@ -224,7 +175,7 @@ class TestGen3Workflow(object):
             expected_status=403,
         )
 
-    @pytest.mark.skip(reason="Test is currently broken")
+    # @pytest.mark.skip(reason="Test is currently broken")
     def test_happy_path_create_tes_task(self):
         """
         Test Case: Happy Path for TES Task Creation
@@ -341,7 +292,7 @@ class TestGen3Workflow(object):
                 input_file_contents == output_file_contents
             ), f"File '{file_name}' does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
 
-    @pytest.mark.skip(reason="Test is currently broken")
+    # @pytest.mark.skip(reason="Test is currently broken")
     def test_happy_path_cancel_tes_task(self):
         """
         Verify that an authorized user can cancel a TES task.
@@ -599,7 +550,7 @@ class TestGen3Workflow(object):
             expected_status=400,
         )
 
-    @pytest.mark.skip(reason="broken as of funnel rc-27")
+    # @pytest.mark.skip(reason="broken as of funnel rc-27")
     def test_create_tes_task_with_quotes(self):
         """
         This is a regression test for an issue when the command contains quotes:
@@ -651,9 +602,60 @@ class TestGen3Workflow(object):
             stdout == expected_stdout
         ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
 
-    ######################## Test /ga4gh/tes/v1/tasks endpoint with Nextflow ######################
 
-    @pytest.mark.skip(reason="Test is currently broken")
+def _nextflow_parse_completed_line(log_line):
+    """
+    Parses a line from the nextflow log that indicates a completed task.
+    Extracts: task name, work directory (and protocol), exit code, and status.
+
+    :param str log_line: A line from the Nextflow log file.
+    :return: Dictionary with extracted task information.
+    :rtype: dict
+
+    Example log line:
+    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
+    Example return value:
+    {
+        "process_name": "extract_metadata (1)",
+        "workDir": "bucket-name/work-dir",
+        "workDirProtocol": "s3",
+        "exit_code": "0",
+        "status": "COMPLETED"
+    }
+    """
+
+    task_info = {
+        "process_name": "-",
+        "workDir": "-",
+        "workDirProtocol": "-",
+        "exit_code": "-",
+        "status": "-",
+    }
+    log_regex = (
+        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
+        r"Task completed > TaskHandler\[.*?"
+        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
+        r"exit: (?P<exit_code>-?\d+); "
+        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
+    )
+
+    match = re.match(log_regex, log_line)
+
+    if match:
+        task_info["process_name"] = match.group("name")
+        task_info["workDir"] = match.group("workDir")
+        task_info["workDirProtocol"] = match.group("workDirProtocol")
+        task_info["exit_code"] = match.group("exit_code")
+        task_info["status"] = match.group("status") or "-"
+
+        if task_info["workDirProtocol"]:
+            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
+
+    return task_info
+
+
+class TestGen3WorkflowNextflow(TestGen3Workflow):
+    # @pytest.mark.skip(reason="Test is currently broken")
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -814,7 +816,7 @@ class TestGen3Workflow(object):
                     f"Actual content: `{file_contents}`"
                 }
 
-    @pytest.mark.skip(reason="Test is currently broken")
+    # @pytest.mark.skip(reason="Test is currently broken")
     def test_nf_canary(self):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
