@@ -210,7 +210,10 @@ class Gen3Workflow:
         s3_storage_config: WorkflowStorageConfig,
         user: str = "main_account",
         expected_status=200,
-        content: str = None,
+        content: str = "",
+        filename: str = "",
+        dest_object_path: str = "",
+        config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
         access_token = self._get_access_token(user)
@@ -227,14 +230,22 @@ class Gen3Workflow:
                 response = client.get_object(Bucket=bucket, Key=key)
             elif action == "put":
                 response = client.put_object(Bucket=bucket, Key=key, Body=content or "")
+            elif action == "upload_file":
+                response = client.upload_file(
+                    Filename=filename, Bucket=bucket, Key=key, Config=config
+                )
+            elif action == "copy":
+                dest_bucket, dest_key = self._get_bucket_and_key(dest_object_path)
+                response = client.copy(
+                    CopySource={"Bucket": bucket, "Key": key},
+                    Bucket=dest_bucket,
+                    Key=dest_key,
+                    Config=config,
+                )
             elif action == "delete":
                 response = client.delete_object(Bucket=bucket, Key=key)
             else:
                 raise ValueError(f"Unsupported S3 action: {action}")
-
-            response_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            logger.info(f"S3 {action.upper()} response:  {response}")
-
         except botocore.exceptions.ClientError as e:
             _print_tes_apps_logs()
             error_code = e.response.get("Error", {}).get("Code", "")
@@ -251,6 +262,14 @@ class Gen3Workflow:
             _print_tes_apps_logs()
             logger.error(f"Received an error from s3_client. Error: {e}")
             raise
+        else:
+            response_status = (
+                response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+                if response
+                else None
+            )
+        logger.info(f"S3 {action.upper()} response:  {response}")
+
         assert (
             response_status == expected_status
         ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Response: {response}"

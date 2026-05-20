@@ -8,8 +8,10 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 
 import pytest
+from boto3.s3.transfer import TransferConfig
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from utils import logger
 
@@ -115,7 +117,27 @@ class TestGen3WorkflowService(TestGen3Workflow):
         )
         response_contents = response_s3_object["Body"].read().decode("utf-8")
         assert (
-            input_content in response_contents
+            input_content == response_contents
+        ), "Stored and retrieved content should match"
+
+        # Test the Copy functionality: copy the file from an S3 location to another
+        self.gen3_workflow._perform_s3_action(
+            "copy",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            dest_object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=None,
+        )
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        response_contents = response_s3_object["Body"].read().decode("utf-8")
+        assert (
+            input_content == response_contents
         ), "Stored and retrieved content should match"
 
     def test_happy_path_delete_s3_file(self):
@@ -147,6 +169,44 @@ class TestGen3WorkflowService(TestGen3Workflow):
             user=self.valid_user,
             expected_status=404,
         )
+
+    def test_multipart_upload(self):
+        # Create a 6MB file (multipart can only be used for files >=5MB) and upload it
+        input_content = b"A" * (6 * 1024 * 1024)
+        with tempfile.NamedTemporaryFile(delete=True) as file_to_upload:
+            file_to_upload.write(input_content)
+            file_to_upload.flush()
+            self.gen3_workflow._perform_s3_action(
+                "upload_file",
+                filename=file_to_upload.name,
+                object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+                s3_storage_config=self.s3_storage_config,
+                expected_status=None,  # boto3 `upload_file` returns None, so expect None response
+                config=TransferConfig(multipart_threshold=1),  # force multipart
+            )
+
+        # Test the Copy functionality: copy the file from an S3 location to another
+        self.gen3_workflow._perform_s3_action(
+            "copy",
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            dest_object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=None,
+            config=TransferConfig(multipart_threshold=1),  # force multipart
+        )
+
+        # Check the contents of the 2nd file to verify that both the upload and the copy succeeded
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        response_contents = response_s3_object["Body"].read().decode("utf-8")
+        assert (
+            input_content.decode() == response_contents
+        ), "Stored and retrieved content should match"
 
 
 class TestGen3WorkflowTES(TestGen3Workflow):
