@@ -4,11 +4,13 @@ process dicom_to_png {
 
     output:
     stdout emit: dicom_to_png_log
-    path('*.png'), emit: png_files
+    path 'outputs', emit: png_files
 
     script:
     """
     python3 /utils/dicom_to_png.py $dicom_files
+    mkdir outputs
+    cp *.png outputs/
     """
 }
 

@@ -8,12 +8,23 @@ TODO:
 - #26 (getting a task that does not exist must not return 500)
 * Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
-* Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
 * Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
 * Test the multi-user setup, where User A has access to User B's tasks, but not their storage. (add to test_multi_user_task_isolation)
+* Always use latest version of nextflow
+* GPU test, includes #60 (dynamic NodeSelector and Toleration configs)
 
 Not fixed yet:
 - #38 (KMS encryption fails when using `executors.stdout`)
+- #57, #69, #71, #80 Maybe add a Funnel reconciler test: check that old resources are being cleared
+- #62 (task volumes): check the created executor pod similarly to what is done in `test_request_cpu`
+- #73 (job retries must not swallow executor or worker error logs)
+- #75, #81 (useful executor pod events in task logs)
+- #76 (no SYSTEM_ERROR on missing output file)
+- #85 (space in output file)
+- #86 (list tasks with tag filter)
+- Support large files and long workflows. Includes #83. May need to be a nightly build test if it
+  takes too long, but then it won't be tested by the Kind CI used in the Funnel repos.
+As of this writing, the last issue was #86. Any newer issues may require additional tests.
 """
 
 import json
@@ -261,6 +272,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Regression test for Funnel issues:
         - #8 (create a task without input)
         - #20 (ability to list tasks)
+        - #48-a (no "Operation not permitted" on output files that require `incremental-upload` on PV)
+        - #48-b (successful task returns an exit code)
         """
         # Step 1: Upload input file to S3
         if with_input_output:
@@ -285,17 +298,17 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "inputs": [
                     {
                         "url": f"s3://{s3_path_prefix}/input.txt",
-                        "path": "/data/input.txt",
+                        "path": "/work/input.txt",
                     }
                 ],
                 "outputs": [
                     {
-                        "path": "/data/output.txt",
+                        "path": "/work/output.txt",
                         "url": f"s3://{s3_path_prefix}/output.txt",
                         "type": "FILE",
                     },
                     {
-                        "path": "/data/grep_output.txt",
+                        "path": "/work/grep_output.txt",
                         "url": f"s3://{s3_path_prefix}/grep_output.txt",
                         "type": "FILE",
                     },
@@ -303,8 +316,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "executors": [
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "workdir": "/work",
                         "command": [
-                            f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
+                            f"touch output.txt && cat input.txt > output.txt && grep hello input.txt > grep_output.txt && echo {echo_message}",
                         ],
                     }
                 ],
@@ -325,7 +339,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             user=self.valid_user,
             expected_status=200,
         )
-
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
@@ -351,11 +364,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Step 5: Validate task logs
         task_logs = task_info.get("logs", [])
-
         assert (
             len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
         ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
-
         assert (
             "stdout" in task_logs[0]["logs"][0]
         ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
@@ -365,6 +376,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert (
             stdout == echo_message
         ), f"Expected stdout to be `{echo_message}`, but found `{stdout}` instead."
+
+        exit_code = task_logs[0]["logs"][0].get("exit_code")
+        assert (
+            exit_code == 0
+        ), f"Expected successful task's exit code to be 0, but got {exit_code}"
 
         # Step 6: Validate task outputs
         if not with_input_output:
@@ -393,6 +409,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         Verify that an authorized user can cancel a TES task.
         Expects: HTTP 200 and task status changes to 'Cancelled'.
+
+        Regression test for Funnel issues:
+        - #74 (successful task cancelation)
         """
         payload = {
             "name": "Hello world",
@@ -670,10 +689,19 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=400,
         )
 
-    @pytest.mark.skip(
-        reason="broken as of funnel rc-27, should be fixed in next release"
+    @pytest.mark.parametrize(
+        "special_char",
+        [
+            pytest.param(
+                "quote",
+                marks=pytest.mark.skip(
+                    reason="broken as of funnel rc-27, should be fixed in next release"
+                ),
+            ),
+            "comma",
+        ],
     )
-    def test_create_tes_task_with_quotes(self):
+    def test_command_with_special_char(self, special_char):
         """
         This is a regression test for an issue when the command contains quotes:
         `Error: yaml: line 33: did not find expected ',' or ']'`
@@ -685,10 +713,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         Regression test for Funnel issues:
         - #12, #41 (quotes in command)
+        - #59 (comma in command)
         """
-        echo_message = "I'm done!"
+        if special_char == "quote":
+            echo_message = "I'm done!"
+        else:
+            echo_message = "hello/world,please/ignore,goodbye/world"
         tes_task_payload = {
-            "name": "Task with quotes",
+            "name": "Task with special char",
             "executors": [
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -701,7 +733,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             user=self.valid_user,
             expected_status=200,
         )
-
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
@@ -717,12 +748,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert (
             len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
         ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
-
         assert (
             "stdout" in task_logs[0]["logs"][0]
         ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
-        expected_stdout = f"'{echo_message}'"
+        # `expected_stdout`: see limitation in docstring
+        expected_stdout = (
+            f"'{echo_message}'" if special_char == "quote" else echo_message
+        )
         assert (
             stdout == expected_stdout
         ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
@@ -891,6 +924,52 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Note: no need to wait for the task to finish running in this case
 
+    def test_task_with_environment_variable(self):
+        """
+        Regression test for Funnel issues:
+        - #61 (set specified env vars)
+        """
+        tes_task_payload = {
+            "name": "Env var test",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": ["env"],
+                    "env": {
+                        "SOMETHING": "VALUE",
+                    },
+                }
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Poll until the TES task completes
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        # Check if the stdout contains the expected echo message
+        task_logs = task_info.get("logs", [])
+        assert (
+            len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
+        ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
+        assert (
+            "stdout" in task_logs[0]["logs"][0]
+        ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
+        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        # `expected_stdout`: see limitation in docstring
+        assert (
+            "SOMETHING=VALUE" in stdout
+        ), f"Expected env var to be set, but `env` returned: {stdout}"
+
 
 def _nextflow_parse_completed_line(log_line):
     """
@@ -951,6 +1030,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         Regression test for Funnel issues:
         - #5 (output a whole directory)
         - #35 (missing stdout)
+        - #72 (missing command.out/.log/.err files)
         """
         expected_task_outputs = {
             "extract_metadata": {
