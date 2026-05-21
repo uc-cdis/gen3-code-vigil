@@ -3,13 +3,6 @@ The `TestGen3Workflow` class includes common setup and test selecting flags.
 The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
 
 TODO:
-- #3, #14, #29 (failed task creation request must not return a successful response)
-- #25 (canceling a task that does not exist must not return 500)
-- #26 (getting a task that does not exist must not return 500)
-* Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
-  and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
-* Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
-* Test the multi-user setup, where User A has access to User B's tasks, but not their storage. (add to test_multi_user_task_isolation)
 * Always use latest version of nextflow
 * GPU test, includes #60 (dynamic NodeSelector and Toleration configs)
 
@@ -60,8 +53,14 @@ class TestGen3Workflow(object):
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
 
+        # hit the storage setup endpoint for all users who will be creating tasks
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
             cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
+        )
+        WorkflowStorageConfig.from_dict(
+            cls.gen3_workflow.setup_storage(
+                user=cls.other_valid_user, expected_status=200
+            )
         )
 
         # Ensure the bucket is emptied before running the tests (must run after
@@ -410,6 +409,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Verify that an authorized user can cancel a TES task.
         Expects: HTTP 200 and task status changes to 'Cancelled'.
 
+        Also verify that attempting to cancel a task that is already canceled should not return an
+        error.
+
         Regression test for Funnel issues:
         - #74 (successful task cancelation)
         """
@@ -433,11 +435,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert task_id, f"Expected 'id' in response, but got: {task_info}"
 
         # Step 2: Cancel the TES task
-        self.gen3_workflow.cancel_tes_task(
+        response = self.gen3_workflow.cancel_tes_task(
             task_id=task_id,
             user=self.valid_user,
             expected_status=200,
         )
+        assert response == {}
 
         # Step 3: Verify the task is cancelled
         task_info = self.gen3_workflow.get_tes_task(
@@ -451,6 +454,34 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert (
             final_state in valid_states
         ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
+
+        # Step 4: Attempt to cancel the TES task again
+        response = self.gen3_workflow.cancel_tes_task(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        assert response == {
+            "message": "Task is already in CANCELED state, no action needed"
+        }
+
+    def test_task_that_does_not_exist(self):
+        """
+        Regression test for Funnel issues:
+        - #25 (gracefully handle canceling a task that does not exist)
+        - #26 (gracefully handle getting a task that does not exist)
+        """
+        self.gen3_workflow.get_tes_task(
+            task_id="does-not-exist",
+            user=self.valid_user,
+            expected_status=404,
+        )
+
+        self.gen3_workflow.cancel_tes_task(
+            task_id="does-not-exist",
+            user=self.valid_user,
+            expected_status=404,
+        )
 
     # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
     #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
@@ -586,105 +617,166 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - User B attempts to access User A's TES task and S3 file, and is denied access
 
         Regression test for Funnel issues:
-        - TODO: #31 (user A creates task A, user B creates task B: task B must belong to user B) (check that B is in B's bucket)
+        - #31 (first user B creates task B, then user A creates task A: task A must belong to
+          user A == files in user A's bucket)
+        - TODO: Test the multi-user setup, where User A has access to User B's tasks, but not their storage. (add to test_multi_user_task_isolation)
         """
+        user_A = self.valid_user
+        user_B = self.other_valid_user
 
-        # Step 1: User A creates a TES task
-        tes_task_payload = {
-            "name": "User A's Task",
-            "description": "This task belongs to User A.",
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": ["echo", "Hello from User A!"],
-                }
-            ],
-        }
+        # User B creates a TES task
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
-            user=self.valid_user,
+            request_body={
+                "name": "User B's Task",
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": ["echo", "Hello from User B!"],
+                    }
+                ],
+            },
+            user=user_B,
             expected_status=200,
         )
-
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
-        # Step 2: User B attempts to access User A's TES task
+        # User B can access their own task, and user A fails to access User B's task
         self.gen3_workflow.get_tes_task(
             task_id=task_id,
-            user=self.other_valid_user,
-            expected_status=403,
-        )
-        # Verify that User A can access their own task
-        self.gen3_workflow.get_tes_task(
-            task_id=task_id,
-            user=self.valid_user,
+            user=user_B,
             expected_status=200,
         )
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=user_A,
+            expected_status=403,
+        )
 
-        # Step 3: User A uploads a file to S3
+        # User A creates a TES task
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body={
+                "name": "User A's Task",
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": [
+                            "touch",
+                            "/work/output.txt",
+                            "&&",
+                            "echo",
+                            "Hello from User A!",
+                        ],
+                    }
+                ],
+                "outputs": [
+                    {
+                        "path": "/work/output.txt",
+                        "url": f"s3://{s3_path_prefix}/output.txt",
+                        "type": "FILE",
+                    },
+                ],
+            },
+            user=user_A,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # User A can access their own task, and user B fails to access User A's task
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=user_A,
+            expected_status=200,
+        )
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=user_B,
+            expected_status=403,
+        )
+
+        # Poll until the TES task completes
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        # Check that the output file is in the right user's bucket
+        bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
+            folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
+            s3_storage_config=self.s3_storage_config,
+            user=user_A,
+            expected_status=200,
+        )
+        assert bucket_contents and len(bucket_contents) >= 1
+        assert bucket_contents[0]["Key"].endswith("/output.txt")
+
+        # User A uploads a file to S3
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
         self.gen3_workflow.put_bucket_object_with_boto3(
             content="User A's secret data",
             object_path=f"{s3_path_prefix}/user_a_file.txt",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=user_A,
             expected_status=200,
         )
 
-        # Step 4: User B attempts to access User A's S3 file
+        # User A can access their own S3 file, and user B fails to access User A's S3 file
         self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/user_a_file.txt",
             s3_storage_config=self.s3_storage_config,
-            user=self.other_valid_user,
+            user=user_A,
+            expected_status=200,
+        )
+        self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/user_a_file.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=user_B,
             expected_status=403,
         )
 
-        # Verify that User A can access their own S3 file
-        self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{s3_path_prefix}/user_a_file.txt",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
-
-    def test_create_task_format_error(self):
+    @pytest.mark.parametrize(
+        "invalid_payload",
+        [
+            {
+                # Missing required 'executors' field
+                "name": "Invalid Task 1",
+                "description": "This task is missing the 'executors' field.",
+            },
+            {
+                "name": "Invalid Task 2",
+                "description": "This task has an invalid command format.",
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        # Invalid command format (should be a list of strings)
+                        "command": "not_a_list",
+                    }
+                ],
+            },
+        ],
+    )
+    def test_create_task_format_error(self, invalid_payload):
         """
         Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
         - Attempt to create a TES task with missing required fields and invalid command format
         - Verify that the response status is 400 Bad Request
 
+        Note: These tests are a part of integration tests instead of unit tests, because the error
+        is thrown by funnel and not gen3-workflow, and we want to verify that the error is properly
+        propagated through gen3-workflow's API.
+
         Regression test for Funnel issues:
+        - #3, #14, #29 (failed task creation request must not return a successful response)
+          Note that not all edge cases can be tested: this was usually triggered by kubernetes job
+          creation bugs which are now fixed.
         - #42 (gracefully handle invalid command format)
         """
-        # Note: These tests are a part of integration tests instead of unit tests,
-        # since the error is thrown by funnel and not gen3-workflow,
-        # and we want to verify that the error is properly propagated through gen3-workflow's API.
 
-        # Missing required 'executors' field
-        invalid_payload_1 = {
-            "name": "Invalid Task 1",
-            "description": "This task is missing the 'executors' field.",
-        }
         self.gen3_workflow.create_tes_task(
-            request_body=invalid_payload_1,
-            user=self.valid_user,
-            expected_status=400,
-        )
-
-        # Invalid command format (should be a list of strings)
-        invalid_payload_2 = {
-            "name": "Invalid Task 2",
-            "description": "This task has an invalid command format.",
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": "not_a_list",  # Invalid command format
-                }
-            ],
-        }
-        self.gen3_workflow.create_tes_task(
-            request_body=invalid_payload_2,
+            request_body=invalid_payload,
             user=self.valid_user,
             expected_status=400,
         )
