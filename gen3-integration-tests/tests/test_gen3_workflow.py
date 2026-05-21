@@ -17,6 +17,7 @@ Not fixed yet:
 - #86 (list tasks with tag filter)
 - Support large files and long workflows. Includes #83. May need to be a nightly build test if it
   takes too long, but then it won't be tested by the Kind CI used in the Funnel repos.
+
 As of this writing, the last issue was #86. Any newer issues may require additional tests.
 """
 
@@ -612,17 +613,20 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
     def test_multi_user_task_isolation(self):
         """
-        Test Case: Verify that users can only see and access their own TES tasks and storage.
+        Test Case: Verify that users can only see and access their own TES tasks and storage,
+        unless they are granted explicit access.
         - User A creates a TES task and uploads a file to S3
         - User B attempts to access User A's TES task and S3 file, and is denied access
+        - User C has access to User A's tasks, but not to their storage (that is not currently
+          supported by gen3-workflow)
 
         Regression test for Funnel issues:
         - #31 (first user B creates task B, then user A creates task A: task A must belong to
           user A == files in user A's bucket)
-        - TODO: Test the multi-user setup, where User A has access to User B's tasks, but not their storage. (add to test_multi_user_task_isolation)
         """
         user_A = self.valid_user
         user_B = self.other_valid_user
+        user_C = "user1_account"
 
         # User B creates a TES task
         task_response = self.gen3_workflow.create_tes_task(
@@ -684,10 +688,16 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
-        # User A can access their own task, and user B fails to access User A's task
+        # User A can access their own task, user C has access to user A's tasks in the user.yaml,
+        # and user B fails to access User A's task
         self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=user_A,
+            expected_status=200,
+        )
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=user_C,
             expected_status=200,
         )
         self.gen3_workflow.get_tes_task(
