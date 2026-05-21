@@ -527,7 +527,10 @@ fi
 # .global.fence_container_image
 # .global.awshelper_container_image
 yq eval '.global.fence_container_image = (.fence.image.repository + ":" + .fence.image.tag)' -i "$ci_default_manifest_values_yaml"
-yq eval '.global.awshelper_container_image = (.awshelper.image.repository + ":" + .awshelper.image.tag)' -i "$ci_default_manifest_values_yaml"
+awshelper_block=$(yq eval ".awshelper // \"key not found\"" $ci_default_manifest_values_yaml)
+if [ "$awshelper_block" != "key not found" ]; then
+  yq eval '.global.awshelper_container_image = (.awshelper.image.repository + ":" + .awshelper.image.tag)' -i "$ci_default_manifest_values_yaml"
+fi
 
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
