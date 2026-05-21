@@ -1,6 +1,19 @@
 """
 The `TestGen3Workflow` class includes common setup and test selecting flags.
 The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
+
+TODO:
+- #3, #14, #29 (failed task creation request must not return a successful response)
+- #25 (canceling a task that does not exist must not return 500)
+- #26 (getting a task that does not exist must not return 500)
+* Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
+  and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
+* Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
+* Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
+* Test the multi-user setup, where User A has access to User B's tasks, but not their storage. (add to test_multi_user_task_isolation)
+
+Not fixed yet:
+- #38 (KMS encryption fails when using `executors.stdout`)
 """
 
 import json
@@ -9,6 +22,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 
 import pytest
 from boto3.s3.transfer import TransferConfig
@@ -235,55 +249,72 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=403,
         )
 
-    def test_happy_path_create_tes_task(self):
+    @pytest.mark.parametrize("with_input_output", [True, False])
+    def test_happy_path_create_tes_task(self, with_input_output):
         """
         Test Case: Happy Path for TES Task Creation
         - Upload input file to S3
         - Submit TES task
         - Verify task creation, listing, retrieval, and completion
         - Validate outputs and logs
-        """
-        input_file_contents = "hello beautiful world!"
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
 
+        Regression test for Funnel issues:
+        - #8 (create a task without input)
+        - #20 (ability to list tasks)
+        """
         # Step 1: Upload input file to S3
-        self.gen3_workflow.put_bucket_object_with_boto3(
-            content=input_file_contents,
-            object_path=f"{s3_path_prefix}/input.txt",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
+        if with_input_output:
+            input_file_contents = "hello beautiful world!"
+            s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+            self.gen3_workflow.put_bucket_object_with_boto3(
+                content=input_file_contents,
+                object_path=f"{s3_path_prefix}/input.txt",
+                s3_storage_config=self.s3_storage_config,
+                user=self.valid_user,
+                expected_status=200,
+            )
 
         # Step 2: Create a TES task
         echo_message = "done!"
-        tes_task_payload = {
-            "name": "Hello world with Word Count",
-            "description": "Demonstrates the most basic echo task.",
-            "inputs": [
-                {"url": f"s3://{s3_path_prefix}/input.txt", "path": "/data/input.txt"}
-            ],
-            "outputs": [
-                {
-                    "path": "/data/output.txt",
-                    "url": f"s3://{s3_path_prefix}/output.txt",
-                    "type": "FILE",
-                },
-                {
-                    "path": "/data/grep_output.txt",
-                    "url": f"s3://{s3_path_prefix}/grep_output.txt",
-                    "type": "FILE",
-                },
-            ],
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": [
-                        f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
-                    ],
-                }
-            ],
-        }
+        if with_input_output:
+            tes_task_payload = {
+                "name": "Hello world with Word Count",
+                "description": "Demonstrates the most basic echo task.",
+                "inputs": [
+                    {"url": f"s3://{s3_path_prefix}/input.txt", "path": "/data/input.txt"}
+                ],
+                "outputs": [
+                    {
+                        "path": "/data/output.txt",
+                        "url": f"s3://{s3_path_prefix}/output.txt",
+                        "type": "FILE",
+                    },
+                    {
+                        "path": "/data/grep_output.txt",
+                        "url": f"s3://{s3_path_prefix}/grep_output.txt",
+                        "type": "FILE",
+                    },
+                ],
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": [
+                            f"cat /data/input.txt > /data/output.txt && grep hello /data/input.txt > /data/grep_output.txt && echo {echo_message}",
+                        ],
+                    }
+                ],
+            }
+        else:
+            tes_task_payload = {
+                "name": "Hello world without input/output",
+                "description": "Demonstrates the most basic echo task.",
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": [f"echo {echo_message}"],
+                    }
+                ],
+            }
         task_response = self.gen3_workflow.create_tes_task(
             request_body=tes_task_payload,
             user=self.valid_user,
@@ -331,6 +362,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         ), f"Expected stdout to be `{echo_message}`, but found `{stdout}` instead."
 
         # Step 6: Validate task outputs
+        if not with_input_output:
+            return
         for file_name in ["output.txt", "grep_output.txt"]:
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{file_name}",
@@ -398,6 +431,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
     # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
     #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
     #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
+    @pytest.mark.skip(reason="test needs to be updated")
     def test_access_internal_endpoints(self):
         """
         Test Case: Access internal endpoints must be restricted
@@ -451,11 +485,19 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "command": ["echo 'This will fail' && exit 123"],
                 "expected_exit_code": 123,  # This is to ensure response's error code matches the executor command's exit code
                 "expected_state": "EXECUTOR_ERROR",
+                "expected_logs": "This will fail\n",
             },
             {
                 "command": ["False"],
-                "expected_exit_code": 127,
+                "expected_exit_code": 127,  # command not found
                 "expected_state": "EXECUTOR_ERROR",
+                "expected_logs": "/bin/sh: False: not found\n",
+            },
+            {
+                "command": ["cd missing/directory"],
+                "expected_exit_code": 2,
+                "expected_state": "EXECUTOR_ERROR",
+                "expected_logs": "/bin/sh: cd: line 0: can't cd to missing/directory: No such file or directory\n",
             },
         ],
     )
@@ -466,6 +508,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - Poll until the task fails
         - Verify the exit code and that the task status is 'EXECUTOR_ERROR' (if the provided command returns a non-0 exit code) or 'SYSTEM_ERROR' (if the provided task cannot be run)
         - Validate that the logs capture the error message
+
+        Regression test for Funnel issues:
+        - #2 (task that completes with an error must not be reported successful)
+        - #38 (task with failing command must not stay stuck in "Running" state)
         """
 
         # Step 1: Create a TES task
@@ -499,16 +545,24 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         task_logs = task_info.get("logs", [])
         if task_logs and len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0:
             task_exit_code = task_logs[0]["logs"][0].get("exit_code")
+            executor_logs = task_logs[0]["logs"][0].get("stdout")
 
         assert (
             task_exit_code == test_case["expected_exit_code"]
         ), f"Expected exit code to be {test_case['expected_exit_code']}, but found {task_exit_code} instead. Response: {json.dumps(task_info, indent=2)}"
+
+        assert (
+            executor_logs == test_case["expected_logs"]
+        ), f"Expected logs to be '{test_case['expected_logs']}', but found '{executor_logs}' instead. Response: {json.dumps(task_info, indent=2)}"
 
     def test_multi_user_task_isolation(self):
         """
         Test Case: Verify that users can only see and access their own TES tasks and storage.
         - User A creates a TES task and uploads a file to S3
         - User B attempts to access User A's TES task and S3 file, and is denied access
+
+        Regression test for Funnel issues:
+        - TODO: #31 (user A creates task A, user B creates task B: task B must belong to user B) (check that B is in B's bucket)
         """
 
         # Step 1: User A creates a TES task
@@ -575,6 +629,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Test Case: Verify that creating a TES task with an invalid request format returns a 400 error.
         - Attempt to create a TES task with missing required fields and invalid command format
         - Verify that the response status is 400 Bad Request
+
+        Regression test for Funnel issues:
+        - #42 (gracefully handle invalid command format)
         """
         # Note: These tests are a part of integration tests instead of unit tests,
         # since the error is thrown by funnel and not gen3-workflow,
@@ -620,6 +677,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         A current limitation of quote handling is that the command received by the Funnel executor
         is: echo \'I\'m done!\' so the output includes extra quotes (see `expected_stdout`
         variable).
+
+        Regression test for Funnel issues:
+        - #12, #41 (quotes in command)
         """
         echo_message = "I'm done!"
         tes_task_payload = {
@@ -661,6 +721,74 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert (
             stdout == expected_stdout
         ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
+
+    @pytest.mark.parametrize("requests", [{"cpu": 1, "mem": 2, "disk": 3}, {"cpu": 3, "mem": 1, "disk": 2}])
+    def test_request_cpu(self, requests):
+        """
+        Verify that the resources requested in the TES task body are indeed what the executor
+        container requests.
+
+        Regression test for Funnel issues:
+        - #43 (request a specific number of CPUs)
+        """
+
+        # Create a TES task
+        tes_task_payload = {
+            "name": "Request and check CPUs",
+            "resources": {
+                "cpu_cores": requests["cpu"],
+                "ram_gb": requests["mem"],
+                "disk_gb": requests["disk"],
+            },
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": ["sleep 60"],
+                }
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Poll until the task starts running so we know the worker pod has started
+        poll_interval = 10
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="RUNNING",
+            poll_interval=poll_interval,
+        )
+
+        # Wait until the executor has started to get its requested CPU, memory and storage
+        cmd = [f'kubectl get pod -l app=funnel-executor -n {pytest.namespace} -o custom-columns="NAME:.metadata.name,REQUESTS:.spec.containers[*].resources.requests" | grep {task_id}']
+        max_retries = 10
+        container_requests = ""
+        for attempt in range(1, max_retries + 1):
+            result = subprocess.run(
+                cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            if result.returncode == 0:
+                container_requests = result.stdout.decode('utf-8').split("map")[-1]
+            else:
+                raise Exception(
+                    f"Failed to run command '{cmd}': {result.stderr.decode('utf-8')}"
+                )
+            if container_requests:
+                break
+            if attempt <= max_retries:
+                time.sleep(poll_interval)
+        if not container_requests:
+            raise Exception(f"TES executor for task '{task_id}' was not created in time")
+
+        assert container_requests == f"[cpu:{requests['cpu']} ephemeral-storage:{requests['disk']}Gi memory:{requests['mem']}Gi]", f"Expected the container to request '{requests}', but the requests are '{container_requests}'"
+
+        # Note: no need to wait for the task to finish running in this case
 
 
 def _nextflow_parse_completed_line(log_line):
@@ -718,6 +846,10 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
+
+        Regression test for Funnel issues:
+        - #5 (output a whole directory)
+        - #35 (missing stdout)
         """
         expected_task_outputs = {
             "extract_metadata": {
@@ -891,6 +1023,9 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
             NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
             -- Being tracked by MIDRC-1254 to investigate GPU support in our infra and enable this test
+
+        Regression test for Funnel issues:
+        - #40 (support Nextflow "publishDir" directive)
         """
         known_unsupported = [
             "TEST_MV_FILE",
@@ -982,12 +1117,3 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         assert tasks_with_ignored_error == [
             "TEST_IGNORED_FAIL"
         ], "TEST_IGNORED_FAIL failure is expected to be ignored"
-
-    # TODO:
-    # * Test the GET /ga4gh/tes/v1/tasks/<task_id> endpoint with a task id that is not present in the system, and expect a 404 from gen3-workflow
-    # * Test the POST /ga4gh/tes/v1/tasks:cancel with a task id that is not present in the system, and expect a 404 from gen3-workflow
-    # * Test the POST /ga4gh/tes/v1/tasks/<task_id>:cancel endpoint with a task that has already reached a final state,
-    #   and expect a 200 from gen3-workflow with an error message in the response body indicating that the task cannot be cancelled
-    # * Test the POST /ga4gh/tes/v1/tasks/ to `verify incremental-upload`. #48 "Operation not permitted" on output files should return a 200
-    # * Test the s3 endpoint by uploading a large file(say 20MB) to test multipart upload logic by Gen3-workflow.
-    # * Test the multi-user setup, where User A has access to User B's tasks, but not their storage.

@@ -297,6 +297,7 @@ class Gen3Workflow:
             "CANCELED",
             "SYSTEM_ERROR",
         }
+        logger.info(f"Monitoring task '{task_id}'")
         try:
             for attempt in range(1, max_retries + 1):
                 task_info = self.get_tes_task(
@@ -307,7 +308,7 @@ class Gen3Workflow:
                 state = task_info.get("state")
 
                 if state == expected_final_state:
-                    logger.info(f"TES task reached final state '{state}'")
+                    logger.info(f"TES task reached final state '{state}', Response: {json.dumps(task_info, indent=2)}")
                     return task_info
 
                 assert (
@@ -318,7 +319,7 @@ class Gen3Workflow:
                 ), f"Unexpected TES task state '{state}' encountered. Response: {json.dumps(task_info, indent=2)}"
 
                 logger.info(
-                    f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
+                    f"Check {attempt}/{max_retries}: Task state is '{state}', retrying in {poll_interval}s..."
                 )
                 if attempt <= max_retries:
                     time.sleep(poll_interval)
