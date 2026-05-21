@@ -1,6 +1,15 @@
 import pytest
+from pages.data_library_page import DataLibraryPage
+from pages.login import LoginPage
 from services.userdatalibrary import UserDataLibrary
 from utils import logger
+from utils.test_execution import screenshot
+
+
+@pytest.fixture()
+def page_setup(page):
+    yield page
+    page.close()
 
 
 @pytest.mark.skipif(
@@ -8,6 +17,7 @@ from utils import logger
     reason="gen3-user-data-library service is not running on this environment",
 )
 @pytest.mark.gen3_user_data_library
+@pytest.mark.frontend
 class TestUserDataLibrary(object):
     def setup_class(cls):
         cls.test_data_create = {
@@ -38,8 +48,9 @@ class TestUserDataLibrary(object):
             },
         }
 
-    def teardown_method(self):
-        # Delete the list after each test
+    @classmethod
+    def teardown_class(cls):
+        # Delete the list after all tests are run.
         gen3_udl = UserDataLibrary()
         gen3_udl.delete_list(user="main_account")
 
@@ -101,6 +112,63 @@ class TestUserDataLibrary(object):
 
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
+
+    @pytest.mark.skipif(
+        "frontend-framework" not in pytest.deployed_services,
+        reason="Frontend-framework services are not running on this environment",
+    )
+    def test_data_library_page(self, page_setup):
+        """
+        Scenario:
+            From Data Library Page export selected data items to Terra by
+            selecting the entries created.
+        Steps:
+            1. Create a data library list.
+            2. Login and Navigate to Data Library Page and expand first row created
+            3. Select list item entries and click "Retrieve Selected" button on selected data
+            4. Select all entries on dialog window and select Terra export option
+            5. Click Export button and close "Retrieve Data" dialog window
+            6. Delete list
+        """
+        gen3_udl = UserDataLibrary()
+        # Create the data library list
+        data_library_list = gen3_udl.create_list(
+            user="main_account", data=self.test_data_create
+        )
+        # Login
+        login_page = LoginPage()
+        login_page.go_to(page_setup)
+        login_page.login(page_setup)
+
+        # Navigate to Data Library Page
+        data_library_page = DataLibraryPage()
+        data_library_page.go_to(page_setup)
+        data_library_page.assert_first_row_exists(
+            page_setup
+        )  # Assert that data exists on data library page.
+
+        # Expand first row
+        data_library_page.expand_first_row(page_setup)
+        screenshot(page_setup, "ExpandList")
+
+        # Select list and click "Retrieve Selected" button
+        data_library_page.select_first_child_entry(page_setup)
+        data_library_page.retrieve_selected_data(page_setup)
+        screenshot(page_setup, "RetrieveSelectedData")
+
+        # Select all entries on "Retrieve Data" dialog and select Tera Option
+        data_library_page.select_all_entries(page_setup)
+        data_library_page.select_export_to_terra(page_setup)
+        screenshot(page_setup, "TerraExportSelected")
+
+        # Do the Export and close dialog window
+        data_library_page.export_data(page_setup)
+        data_library_page.close_modal(page_setup)
+        screenshot(page_setup, "ExportPerformed")
+
+        # Delete list
+        data_library_page.delete_list(page_setup)
+        screenshot(page_setup, "ListDeleted")
 
     @pytest.mark.skipif(
         True,
