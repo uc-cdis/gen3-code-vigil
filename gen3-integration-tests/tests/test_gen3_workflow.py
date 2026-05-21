@@ -265,7 +265,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 1: Upload input file to S3
         if with_input_output:
             input_file_contents = "hello beautiful world!"
-            s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+            s3_path_prefix = (
+                f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+            )
             self.gen3_workflow.put_bucket_object_with_boto3(
                 content=input_file_contents,
                 object_path=f"{s3_path_prefix}/input.txt",
@@ -281,7 +283,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "name": "Hello world with Word Count",
                 "description": "Demonstrates the most basic echo task.",
                 "inputs": [
-                    {"url": f"s3://{s3_path_prefix}/input.txt", "path": "/data/input.txt"}
+                    {
+                        "url": f"s3://{s3_path_prefix}/input.txt",
+                        "path": "/data/input.txt",
+                    }
                 ],
                 "outputs": [
                     {
@@ -722,7 +727,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             stdout == expected_stdout
         ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
 
-    @pytest.mark.parametrize("requests", [{"cpu": 1, "mem": 2, "disk": 3}, {"cpu": 3, "mem": 1, "disk": 2}])
+    @pytest.mark.parametrize(
+        "requests", [{"cpu": 1, "mem": 2, "disk": 3}, {"cpu": 3, "mem": 1, "disk": 2}]
+    )
     def test_request_cpu(self, requests):
         """
         Verify that the resources requested in the TES task body are indeed what the executor
@@ -743,6 +750,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "executors": [
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
+                    # sleep for long enough to describe the pod once it's running
                     "command": ["sleep 60"],
                 }
             ],
@@ -752,7 +760,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             user=self.valid_user,
             expected_status=200,
         )
-
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
@@ -766,7 +773,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Wait until the executor has started to get its requested CPU, memory and storage
-        cmd = [f'kubectl get pod -l app=funnel-executor -n {pytest.namespace} -o custom-columns="NAME:.metadata.name,REQUESTS:.spec.containers[*].resources.requests" | grep {task_id}']
+        cmd = [
+            f'kubectl get pod -l app=funnel-executor -n {pytest.namespace} -o custom-columns="NAME:.metadata.name,REQUESTS:.spec.containers[*].resources.requests" | grep {task_id}'
+        ]
         max_retries = 10
         container_requests = ""
         for attempt in range(1, max_retries + 1):
@@ -774,19 +783,111 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             if result.returncode == 0:
-                container_requests = result.stdout.decode('utf-8').split("map")[-1]
+                container_requests = result.stdout.decode("utf-8").split("map")[-1]
             else:
                 raise Exception(
-                    f"Failed to run command '{cmd}': {result.stderr.decode('utf-8')}"
+                    f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
                 )
             if container_requests:
                 break
             if attempt <= max_retries:
                 time.sleep(poll_interval)
         if not container_requests:
-            raise Exception(f"TES executor for task '{task_id}' was not created in time")
+            raise Exception(
+                f"TES executor for task '{task_id}' was not created in time"
+            )
 
-        assert container_requests == f"[cpu:{requests['cpu']} ephemeral-storage:{requests['disk']}Gi memory:{requests['mem']}Gi]", f"Expected the container to request '{requests}', but the requests are '{container_requests}'"
+        assert (
+            container_requests
+            == f"[cpu:{requests['cpu']} ephemeral-storage:{requests['disk']}Gi memory:{requests['mem']}Gi]"
+        ), f"Expected the container to request '{requests}', but the requests are '{container_requests}'"
+
+        # Note: no need to wait for the task to finish running in this case
+
+    def test_no_secrets_in_logs(self, requests):
+        """
+        Verify no secrets are being dumped in the Funnel or Funnel worker logs.
+
+        Regression test for Funnel issues:
+        - #44 (secrets must not be logged when the config is logged)
+        """
+
+        # Look for 3 secret values: Funnel DB password, Funnel OIDC client secret, and
+        # "GenericS3.Key" value set by the Funnel plugin (in the format "<token>;userId=<user_id>")
+        secrets = [";userId="]
+        for secret_name, field in [
+            ("funnel-dbcreds", "password"),
+            ("funnel-oidc-client", "client_secret"),
+        ]:
+            cmd = [
+                f"kubectl -n {{{pytest.namespace}}} get secret {secret_name} -o jsonpath='{{.data.{field}}}' | base64 --decode"
+            ]
+            result = subprocess.run(
+                cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            if result.returncode == 0:
+                secrets.append(result.stdout.decode("utf-8").strip())
+            else:
+                raise Exception(
+                    f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
+                )
+
+        # Create a TES task
+        tes_task_payload = {
+            "name": "Request and check CPUs",
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "command": ["sleep 60"],  # sleep for long enough to get the logs
+                }
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Poll until the task starts running so we know the worker pod has started
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="RUNNING",
+        )
+
+        # Get the Funnel logs
+        cmd = [
+            f"kubectl -n {pytest.namespace} logs -l app=funnel --all-containers --tail -1"
+        ]
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode == 0:
+            funnel_logs = result.stdout.decode("utf-8")
+        else:
+            raise Exception(
+                f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
+            )
+
+        # Get the Funnel worker logs
+        cmd = [
+            f"kubectl -n workflow-pods-{pytest.namespace} logs -l app=funnel-worker --all-containers --tail -1"
+        ]
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode == 0:
+            worker_logs = result.stdout.decode("utf-8")
+        else:
+            raise Exception(
+                f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
+            )
+
+        for logs in [funnel_logs, worker_logs]:
+            for secret in secrets:
+                assert secret not in logs, f"Found a secret in these logs: {logs}"
 
         # Note: no need to wait for the task to finish running in this case
 
