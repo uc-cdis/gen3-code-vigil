@@ -1164,6 +1164,8 @@ def validate_release_version_for_test_execution(
     )
     if result.returncode == 0:
         current_version = result.stdout.strip().replace('"', "")
+    else:
+        logger.info(f"Unable to run command. Error: {result.stdout}")
     # master or main version would have all the changes
     if current_version in ["master", "main"]:
         return False
