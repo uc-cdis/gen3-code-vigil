@@ -716,7 +716,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             )["sub"]
             resource_path = f"/services/workflow/gen3-workflow/tasks/{user_A_id}"
             resp = requestor.create_request_with_auth_header(
-                username=user_C,
+                username=pytest.users[user_C],
                 resource_paths=[resource_path],
                 role_ids=["gen3_workflow_reader"],
                 request_status="SIGNED",
@@ -1242,7 +1242,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
 
             # Verify the expected file is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{task['workDir']}/{expected_file}",
+                object_path=f"{task['workDir']}/outputs/{expected_file}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
@@ -1371,7 +1371,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             "process.executor = 'tes'",
             # for some reason using `plugins.id` here throws `UnsupportedOperationException`
             "plugins {id 'nf-ga4gh'}",
-            "endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
+            "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
             "tes.oauthToken = env('GEN3_TOKEN')",
             "tes.timeout = 30",
             "aws.accessKey = env('GEN3_TOKEN')",
