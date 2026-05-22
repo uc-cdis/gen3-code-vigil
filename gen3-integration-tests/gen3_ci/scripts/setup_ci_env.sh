@@ -532,6 +532,12 @@ if [ "$awshelper_block" != "key not found" ]; then
   yq eval '.global.awshelper_container_image = (.awshelper.image.repository + ":" + .awshelper.image.tag)' -i "$ci_default_manifest_values_yaml"
 fi
 
+# TODO: https://ctds-planx.atlassian.net/browse/GPE-2406
+# Disable embedding-management-service if defined in values
+if yq -e '.["embedding-management-service"]' "$ci_default_manifest_values_yaml" >/dev/null; then
+  yq eval '.["embedding-management-service"].enabled = false' -i "$ci_default_manifest_values_yaml"
+fi
+
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_funnel_chart_branch=$?
