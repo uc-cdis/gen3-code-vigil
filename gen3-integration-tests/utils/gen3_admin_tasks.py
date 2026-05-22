@@ -1153,6 +1153,8 @@ def validate_release_version_for_test_execution(
         pytest.namespace,
         "-n",
         pytest.namespace,
+        "-o",
+        "yaml",
         "|",
         "yq",
         f"'.{service_name}.image.tag'",
