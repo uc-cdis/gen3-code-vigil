@@ -23,11 +23,15 @@ def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
     deployed_services = get_list_of_services_deployed()
     if pytest.frontend_url:
+        if os.getenv("REPO") == "commons-frontend-app":
+            folder_name = "ci"
+        else:
+            folder_name = "gen3"
         json_path = (
             Path(__file__).parent.parent
             / pytest.frontend_commons_name
             / "config"
-            / "gen3"
+            / folder_name
             / f"{json_file_name}.json"
         )
         if not json_path.exists():
@@ -1115,11 +1119,12 @@ def get_ff_commons_info():
             result.stdout.strip()
             .split("/")[-1]
             .split(":")[-1]
+            .replace("_test", "")
             .replace("_", "/", 1)
             .strip()
             .replace("'", "")
         )
-        target_dir = "ci-data-commons"
+        target_dir = "commons-frontend-app"
         return repo_name, branch_name, target_dir
     else:
         raise Exception("Unable to get frontend-framework image name")
