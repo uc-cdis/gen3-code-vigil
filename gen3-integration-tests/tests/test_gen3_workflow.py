@@ -29,9 +29,11 @@ import subprocess
 import tempfile
 import time
 
+import jwt
 import pytest
 from boto3.s3.transfer import TransferConfig
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
+from services.requestor import Requestor
 from utils import logger
 
 
@@ -688,8 +690,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
-        # User A can access their own task, user C has access to user A's tasks in the user.yaml,
-        # and user B fails to access User A's task
+        # User A can access their own task, and user B fails to access User A's task
         self.gen3_workflow.get_tes_task(
             task_id=task_id,
             user=user_A,
@@ -697,13 +698,42 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
         self.gen3_workflow.get_tes_task(
             task_id=task_id,
-            user=user_C,
-            expected_status=200,
-        )
-        self.gen3_workflow.get_tes_task(
-            task_id=task_id,
             user=user_B,
             expected_status=403,
+        )
+
+        if "requestor" in pytest.deployed_services:
+            # Grant user C access to user A's tasks (not through the user.yaml because the resource
+            # path must include user A's ID, which is not guaranteed to be the same in all CI runs)
+            logger.info(
+                f"Requestor is deployed: granting {user_C} access to {user_A}'s tasks"
+            )
+            requestor = Requestor()
+            user_A_id = jwt.decode(
+                self.gen3_workflow._get_access_token(user_A),
+                algorithms=["RS256"],
+                options={"verify_signature": False},
+            )["sub"]
+            resource_path = f"/services/workflow/gen3-workflow/tasks/{user_A_id}"
+            resp = requestor.create_request_with_auth_header(
+                username=user_C,
+                resource_paths=[resource_path],
+                role_ids=["gen3_workflow_reader"],
+                request_status="SIGNED",
+            )
+            assert (
+                resp.status_code == 201
+            ), f"Unable to grant {user_C} access to {resource_path}"
+        else:
+            # in the gen3-workflow Kind CI, Requestor is not deployed but user A always has the
+            # same user ID, so access is granted through the user.yaml
+            logger.info(
+                f"Requestor not is deployed: assuming {user_C} already has access to {user_A}'s tasks"
+            )
+        self.gen3_workflow.get_tes_task(
+            task_id=task_id,
+            user=user_C,
+            expected_status=200,
         )
 
         # Poll until the TES task completes
@@ -899,12 +929,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
 
         # Poll until the task starts running so we know the worker pod has started
-        poll_interval = 10
         self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
             user=self.valid_user,
             expected_final_state="RUNNING",
-            poll_interval=poll_interval,
         )
 
         # Wait until the executor has started to get its requested CPU, memory and storage
@@ -926,7 +954,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             if container_requests:
                 break
             if attempt <= max_retries:
-                time.sleep(poll_interval)
+                time.sleep(10)
         if not container_requests:
             raise Exception(
                 f"TES executor for task '{task_id}' was not created in time"
@@ -939,7 +967,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Note: no need to wait for the task to finish running in this case
 
-    def test_no_secrets_in_logs(self, requests):
+    def test_no_secrets_in_logs(self):
         """
         Verify no secrets are being dumped in the Funnel or Funnel worker logs.
 
