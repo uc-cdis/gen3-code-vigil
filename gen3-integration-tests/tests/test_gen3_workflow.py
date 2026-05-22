@@ -946,7 +946,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             if result.returncode == 0:
-                container_requests = result.stdout.decode("utf-8").split("map")[-1]
+                container_requests = (
+                    result.stdout.decode("utf-8").split("map")[-1].strip()
+                )
             else:
                 raise Exception(
                     f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
@@ -977,7 +979,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Look for 3 secret values: Funnel DB password, Funnel OIDC client secret, and
         # "GenericS3.Key" value set by the Funnel plugin (in the format "<token>;userId=<user_id>")
-        secrets = [";userId="]
+        secrets = {"GenericS3.Key": ";userId="}
         for secret_name, field in [
             ("funnel-dbcreds", "password"),
             ("funnel-oidc-client", "client_secret"),
@@ -989,7 +991,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             if result.returncode == 0:
-                secrets.append(result.stdout.decode("utf-8").strip())
+                secrets[f"{secret_name}.{field}"] = result.stdout.decode(
+                    "utf-8"
+                ).strip()
             else:
                 raise Exception(
                     f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
@@ -1048,9 +1052,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
             )
 
-        for logs in [funnel_logs, worker_logs]:
-            for secret in secrets:
-                assert secret not in logs, f"Found a secret in these logs: {logs}"
+        for logs_name, logs in [
+            ("funnel logs", funnel_logs),
+            ("funnel worker logs", worker_logs),
+        ]:
+            for secret_name, secret_val in secrets.items():
+                assert (
+                    secret_val not in logs
+                ), f"Found secret '{secret_name}' ('{secret_val}') in {logs_name} logs: {logs}"
 
         # Note: no need to wait for the task to finish running in this case
 
@@ -1190,7 +1199,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 completed_tasks.append(_nextflow_parse_completed_line(line))
 
         for task in completed_tasks:
-
             task_name = task["process_name"]
             task_category = task["process_name"].split(" ")[0]
             assert (
