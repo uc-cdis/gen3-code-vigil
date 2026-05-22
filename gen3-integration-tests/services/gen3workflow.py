@@ -308,7 +308,9 @@ class Gen3Workflow:
                 state = task_info.get("state")
 
                 if state == expected_final_state:
-                    logger.info(f"TES task reached final state '{state}', Response: {json.dumps(task_info, indent=2)}")
+                    logger.info(
+                        f"TES task reached final state '{state}', Response: {json.dumps(task_info, indent=2)}"
+                    )
                     return task_info
 
                 assert (
@@ -601,6 +603,8 @@ class Gen3Workflow:
             log_file_content = ""
             with open(".nextflow.log", "r") as log_file:
                 log_file_content = log_file.read()
+            if execution.status != "OK":
+                _print_tes_apps_logs(describe_task_pods=True)
             assert (
                 execution.status == "OK"
             ), f"Nextflow workflow execution failed with status: {execution.status} and log:\n{log_file_content}"

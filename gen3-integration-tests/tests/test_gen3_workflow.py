@@ -937,7 +937,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Wait until the executor has started to get its requested CPU, memory and storage
         cmd = [
-            f'kubectl get pod -l app=funnel-executor -n {pytest.namespace} -o custom-columns="NAME:.metadata.name,REQUESTS:.spec.containers[*].resources.requests" | grep {task_id}'
+            f'kubectl get pod -l app=funnel-executor -n workflow-pods-{pytest.namespace} -o custom-columns="NAME:.metadata.name,REQUESTS:.spec.containers[*].resources.requests" | grep {task_id}'
         ]
         max_retries = 10
         container_requests = ""
@@ -1364,9 +1364,9 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             # for some reason using `plugins.id` here throws `UnsupportedOperationException`
             "plugins {id 'nf-ga4gh'}",
             "endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
-            "tes.oauthToken = \"env('GEN3_TOKEN')",
+            "tes.oauthToken = env('GEN3_TOKEN')",
             "tes.timeout = 30",
-            "aws.accessKey = \"env('GEN3_TOKEN')",
+            "aws.accessKey = env('GEN3_TOKEN')",
             "aws.secretKey = 'N/A'",
             f"aws.region = '{self.s3_storage_config.bucket_region}'",
             "aws.client.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/workflows/s3\"",
