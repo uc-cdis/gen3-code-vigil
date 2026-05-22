@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import random
+import re
 import shutil
 import string
 import subprocess
@@ -12,6 +13,7 @@ from pathlib import Path
 import pytest
 import requests
 from dotenv import load_dotenv
+from packaging.version import Version
 from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 
@@ -1139,3 +1141,34 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
             target_dir,
         ]
     )
+
+
+def validate_release_version_for_test_execution(
+    service_name, min_release_version, min_sem_verion
+):
+    cmd = [
+        "helm",
+        "get",
+        "values",
+        pytest.namespace,
+        "-n",
+        pytest.namespace,
+        "|",
+        "yq",
+        f"'.{service_name}.image.tag'",
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
+    if result.returncode == 0:
+        current_version = result.stdout.strip().replace('"', "")
+    # master or main version would have all the changes
+    if current_version in ["master", "main"]:
+        return False
+    CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
+    if CALVER_RE.match(current_version):
+        # CALVER version
+        return Version(min_release_version) >= Version(current_version)
+    else:
+        # SEMVER version
+        return Version(min_sem_verion) >= Version(current_version)
