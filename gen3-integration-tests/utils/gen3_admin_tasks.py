@@ -1143,9 +1143,12 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
     )
 
 
-def validate_release_version_for_test_execution(
-    service_name, min_release_version, min_sem_verion
-):
+def service_version_greater_than(service_name, min_release_version, min_sem_verion):
+    """
+    This function determines if a test can run based on the minimum supported version.
+    min_release_version -> CALVER e.g. 2026.04
+    min_sem_verion -> SEMVER e.g. 13.1.0
+    """
     cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
