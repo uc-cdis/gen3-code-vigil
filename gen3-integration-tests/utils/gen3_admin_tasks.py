@@ -1160,7 +1160,7 @@ def validate_release_version_for_test_execution(
         f"'.{service_name}.image.tag'",
     ]
     result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
     )
     if result.returncode == 0:
         current_version = result.stdout.strip().replace('"', "")
