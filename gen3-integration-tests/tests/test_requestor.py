@@ -278,29 +278,30 @@ class TestRequestor:
 
         # Attempt to create an access request with DRAFT status (NOT already approved).
         # User dummy_one has access to create access requests, so this should succeed.
-        signed_req = requestor.create_request_with_auth_header(
+        res = requestor.create_request_with_auth_header(
             user="dummy_one",
             username=pytest.users["user0_account"],
             policy_id="requestor_integration_test",
             request_status="DRAFT",
         )
-        self.variables["request_ids"].append(signed_req.json()["request_id"])
-        assert signed_req.status_code == 201, f"Failed to create access request"
+        if "request_id" in res.json():
+            self.variables["request_ids"].append(res.json()["request_id"])
+        assert res.status_code == 201, f"Failed to create access request: {res.text}"
 
         # Attempt to create an access request with SIGNED status (already approved).
         # User dummy_one has access to create access requests, but not to update them, so they
         # should not able to create a SIGNED request and this should fail.
-        signed_req = requestor.create_request_with_auth_header(
+        res = requestor.create_request_with_auth_header(
             user="dummy_one",
             username=pytest.users["user0_account"],
             policy_id="requestor_integration_test",
             request_status="SIGNED",
         )
-        if "request_id" in signed_req.json():
-            self.variables["request_ids"].append(signed_req.json()["request_id"])
+        if "request_id" in res.json():
+            self.variables["request_ids"].append(res.json()["request_id"])
         assert (
-            signed_req.status_code == 403
-        ), f"Should have failed to create access request"
+            res.status_code == 403
+        ), f"Should have failed to create access request: {res.text}"
 
         # user0 still should not have access to the policy, since the previous call failed
         user_policy = fence.get_user_info("user0_account")
@@ -310,14 +311,15 @@ class TestRequestor:
 
         # Attempt to create an access request with SIGNED status (already approved).
         # User main_account has access to create AND update access requests, so this should succeed.
-        signed_req = requestor.create_request_with_auth_header(
+        res = requestor.create_request_with_auth_header(
             user="main_account",
             username=pytest.users["user0_account"],
             policy_id="requestor_integration_test",
             request_status="SIGNED",
         )
-        self.variables["request_ids"].append(signed_req.json()["request_id"])
-        assert signed_req.status_code == 201, f"Failed to create access request"
+        if "request_id" in res.json():
+            self.variables["request_ids"].append(res.json()["request_id"])
+        assert res.status_code == 201, f"Failed to create access request: {res.text}"
 
     def test_request_resource_path_and_role_ids(self, page):
         """
