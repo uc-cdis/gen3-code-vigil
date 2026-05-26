@@ -270,11 +270,13 @@ class TestRequestor:
         fence = Fence()
         requestor = Requestor()
 
-        # user0 should not have access to the policy
+        # user0 should not already have access to the policy (their only access to this resource
+        # should be the access to request access, which all users have)
         user_policy = fence.get_user_info("user0_account")
-        assert (
-            "/requestor_client_credentials_test" not in user_policy["authz"]
-        ), "User should not already have access to '/requestor_client_credentials_test'"
+        assert not any(
+            e["service"] != "requestor" and e["method"] != "create"
+            for e in user_policy["authz"].get("/requestor_client_credentials_test", [])
+        ), "User should not already have access to 'requestor_client_credentials_test'"
 
         # Attempt to create an access request with DRAFT status (NOT already approved).
         # User dummy_one has access to create access requests, so this should succeed.
@@ -305,9 +307,10 @@ class TestRequestor:
 
         # user0 still should not have access to the policy, since the previous call failed
         user_policy = fence.get_user_info("user0_account")
-        assert (
-            "/requestor_client_credentials_test" not in user_policy["authz"]
-        ), "User still should not have access to '/requestor_client_credentials_test'"
+        assert not any(
+            e["service"] != "requestor" and e["method"] != "create"
+            for e in user_policy["authz"].get("/requestor_client_credentials_test", [])
+        ), "User should not already have access to 'requestor_client_credentials_test'"
 
         # Attempt to create an access request with SIGNED status (already approved).
         # User main_account has access to create AND update access requests, so this should succeed.
