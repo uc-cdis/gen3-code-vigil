@@ -1146,19 +1146,7 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
 def validate_release_version_for_test_execution(
     service_name, min_release_version, min_sem_verion
 ):
-    cmd = [
-        "helm",
-        "get",
-        "values",
-        pytest.namespace,
-        "-n",
-        pytest.namespace,
-        "-o",
-        "yaml",
-        "|",
-        "yq",
-        f"'.{service_name}.image.tag'",
-    ]
+    cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
     )
@@ -1167,6 +1155,8 @@ def validate_release_version_for_test_execution(
     else:
         logger.info(f"Unable to run command. Error: {result.stderr}")
         logger.info(f"Unable to run command. Output: {result.stdout}")
+    logger.info(f"Current Version: {current_version}")
+    logger.info(f"MinVersion: {min_release_version}")
     # master or main version would have all the changes
     if current_version in ["master", "main"]:
         return False
