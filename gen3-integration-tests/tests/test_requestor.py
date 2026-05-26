@@ -273,15 +273,15 @@ class TestRequestor:
         # user0 should not have access to the policy
         user_policy = fence.get_user_info("user0_account")
         assert (
-            "/requestor_integration_test" not in user_policy["authz"]
-        ), "User should not already have access to '/requestor_integration_test'"
+            "/requestor_client_credentials_test" not in user_policy["authz"]
+        ), "User should not already have access to '/requestor_client_credentials_test'"
 
         # Attempt to create an access request with DRAFT status (NOT already approved).
         # User dummy_one has access to create access requests, so this should succeed.
         res = requestor.create_request_with_auth_header(
             user="dummy_one",
             username=pytest.users["user0_account"],
-            policy_id="requestor_integration_test",
+            policy_id="requestor_client_credentials_test",
             request_status="DRAFT",
         )
         if "request_id" in res.json():
@@ -294,7 +294,7 @@ class TestRequestor:
         res = requestor.create_request_with_auth_header(
             user="dummy_one",
             username=pytest.users["user0_account"],
-            policy_id="requestor_integration_test",
+            policy_id="requestor_client_credentials_test",
             request_status="SIGNED",
         )
         if "request_id" in res.json():
@@ -306,15 +306,15 @@ class TestRequestor:
         # user0 still should not have access to the policy, since the previous call failed
         user_policy = fence.get_user_info("user0_account")
         assert (
-            "/requestor_integration_test" not in user_policy["authz"]
-        ), "User still should not have access to '/requestor_integration_test'"
+            "/requestor_client_credentials_test" not in user_policy["authz"]
+        ), "User still should not have access to '/requestor_client_credentials_test'"
 
         # Attempt to create an access request with SIGNED status (already approved).
         # User main_account has access to create AND update access requests, so this should succeed.
         res = requestor.create_request_with_auth_header(
             user="main_account",
             username=pytest.users["user0_account"],
-            policy_id="requestor_integration_test",
+            policy_id="requestor_client_credentials_test",
             request_status="SIGNED",
         )
         if "request_id" in res.json():
