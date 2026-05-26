@@ -88,9 +88,6 @@ class TestRequestor:
         create_resp = requestor.create_request_with_auth_header(
             username=req_data["username"], policy_id=req_data["policy_id"]
         )
-        assert (
-            create_resp.status_code == 201
-        ), f"Create Request failed with status code : {create_resp.status_code}"
         create_resp_data = create_resp.json()
         logger.debug(f"Request Data: {json.dumps(create_resp_data, indent=4)}")
         # storing the request id to be deleted later
@@ -98,6 +95,9 @@ class TestRequestor:
             request_id = create_resp_data.get("request_id")
             self.variables["request_ids"].append(request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
+        assert (
+            create_resp.status_code == 201
+        ), f"Create Request failed with status code : {create_resp.status_code}"
 
         # Checking the user_Info for authz permissions and authz should not contain policy as the request is not in SIGNED status
         user_policy = fence.get_user_info("user0_account")
@@ -121,15 +121,15 @@ class TestRequestor:
             policy_id=req_data["policy_id"],
             revoke=req_data["revoke"],
         )
-        assert (
-            revoke_req.status_code == 201
-        ), f"Create Request failed with status code : {revoke_req.status_code}"
         revoke_req_data = revoke_req.json()
         logger.debug(f"Request Data: {json.dumps(revoke_req_data, indent=4)}")
         if "request_id" in revoke_req_data:
             revoke_request_id = revoke_req_data.get("request_id")
             self.variables["request_ids"].append(revoke_request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
+        assert (
+            revoke_req.status_code == 201
+        ), f"Create Request failed with status code : {revoke_req.status_code}"
 
         # Checking the user_Info for authz permissions and authz should contain policy as the revoke request is not in SIGNED status
         user_policy = fence.get_user_info("user0_account")
@@ -220,15 +220,15 @@ class TestRequestor:
             policy_id=req_data["policy_id"],
             request_status=req_data["status"],
         )
-        assert (
-            signed_req.status_code == 201
-        ), f"Create Request failed with status code : {signed_req.status_code}"
         signed_req_data = signed_req.json()
         logger.debug(f"Request Data: {json.dumps(signed_req_data, indent=4)}")
         if "request_id" in signed_req_data:
             request_id = signed_req_data.get("request_id")
             self.variables["request_ids"].append(request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
+        assert (
+            signed_req.status_code == 201
+        ), f"Create Request failed with status code : {signed_req.status_code}"
 
         # Checking the user_info for authz permissions and authz should contain policy
         user_policy = fence.get_user_info("user0_account")
@@ -245,15 +245,15 @@ class TestRequestor:
             revoke=req_data["revoke"],
             request_status=req_data["status"],
         )
-        assert (
-            revoke_req.status_code == 201
-        ), f"Create Request failed with status code : {revoke_req.status_code}"
         revoke_req_data = revoke_req.json()
         logger.debug(f"Request Data: {json.dumps(revoke_req_data, indent=4)}")
         if "request_id" in revoke_req_data:
             revoke_request_id = revoke_req_data.get("request_id")
             self.variables["request_ids"].append(revoke_request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
+        assert (
+            revoke_req.status_code == 201
+        ), f"Create Request failed with status code : {revoke_req.status_code}"
 
         # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
@@ -261,6 +261,63 @@ class TestRequestor:
         assert (
             "/requestor_integration_test" not in user_policy["authz"]
         ), "Authz contains policy '/requestor_integration_test'"
+
+    def test_approve_signed_request(self):
+        """
+        Check that only users with access to update access requests can create a request that
+        is already in approved status.
+        """
+        fence = Fence()
+        requestor = Requestor()
+
+        # user0 should not have access to the policy
+        user_policy = fence.get_user_info("user0_account")
+        assert (
+            "/requestor_integration_test" not in user_policy["authz"]
+        ), "User should not already have access to '/requestor_integration_test'"
+
+        # Attempt to create an access request with DRAFT status (NOT already approved).
+        # User dummy_one has access to create access requests, so this should succeed.
+        signed_req = requestor.create_request_with_auth_header(
+            user="dummy_one",
+            username=pytest.users["user0_account"],
+            policy_id="requestor_integration_test",
+            request_status="DRAFT",
+        )
+        self.variables["request_ids"].append(signed_req.json()["request_id"])
+        assert signed_req.status_code == 201, f"Failed to create access request"
+
+        # Attempt to create an access request with SIGNED status (already approved).
+        # User dummy_one has access to create access requests, but not to update them, so they
+        # should not able to create a SIGNED request and this should fail.
+        signed_req = requestor.create_request_with_auth_header(
+            user="dummy_one",
+            username=pytest.users["user0_account"],
+            policy_id="requestor_integration_test",
+            request_status="SIGNED",
+        )
+        if "request_id" in signed_req.json():
+            self.variables["request_ids"].append(signed_req.json()["request_id"])
+        assert (
+            signed_req.status_code == 403
+        ), f"Should have failed to create access request"
+
+        # user0 still should not have access to the policy, since the previous call failed
+        user_policy = fence.get_user_info("user0_account")
+        assert (
+            "/requestor_integration_test" not in user_policy["authz"]
+        ), "User still should not have access to '/requestor_integration_test'"
+
+        # Attempt to create an access request with SIGNED status (already approved).
+        # User main_account has access to create AND update access requests, so this should succeed.
+        signed_req = requestor.create_request_with_auth_header(
+            user="main_account",
+            username=pytest.users["user0_account"],
+            policy_id="requestor_integration_test",
+            request_status="SIGNED",
+        )
+        self.variables["request_ids"].append(signed_req.json()["request_id"])
+        assert signed_req.status_code == 201, f"Failed to create access request"
 
     def test_request_resource_path_and_role_ids(self, page):
         """
@@ -299,15 +356,15 @@ class TestRequestor:
             role_ids=req_data["role_ids"],
             request_status=req_data["status"],
         )
-        assert (
-            signed_req.status_code == 201
-        ), f"Create Request failed with status code : {signed_req.status_code}"
         signed_req_data = signed_req.json()
         logger.debug(f"Request Data: {json.dumps(signed_req_data, indent=4)}")
         if "request_id" in signed_req_data:
             request_id = signed_req_data.get("request_id")
             self.variables["request_ids"].append(request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
+        assert (
+            signed_req.status_code == 201
+        ), f"Create Request failed with status code : {signed_req.status_code}"
         # storing the policy_id for revoke request
         policy = signed_req_data.get("policy_id")
 
@@ -330,15 +387,15 @@ class TestRequestor:
             revoke=revoke_data["revoke"],
             request_status=revoke_data["status"],
         )
-        assert (
-            revoke_req.status_code == 201
-        ), f"Revoke Request failed with status code : {revoke_req.status_code}"
         revoke_req_data = revoke_req.json()
         logger.debug(f"Request Data: {json.dumps(revoke_req_data, indent=4)}")
         if "request_id" in revoke_req_data:
             revoke_request_id = revoke_req_data.get("request_id")
             self.variables["request_ids"].append(revoke_request_id)
         logger.debug(f"Request ID list : {self.variables['request_ids']}")
+        assert (
+            revoke_req.status_code == 201
+        ), f"Revoke Request failed with status code : {revoke_req.status_code}"
 
         # Checking the user_info for authz permissions and authz should not contain policy
         user_policy = fence.get_user_info("user0_account")
