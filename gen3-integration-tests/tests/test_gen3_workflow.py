@@ -986,7 +986,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             cmd = [
                 f"kubectl -n {pytest.namespace} get secret {secret_name} -o jsonpath='{{.data.{field}}}' | base64 --decode"
             ]
-            logger.info(f"[run_gen3_job] Running command: {cmd}")
+            logger.info(f"Running command: {cmd}")
             result = subprocess.run(
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
@@ -1183,7 +1183,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             },
             "dicom_to_png": {
                 "filenames": {"img-1.png", "img-2.png"},
-                "command": "python3 /utils/dicom_to_png.py img-*.dcm",
+                "command": "python3 /utils/dicom_to_png.py img-*.dcm\nmkdir outputs\ncp *.png outputs/",
             },
         }
         workflow_dir = "test_data/gen3_workflow/"
@@ -1289,7 +1289,8 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 file_contents = get_nextflow_output_file_contents(test_file_name)
 
                 if test_file_name == "/.command.sh":
-                    # Replace the 'img-*.dcm' in the expected command with the actual filename identified for the task.
+                    # Replace 'img-*.dcm' in the expected command with the actual filename
+                    # identified for the task.
                     file_num = "1" if "1" in expected_file else "2"
                     expected_command_with_filename = expected["command"].replace(
                         "*", file_num
@@ -1313,7 +1314,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 elif test_file_name in ["/.command.log", "/.command.err"]:
                     if "dicom_to_png" in task_name:
                         expected_file_contents = ""
-                    else:  # extract_metadata task_name
+                    else:  # `extract_metadata` task_name
                         # This task currently outputs task progress and a warning (`A value is
                         # trying to be set on a copy of a slice from a DataFrame`).
                         # We do not check the full logs, just that the file is not empty.
