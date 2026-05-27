@@ -282,7 +282,7 @@ class TestRequestor:
         # User dummy_one has access to create access requests, so this should succeed.
         res = requestor.create_request_with_auth_header(
             user="dummy_one",
-            username=pytest.users["user0_account"],
+            username=pytest.users["dummy_one"],
             policy_id="requestor_client_credentials_test",
             request_status="DRAFT",
         )
@@ -295,6 +295,7 @@ class TestRequestor:
         # should not able to create a SIGNED request and this should fail.
         res = requestor.create_request_with_auth_header(
             user="dummy_one",
+            # different username to skip the "draft" logic when an access request already exists
             username=pytest.users["user0_account"],
             policy_id="requestor_client_credentials_test",
             request_status="SIGNED",
