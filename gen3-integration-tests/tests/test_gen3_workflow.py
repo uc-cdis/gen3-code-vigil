@@ -129,11 +129,10 @@ class TestGen3WorkflowService(TestGen3Workflow):
         assert (
             isinstance(response_contents, list) and len(response_contents) > 0
         ), f"Expected the function to return a list of at least one item but received: {response_contents}"
-        assert (
-            "Key" in response_contents[0]
-            and response_contents[0]["Key"]
-            == f"{self.s3_folder_name}/{self.s3_file_name}"
-        ), f"Expected folder {self.s3_folder_name} in the bucket to have file `{self.s3_file_name}` but received {response_contents}"
+        assert any(
+            e.get("Key") == f"{self.s3_folder_name}/{self.s3_file_name}"
+            for e in response_contents
+        ), f"Expected bucket folder `{self.s3_folder_name}` to have file `{self.s3_file_name}` but received {response_contents}"
 
         # Fetch the exact file to verify the get-object functionality
         response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
@@ -985,15 +984,18 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             ("funnel-oidc-client", "client_secret"),
         ]:
             cmd = [
-                f"kubectl -n {{{pytest.namespace}}} get secret {secret_name} -o jsonpath='{{.data.{field}}}' | base64 --decode"
+                f"kubectl -n {pytest.namespace} get secret {secret_name} -o jsonpath='{{.data.{field}}}' | base64 --decode"
             ]
+            logger.info(f"[run_gen3_job] Running command: {cmd}")
             result = subprocess.run(
                 cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
             if result.returncode == 0:
-                secrets[f"{secret_name}.{field}"] = result.stdout.decode(
-                    "utf-8"
-                ).strip()
+                secret_val = result.stdout.decode("utf-8").strip()
+                assert (
+                    secret_val
+                ), f"Unable to get value for secret '{secret_name}.{field}'"
+                secrets[f"{secret_name}.{field}"] = secret_val
             else:
                 raise Exception(
                     f"Failed to run command '{cmd}' (code {result.returncode}): {result.stderr.decode('utf-8')}"
@@ -1053,8 +1055,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             )
 
         for logs_name, logs in [
-            ("funnel logs", funnel_logs),
-            ("funnel worker logs", worker_logs),
+            ("funnel server", funnel_logs),
+            ("funnel worker", worker_logs),
         ]:
             for secret_name, secret_val in secrets.items():
                 assert (
