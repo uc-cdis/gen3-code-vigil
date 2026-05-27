@@ -1160,12 +1160,11 @@ def service_version_greater_than(service_name, min_release_version, min_sem_veri
         logger.info(f"Unable to run command. Output: {result.stdout}")
     logger.info(f"Current Version: {current_version}")
     logger.info(f"MinVersion: {min_release_version}")
-    # master or main version would have all the changes
-    if current_version in ["master", "main"]:
-        return False
     try:
         parsed_current = Version(current_version)
     except InvalidVersion:
+        # If the branch is master/main/branch with aphabets,
+        # it will return False to execute the test
         return False
     CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
     if CALVER_RE.match(parsed_current):
