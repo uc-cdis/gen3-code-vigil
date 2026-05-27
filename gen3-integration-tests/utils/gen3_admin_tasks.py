@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 import requests
 from dotenv import load_dotenv
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
 from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 
@@ -1160,13 +1160,16 @@ def service_version_greater_than(service_name, min_release_version, min_sem_veri
         logger.info(f"Unable to run command. Output: {result.stdout}")
     logger.info(f"Current Version: {current_version}")
     logger.info(f"MinVersion: {min_release_version}")
-    # master or main version would have all the changes
-    if current_version in ["master", "main"]:
+    try:
+        parsed_current = Version(current_version)
+    except InvalidVersion:
+        # If the branch is master/main/branch with aphabets,
+        # it will return False to execute the test
         return False
     CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
-    if CALVER_RE.match(current_version):
+    if CALVER_RE.match(parsed_current):
         # CALVER version
-        return Version(min_release_version) >= Version(current_version)
+        return Version(min_release_version) >= Version(parsed_current)
     else:
         # SEMVER version
-        return Version(min_sem_verion) >= Version(current_version)
+        return Version(min_sem_verion) >= Version(parsed_current)
