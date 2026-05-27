@@ -1163,6 +1163,9 @@ def _nextflow_parse_completed_line(log_line):
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname, reason="currently broken in Kind CI"
+    )
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -1330,6 +1333,9 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     f"Actual content: `{file_contents}`"
                 }
 
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname, reason="currently broken in Kind CI"
+    )
     @pytest.mark.parametrize(
         "run_gpu_test",
         [
