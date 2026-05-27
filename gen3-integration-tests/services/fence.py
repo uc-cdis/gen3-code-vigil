@@ -116,8 +116,8 @@ class Fence(object):
     def delete_file(self, guid: str, user: str) -> int:
         """Deletes the file based on guid"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        url = f"{self.BASE_URL}{self.DATA_ENDPOINT}/{guid}"
-        response = requests.delete(url=url, auth=auth)
+        gen3file = Gen3File(auth_provider=auth)
+        response = gen3file.delete_file_locations(guid)
         return response.status_code
 
     def get_user_info(
