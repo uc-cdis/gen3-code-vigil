@@ -110,6 +110,7 @@ new_dbgap_records = {
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
+@pytest.mark.gen3sdk
 class TestDbgap:
     @classmethod
     def setup_class(cls):

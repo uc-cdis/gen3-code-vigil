@@ -716,6 +716,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_consent_codes_multiple_policies(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (multiple policies).
         signed_url_res = self.fence.create_signed_url(
@@ -734,6 +735,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_consent_codes_single_policy(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (single policy).
         signed_url_res = self.fence.create_signed_url(
@@ -752,6 +754,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_cannot_create_signed_url_unauthorized_consent_codes_(self):
         # Create Signed URLs for file in authorized namespace with UNauthorized consent code.
         signed_url_res = self.fence.create_signed_url(
@@ -765,6 +768,7 @@ class TestCentralizedAuth:
             401 == signed_url_res.status_code
         ), "Expected 401 status when creating signed url"
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_implied_authorized_consent_codes(self):
         # Create Signed URLs for file in authorized namespace with IMPLIED authorized consent code (based on DUO hierarchy).
         signed_url_res = self.fence.create_signed_url(

@@ -16,6 +16,7 @@ from utils import logger
 )
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
+@pytest.mark.gen3sdk
 class TestGoogleDataAccess:
     @classmethod
     def setup_class(cls):

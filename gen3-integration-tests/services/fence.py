@@ -57,9 +57,7 @@ class Fence(object):
             )
             gen3file = Gen3File(auth_provider=auth)
             response = gen3file.get_presigned_url(id, protocol)
-            # get_presigned_url returns response.json() if 200 so handling return here
-            if response.status_code == 200:
-                return response
+            return response
         elif access_token:
             response = requests.get(
                 self.BASE_URL + url,
