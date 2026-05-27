@@ -4,6 +4,7 @@ import json
 import pytest
 import requests
 from gen3.auth import Gen3Auth, Gen3AuthError
+from gen3.file import Gen3File
 from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page
@@ -44,16 +45,19 @@ class Fence(object):
         ),
     )
     def create_signed_url(
-        self, id, user, expected_status, params=[], access_token=None
+        self, id, user, expected_status, protocol=None, access_token=None
     ):
         """Creates a signed url for the requested id"""
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
-        if len(params) > 0:
-            url = url + "?" + "&".join(params)
+        url = f"{url}?protocol={protocol}"
         if user:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-            response = auth.curl(path=url)
+            gen3file = Gen3File(auth_provider=auth)
+            response = gen3file.get_presigned_url(id, protocol)
+            # get_presigned_url returns response.json() if 200 so handling return here
+            if response.status_code == 200:
+                return response
         elif access_token:
             response = requests.get(
                 self.BASE_URL + url,

@@ -138,7 +138,7 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=400,
-            params=["protocol=s2"],
+            protocol="s2",
         )
         msg = "The specified protocol s2 is not supported"
         if msg not in signed_url_res.content.decode():
@@ -159,7 +159,7 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s2"],
+            protocol="s2",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s2."
         if msg not in signed_url_res.content.decode():
@@ -180,7 +180,7 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s3"],
+            protocol="s3",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
         if msg not in signed_url_res.content.decode():
@@ -201,7 +201,7 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s3"],
+            protocol="s3",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
         if msg not in signed_url_res.content.decode():
