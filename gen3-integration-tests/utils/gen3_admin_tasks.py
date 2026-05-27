@@ -1169,7 +1169,7 @@ def service_version_greater_than(service_name, min_release_version, min_sem_veri
     CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
     if CALVER_RE.match(parsed_current):
         # CALVER version
-        return Version(min_release_version) >= Version(parsed_current)
+        return Version(min_release_version) >= parsed_current
     else:
         # SEMVER version
-        return Version(min_sem_verion) >= Version(parsed_current)
+        return Version(min_sem_verion) >= parsed_current
