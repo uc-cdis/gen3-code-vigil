@@ -557,6 +557,7 @@ class TestCentralizedAuth:
             401 == signed_url_gen3_res.status_code
         ), "Expected 401 status when creating signed url"
 
+    @pytest.mark.gen3sdk
     def test_user_with_access_can_create_sgined_urls_records_namespace(self):
         """
         Scenario: User with access can create signed urls for records in namespace, not outside namespace

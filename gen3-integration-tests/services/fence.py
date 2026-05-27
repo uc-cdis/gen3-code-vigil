@@ -52,7 +52,9 @@ class Fence(object):
         url = API_GET_FILE + "/" + str(id)
         url = f"{url}?protocol={protocol}"
         if user:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            auth = Gen3Auth(
+                refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
+            )
             gen3file = Gen3File(auth_provider=auth)
             response = gen3file.get_presigned_url(id, protocol)
             # get_presigned_url returns response.json() if 200 so handling return here
@@ -115,7 +117,7 @@ class Fence(object):
 
     def delete_file(self, guid: str, user: str) -> int:
         """Deletes the file based on guid"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         gen3file = Gen3File(auth_provider=auth)
         response = gen3file.delete_file_locations(guid)
         return response.status_code
