@@ -2,10 +2,6 @@
 The `TestGen3Workflow` class includes common setup and test selecting flags.
 The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
 
-TODO:
-* Always use latest version of nextflow
-* GPU test, includes #60 (dynamic NodeSelector and Toleration configs)
-
 Not fixed yet:
 - #38 (KMS encryption fails when using `executors.stdout`)
 - #57, #69, #71, #80 Maybe add a Funnel reconciler test: check that old resources are being cleared
@@ -108,6 +104,9 @@ class TestGen3WorkflowService(TestGen3Workflow):
         POST an S3 file in a `directoy/filename` format,
         then GET with the `directory/` to test the list-object functionality
         followed by GET `directory/filename`to verify the uploaded file exists.
+
+        Regression test for Funnel issues:
+        - #40 (support Nextflow "publishDir" directive): copy functionality
         """
 
         input_content = "sample_S3_content"
@@ -411,7 +410,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Verify that an authorized user can cancel a TES task.
         Expects: HTTP 200 and task status changes to 'Cancelled'.
 
-        Also verify that attempting to cancel a task that is already canceled should not return an
+        Also verify that attempting to cancel a task that is already canceled does not return an
         error.
 
         Regression test for Funnel issues:
@@ -705,7 +704,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             # Grant user C access to user A's tasks (not through the user.yaml because the resource
             # path must include user A's ID, which is not guaranteed to be the same in all CI runs)
             logger.info(
-                f"Requestor is deployed: granting {user_C} access to {user_A}'s tasks"
+                f"Requestor is deployed: granting {pytest.users[user_C]} access to {pytest.users[user_A]}'s tasks"
             )
             requestor = Requestor()
             user_A_id = jwt.decode(
@@ -722,12 +721,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             )
             assert (
                 resp.status_code == 201
-            ), f"Unable to grant {user_C} access to {resource_path}"
+            ), f"Unable to grant {pytest.users[user_C]} access to {resource_path}"
         else:
             # in the gen3-workflow Kind CI, Requestor is not deployed but user A always has the
             # same user ID, so access is granted through the user.yaml
             logger.info(
-                f"Requestor not is deployed: assuming {user_C} already has access to {user_A}'s tasks"
+                f"Requestor not is deployed: assuming {pytest.users[user_C]} already has access to {pytest.users[user_A]}'s tasks"
             )
         self.gen3_workflow.get_tes_task(
             task_id=task_id,
@@ -1179,11 +1178,11 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     "dicom-metadata-img-1.dcm.csv",
                     "dicom-metadata-img-2.dcm.csv",
                 },
-                "command": "python3 /utils/extract_metadata.py img-*.dcm",
+                "command": "python3 /utils/extract_metadata.py img-ID_PLACEHOLDER.dcm",
             },
             "dicom_to_png": {
                 "filenames": {"img-1.png", "img-2.png"},
-                "command": "python3 /utils/dicom_to_png.py img-*.dcm\nmkdir outputs\ncp *.png outputs/",
+                "command": "python3 /utils/dicom_to_png.py img-ID_PLACEHOLDER.dcm\nmkdir outputs\ncp *.png outputs/",
             },
         }
         workflow_dir = "test_data/gen3_workflow/"
@@ -1241,10 +1240,12 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             ), f"Expected to find exactly one of '{expected['filenames']}' to be present in the S3 bucket for task '{task_name}', but found files {s3_file_list}"
             # Unpacking the single overlapped filename from the set
             (expected_file,) = overlapped_filenames
+            if "dicom_to_png" in task_name:
+                expected_file = f"/outputs/{expected_file}"
 
             # Verify the expected file is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{task['workDir']}/outputs/{expected_file}",
+                object_path=f"{task['workDir']}/{expected_file}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
             )
@@ -1289,11 +1290,11 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 file_contents = get_nextflow_output_file_contents(test_file_name)
 
                 if test_file_name == "/.command.sh":
-                    # Replace 'img-*.dcm' in the expected command with the actual filename
+                    # Replace placeholders in the expected command with the actual filename
                     # identified for the task.
                     file_num = "1" if "1" in expected_file else "2"
                     expected_command_with_filename = expected["command"].replace(
-                        "*", file_num
+                        "ID_PLACEHOLDER", file_num
                     )
                     expected_file_contents = (
                         f"#!/bin/bash -ue\n{expected_command_with_filename}\n"
@@ -1329,7 +1330,20 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     f"Actual content: `{file_contents}`"
                 }
 
-    def test_nf_canary(self):
+    @pytest.mark.parametrize(
+        "run_gpu_test",
+        [
+            False,
+            pytest.param(
+                True,
+                marks=pytest.mark.skipif(
+                    "localhost" in pytest.hostname,
+                    reason="GPU tasks are not supported by the Kind CI",
+                ),
+            ),
+        ],
+    )
+    def test_nf_canary(self, run_gpu_test):
         """
         Run the Nextflow infrastructure tests from https://github.com/seqeralabs/nf-canary
 
@@ -1337,23 +1351,12 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         - TEST_MV_FILE and TEST_MV_FOLDER_CONTENTS. Error:
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
             -- they are not supported by S3 CSI mount (https://github.com/awslabs/mountpoint-s3/issues/506#issuecomment-1709952359)
-        - TEST_GPU (only runs with param `gpu: true`). Reported successful but fails with:
-            CUDA is not available on this system.
-            [...]
-            in gpu_computation
-                x = torch.rand(size, size, device='cuda')
-            RuntimeError: Found no NVIDIA driver on your system. Please check that you have an
-            NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
-            -- Being tracked by MIDRC-1254 to investigate GPU support in our infra and enable this test
 
         Regression test for Funnel issues:
         - #40 (support Nextflow "publishDir" directive)
+        - #60 (dynamic NodeSelector and Toleration configs to support GPU tasks)
         """
-        known_unsupported = [
-            "TEST_MV_FILE",
-            "TEST_MV_FOLDER_CONTENTS",
-            "TEST_GPU",
-        ]
+        known_unsupported = ["TEST_MV_FILE", "TEST_MV_FOLDER_CONTENTS"]
 
         # clone the tests repo
         directory = "test_data/gen3_workflow/nf-canary"
@@ -1369,14 +1372,31 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             ]
         )
 
+        if run_gpu_test:
+            # only run the GPU test
+            params = {"gpu": "true", "run": "TEST_GPU"}
+
+            # ask the server to schedule on a GPU node
+            config_lines = ["tes.tags._GPU = 'yes'"]
+
+            # the test requests 10G memory, but our configured limit is 4G: override to 1G
+            with open(f"{directory}/main.nf", "r") as file:
+                data = file.read()
+            with open(f"{directory}/main.nf", "w") as file:
+                file.write(data.replace("memory '10G'", "memory '1G'"))
+        else:
+            # do not run unsupported tests or the GPU test (no `gpu` param)
+            params = {"skip": ",".join(known_unsupported)}
+            config_lines = []
+
         # update the nextflow config
-        lines = [
+        config_lines += [
             "process.executor = 'tes'",
             # for some reason using `plugins.id` here throws `UnsupportedOperationException`
             "plugins {id 'nf-ga4gh'}",
             "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
             "tes.oauthToken = env('GEN3_TOKEN')",
-            "tes.timeout = 30",
+            "tes.timeout = 120",
             "aws.accessKey = env('GEN3_TOKEN')",
             "aws.secretKey = 'N/A'",
             f"aws.region = '{self.s3_storage_config.bucket_region}'",
@@ -1389,7 +1409,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             "process.maxRetries = 2",
         ]
         with open(os.path.join(directory, "nextflow.config"), "a") as file:
-            file.write("\n".join(lines) + "\n")
+            file.write("\n".join(config_lines) + "\n")
 
         # run the test nextflow workflow
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
@@ -1397,7 +1417,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             workflow_script="main.nf",
             nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
-            params={"gpu": "true", "skip": ",".join(known_unsupported)},
+            params=params,
         )
 
         # check that each test == each task succeeded
@@ -1436,6 +1456,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 == ("1" if "TEST_IGNORED_FAIL" in task_name else "0")
             ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
 
-        assert tasks_with_ignored_error == [
-            "TEST_IGNORED_FAIL"
-        ], "TEST_IGNORED_FAIL failure is expected to be ignored"
+        assert (
+            tasks_with_ignored_error == [] if run_gpu_test else ["TEST_IGNORED_FAIL"]
+        ), "TEST_IGNORED_FAIL failure is expected to be ignored"
