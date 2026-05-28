@@ -4,6 +4,7 @@ import os
 import pytest
 import requests
 from gen3.auth import Gen3Auth
+from gen3.metadata import Gen3Metadata
 from utils import logger
 from utils.misc import retry
 
@@ -17,14 +18,13 @@ class MetadataService(object):
     @retry(times=3, delay=20, exceptions=(AssertionError))
     def get_metadata(self, study_id, user="main_account"):
         """Get mds record for the study id specified"""
-        res = requests.get(
-            f"{self.MDS_ENDPOINT}/{study_id}",
-            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
-        )
-        assert (
-            res.status_code == 200
-        ), f"Response status code was {res.status_code}: {res.text}"
-        return res.json()
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.BASE_URL)
+        gen3metadata = Gen3Metadata(auth_provider=auth)
+        try:
+            response = gen3metadata.get(guid=study_id)
+            return response
+        except Exception as e:
+            raise Exception(f"Unable to get metadata, exception: {e}")
 
     @retry(times=8, delay=30, exceptions=(AssertionError))
     def get_aggregate_metadata(self, study_id, user="main_account"):
