@@ -570,7 +570,7 @@ install_helm_chart() {
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
 
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --wait --timeout 30m; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -578,7 +578,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --wait --timeout 30m; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -624,13 +624,16 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
+  local namespace="$namespace"
+  local timeout=1800 # 30m
+  local interval=180 # 3m
+
+  local end=$((SECONDS + timeout))
+
   echo "[wait_for_pods_ready] Waiting for all deployments in namespace: ${namespace}"
 
-  if ! kubectl rollout status deployment --all -n "$namespace"; then
-
-    echo "❌ Deployments failed to roll out successfully"
-
-    # Show failing pods for debugging
+  while [ $SECONDS -lt $end ]; do
+    # Exit 1 if any pods fail
     failure_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq -r '
       .items[]
       | select(
@@ -643,23 +646,43 @@ wait_for_pods_ready() {
       | .metadata.name')
 
     if [[ -n "$failure_pods" ]]; then
-      echo "FAILURE_PODS=$failing_pods" >> "$GITHUB_ENV"
-
+      echo "[wait_for_pods_ready] FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
+      echo "[wait_for_pods_ready] ❌ Detected failed pods:"
+      echo "$failure_pods"
       while IFS= read -r pod; do
-        echo "======= Describe $pod"
+        echo "======= Describe $pod:"
         kubectl describe pod "$pod" -n "${namespace}"
-
-        echo "======= Logs for $pod"
+        echo "======= Logs for $pod:"
         kubectl logs "$pod" -n "${namespace}" --all-containers --tail=300 || true
       done <<< "$failure_pods"
+      return 1
     fi
 
-    return 1
-  fi
+    # Exit 0 if all deployments start
+    if kubectl rollout status deployment --all -n "$namespace" --timeout=1s >/dev/null 2>&1; then
+      echo "[wait_for_pods_ready] ✅ All deployments successfully rolled out"
+      kubectl get pods -n "$namespace" -o wide
+      return 0
+    fi
 
-  echo "✅ All deployments successfully rolled out"
-  kubectl get pods -n "${namespace}"
-  return 0
+    # Continue
+    echo "[wait_for_pods_ready] ⏳ Deployment in progress ..."
+    sleep "$interval"
+  done
+
+  # Timed out
+  echo "[wait_for_pods_ready] ❌ Timed out after 30 minutes"
+
+  # List not-ready, non-terminating pods
+  kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
+    jq '[.items[]
+      | select(
+          (.metadata.deletionTimestamp == null) and
+          ((.status.phase != "Running") or
+          (.status.containerStatuses[]?.ready != true))
+      )
+    ]'
+  return 1
 }
 
 # 🚀 Run the helm install and then wait for pods if successful
