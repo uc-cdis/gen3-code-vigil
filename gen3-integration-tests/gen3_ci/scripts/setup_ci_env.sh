@@ -570,7 +570,7 @@ install_helm_chart() {
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
 
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --wait --timeout 30m; then
       echo "Helm chart installed!"
     else
       return 1
@@ -578,7 +578,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --wait --timeout 30m; then
       echo "Helm chart installed!"
     else
       return 1
@@ -624,11 +624,9 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  local timeout="30m"
-
   echo "[wait_for_pods_ready] Waiting for all deployments in namespace: ${namespace}"
 
-  if ! timeout 30m kubectl rollout status deployment --all -n "$namespace"; then
+  if ! kubectl rollout status deployment --all -n "$namespace"; then
 
     echo "❌ Deployments failed to roll out successfully"
 
