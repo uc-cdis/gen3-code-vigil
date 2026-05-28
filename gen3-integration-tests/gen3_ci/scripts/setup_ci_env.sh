@@ -628,6 +628,7 @@ wait_for_pods_ready() {
   export interval=20
 
   end=$((SECONDS + timeout))
+  failedPodsTimneout=$((SECONDS + 500))
   while [ $SECONDS -lt $end ]; do
     echo '[wait_for_pods_ready] Pods:'
     kubectl get pods -n ${namespace}
@@ -667,7 +668,9 @@ wait_for_pods_ready() {
           )
         )
       | .metadata.name')
-    if [[ -n "$failure_pods" ]]; then
+    # give failed pods a chance to recover (e.g. some apps fail until other apps are running),
+    # but give up early if they don't recover in time
+    if [[ $SECONDS -gt $failedPodsTimneout && -n "$failure_pods" ]]; then
       echo "❌ Giving up! Failed pods: $failure_pods"
       echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
       echo "[wait_for_pods_ready] Describing failed pods:"
