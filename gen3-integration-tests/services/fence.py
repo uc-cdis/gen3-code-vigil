@@ -1,6 +1,8 @@
 import base64
+import io
 import json
 import re
+from contextlib import redirect_stdout
 
 import pytest
 import requests
@@ -57,12 +59,13 @@ class Fence(object):
                 refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
             )
             gen3file = Gen3File(auth_provider=auth)
+            stdout_buffer = io.StringIO()
             try:
-                response = gen3file.get_presigned_url(id, protocol)
+                with redirect_stdout(stdout_buffer):
+                    response = gen3file.get_presigned_url(id, protocol)
                 return response
             except Exception as e:
-                logger.info(e)
-                response = e
+                response = stdout_buffer.getvalue()
                 status_code = int(re.search(r"\b\d{3}\b", str(e)).group())
         elif access_token:
             response = requests.get(
