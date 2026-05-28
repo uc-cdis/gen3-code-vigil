@@ -74,12 +74,14 @@ class Fence(object):
                     "Content-Type": "application/json",
                     "Authorization": f"bearer {access_token}",
                 },
-            ).content.decode()
+            )
             status_code = response.status_code
+            response = response.content.decode()
         else:
             # Perform GET requests without authorization code
-            response = requests.get(self.BASE_URL + url, auth={}).content.decode()
+            response = requests.get(self.BASE_URL + url, auth={})
             status_code = response.status_code
+            response = response.content.decode()
         logger.info("Status code : " + str(status_code))
         assert (
             expected_status == status_code
