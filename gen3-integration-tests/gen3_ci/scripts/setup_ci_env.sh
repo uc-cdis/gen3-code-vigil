@@ -659,9 +659,8 @@ wait_for_pods_ready() {
     fi
 
     # Exit 0 if all deployments start
-    if kubectl rollout status deployment --all -n "$namespace" --timeout=1s >/dev/null 2>&1; then
+    if kubectl rollout status deployment --all -n "$namespace"; then
       echo "[wait_for_pods_ready] ✅ All deployments successfully rolled out"
-      kubectl get pods -n "$namespace" -o wide
       return 0
     fi
 
