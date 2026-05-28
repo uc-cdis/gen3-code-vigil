@@ -624,39 +624,15 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=1800
-  export interval=20
+  local timeout="30m"
 
-  end=$((SECONDS + timeout))
-  while [ $SECONDS -lt $end ]; do
-    echo '[wait_for_pods_ready] Pods:'
-    kubectl get pods -n ${namespace}
+  echo "[wait_for_pods_ready] Waiting for all deployments in namespace: ${namespace}"
 
-    # Get JSON for not-ready, non-terminating pods
-    not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
-      jq '[.items[]
-        | select(
-            (.metadata.deletionTimestamp == null) and
-            ((.status.phase != "Running") or
-            (.status.containerStatuses[]?.ready != true))
-        )
-      ]')
+  if ! kubectl rollout status deployment --all -n "${namespace}" --timeout="${timeout}"; then
 
-    not_ready_count=$(echo "$not_ready_json" | jq 'length')
+    echo "❌ Deployments failed to roll out successfully"
 
-    if [ "$not_ready_count" -eq 0 ]; then
-      n_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq '[.items[]]' | jq 'length')
-      if [ "$n_pods" -eq 0 ]; then
-        echo "❌ No running pods!"
-        return 1
-      fi
-      echo "✅ All pods containers are Ready"
-      return 0
-    fi
-
-    echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
-    sleep $interval
-
+    # Show failing pods for debugging
     failure_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq -r '
       .items[]
       | select(
@@ -667,33 +643,25 @@ wait_for_pods_ready() {
           )
         )
       | .metadata.name')
+
     if [[ -n "$failure_pods" ]]; then
-      echo "❌ Giving up! Failed pods: $failure_pods"
-      echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
-      echo "[wait_for_pods_ready] Describing failed pods:"
-      kubectl describe pod $failure_pods -n "${namespace}"
-      return 1
+      echo "FAILURE_PODS=$failing_pods" >> "$GITHUB_ENV"
+
+      while IFS= read -r pod; do
+        echo "======= Describe $pod"
+        kubectl describe pod "$pod" -n "${namespace}"
+
+        echo "======= Logs for $pod"
+        kubectl logs "$pod" -n "${namespace}" --all-containers --tail=300 || true
+      done <<< "$failure_pods"
     fi
-  done
 
-  echo "❌ Timeout: Pods' containers not ready"
+    return 1
+  fi
 
-  echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
-    echo "[wait_for_pods_ready] Describing pods that are not ready:"
-    echo "======= Describing $pod:"
-    kubectl describe pod $pod -n "${namespace}"
-    echo "======= Logs for $pod:"
-    kubectl logs $pod -n "${namespace}" --all-containers --tail 300
-  done
-
-  echo "$not_ready_json" | jq -r '.[] |
-    .metadata.name as $pod_name |
-    .status.containerStatuses[]?
-    | select(.ready != true)
-    | "🔴 Pod: \($pod_name), Container: \(.name) is NOT ready"'
-
+  echo "✅ All deployments successfully rolled out"
   kubectl get pods -n "${namespace}"
-  return 1
+  return 0
 }
 
 # 🚀 Run the helm install and then wait for pods if successful
