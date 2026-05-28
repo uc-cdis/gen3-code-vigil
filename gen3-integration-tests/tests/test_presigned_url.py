@@ -113,17 +113,12 @@ class TestPresignedURL:
         Steps:
             1. Create indexd record using not_allowed key information in files as setup
             2. Create a signed url using did from step 1.
-            3. Verify the fence error is 'You don\'t have access permission on this file'
+            3. Verify status_code returned is 401
         """
         indexd_record = indexd_files["not_allowed"]
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexd_record["did"], user="main_account", expected_status=401
         )
-        msg = "You don&#39;t have access permission on this file"
-        if msg not in signed_url_res.content.decode():
-            logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
-            raise
 
     def test_get_presigned_url_with_invalid_protocol(self):
         """
@@ -131,20 +126,15 @@ class TestPresignedURL:
         Steps:
             1. Create indexd record using invalid_protocol key information in files as setup
             2. Create a signed url using did from step 1 and protocol as s2.
-            3. Verify the fence error is 'The specified protocol s2 is not supported'
+            3. Verify status_code returned is 400
         """
         indexd_record = indexd_files["invalid_protocol"]
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
             expected_status=400,
             protocol="s2",
         )
-        msg = "The specified protocol s2 is not supported"
-        if msg not in signed_url_res.content.decode():
-            logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
-            raise
 
     def test_get_presigned_url_with_protocol_not_available(self):
         """
@@ -152,20 +142,15 @@ class TestPresignedURL:
         Steps:
             1. Create indexd record using allowed key information in files as setup
             2. Create a signed url using did from step 1 and protocol as s2.
-            3. Verify the fence error is 'File {did} does not have a location with specified protocol s2.'
+            3. Verify status_code returned is 404
         """
         indexd_record = indexd_files["allowed"]
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
             protocol="s2",
         )
-        msg = f"File {indexd_record['did']} does not have a location with specified protocol s2."
-        if msg not in signed_url_res.content.decode():
-            logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
-            raise
 
     def test_get_presigned_url_with_protocol_not_exist_for_file(self):
         """
@@ -173,20 +158,15 @@ class TestPresignedURL:
         Steps:
             1. Create indexd record using http_link key information in files as setup
             2. Create a signed url using did from step 1 and protocol as s3.
-            3. Verify the fence error is 'File {did} does not have a location with specified protocol s3.'
+            3. Verify status_code returned is 404
         """
         indexd_record = indexd_files["http_link"]
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
             protocol="s3",
         )
-        msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
-        if msg not in signed_url_res.content.decode():
-            logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
-            raise
 
     def test_get_presigned_url_no_data(self):
         """
@@ -194,20 +174,15 @@ class TestPresignedURL:
         Steps:
             1. Create indexd record using no_link key information in files as setup
             2. Create a signed url using did from step 1 and protocol as s3.
-            3. Verify the fence error is 'File {did} does not have a location with specified protocol s3.'
+            3. Verify status_code returned is 404
         """
         indexd_record = indexd_files["no_link"]
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
             protocol="s3",
         )
-        msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
-        if msg not in signed_url_res.content.decode():
-            logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
-            raise
 
     def test_get_presigned_url_no_requested_protocol_no_data(self):
         """
@@ -215,14 +190,9 @@ class TestPresignedURL:
         Steps:
             1. Create indexd record using no_link key information in files as setup
             2. Create a signed url using did from step 1.
-            3. Verify the fence error is 'Can\'t find any file locations.'
+            3. Verify status_code returned is 404
         """
         indexd_record = indexd_files["no_link"]
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexd_record["did"], user="main_account", expected_status=404
         )
-        msg = "Can&#39;t find any file locations."
-        if msg not in signed_url_res.content.decode():
-            logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
-            raise

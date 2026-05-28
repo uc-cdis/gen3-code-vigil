@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 
 import pytest
 import requests
@@ -56,8 +57,13 @@ class Fence(object):
                 refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
             )
             gen3file = Gen3File(auth_provider=auth)
-            response = gen3file.get_presigned_url(id, protocol)
-            return response
+            try:
+                response = gen3file.get_presigned_url(id, protocol)
+                return response
+            except Exception as e:
+                logger.info(e)
+                response = e
+                status_code = int(re.search(r"\b\d{3}\b", str(e)).group())
         elif access_token:
             response = requests.get(
                 self.BASE_URL + url,
@@ -65,15 +71,17 @@ class Fence(object):
                     "Content-Type": "application/json",
                     "Authorization": f"bearer {access_token}",
                 },
-            )
+            ).content.decode()
+            status_code = response.status_code
         else:
             # Perform GET requests without authorization code
-            response = requests.get(self.BASE_URL + url, auth={})
-        logger.info("Status code : " + str(response.status_code))
+            response = requests.get(self.BASE_URL + url, auth={}).content.decode()
+            status_code = response.status_code
+        logger.info("Status code : " + str(status_code))
         assert (
-            expected_status == response.status_code
-        ), f"Expected response {expected_status}, but got {response.status_code}"
-        if response.status_code == 200:
+            expected_status == status_code
+        ), f"Expected response {expected_status}, but got {status_code}"
+        if status_code == 200:
             return response.json()
         return response
 
