@@ -279,7 +279,7 @@ class Gen3Workflow:
         return response
 
     def poll_until_task_reaches_expected_state(
-        self, task_id, user, expected_final_state, max_retries=10, poll_interval=30
+        self, task_id, user, expected_final_state, max_retries=15, poll_interval=30
     ):
         """
         Polls the TES task status until it reaches a final state or exceeds max retries.

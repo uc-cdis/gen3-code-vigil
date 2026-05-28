@@ -23,6 +23,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 
 import jwt
@@ -43,6 +44,9 @@ from utils import logger
 )
 @pytest.mark.gen3_workflow
 class TestGen3Workflow(object):
+    _setup_lock = threading.Lock()
+    s3_storage_config = None
+
     @classmethod
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
@@ -52,15 +56,18 @@ class TestGen3Workflow(object):
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"
 
-        # hit the storage setup endpoint for all users who will be creating tasks
-        cls.s3_storage_config = WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
-        )
-        WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.setup_storage(
-                user=cls.other_valid_user, expected_status=200
-            )
-        )
+        # Hit the storage setup endpoint for all users who will be creating tasks.
+        # We only want this to run once for all child classes, to avoid race conditions.
+        with TestGen3Workflow._setup_lock:
+            if not TestGen3Workflow.s3_storage_config:
+                TestGen3Workflow.s3_storage_config = WorkflowStorageConfig.from_dict(
+                    cls.gen3_workflow.setup_storage(
+                        user=cls.valid_user, expected_status=200
+                    )
+                )
+                cls.gen3_workflow.setup_storage(
+                    user=cls.other_valid_user, expected_status=200
+                )
 
         # Ensure the bucket is emptied before running the tests (must run after
         # `storage_setup` so the user has access to empty the bucket)
@@ -105,7 +112,7 @@ class TestGen3WorkflowService(TestGen3Workflow):
         then GET with the `directory/` to test the list-object functionality
         followed by GET `directory/filename`to verify the uploaded file exists.
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #40 (support Nextflow "publishDir" directive): copy functionality
         """
 
@@ -269,7 +276,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - Verify task creation, listing, retrieval, and completion
         - Validate outputs and logs
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #8 (create a task without input)
         - #20 (ability to list tasks)
         - #48-a (no "Operation not permitted" on output files that require `incremental-upload` on PV)
@@ -413,7 +420,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Also verify that attempting to cancel a task that is already canceled does not return an
         error.
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #74 (successful task cancelation)
         """
         payload = {
@@ -468,7 +475,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
     def test_task_that_does_not_exist(self):
         """
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #25 (gracefully handle canceling a task that does not exist)
         - #26 (gracefully handle getting a task that does not exist)
         """
@@ -565,7 +572,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - Verify the exit code and that the task status is 'EXECUTOR_ERROR' (if the provided command returns a non-0 exit code) or 'SYSTEM_ERROR' (if the provided task cannot be run)
         - Validate that the logs capture the error message
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #2 (task that completes with an error must not be reported successful)
         - #38 (task with failing command must not stay stuck in "Running" state)
         """
@@ -620,7 +627,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - User C has access to User A's tasks, but not to their storage (that is not currently
           supported by gen3-workflow)
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #31 (first user B creates task B, then user A creates task A: task A must belong to
           user A == files in user A's bucket)
         """
@@ -806,7 +813,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         is thrown by funnel and not gen3-workflow, and we want to verify that the error is properly
         propagated through gen3-workflow's API.
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #3, #14, #29 (failed task creation request must not return a successful response)
           Note that not all edge cases can be tested: this was usually triggered by kubernetes job
           creation bugs which are now fixed.
@@ -841,7 +848,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         is: echo \'I\'m done!\' so the output includes extra quotes (see `expected_stdout`
         variable).
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #12, #41 (quotes in command)
         - #59 (comma in command)
         """
@@ -898,7 +905,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Verify that the resources requested in the TES task body are indeed what the executor
         container requests.
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #43 (request a specific number of CPUs)
         """
 
@@ -971,7 +978,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         Verify no secrets are being dumped in the Funnel or Funnel worker logs.
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #44 (secrets must not be logged when the config is logged)
         """
 
@@ -1066,7 +1073,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
     def test_task_with_environment_variable(self):
         """
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #61 (set specified env vars)
         """
         tes_task_payload = {
@@ -1170,7 +1177,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #5 (output a whole directory)
         - #35 (missing stdout)
         - #72 (missing command.out/.log/.err files)
@@ -1358,7 +1365,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
             -- they are not supported by S3 CSI mount (https://github.com/awslabs/mountpoint-s3/issues/506#issuecomment-1709952359)
 
-        Regression test for Funnel issues:
+        Regression test for TES issues:
         - #40 (support Nextflow "publishDir" directive)
         - #60 (dynamic NodeSelector and Toleration configs to support GPU tasks)
         """
