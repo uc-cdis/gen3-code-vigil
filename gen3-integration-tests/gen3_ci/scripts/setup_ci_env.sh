@@ -628,7 +628,7 @@ wait_for_pods_ready() {
 
   echo "[wait_for_pods_ready] Waiting for all deployments in namespace: ${namespace}"
 
-  if ! kubectl rollout status deployment --all -n "${namespace}" --timeout="${timeout}"; then
+  if ! timeout 30m kubectl rollout status deployment --all -n "$namespace"; then
 
     echo "❌ Deployments failed to roll out successfully"
 
