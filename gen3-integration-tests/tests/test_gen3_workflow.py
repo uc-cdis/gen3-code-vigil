@@ -10,11 +10,11 @@ Not fixed yet:
 - #75, #81 (useful executor pod events in task logs)
 - #76 (no SYSTEM_ERROR on missing output file)
 - #85 (space in output file)
-- #86 (list tasks with tag filter)
+- #86 (list tasks with a tag filter, list all tasks with a user that has extra access)
 - Support large files and long workflows. Includes #83. May need to be a nightly build test if it
   takes too long, but then it won't be tested by the Kind CI used in the Funnel repos.
 
-As of this writing, the last issue was #86. Any newer issues may require additional tests.
+As of this writing, the last issue was #87. Any newer issues may require additional tests.
 """
 
 import json
