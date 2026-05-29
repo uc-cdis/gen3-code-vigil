@@ -686,7 +686,7 @@ wait_for_pods_ready() {
     echo "======= Describing $pod:"
     kubectl describe pod $pod -n "${namespace}"
     echo "======= Logs for $pod:"
-    kubectl logs $pod -n "${namespace}" --all-containers --tail 300
+    kubectl logs $pod -n "${namespace}" --all-containers --tail -1
   done
 
   echo "$not_ready_json" | jq -r '.[] |
@@ -730,9 +730,16 @@ else
   echo "======= Describing $jobName:"
   kubectl describe pod -l job-name=$jobName -n "${namespace}"
   echo "======= Logs for $jobName:"
-  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail 300
+  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
   exit 1
 fi
+# TODO temp
+echo "======= Logs for $jobName:"
+kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
+echo "======= End of logs for $jobName"
+echo "======= Logs for arborist:"
+kubectl logs -l app=arborist -n "${namespace}" --all-containers --tail -1
+echo "======= End of logs for arborist"
 
 echo "YAY!!! Env is up..."
 exit 0
