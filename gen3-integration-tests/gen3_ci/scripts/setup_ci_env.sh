@@ -674,13 +674,7 @@ wait_for_pods_ready() {
   echo "[wait_for_pods_ready] ❌ Timed out after 30 minutes"
 
   # List not-ready, non-terminating pods
-  kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
-    jq '[.items[]
-      | select(
-          (.metadata.deletionTimestamp == null) and
-          any(.status.containerStatuses[]?; .ready != true)
-      )
-    ]'
+  kubectl get pods -n "${namespace}" -o wide
   return 1
 }
 
