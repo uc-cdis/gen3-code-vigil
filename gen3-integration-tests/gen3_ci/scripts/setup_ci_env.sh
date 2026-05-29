@@ -678,8 +678,7 @@ wait_for_pods_ready() {
     jq '[.items[]
       | select(
           (.metadata.deletionTimestamp == null) and
-          ((.status.phase != "Running") or
-          (.status.containerStatuses[]?.ready != true))
+          any(.status.containerStatuses[]?; .ready != true)
       )
     ]'
   return 1
