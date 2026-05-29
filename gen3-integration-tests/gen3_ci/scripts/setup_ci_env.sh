@@ -722,7 +722,7 @@ echo "Running usersync..."
 jobName="usersync-manual"
 kubectl delete job $jobName -n ${namespace}
 kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
-kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=5m
+kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=10m
 if [ $? -eq 0 ]; then
   echo "usersync completed successfully"
 else
