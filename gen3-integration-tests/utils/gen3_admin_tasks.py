@@ -207,6 +207,27 @@ def check_job_pod(
             f"Job {job_name} failed to complete in {timeout}. Info: {result.stderr.strip()}"
         )
 
+    # TODO only get logs in case of error
+    logger.info(f"********** {job_name} logs begin **********")
+    cmd = [
+        "kubectl",
+        "-n",
+        pytest.namespace,
+        "logs",
+        f"job/{job_name}",
+        "--all-containers",
+        "--tail",
+        "-1",
+    ]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode == 0:
+        logger.info(result.stdout.decode("utf-8"))
+    else:
+        logger.info(
+            f"Unable to get {job_name} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+        )
+    logger.info(f"********** {job_name} logs end **********")
+
 
 @retry(times=2, delay=30, exceptions=(AssertionError,))
 def _get_fence_pod_name(test_env_namespace):
