@@ -23,7 +23,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import threading
 import time
 
 import jwt
@@ -44,9 +43,6 @@ from utils import logger
 )
 @pytest.mark.gen3_workflow
 class TestGen3Workflow(object):
-    _setup_lock = threading.Lock()
-    s3_storage_config = None
-
     @classmethod
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
@@ -57,27 +53,23 @@ class TestGen3Workflow(object):
         cls.s3_file_name = "test-input.txt"
 
         # Hit the storage setup endpoint for all users who will be creating tasks.
-        # We only want this to run once for all child classes, to avoid race conditions.
-        with TestGen3Workflow._setup_lock:
-            if not TestGen3Workflow.s3_storage_config:
-                TestGen3Workflow.s3_storage_config = WorkflowStorageConfig.from_dict(
-                    cls.gen3_workflow.setup_storage(
-                        user=cls.valid_user, expected_status=200
-                    )
-                )
-                cls.gen3_workflow.setup_storage(
-                    user=cls.other_valid_user, expected_status=200
-                )
+        cls.s3_storage_config = WorkflowStorageConfig.from_dict(
+            cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
+        )
+        cls.gen3_workflow.setup_storage(user=cls.other_valid_user, expected_status=200)
 
         # Ensure the bucket is emptied before running the tests (must run after
         # `storage_setup` so the user has access to empty the bucket)
         cls.gen3_workflow.cleanup_user_bucket()
+        cls.gen3_workflow.cleanup_user_bucket(user=cls.other_valid_user)
 
 
 class TestGen3WorkflowService(TestGen3Workflow):
-    def test_setup_storage_without_token(self):
-        """Test GET /storage/setup without an access token."""
+    def test_setup_storage_unauthorized(self):
+        """Test GET /storage/setup without an access token or with an unauthorized token."""
         self.gen3_workflow.setup_storage(user=None, expected_status=401)
+        # TODO enable this once the check is added to gen3-workflow
+        # self.gen3_workflow.setup_storage(user=self.invalid_user, expected_status=403)
 
     def test_any_user_cannot_get_s3_file_with_unsigned_request(self):
         """Unsigned requests should receive 401 even if the user is authorized to get data."""

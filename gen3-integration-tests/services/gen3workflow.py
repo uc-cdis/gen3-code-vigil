@@ -66,7 +66,7 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
     if with_arborist:
         apps.append("arborist")
     for app in apps:
-        logger.info(f"========== {app} logs begin ==========")
+        logger.info(f"********** {app} logs begin **********")
         cmd = [
             "kubectl",
             "-n",
@@ -76,7 +76,8 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             f"app={app}",
             "--all-containers",
             "--tail",
-            "10" if app == "arborist" else "150",
+            # "10" if app == "arborist" else "150",
+            "-1" if app == "arborist" else "150",  # TODO temp
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
@@ -85,7 +86,7 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             logger.info(
                 f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
             )
-        logger.info(f"========== {app} logs end ==========")
+        logger.info(f"********** {app} logs end **********")
 
     if describe_task_pods:
         # list the jobs in the JobsNamespace
@@ -96,7 +97,7 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             "get",
             "jobs",
         ]
-        logger.info(f"========== {" ".join(cmd)} ==========")
+        logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(result.stdout.decode("utf-8"))
@@ -113,7 +114,7 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             "get",
             "pods",
         ]
-        logger.info(f"========== {" ".join(cmd)} ==========")
+        logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(result.stdout.decode("utf-8"))
@@ -130,7 +131,7 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             "describe",
             "pod",
         ]
-        logger.info(f"========== {" ".join(cmd)} ==========")
+        logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(result.stdout.decode("utf-8"))
