@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import time
@@ -60,9 +61,12 @@ class WorkflowStorageConfig:
         )
 
 
-def _print_tes_apps_logs(describe_task_pods=False):
-    for app in ["gen3-workflow", "funnel"]:
-        logger.info(f"========== {app} logs begin ==========")
+def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
+    apps = ["gen3-workflow", "funnel"]
+    if with_arborist:
+        apps.append("arborist")
+    for app in apps:
+        logger.info(f"********** {app} logs begin **********")
         cmd = [
             "kubectl",
             "-n",
@@ -72,7 +76,7 @@ def _print_tes_apps_logs(describe_task_pods=False):
             f"app={app}",
             "--all-containers",
             "--tail",
-            "200",
+            "10" if app == "arborist" else "150",
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
@@ -81,7 +85,7 @@ def _print_tes_apps_logs(describe_task_pods=False):
             logger.info(
                 f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
             )
-        logger.info(f"========== {app} logs end ==========")
+        logger.info(f"********** {app} logs end **********")
 
     if describe_task_pods:
         # list the jobs in the JobsNamespace
@@ -92,7 +96,7 @@ def _print_tes_apps_logs(describe_task_pods=False):
             "get",
             "jobs",
         ]
-        logger.info(f"========== {" ".join(cmd)} ==========")
+        logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(result.stdout.decode("utf-8"))
@@ -109,7 +113,7 @@ def _print_tes_apps_logs(describe_task_pods=False):
             "get",
             "pods",
         ]
-        logger.info(f"========== {" ".join(cmd)} ==========")
+        logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(result.stdout.decode("utf-8"))
@@ -126,7 +130,7 @@ def _print_tes_apps_logs(describe_task_pods=False):
             "describe",
             "pod",
         ]
-        logger.info(f"========== {" ".join(cmd)} ==========")
+        logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             logger.info(result.stdout.decode("utf-8"))
@@ -209,7 +213,10 @@ class Gen3Workflow:
         s3_storage_config: WorkflowStorageConfig,
         user: str = "main_account",
         expected_status=200,
-        content: str = None,
+        content: str = "",
+        filename: str = "",
+        dest_object_path: str = "",
+        config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
         access_token = self._get_access_token(user)
@@ -226,17 +233,25 @@ class Gen3Workflow:
                 response = client.get_object(Bucket=bucket, Key=key)
             elif action == "put":
                 response = client.put_object(Bucket=bucket, Key=key, Body=content or "")
+            elif action == "upload_file":
+                response = client.upload_file(
+                    Filename=filename, Bucket=bucket, Key=key, Config=config
+                )
+            elif action == "copy":
+                dest_bucket, dest_key = self._get_bucket_and_key(dest_object_path)
+                response = client.copy(
+                    CopySource={"Bucket": bucket, "Key": key},
+                    Bucket=dest_bucket,
+                    Key=dest_key,
+                    Config=config,
+                )
             elif action == "delete":
                 response = client.delete_object(Bucket=bucket, Key=key)
             else:
                 raise ValueError(f"Unsupported S3 action: {action}")
-
-            response_status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-            logger.info(f"S3 {action.upper()} response:  {response}")
-
         except botocore.exceptions.ClientError as e:
-            _print_tes_apps_logs()
             error_code = e.response.get("Error", {}).get("Code", "")
+            _print_tes_apps_logs(with_arborist=error_code == "403")
             if error_code == "NoSuchKey":
                 response_status = 404
             elif error_code == "403":
@@ -250,13 +265,21 @@ class Gen3Workflow:
             _print_tes_apps_logs()
             logger.error(f"Received an error from s3_client. Error: {e}")
             raise
+        else:
+            response_status = (
+                response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+                if response
+                else None
+            )
+        logger.info(f"S3 {action.upper()} response:  {response}")
+
         assert (
             response_status == expected_status
         ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Response: {response}"
         return response
 
     def poll_until_task_reaches_expected_state(
-        self, task_id, user, expected_final_state, max_retries=10, poll_interval=30
+        self, task_id, user, expected_final_state, max_retries=15, poll_interval=30
     ):
         """
         Polls the TES task status until it reaches a final state or exceeds max retries.
@@ -277,6 +300,7 @@ class Gen3Workflow:
             "CANCELED",
             "SYSTEM_ERROR",
         }
+        logger.info(f"Monitoring task '{task_id}'")
         try:
             for attempt in range(1, max_retries + 1):
                 task_info = self.get_tes_task(
@@ -287,24 +311,26 @@ class Gen3Workflow:
                 state = task_info.get("state")
 
                 if state == expected_final_state:
-                    logger.info(f"TES task reached final state '{state}'")
+                    logger.info(
+                        f"TES task reached final state '{state}', Response: {json.dumps(task_info, indent=2)}"
+                    )
                     return task_info
 
                 assert (
                     state not in final_states
-                ), f"TES task reached a final state, that is not '{expected_final_state}'. Final state: {state}, Response: {task_info}"
+                ), f"TES task reached a final state that is not the expected '{expected_final_state}'. Final state: {state}, Response: {json.dumps(task_info, indent=2)}"
                 assert (
                     state in transient_states
-                ), f"Unexpected TES task state '{state}' encountered. Response: {task_info}"
+                ), f"Unexpected TES task state '{state}' encountered. Response: {json.dumps(task_info, indent=2)}"
 
                 logger.info(
-                    f"Attempt {attempt} of {max_retries}: Task state is '{state}', retrying after {poll_interval} seconds..."
+                    f"Check {attempt}/{max_retries}: Task state is '{state}', retrying in {poll_interval}s..."
                 )
                 if attempt <= max_retries:
                     time.sleep(poll_interval)
 
             raise Exception(
-                f"TES task did not reach a final state in time. Last known state: {state}, Response: {task_info}"
+                f"TES task did not reach a final state in time. Last known state: '{state}', Response: {json.dumps(task_info, indent=2)}"
             )
         except Exception:
             _print_tes_apps_logs(describe_task_pods=True)
@@ -327,7 +353,7 @@ class Gen3Workflow:
 
         response = requests.get(url=storage_url, headers=headers)
         if response.status_code != expected_status:
-            _print_tes_apps_logs()
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
@@ -374,7 +400,7 @@ class Gen3Workflow:
             [expected_status, 404] if ignore_missing else [expected_status]
         )
         if response.status_code not in allowed_statuses:
-            _print_tes_apps_logs()
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
             response.status_code in allowed_statuses
         ), f"Expected one of {allowed_statuses}, got {response.status_code} when making a DELETE request to {cleanup_url}: {response.text}"
@@ -475,7 +501,7 @@ class Gen3Workflow:
             json=request_body,
         )
         if response.status_code != expected_status:
-            _print_tes_apps_logs()
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}: {response.text}"
@@ -492,7 +518,7 @@ class Gen3Workflow:
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
         if response.status_code != expected_status:
-            _print_tes_apps_logs()
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
@@ -512,7 +538,7 @@ class Gen3Workflow:
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
         if response.status_code != expected_status:
-            _print_tes_apps_logs()
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a GET request to {tes_task_url}: {response.text}"
@@ -532,13 +558,13 @@ class Gen3Workflow:
             headers={"Authorization": f"bearer {access_token}"} if user else {},
         )
         if response.status_code != expected_status:
-            _print_tes_apps_logs()
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an POST request to {tes_task_url}: {response.text}"
         return response.json()
 
-    def run_nextflow_task(
+    def run_nextflow_workflow(
         self,
         workflow_dir: str,
         workflow_script: str,
@@ -580,6 +606,8 @@ class Gen3Workflow:
             log_file_content = ""
             with open(".nextflow.log", "r") as log_file:
                 log_file_content = log_file.read()
+            if execution.status != "OK":
+                _print_tes_apps_logs(describe_task_pods=True)
             assert (
                 execution.status == "OK"
             ), f"Nextflow workflow execution failed with status: {execution.status} and log:\n{log_file_content}"
