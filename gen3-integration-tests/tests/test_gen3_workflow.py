@@ -869,18 +869,25 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
     @pytest.mark.parametrize(
-        "special_char",
+        "echo_message, expected_stdout",
         [
             pytest.param(
-                "quote",
+                "I'm done!",
+                "'I'm done!'",
+                id="quote",
+                # TODO enable this once the fix is released
                 marks=pytest.mark.skip(
                     reason="broken as of funnel rc-27, should be fixed in next release"
                 ),
             ),
-            "comma",
+            pytest.param(
+                "hello/world,please/ignore,goodbye/world",
+                "hello/world,please/ignore,goodbye/world",
+                id="comma",
+            ),
         ],
     )
-    def test_command_with_special_char(self, special_char):
+    def test_command_with_special_char(self, echo_message, expected_stdout):
         """
         This is a regression test for an issue when the command contains quotes:
         `Error: yaml: line 33: did not find expected ',' or ']'`
@@ -894,10 +901,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - #12, #41 (quotes in command)
         - #59 (comma in command)
         """
-        if special_char == "quote":
-            echo_message = "I'm done!"
-        else:
-            echo_message = "hello/world,please/ignore,goodbye/world"
         tes_task_payload = {
             "name": "Task with special char",
             "executors": [
@@ -931,10 +934,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "stdout" in task_logs[0]["logs"][0]
         ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
-        # `expected_stdout`: see limitation in docstring
-        expected_stdout = (
-            f"'{echo_message}'" if special_char == "quote" else echo_message
-        )
         assert (
             stdout == expected_stdout
         ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
@@ -983,6 +982,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Wait until the executor has started to get its requested CPU, memory and storage
+        # TODO: Funnel release rc-37 adds a taskId label to all the executor pods: use it to filter
         cmd = [
             f'kubectl get pod -l app=funnel-executor -n workflow-pods-{pytest.namespace} -o custom-columns="NAME:.metadata.name,REQUESTS:.spec.containers[*].resources.requests" | grep {task_id}'
         ]
@@ -1154,7 +1154,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "stdout" in task_logs[0]["logs"][0]
         ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
-        # `expected_stdout`: see limitation in docstring
         assert (
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
