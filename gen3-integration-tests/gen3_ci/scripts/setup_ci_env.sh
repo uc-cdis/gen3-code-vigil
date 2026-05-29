@@ -641,6 +641,7 @@ wait_for_pods_ready() {
             .state.waiting.reason == "ImagePullBackOff"
             or .state.waiting.reason == "ErrImagePull"
             or .state.waiting.reason == "CrashLoopBackOff"
+            or .state.waiting.reason == "CreateContainerConfigError"
           )
         )
       | .metadata.name')
