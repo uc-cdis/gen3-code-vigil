@@ -76,8 +76,7 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             f"app={app}",
             "--all-containers",
             "--tail",
-            # "10" if app == "arborist" else "150",
-            "-1" if app == "arborist" else "150",  # TODO temp
+            "10" if app == "arborist" else "150",
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:

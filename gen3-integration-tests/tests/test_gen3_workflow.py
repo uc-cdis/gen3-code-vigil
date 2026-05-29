@@ -68,8 +68,7 @@ class TestGen3WorkflowService(TestGen3Workflow):
     def test_setup_storage_unauthorized(self):
         """Test GET /storage/setup without an access token or with an unauthorized token."""
         self.gen3_workflow.setup_storage(user=None, expected_status=401)
-        # TODO enable this once the check is added to gen3-workflow
-        # self.gen3_workflow.setup_storage(user=self.invalid_user, expected_status=403)
+        self.gen3_workflow.setup_storage(user=self.invalid_user, expected_status=403)
 
     def test_any_user_cannot_get_s3_file_with_unsigned_request(self):
         """Unsigned requests should receive 401 even if the user is authorized to get data."""

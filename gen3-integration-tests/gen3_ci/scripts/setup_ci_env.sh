@@ -733,13 +733,6 @@ else
   kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
   exit 1
 fi
-# TODO temp
-echo "======= Logs for $jobName:"
-kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
-echo "======= End of logs for $jobName"
-echo "======= Logs for arborist:"
-kubectl logs -l app=arborist -n "${namespace}" --all-containers --tail -1
-echo "======= End of logs for arborist"
 
 echo "YAY!!! Env is up..."
 exit 0
