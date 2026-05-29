@@ -624,7 +624,6 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  local namespace="$namespace"
   local timeout=1800 # 30m
   local interval=180 # 3m
 
