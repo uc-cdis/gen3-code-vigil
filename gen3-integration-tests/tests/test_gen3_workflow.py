@@ -33,6 +33,57 @@ from services.requestor import Requestor
 from utils import logger
 
 
+def _nextflow_parse_completed_line(log_line):
+    """
+    Parses a line from the nextflow log that indicates a completed task.
+    Extracts: task name, work directory (and protocol), exit code, and status.
+
+    :param str log_line: A line from the Nextflow log file.
+    :return: Dictionary with extracted task information.
+    :rtype: dict
+
+    Example log line:
+    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
+    Example return value:
+    {
+        "process_name": "extract_metadata (1)",
+        "workDir": "bucket-name/work-dir",
+        "workDirProtocol": "s3",
+        "exit_code": "0",
+        "status": "COMPLETED"
+    }
+    """
+
+    task_info = {
+        "process_name": "-",
+        "workDir": "-",
+        "workDirProtocol": "-",
+        "exit_code": "-",
+        "status": "-",
+    }
+    log_regex = (
+        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
+        r"Task completed > TaskHandler\[.*?"
+        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
+        r"exit: (?P<exit_code>-?\d+); "
+        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
+    )
+
+    match = re.match(log_regex, log_line)
+
+    if match:
+        task_info["process_name"] = match.group("name")
+        task_info["workDir"] = match.group("workDir")
+        task_info["workDirProtocol"] = match.group("workDirProtocol")
+        task_info["exit_code"] = match.group("exit_code")
+        task_info["status"] = match.group("status") or "-"
+
+        if task_info["workDirProtocol"]:
+            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
+
+    return task_info
+
+
 @pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
@@ -1107,57 +1158,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert (
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
-
-
-def _nextflow_parse_completed_line(log_line):
-    """
-    Parses a line from the nextflow log that indicates a completed task.
-    Extracts: task name, work directory (and protocol), exit code, and status.
-
-    :param str log_line: A line from the Nextflow log file.
-    :return: Dictionary with extracted task information.
-    :rtype: dict
-
-    Example log line:
-    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
-    Example return value:
-    {
-        "process_name": "extract_metadata (1)",
-        "workDir": "bucket-name/work-dir",
-        "workDirProtocol": "s3",
-        "exit_code": "0",
-        "status": "COMPLETED"
-    }
-    """
-
-    task_info = {
-        "process_name": "-",
-        "workDir": "-",
-        "workDirProtocol": "-",
-        "exit_code": "-",
-        "status": "-",
-    }
-    log_regex = (
-        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
-        r"Task completed > TaskHandler\[.*?"
-        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
-        r"exit: (?P<exit_code>-?\d+); "
-        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
-    )
-
-    match = re.match(log_regex, log_line)
-
-    if match:
-        task_info["process_name"] = match.group("name")
-        task_info["workDir"] = match.group("workDir")
-        task_info["workDirProtocol"] = match.group("workDirProtocol")
-        task_info["exit_code"] = match.group("exit_code")
-        task_info["status"] = match.group("status") or "-"
-
-        if task_info["workDirProtocol"]:
-            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
-
-    return task_info
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
