@@ -9,7 +9,7 @@ Not fixed yet:
 - #73 (job retries must not swallow executor or worker error logs)
 - #75, #81 (useful executor pod events in task logs)
 - #76 (no SYSTEM_ERROR on missing output file)
-- #85 (space in output file)
+- #85 (space in output file name)
 - #86 (list tasks with a tag filter, list all tasks with a user that has extra access)
 - Support large files and long workflows. Includes #83. May need to be a nightly build test if it
   takes too long, but then it won't be tested by the Kind CI used in the Funnel repos.
@@ -1396,6 +1396,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         # update the nextflow config
         config_lines += [
             "process.executor = 'tes'",
+            "process.time = '20 min'",
             # for some reason using `plugins.id` here throws `UnsupportedOperationException`
             "plugins {id 'nf-ga4gh'}",
             "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
