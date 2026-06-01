@@ -875,10 +875,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "I'm done!",
                 "'I'm done!'",
                 id="quote",
-                # TODO enable this once the fix is released
-                marks=pytest.mark.skip(
-                    reason="broken as of funnel rc-27, should be fixed in next release"
-                ),
             ),
             pytest.param(
                 "hello/world,please/ignore,goodbye/world",
@@ -1160,9 +1156,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
-    @pytest.mark.skipif(
-        "localhost" in pytest.hostname, reason="currently broken in Kind CI"
-    )
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -1330,9 +1323,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     f"Actual content: `{file_contents}`"
                 }
 
-    @pytest.mark.skipif(
-        "localhost" in pytest.hostname, reason="currently broken in Kind CI"
-    )
     @pytest.mark.parametrize(
         "run_gpu_test",
         [
