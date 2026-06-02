@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import requests
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from gen3.jobs import Gen3Jobs
@@ -17,18 +18,20 @@ class TestGen3Sdk:
         Steps:
             1.
         """
-        PFB_EXPORT_JOB = "export"
+        PFB_EXPORT_JOB = "batch-export"
         JOB_INPUT = {
-            "action": "export",
+            "action": "batch-export",
             "input": {"filter": {"IN": {"project_id": ["Canine-NHGRI"]}}},
         }
         auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-        gen3jobs = Gen3Jobs(endpoint=pytest.root_url, auth_provider=auth)
-        create_job = gen3jobs.async_run_job_and_wait(
-            job_name=PFB_EXPORT_JOB, job_input=JOB_INPUT
+        response = requests.post(
+            f"{pytest.root_url}/job/dispatch", json=JOB_INPUT, auth=auth
         )
+        logger.info(response.json())
+        gen3jobs = Gen3Jobs(endpoint=pytest.root_url, auth_provider=auth)
+        create_job = gen3jobs.create_job(job_name=PFB_EXPORT_JOB, job_input=JOB_INPUT)
         logger.info(create_job)
         status = "Running"
         while status == "Running":
