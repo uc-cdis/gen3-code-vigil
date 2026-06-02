@@ -19,6 +19,7 @@ The API keys should be saved to `~/.gen3` directory
 1. Switch to `gen3-integration-tests` directory
 1. Set up the following environment variables in the `.env`file
     ```
+    HOSTNAME_PROTOCOL=https
     HOSTNAME="<hostname>"
     NAMESPACE="<namespace>"
     ```

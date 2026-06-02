@@ -1,8 +1,6 @@
 import json
-import os
 
 import pytest
-from gen3.auth import Gen3Auth
 from pages.login import LoginPage
 from services.fence import Fence
 from services.requestor import Requestor

@@ -1,16 +1,16 @@
-dicom_data = "$baseDir/input_data/*.dcm"
-
 process dicom_to_png {
     input:
     path dicom_files
 
     output:
     stdout emit: dicom_to_png_log
-    path('*.png'), emit: png_files
+    path 'outputs', emit: png_files
 
     script:
     """
     python3 /utils/dicom_to_png.py $dicom_files
+    mkdir outputs
+    cp *.png outputs/
     """
 }
 
@@ -29,6 +29,7 @@ process extract_metadata {
 }
 
 workflow {
+    dicom_data = "$baseDir/input_data/*.dcm"
     dicom_files = Channel.fromPath(dicom_data)
     dicom_to_png(dicom_files)
     extract_metadata(dicom_files)
