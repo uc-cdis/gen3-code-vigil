@@ -96,12 +96,12 @@ def _nextflow_parse_completed_tasks(completed_tasks):
         if task["process_name"] not in res:
             res[task["process_name"]] = task
             continue
-        prev_timestamp = parser.parse(task["timestamp"])
-        new_timestamp = parser.parse(res[task["process_name"]]["timestamp"])
+        new_timestamp = parser.parse(task["timestamp"])
+        stored_timestamp = parser.parse(res[task["process_name"]]["timestamp"])
         logger.info(
-            f"'{task['process_name']}' ran more than once. Keeping the latest run. Timestamps: {prev_timestamp} and {new_timestamp}"
+            f"'{task['process_name']}' ran more than once. Keeping the latest run. Timestamps: {stored_timestamp} and {new_timestamp}"
         )
-        if prev_timestamp > new_timestamp:
+        if new_timestamp > stored_timestamp:
             res[task["process_name"]] = task
     return res
 
