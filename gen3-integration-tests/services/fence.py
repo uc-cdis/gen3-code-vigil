@@ -53,7 +53,8 @@ class Fence(object):
         """Creates a signed url for the requested id"""
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
-        url = f"{url}?protocol={protocol}"
+        if protocol:
+            url = f"{url}?protocol={protocol}"
         if user:
             auth = Gen3Auth(
                 refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
@@ -79,9 +80,12 @@ class Fence(object):
             response = response.content.decode()
         else:
             # Perform GET requests without authorization code
+            logger.info("Executing this code")
+            logger.info(url)
             response = requests.get(self.BASE_URL + url, auth={})
             status_code = response.status_code
             response = response.content.decode()
+            logger.info(response)
         logger.info("Status code : " + str(status_code))
         assert (
             expected_status == status_code
