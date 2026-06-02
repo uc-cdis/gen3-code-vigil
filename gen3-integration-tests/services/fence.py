@@ -81,17 +81,13 @@ class Fence(object):
         else:
             # Perform GET requests without authorization code
             logger.info("Executing this code")
-            logger.info(url)
             response = requests.get(self.BASE_URL + url, auth={})
             status_code = response.status_code
             response = response.content.decode()
-            logger.info(response)
         logger.info("Status code : " + str(status_code))
         assert (
             expected_status == status_code
         ), f"Expected response {expected_status}, but got {status_code}"
-        if status_code == 200:
-            return response.json()
         return response
 
     def get_url_for_data_upload(self, file_name: str, user: str) -> dict:
