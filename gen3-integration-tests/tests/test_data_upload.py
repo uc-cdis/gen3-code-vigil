@@ -384,6 +384,7 @@ class TestDataUpload:
             file_name, "main_account"
         ).json()
         file_guid = fence_upload_res["guid"]
+        logger.info(f"First file upload; GUID: {file_guid}")
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
 
@@ -417,11 +418,15 @@ class TestDataUpload:
             file_name, "main_account"
         ).json()
         file_guid = fence_upload_res["guid"]
+        logger.info(f"Second file upload; GUID: {file_guid}")
         self.created_guids.append(file_guid)
         presigned_url = fence_upload_res["url"]
 
         # Upload the file to the S3 bucket using the presigned URL
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)
+        file_record = FileRecord(
+            did=file_guid, props={"md5sum": file_md5, "file_size": file_size}
+        )
 
         # wait for the indexd listener to add size, hashes and URL to the record
         self.fence.wait_upload_file_updated_from_indexd_listener(
