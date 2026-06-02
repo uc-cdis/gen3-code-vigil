@@ -352,7 +352,7 @@ class TestDataUpload:
         except Exception as e:
             assert (
                 "400" in f"{e}"
-            ), f"Linking metadata to file without hash and size should not be possible.\n{metadata_response}"
+            ), f"Linking metadata to file without hash and size should not be possible"
 
         # no download after delete
         self.fence.create_signed_url(

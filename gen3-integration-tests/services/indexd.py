@@ -123,7 +123,7 @@ class Indexd(object):
                     )
         if errors:
             logger.error(f"indexd.file_equals(): files do not match: {errors}")
-        return len(errors) == 0, errors
+        assert len(errors) == 0, errors
 
     def clear_previous_upload_files(self, user="main_account"):
         """Delete indexd record if upload is not happening through gen3-sdk"""
