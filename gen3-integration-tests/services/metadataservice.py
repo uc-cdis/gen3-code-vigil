@@ -14,7 +14,7 @@ class MetadataService(object):
     @retry(times=3, delay=20, exceptions=(AssertionError))
     def get_metadata(self, study_id, user="main_account"):
         """Get mds record for the study id specified"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         gen3metadata = Gen3Metadata(auth_provider=auth)
         try:
             response = gen3metadata.get(guid=study_id)
@@ -40,7 +40,7 @@ class MetadataService(object):
         metadata-aggregate-sync job must be run to update the record in aggregate metadata.
         """
         logger.info(f"Creating study with id {study_id}")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         gen3metadata = Gen3Metadata(auth_provider=auth)
         try:
             response = gen3metadata.create(
@@ -57,7 +57,7 @@ class MetadataService(object):
         metadata-aggregate-sync job must be run to update the record in aggregate metadata.
         """
         logger.info(f"Updating study with id {study_id}")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         gen3metadata = Gen3Metadata(auth_provider=auth)
         try:
             response = gen3metadata.update(
@@ -75,7 +75,7 @@ class MetadataService(object):
         metadata-aggregate-sync job must be run to update the record in aggregate metadata.
         """
         logger.info(f"Deleting study with id {study_id}")
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         gen3metadata = Gen3Metadata(auth_provider=auth)
         try:
             response = gen3metadata.delete(
