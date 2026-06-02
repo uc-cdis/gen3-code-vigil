@@ -18,21 +18,16 @@ class TestGen3Sdk:
         Steps:
             1.
         """
-        PFB_EXPORT_JOB = "batch-export"
+        PFB_EXPORT_JOB = "pelican-export"
         JOB_INPUT = {
-            "action": "batch-export",
+            "action": "export",
             "input": {"filter": {"IN": {"project_id": ["Canine-NHGRI"]}}},
         }
         auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
-        response = requests.post(
-            f"{pytest.root_url}/job/dispatch", json=JOB_INPUT, auth=auth
-        )
-        logger.info(response.json())
         gen3jobs = Gen3Jobs(endpoint=pytest.root_url, auth_provider=auth)
         create_job = gen3jobs.create_job(job_name=PFB_EXPORT_JOB, job_input=JOB_INPUT)
-        logger.info(create_job)
         status = "Running"
         while status == "Running":
             status = gen3jobs.get_status(create_job.get("uid")).get("status")
