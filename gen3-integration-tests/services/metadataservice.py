@@ -15,7 +15,7 @@ class MetadataService(object):
     def get_metadata(self, study_id, user="main_account"):
         """Get mds record for the study id specified"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        gen3metadata = Gen3Metadata(auth_provider=auth)
+        gen3metadata = Gen3Metadata(auth_provider=auth, admin_endpoint_suffix="")
         try:
             response = gen3metadata.get(guid=study_id)
             return response
@@ -41,7 +41,7 @@ class MetadataService(object):
         """
         logger.info(f"Creating study with id {study_id}")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        gen3metadata = Gen3Metadata(auth_provider=auth)
+        gen3metadata = Gen3Metadata(auth_provider=auth, admin_endpoint_suffix="")
         try:
             response = gen3metadata.create(
                 guid=study_id,
@@ -58,7 +58,7 @@ class MetadataService(object):
         """
         logger.info(f"Updating study with id {study_id}")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        gen3metadata = Gen3Metadata(auth_provider=auth)
+        gen3metadata = Gen3Metadata(auth_provider=auth, admin_endpoint_suffix="")
         try:
             response = gen3metadata.update(
                 guid=study_id,
@@ -76,7 +76,7 @@ class MetadataService(object):
         """
         logger.info(f"Deleting study with id {study_id}")
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        gen3metadata = Gen3Metadata(auth_provider=auth)
+        gen3metadata = Gen3Metadata(auth_provider=auth, admin_endpoint_suffix="")
         try:
             response = gen3metadata.delete(
                 guid=study_id,
