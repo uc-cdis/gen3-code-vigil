@@ -12,6 +12,10 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 @pytest.mark.gen3sdk
 class TestGen3Sdk:
+    @pytest.mark.skipif(
+        "batch-export" not in pytest.enabled_sower_jobs,
+        reason="batch-export is not part of sower in manifest",
+    )
     def test_gen3_jobs_list_jobs(self):
         """
         Scenario: Gen3Jobs List jobs
@@ -34,6 +38,10 @@ class TestGen3Sdk:
         get_output = gen3jobs.get_output(create_job.get("uid"))
         get_status = gen3jobs.get_status(create_job.get("uid"))
         list_jobs = gen3jobs.list_jobs()
-        logger.info(f"Output of job {create_job.get("uid")}: {get_output}")
-        logger.info(f"Status of job {create_job.get("uid")}: {get_status}")
+        assert (
+            "No studies or files provided" in get_output["output"]
+        ), f"Expected 'No studies or files provided' but got {get_output}"
+        assert (
+            "Completed" in get_status["status"]
+        ), f"Expected status completed but got {get_status}"
         logger.info(f"List of all jobs running: {list_jobs}")
