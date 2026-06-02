@@ -18,21 +18,22 @@ class TestGen3Sdk:
         Steps:
             1.
         """
-        PFB_EXPORT_JOB = "pelican-export"
+        BATCH_EXPORT_JOB = "batch-export"
         JOB_INPUT = {
-            "action": "export",
-            "input": {"filter": {"IN": {"project_id": ["Canine-NHGRI"]}}},
+            "action": "batch-export",
         }
         auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
         gen3jobs = Gen3Jobs(endpoint=pytest.root_url, auth_provider=auth)
-        create_job = gen3jobs.create_job(job_name=PFB_EXPORT_JOB, job_input=JOB_INPUT)
+        create_job = gen3jobs.create_job(job_name=BATCH_EXPORT_JOB, job_input=JOB_INPUT)
         status = "Running"
         while status == "Running":
             status = gen3jobs.get_status(create_job.get("uid")).get("status")
 
         get_output = gen3jobs.get_output(create_job.get("uid"))
-        logger.info(get_output)
+        get_status = gen3jobs.get_status(create_job.get("uid"))
         list_jobs = gen3jobs.list_jobs()
-        logger.info(list_jobs)
+        logger.info(f"Output of job {create_job.get("uid")}: {get_output}")
+        logger.info(f"Status of job {create_job.get("uid")}: {get_status}")
+        logger.info(f"List of all jobs running: {list_jobs}")
