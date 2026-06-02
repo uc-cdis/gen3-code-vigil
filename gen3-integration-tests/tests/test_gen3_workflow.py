@@ -28,6 +28,7 @@ import time
 import jwt
 import pytest
 from boto3.s3.transfer import TransferConfig
+from dateutil import parser
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from services.requestor import Requestor
 from utils import logger
@@ -82,6 +83,27 @@ def _nextflow_parse_completed_line(log_line):
             task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
 
     return task_info
+
+
+def _nextflow_parse_completed_tasks(completed_tasks):
+    """
+    Input: list of completed tasks, as produced by `_nextflow_parse_completed_line`.
+    Output: dictionary of completed task name to the task's latest run, since tasks may be
+    retried in case of failure.
+    """
+    res = {}
+    for task in completed_tasks:
+        if task["process_name"] not in res:
+            res[task["process_name"]] = task
+            continue
+        new_timestamp = parser.parse(task["timestamp"])
+        stored_timestamp = parser.parse(res[task["process_name"]]["timestamp"])
+        logger.info(
+            f"'{task['process_name']}' ran more than once. Keeping the latest run. Timestamps: {stored_timestamp} and {new_timestamp}"
+        )
+        if new_timestamp > stored_timestamp:
+            res[task["process_name"]] = task
+    return res
 
 
 @pytest.mark.skipif(
@@ -875,10 +897,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "I'm done!",
                 "'I'm done!'",
                 id="quote",
-                # TODO enable this once the fix is released
-                marks=pytest.mark.skip(
-                    reason="broken as of funnel rc-27, should be fixed in next release"
-                ),
             ),
             pytest.param(
                 "hello/world,please/ignore,goodbye/world",
@@ -1159,10 +1177,24 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         ), f"Expected env var to be set, but `env` returned: {stdout}"
 
 
+@pytest.mark.skipif(
+    "localhost" in pytest.hostname, reason="currently broken in Kind CI"
+)
 class TestGen3WorkflowNextflow(TestGen3Workflow):
-    @pytest.mark.skipif(
-        "localhost" in pytest.hostname, reason="currently broken in Kind CI"
-    )
+    """
+    Nextflow tests are currently broken in the Kind CI.
+
+    - Nextflow logs:
+    nextflow.exception.AbortOperationException: Cannot create work-dir 's3://gen3wf-localhost-1/ga4gh-tes' -- Make sure you have write permissions or specify a different directory by using the `-w` command line option
+
+    - gen3-workflow logs:
+    Incoming S3 request from user '1': 'PUT gen3wf-localhost-1/ga4gh-tes/'
+    Outgoing S3 request: 'PUT http://minio.gen3-code-vigil-pr-561.svc.cluster.local:9000/gen3wf-localhost-1/ga4gh-tes/'
+    Error from S3: 403 <?xml version="1.0" encoding="UTF-8"?>
+    2026-06-01T23:00:33.9689129Z <Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your key and signing method.</Message><Key>ga4gh-tes/</Key><BucketName>gen3wf-localhost-1</BucketName><Resource>/gen3wf-localhost-1/ga4gh-tes/</Resource><RequestId>18B5174696300C46</RequestId><HostId>dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8</HostId></Error>
+    "PUT /s3/gen3wf-localhost-1/ga4gh-tes/ HTTP/1.0" 403
+    """
+
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
@@ -1199,9 +1231,8 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             if "Task completed > TaskHandler" in line:
                 completed_tasks.append(_nextflow_parse_completed_line(line))
 
-        for task in completed_tasks:
-            task_name = task["process_name"]
-            task_category = task["process_name"].split(" ")[0]
+        for task_name, task in _nextflow_parse_completed_tasks(completed_tasks).items():
+            task_category = task_name.split(" ")[0]
             assert (
                 task_category in expected_task_outputs
             ), f"Unexpected task name: {task_name}. Expected one of {list(expected_task_outputs.keys())}"
@@ -1217,7 +1248,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             ), f"Task '{task_name}' failed with status: {task['status']}"
             assert (
                 task["exit_code"] == "0"
-            ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
+            ), f"Task '{task_name}' returned exit code {task['exit_code']}"
             assert (
                 task["workDirProtocol"] == "s3"
             ), f"Expected workDir to be an 's3' location, but got {task['workDirProtocol']}"
@@ -1330,9 +1361,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     f"Actual content: `{file_contents}`"
                 }
 
-    @pytest.mark.skipif(
-        "localhost" in pytest.hostname, reason="currently broken in Kind CI"
-    )
     @pytest.mark.parametrize(
         "run_gpu_test",
         [
@@ -1448,8 +1476,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         logger.info("Completed tasks:")
         logger.info(json.dumps(completed_tasks, indent=2))
 
-        for task in completed_tasks:
-            task_name = task["process_name"]
+        for task_name, task in _nextflow_parse_completed_tasks(completed_tasks).items():
             assert (
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"
@@ -1458,7 +1485,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 # of error
                 task["exit_code"]
                 == ("1" if "TEST_IGNORED_FAIL" in task_name else "0")
-            ), f"Task '{task_name}' failed with exit code: {task['exit_code']}"
+            ), f"Task '{task_name}' returned exit code {task['exit_code']}"
 
         assert (
             tasks_with_ignored_error == [] if run_gpu_test else ["TEST_IGNORED_FAIL"]
