@@ -469,6 +469,16 @@ for item in "${common_param_updates[@]}"; do
   fi
 done
 
+####################################################################################
+# Enable RAS passport/visa parsing features only for nightly-build-ff
+####################################################################################
+if [[ "$namespace" == "nightly-build-ff" ]]; then
+  echo "Enabling visa parsing settings for nightly-build-ff"
+
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.GLOBAL_PARSE_VISAS_ON_LOGIN = true' -i "$ci_default_manifest_values_yaml"
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_VISA_UPDATE_CRON = true' -i "$ci_default_manifest_values_yaml"
+fi
+
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: ${HOSTNAME_PROTOCOL}://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
 # Remove aws-es-proxy block
