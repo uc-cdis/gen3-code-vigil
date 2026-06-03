@@ -69,8 +69,8 @@ class TestDiscoveryPage(object):
         )
         indexd = Indexd()
         mds = MetadataService()
+        mds.delete_metadata_object(cls.variables["study_id"])
         indexd.delete_records([cls.variables["did"]])
-        mds.delete_metadata(cls.variables["study_id"])
 
     def test_study_publish_search_export(self, page_setup):
         """

@@ -2,6 +2,7 @@ import pytest
 import requests
 from gen3.auth import Gen3Auth
 from gen3.metadata import Gen3Metadata
+from gen3.object import Gen3Object
 from utils import logger
 from utils.misc import retry
 
@@ -25,17 +26,14 @@ class MetadataService(object):
     @retry(times=8, delay=30, exceptions=(AssertionError))
     def get_aggregate_metadata(self, study_id, user="main_account"):
         """Get aggregate mds record for the study id specified"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        gen3metadata = Gen3Metadata(
-            auth_provider=auth,
-            service_location="mds/aggregate",
-            admin_endpoint_suffix="",
+        res = requests.get(
+            f"{self.AGG_MDS_ENDPOINT}/guid/{study_id}",
+            auth=Gen3Auth(refresh_token=pytest.api_keys[user]),
         )
-        try:
-            response = gen3metadata.get(guid=study_id)
-            return response
-        except Exception as e:
-            raise Exception(f"Unable to get metadata, exception: {e}")
+        assert (
+            res.status_code == 200
+        ), f"Response status code was {res.status_code}: {res.text}"
+        return res.json()
 
     def create_metadata(self, study_id, study_json, user="main_account"):
         """
@@ -87,3 +85,19 @@ class MetadataService(object):
             logger.info(response)
         except Exception as e:
             raise Exception(f"Unable to delete metadata, exception: {e}")
+
+    @retry(times=1, delay=30, exceptions=(AssertionError))
+    def delete_metadata_object(self, study_id, user="main_account"):
+        """
+        Delete study metadata record and indexd record
+        """
+        logger.info(f"Deleting object with id {study_id}")
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        gen3object = Gen3Object(auth_provider=auth)
+        try:
+            response = gen3object.delete_object(
+                guid=study_id,
+            )
+            logger.info(response)
+        except Exception as e:
+            raise Exception(f"Unable to delete object, exception: {e}")
