@@ -337,6 +337,7 @@ class Fence(object):
 
     @retry(times=10, delay=30, exceptions=(AssertionError))
     def wait_upload_file_updated_from_indexd_listener(self, indexd, file_node):
+        logger.info(f"Waiting for uploaded file '{file_node.did}' to be updated")
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_record=file_node)
         return response
