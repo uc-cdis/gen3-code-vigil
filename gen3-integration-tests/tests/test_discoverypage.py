@@ -133,6 +133,7 @@ class TestDiscoveryPage(object):
                 "commons_url": pytest.hostname,
             }
         )
+        logger.info(f"Study json: {study_json}")
         mds.create_metadata(self.variables["study_id"], study_json)
 
         # Re-sync aggregate mds
