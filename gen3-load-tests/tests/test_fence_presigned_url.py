@@ -10,7 +10,7 @@ from utils import test_setup as setup
 @pytest.mark.fence_presigned_url
 class TestFencePresignedURL:
     def setup_method(self):
-        # Initialize gen3sdk objects needed
+        # Initialize gen3sdk object needed
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
