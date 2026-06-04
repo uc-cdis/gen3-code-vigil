@@ -5,8 +5,14 @@ GUPPY SERVICE
 import os
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from services.guppy import Guppy
 from utils import logger
+
+skip_on_old_guppy = pytest.mark.skipif(
+    gat.service_version_greater_than("guppy", "2026.06", "0.22.0"),
+    reason="Current guppy version doesn't have support for extended ES filter for this test",
+)
 
 
 @pytest.mark.skipif(
@@ -170,11 +176,12 @@ class TestGuppyService:
             endpoint="/download",
         )
 
+    @skip_on_old_guppy
     def test_guppy_test_query_9(self):
         """
         Scenario:
         Verify CONTAINS_ANY behaves like IN operator.
-    
+
         Steps:
             1. Call API guppy/graphql using Query in test_query9.json
             2. Validate API response against data in test_response9.json
@@ -191,6 +198,7 @@ class TestGuppyService:
             200,
         )
 
+    @skip_on_old_guppy
     def test_guppy_test_query_10(self):
         """
         Scenario:
@@ -208,6 +216,7 @@ class TestGuppyService:
             200,
         )
 
+    @skip_on_old_guppy
     def test_guppy_test_query_11(self):
         """
         Scenario:
@@ -224,5 +233,3 @@ class TestGuppyService:
             "main_account",
             200,
         )
-
-
