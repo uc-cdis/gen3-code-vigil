@@ -89,9 +89,9 @@ def retry(times, delay, exceptions):
             while attempt <= times:
                 try:
                     return func(*args, **kwargs)
-                except exceptions:
+                except exceptions as e:
                     print(
-                        f"Errored when trying to run '{func.__name__}', attempt {attempt} of {times}"
+                        f"Errored when trying to run '{func.__name__}', attempt {attempt} of {times}: {e}"
                     )
                     attempt += 1
                 time.sleep(delay)
