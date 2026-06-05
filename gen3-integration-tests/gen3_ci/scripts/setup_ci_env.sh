@@ -523,6 +523,21 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
   fi
 fi
 
+# Update job container images using flags in global section
+# .global.fence_container_image
+# .global.awshelper_container_image
+yq eval '.global.fence_container_image = (.fence.image.repository + ":" + .fence.image.tag)' -i "$ci_default_manifest_values_yaml"
+awshelper_block=$(yq eval ".awshelper // \"key not found\"" $ci_default_manifest_values_yaml)
+if [ "$awshelper_block" != "key not found" ]; then
+  yq eval '.global.awshelper_container_image = (.awshelper.image.repository + ":" + .awshelper.image.tag)' -i "$ci_default_manifest_values_yaml"
+fi
+
+# TODO: https://ctds-planx.atlassian.net/browse/GPE-2406
+# Disable embedding-management-service if defined in values
+if yq -e '.["embedding-management-service"]' "$ci_default_manifest_values_yaml" >/dev/null; then
+  yq eval '.["embedding-management-service"].enabled = false' -i "$ci_default_manifest_values_yaml"
+fi
+
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_funnel_chart_branch=$?
@@ -609,10 +624,11 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=1800
+  export timeout=1800  # 30 min
   export interval=20
 
   end=$((SECONDS + timeout))
+  failedPodsTimneout=$((SECONDS + 300))  # 5 min
   while [ $SECONDS -lt $end ]; do
     echo '[wait_for_pods_ready] Pods:'
     kubectl get pods -n ${namespace}
@@ -652,23 +668,34 @@ wait_for_pods_ready() {
           )
         )
       | .metadata.name')
-    if [[ -n "$failure_pods" ]]; then
+    # give failed pods a chance to recover (e.g. some apps fail until other apps are running),
+    # but give up early if they don't recover in time
+    if [[ $SECONDS -gt $failedPodsTimneout && -n "$failure_pods" ]]; then
       echo "❌ Giving up! Failed pods: $failure_pods"
-      echo "FAILURE_PODS=$failure_pods" >> "$GITHUB_ENV"
+      # add multiline list of failed pods to GITHUB_ENV so they can be commented on the PR
+      echo "FAILURE_PODS<<EOF" >> $GITHUB_ENV
+      echo $failure_pods >> $GITHUB_ENV
+      echo "EOF" >> $GITHUB_ENV
+
       echo "[wait_for_pods_ready] Describing failed pods:"
-      kubectl describe pod $failure_pods -n "${namespace}"
+      echo "$failure_pods" | while IFS= read -r pod; do
+        echo "======= Describing $pod:"
+        kubectl describe pod $pod -n "${namespace}"
+        echo "======= Logs for $pod:"
+        kubectl logs $pod -n "${namespace}" --all-containers --tail -1
+      done
       return 1
     fi
   done
 
   echo "❌ Timeout: Pods' containers not ready"
 
+  echo "[wait_for_pods_ready] Describing pods that are not ready:"
   echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
-    echo "[wait_for_pods_ready] Describing pods that are not ready:"
     echo "======= Describing $pod:"
     kubectl describe pod $pod -n "${namespace}"
     echo "======= Logs for $pod:"
-    kubectl logs $pod -n "${namespace}" --all-containers --tail 300
+    kubectl logs $pod -n "${namespace}" --all-containers --tail -1
   done
 
   echo "$not_ready_json" | jq -r '.[] |
@@ -704,7 +731,7 @@ echo "Running usersync..."
 jobName="usersync-manual"
 kubectl delete job $jobName -n ${namespace}
 kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
-kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=5m
+kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=10m
 if [ $? -eq 0 ]; then
   echo "usersync completed successfully"
 else
@@ -712,7 +739,7 @@ else
   echo "======= Describing $jobName:"
   kubectl describe pod -l job-name=$jobName -n "${namespace}"
   echo "======= Logs for $jobName:"
-  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail 300
+  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
   exit 1
 fi
 

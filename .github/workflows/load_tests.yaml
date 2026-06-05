@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/load_tests.yaml
-      - gen3-load-tests/*
+      - gen3-load-tests/**
   workflow_dispatch:
     inputs:
       TEST_SUITE:

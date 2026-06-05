@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import random
+import re
 import shutil
 import string
 import subprocess
@@ -12,6 +13,7 @@ from pathlib import Path
 import pytest
 import requests
 from dotenv import load_dotenv
+from packaging.version import InvalidVersion, Version
 from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 
@@ -205,6 +207,25 @@ def check_job_pod(
     if result.returncode == 0:
         logger.info(f"Job {job_name} completed successfully")
     else:
+        logger.info(f"********** {job_name} logs begin **********")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            f"job/{job_name}",
+            "--all-containers",
+            "--tail",
+            "-1",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"Unable to get {job_name} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+        logger.info(f"********** {job_name} logs end **********")
         raise Exception(
             f"Job {job_name} failed to complete in {timeout}. Info: {result.stderr.strip()}"
         )
@@ -1144,3 +1165,35 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
             target_dir,
         ]
     )
+
+
+def service_version_greater_than(service_name, min_release_version, min_sem_verion):
+    """
+    This function determines if a test can run based on the minimum supported version.
+    min_release_version -> CALVER e.g. 2026.04
+    min_sem_verion -> SEMVER e.g. 13.1.0
+    """
+    cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
+    )
+    if result.returncode == 0:
+        current_version = result.stdout.strip().replace('"', "")
+    else:
+        logger.info(f"Unable to run command. Error: {result.stderr}")
+        logger.info(f"Unable to run command. Output: {result.stdout}")
+    logger.info(f"Current Version: {current_version}")
+    logger.info(f"MinVersion: {min_release_version}")
+    try:
+        parsed_current = Version(current_version)
+        CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
+        if CALVER_RE.match(current_version):
+            # CALVER version
+            return Version(min_release_version) >= parsed_current
+        else:
+            # SEMVER version
+            return Version(min_sem_verion) >= parsed_current
+    except InvalidVersion:
+        # If the branch is master/main/branch with aphabets,
+        # it will return False to execute the test
+        return False

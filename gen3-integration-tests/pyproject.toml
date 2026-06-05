@@ -16,21 +16,25 @@ python = "^3.13"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
-gen3 = "^4.27.3"
-nextflow = "^24.10.3"
+gen3 = "*"
 pandas = "<3"
 pytest = "^7.4.0"
 pytest-md-report = "^0.5.0"
 pytest-playwright = "^0.4.3"
 pytest-xdist = "^3.3.1"
+python-dateutil = "*"
 python-dotenv = "^1.0.0"
 requests = "^2.32.5"
 pypfb = ">=0.5.29"
 fastavro = "^1.8.2"
 psutil = "^5.9.8"
 allure-pytest = "^2.16.0"
-nextflowpy = "^0.11.0"
 boto3 = "^1.38.20"
+
+# We need to support the latest version of Nextflow.
+# DO NOT PIN THIS VERSION WITHOUT REPORTING THE ISSUE YOU ENCOUNTERED TO THE TEAM.
+nextflow = "*"
+nextflowpy = ">=0.13.1" # see https://github.com/goodwright/nextflow.py/issues/14
 
 # NOTE: NumPy version is pinned to <2.0.0
 # Without this, importing pandas throws the following error during CI:
@@ -42,6 +46,7 @@ langchain = "^1.2.10"
 langchain-ollama = "^1.0.1"
 langchain-mcp-adapters = "^0.2.1"
 langchain-core = "^1.2.14"
+packaging = "^26.2"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
