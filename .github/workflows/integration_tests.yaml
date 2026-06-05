@@ -1,6 +1,10 @@
 name: Integration Tests
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - .github/workflows/integration_tests.yaml
+      - gen3-integration-tests/**
 
 permissions:
   id-token: write
