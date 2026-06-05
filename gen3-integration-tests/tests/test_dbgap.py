@@ -22,7 +22,7 @@ indexd_files = {
             "gs://dcf-integration-test/file.txt",
         ],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
-        "authz": ["/programs/phs000178"],
+        "authz": ["/programs/phs000178.c1"],
         "size": 9,
     },
     "phs000179File": {
