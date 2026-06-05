@@ -61,6 +61,7 @@ def _nextflow_parse_completed_line(log_line):
         "workDirProtocol": "-",
         "exit_code": "-",
         "status": "-",
+        "timestamp": "-",
     }
     log_regex = (
         r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
@@ -78,6 +79,7 @@ def _nextflow_parse_completed_line(log_line):
         task_info["workDirProtocol"] = match.group("workDirProtocol")
         task_info["exit_code"] = match.group("exit_code")
         task_info["status"] = match.group("status") or "-"
+        task_info["timestamp"] = match.group("timestamp")
 
         if task_info["workDirProtocol"]:
             task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
