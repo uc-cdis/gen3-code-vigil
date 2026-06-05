@@ -5,8 +5,14 @@ GUPPY SERVICE
 import os
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from services.guppy import Guppy
 from utils import logger
+
+skip_on_old_guppy = pytest.mark.skipif(
+    gat.service_version_greater_than("guppy", "2026.06", "0.22.0"),
+    reason="Current guppy version doesn't have support for extended ES filter for this test",
+)
 
 
 @pytest.mark.skipif(
@@ -168,4 +174,62 @@ class TestGuppyService:
             "main_account",
             200,
             endpoint="/download",
+        )
+
+    @skip_on_old_guppy
+    def test_guppy_test_query_9(self):
+        """
+        Scenario:
+        Verify CONTAINS_ANY behaves like IN operator.
+
+        Steps:
+            1. Call API guppy/graphql using Query in test_query9.json
+            2. Validate API response against data in test_response9.json
+        """
+        guppy = Guppy()
+        queryFile = "test_query9.json"
+        responseFile = "test_response9.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+    @skip_on_old_guppy
+    def test_guppy_test_query_10(self):
+        """
+        Scenario:
+        Verify EXCLUDES_ANY removes records with matching values.
+        """
+        guppy = Guppy()
+        queryFile = "test_query10.json"
+        responseFile = "test_response10.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+    @skip_on_old_guppy
+    def test_guppy_test_query_11(self):
+        """
+        Scenario:
+        Verify filter operators are case insensitive.
+        """
+        guppy = Guppy()
+        queryFile = "test_query11.json"
+        responseFile = "test_response11.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
         )
