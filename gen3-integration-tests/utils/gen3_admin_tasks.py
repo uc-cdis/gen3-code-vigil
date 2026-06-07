@@ -1162,11 +1162,11 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
     )
 
 
-def service_version_greater_than(service_name, min_release_version, min_sem_verion):
+def service_version_greater_than(service_name, min_release_version, min_sem_version):
     """
     This function determines if a test can run based on the minimum supported version.
     min_release_version -> CALVER e.g. 2026.04
-    min_sem_verion -> SEMVER e.g. 13.1.0
+    min_sem_version -> SEMVER e.g. 13.1.0
     """
     cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
     result = subprocess.run(
@@ -1181,14 +1181,14 @@ def service_version_greater_than(service_name, min_release_version, min_sem_veri
     logger.info(f"MinVersion: {min_release_version}")
     try:
         parsed_current = Version(current_version)
+        CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
+        if CALVER_RE.match(current_version):
+            # CALVER version
+            return Version(min_release_version) >= parsed_current
+        else:
+            # SEMVER version
+            return Version(min_sem_version) >= parsed_current
     except InvalidVersion:
-        # If the branch is master/main/branch with aphabets,
+        # If the branch is master/main/branch with alphabets,
         # it will return False to execute the test
         return False
-    CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
-    if CALVER_RE.match(parsed_current):
-        # CALVER version
-        return Version(min_release_version) >= parsed_current
-    else:
-        # SEMVER version
-        return Version(min_sem_verion) >= parsed_current
