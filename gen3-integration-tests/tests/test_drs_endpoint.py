@@ -6,6 +6,8 @@ import os
 
 import pytest
 from cdislogging import get_logger
+from gen3.auth import Gen3Auth
+from gen3.tools.download.drs_download import list_drs_object
 from packaging.version import Version
 from services.drs import Drs
 from services.fence import Fence

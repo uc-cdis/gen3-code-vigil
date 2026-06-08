@@ -3,6 +3,10 @@ from uuid import uuid4
 import pytest
 import requests
 from gen3.auth import Gen3Auth
+from gen3.tools.download.drs_download import (
+    get_download_url_using_drs,
+    list_drs_object,
+)
 from utils import logger
 
 
@@ -19,7 +23,9 @@ class Drs(object):
         except Exception:
             # id is set to None to test the negative test scenario
             id = None
-        response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}")
+        # response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}")
+        response = list_drs_object(pytest.hostname, auth, id)
+        logger.info(response.json())
         return response
 
     def get_drs_signed_url(self, file, user="main_account"):
@@ -31,19 +37,12 @@ class Drs(object):
             # id is set to None to test the negative test scenario
             id = None
         access_id = file["urls"][0][:2]
-        response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}/access/{access_id}")
-        return response
-
-    def get_drs_signed_url_without_header(self, file, user="main_account"):
-        """Get Drs signed url without header"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        try:
-            id = file.get("did") or file.get("id")
-        except Exception:
-            # id is set to None to test the negative test scenario
-            id = None
-        access_id = file["urls"][0][:2]
-        response = auth.curl(
-            path=f"{self.BASE_URL}{self.DRS_ENDPOINT}/{id}/access/{access_id}"
+        # response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}/access/{access_id}")
+        response = get_download_url_using_drs(
+            drs_hostname=pytest.hostname,
+            object_id=access_id,
+            access_method="s3",
+            access_token=auth.get_access_token(),
         )
+        logger.info(response)
         return response
