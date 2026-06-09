@@ -305,7 +305,7 @@ class TestDrsMetadata:
             refresh_token=pytest.api_keys["main_account"],
             endpoint=pytest.root_url,
         )
-        buckets_resp = auth.curl(path="/data/buckets")
+        buckets_resp = auth.curl(path="user/data/buckets")
         if buckets_resp.status_code != 200:
             pytest.skip("Fence /data/buckets endpoint not available")
 
