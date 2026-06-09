@@ -49,7 +49,9 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     fi
 
     # Request API key
-    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "$HOSTNAME_PROTOCOL://$HOSTNAME/user/credentials/api" \
+    ENDPOINT="$HOSTNAME_PROTOCOL://$HOSTNAME/user/credentials/api"
+    echo "Got access token, now getting API key from '$ENDPOINT'"
+    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "$ENDPOINT" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
