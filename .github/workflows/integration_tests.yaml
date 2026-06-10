@@ -15,7 +15,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/get_labels_issue
     with:
       WORKING_DIR: gen3-integration-tests
     secrets:

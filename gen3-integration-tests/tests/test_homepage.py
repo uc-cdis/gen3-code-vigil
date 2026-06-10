@@ -18,6 +18,7 @@ class TestHomePage:
             2. Login using the main account
             3. Verify the summary and cards are as expected
             4. Logout
+
         """
         # Go to home page
         home_page = home.HomePage()
