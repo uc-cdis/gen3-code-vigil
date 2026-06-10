@@ -70,6 +70,7 @@ class TestDrsEndpoints:
             2. Confirm the drs object is present
         """
         res = self.drs.get_drs_object_using_gen3sdk(indexd_files["allowed"])
+        logger.info(res)
         assert res, f"Expected drs object to be present but got {res}"
 
     def test_get_drs_no_record_found(self):
@@ -79,7 +80,10 @@ class TestDrsEndpoints:
             1. Get the drs object for indexd record (not_allowed).
             2. Get the drs object usign the response object in step 1. Drs object shouldn't be returned.
         """
-        drs_record = self.drs.get_drs_object(file=indexd_files["not_allowed"])
+        drs_record = self.drs.get_drs_object_using_gen3sdk(
+            file=indexd_files["not_allowed"]
+        )
+        logger.info(drs_record)
         res = self.drs.get_drs_object(drs_record)
         assert (
             res.status_code == 404
@@ -138,3 +142,15 @@ class TestDrsEndpoints:
         assert (
             file_content == expected_content
         ), f"Data don't match.\n{file_content}\n{expected_content}"
+
+    @pytest.mark.gen3sdk
+    def test_dowload_drs_object_invalid_access_id(self):
+        """
+        Scenario: download drs object
+        Steps:
+            1. Download drs object for indexd record (invalid_protocol).
+            2. Validate the content of the file checkout.
+        """
+        did = indexd_files["invalid_protocol"]["did"]
+        response = self.drs.get_drs_download(file=indexd_files["invalid_protocol"])
+        logger.info(response)
