@@ -268,7 +268,15 @@ class TestGen3WorkflowService(TestGen3Workflow):
             expected_status=404,
         )
 
-    def test_multipart_upload(self):
+    def test_multipart_upload_and_range_param(self):
+        """
+        Check that multipart uploads work.
+        Also check that gen3-workflow correctly forwards the `range` header to S3, enabling the
+        parallel download of file parts.
+
+        Regression test for TES issues:
+        - (no ticket) Getting 18MB when downloading a 10MB file through gen3-workflow
+        """
         # Create a 6MB file (multipart can only be used for files >=5MB) and upload it
         input_content = b"A" * (6 * 1024 * 1024)
         with tempfile.NamedTemporaryFile(delete=True) as file_to_upload:
@@ -305,24 +313,6 @@ class TestGen3WorkflowService(TestGen3Workflow):
         assert (
             input_content.decode() == response_contents
         ), "Stored and retrieved content should match"
-
-    def test_s3_download_range_parameter(self):
-        """
-        Check that gen3-workflow correctly forwards the `range` header to S3, enabling the
-        parallel download of file parts.
-
-        Regression test for TES issues:
-        - (no ticket) Getting 18MB when downloading a 10MB file through gen3-workflow
-        """
-        # Upload a 10MB file
-        input_content = b"A" * (10 * 1024 * 1024)
-        self.gen3_workflow.put_bucket_object_with_boto3(
-            content=input_content,
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
 
         # Download the first 10 bytes of the file
         n_bytes = 10
