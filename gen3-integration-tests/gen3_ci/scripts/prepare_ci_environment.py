@@ -19,56 +19,92 @@ def wait_for_quay_build(repo, tag):
     Wait for the branch image to be ready for testing.
     Used in service PRs.
     """
+    if os.getenv("SKIP_QUAY_BUILD") == "true":
+        logger.info("[wait_for_quay_build] Skipped")
+        return "success"
+    if os.getenv("QUAY_ORG"):
+        quay_org = os.getenv("QUAY_ORG").replace('"', "")
+    else:
+        quay_org = "cdis"
     repo_image_status = {}
-    quay_url_org = "https://quay.io/api/v1/repository/cdis"
+    quay_url_org = f"https://quay.io/api/v1/repository/{quay_org}"
     commit_time = datetime.strptime(os.getenv("COMMIT_TIME"), "%Y-%m-%dT%H:%M:%SZ")
     max_tries = 30  # Minutes to wait for image
     found = False
     i = 0
     repo_list = repo.split(",")
-    logger.info(f"Repo - {repo}, image - {tag}")
+    logger.info(f"[wait_for_quay_build] Repo - {quay_org}/{repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
-            logger.info(f"Waiting for image {repo_item}:{tag} to be built in quay")
-            res = requests.get(f"{quay_url_org}/{repo_item}/tag")
+            logger.info(
+                f"[wait_for_quay_build] Waiting for image '{quay_org}/{repo_item}:{tag}' to be built in quay"
+            )
+            url = f"{quay_url_org}/{repo_item}/tag/?specificTag={tag}"
+            res = requests.get(url)
             if res.status_code == 200:
                 branch_images = [x for x in res.json()["tags"] if x["name"] == tag]
                 if len(branch_images) >= 1:
                     image = branch_images[0]
                     image_time = datetime.utcfromtimestamp(image["start_ts"])
-                    print(image_time)
                     if image_time > commit_time:
                         repo_image_status[repo_item] = True
                     else:
+                        # the tag exists but is too old
+                        logger.info(
+                            f"[wait_for_quay_build] Found an older '{quay_org}/{repo_item}:{tag}' image, waiting..."
+                        )
                         repo_image_status[repo_item] = False
+                else:
+                    # the tag does not exist
+                    repo_image_status[repo_item] = False
             else:
+                logger.error(
+                    f"[wait_for_quay_build] Got an error response from '{url}': {res.status_code} {res.text}"
+                )
+                if res.status_code == 401 or res.status_code >= 500:
+                    return "failure"
                 repo_image_status[repo_item] = False
         i += 1
-        time.sleep(60)
+        if i < max_tries:
+            time.sleep(60)
         found = all(repo_image_status.values())
     if found:
+        logger.info(f"[wait_for_quay_build] Found image '{quay_org}/{repo_item}:{tag}'")
         return "success"
     if not found:
-        logger.error(f"Image with tag {tag} was not found in repo {repo}")
+        logger.error(
+            f"[wait_for_quay_build] Image with tag '{tag}' was not found in repo '{quay_org}/{repo}' after {max_tries} min"
+        )
         return "failure"
 
 
 def setup_env_for_helm(arguments):
-    file_path = HELM_SCRIPTS_PATH_OBJECT / "setup_ci_env.sh"
-    logger.info(f"File path: {file_path}")
-    logger.info(f"Argument: {arguments}")
-    result = subprocess.run(
-        [file_path] + arguments, capture_output=True, text=True, timeout=2100
-    )
-    if result.returncode == 0:
-        logger.info("Script executed successfully. Output:")
-        logger.info(result.stdout)
-        return "SUCCESS"
-    else:
-        logger.info("Script execution failed. Error:")
-        logger.info(result.stderr)
-        logger.info(result.stdout)
+    file_name = "setup_ci_env.sh"
+    file_path = HELM_SCRIPTS_PATH_OBJECT / file_name
+    logger.info(f"[setup_env_for_helm] File path: {file_path}")
+    logger.info(f"[setup_env_for_helm] Argument: {arguments}")
+    try:
+        result = subprocess.run(
+            [file_path] + arguments, capture_output=True, text=True, timeout=2100
+        )
+    except subprocess.TimeoutExpired as e:
+        logger.info(f"{file_name} script timed out. Logs (stderr):")
+        for line in e.stderr.split(b"\n"):
+            logger.info(line)
+        logger.info("------------------------")
+        logger.info(f"{file_name} script timed out. Logs (stdout):")
+        for line in e.stdout.split(b"\n"):
+            logger.info(line)
         return "failure"
+
+    msg = "executed successfully" if result.returncode == 0 else "execution failed"
+    logger.info(f"{file_name} script {msg}. Logs (stderr):")
+    logger.info(result.stderr)
+    logger.info("------------------------")
+    logger.info(f"{file_name} script {msg}. Logs (stdout):")
+    logger.info(result.stdout)
+
+    return "SUCCESS" if result.returncode == 0 else "failure"
 
 
 def modify_env_for_service_pr(namespace, service, tag):
@@ -79,7 +115,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
     helm_service_names = {
         "audit-service": "audit",
@@ -142,11 +178,12 @@ def modify_env_for_test_repo_pr(namespace):
     return setup_env_for_helm(arguments)
 
 
-@retry(times=6, delay=30, exceptions=(Exception))
-def generate_api_keys_for_test_users(namespace):
+@retry(times=10, delay=30, exceptions=(Exception))
+def generate_api_keys_for_test_users():
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
+        os.getenv("HOSTNAME_PROTOCOL"),
         os.getenv("HOSTNAME"),
         os.getenv("NAMESPACE"),
     ]
@@ -158,21 +195,29 @@ def generate_api_keys_for_test_users(namespace):
         return "SUCCESS"
     else:
         logger.info(result.stdout)
-        raise Exception(f"Got error: {result.stderr}")
+        raise Exception(
+            f"[generate_api_keys_for_test_users] Got error: {result.stderr}"
+        )
 
 
 def prepare_ci_environment(namespace):
     """Calls other functions in this module depending on the type of repo under test"""
     repo = os.getenv("REPO")
+    repo_full_name = os.getenv("REPO_FN")
     # if quay repo name is different from github repo name
     if os.getenv("QUAY_REPO"):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
         quay_repo = repo
+
     if repo in ("gen3-code-vigil"):  # Test repos
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
-    elif repo in ("gen3-helm"):  # Helm charts - test with master branch of all services
+    # Helm charts - test with master branch of all services
+    elif repo in ("gen3-helm") or repo_full_name in (
+        "calypr/helm-charts",
+        "uc-cdis/ohsu-funnel-helm-charts",
+    ):
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     elif repo in ("data-simulator", "gen3sdk-python"):
@@ -219,9 +264,7 @@ def prepare_ci_environment(namespace):
             assert result.lower() == "success"
         result = modify_env_for_service_pr(namespace, quay_repo, quay_tag)
         assert result.lower() == "success"
-    # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users(namespace)
-    assert result.lower() == "success"
+
     return result
 
 

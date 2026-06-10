@@ -2,6 +2,7 @@ import base64
 import json
 import os
 import random
+import re
 import shutil
 import string
 import subprocess
@@ -12,6 +13,7 @@ from pathlib import Path
 import pytest
 import requests
 from dotenv import load_dotenv
+from packaging.version import InvalidVersion, Version
 from utils import TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 
@@ -23,11 +25,15 @@ def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
     deployed_services = get_list_of_services_deployed()
     if pytest.frontend_url:
+        if os.getenv("REPO") == "commons-frontend-app":
+            folder_name = "ci"
+        else:
+            folder_name = "gen3"
         json_path = (
             Path(__file__).parent.parent
             / pytest.frontend_commons_name
             / "config"
-            / "gen3"
+            / folder_name
             / f"{json_file_name}.json"
         )
         if not json_path.exists():
@@ -110,32 +116,40 @@ def get_env_configurations(test_env_namespace: str = ""):
 def run_gen3_job(
     job_name: str,
     test_env_namespace: str = "",
+    job_type: str = "cronjob",
 ):
     """
     Run gen3 job (e.g., metadata-aggregate-sync).
     """
-    # job_pod = f"{job_name}-{uuid.uuid4()}"
-    cronjob_name = job_name
-    if job_name == "etl":
-        cronjob_name = "etl-cronjob"
-    job_name += "-" + "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=4)
-    )
-    cmd = [
-        "kubectl",
-        "-n",
-        test_env_namespace,
-        "create",
-        "job",
-        f"--from=cronjob/{cronjob_name}",
-        job_name,
-    ]
-    logger.info(cmd)
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if result.returncode == 0:
-        logger.info(f"{job_name} job triggered - {result.stdout.decode('utf-8')}")
+    if job_type == "job":
+        cmd = [
+            f"kubectl -n {test_env_namespace} get job {job_name} -o json | jq 'del(.spec.selector, .spec.template.metadata.labels, .status, .metadata.uid, .metadata.resourceVersion, .metadata.creationTimestamp)' | kubectl -n {test_env_namespace} replace --force -f -"
+        ]
+    elif job_type == "cronjob":
+        cronjob_name = job_name
+        if job_name == "etl":
+            cronjob_name = "etl-cronjob"
+        job_name += "-" + "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=4)
+        )
+        cmd = [
+            f"kubectl -n {test_env_namespace} create job --from=cronjob/{cronjob_name} {job_name}"
+        ]
     else:
-        raise Exception(f"{job_name} failed to start - {result.stderr.decode('utf-8')}")
+        raise Exception(f"[run_gen3_job] Job type '{job_type}' unknown")
+
+    logger.info(f"[run_gen3_job] Running command: {cmd}")
+    result = subprocess.run(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    if result.returncode == 0:
+        logger.info(
+            f"[run_gen3_job] '{job_name}' job triggered - {result.stdout.decode('utf-8')}"
+        )
+    else:
+        raise Exception(
+            f"[run_gen3_job] '{job_name}' failed to start - {result.stderr.decode('utf-8')}"
+        )
     check_job_pod(job_name=job_name, test_env_namespace=pytest.namespace)
 
 
@@ -177,6 +191,7 @@ def check_job_pod(
     job_name: str,
     test_env_namespace: str = "",
 ):
+    timeout = "30m"
     cmd = [
         "kubectl",
         "-n",
@@ -184,7 +199,7 @@ def check_job_pod(
         "wait",
         "--for=condition=complete",
         f"job/{job_name}",
-        "--timeout=30m",
+        f"--timeout={timeout}",
     ]
     result = subprocess.run(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
@@ -192,8 +207,27 @@ def check_job_pod(
     if result.returncode == 0:
         logger.info(f"Job {job_name} completed successfully")
     else:
+        logger.info(f"********** {job_name} logs begin **********")
+        cmd = [
+            "kubectl",
+            "-n",
+            pytest.namespace,
+            "logs",
+            f"job/{job_name}",
+            "--all-containers",
+            "--tail",
+            "-1",
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"Unable to get {job_name} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+        logger.info(f"********** {job_name} logs end **********")
         raise Exception(
-            f"Job {job_name} failed to complete in 20 minutes. Info: {result.stderr.strip()}"
+            f"Job {job_name} failed to complete in {timeout}. Info: {result.stderr.strip()}"
         )
 
 
@@ -1106,11 +1140,12 @@ def get_ff_commons_info():
             result.stdout.strip()
             .split("/")[-1]
             .split(":")[-1]
+            .replace("_test", "")
             .replace("_", "/", 1)
             .strip()
             .replace("'", "")
         )
-        target_dir = "ci-data-commons"
+        target_dir = "commons-frontend-app"
         return repo_name, branch_name, target_dir
     else:
         raise Exception("Unable to get frontend-framework image name")
@@ -1130,3 +1165,35 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
             target_dir,
         ]
     )
+
+
+def service_version_greater_than(service_name, min_release_version, min_sem_version):
+    """
+    This function determines if a test can run based on the minimum supported version.
+    min_release_version -> CALVER e.g. 2026.04
+    min_sem_version -> SEMVER e.g. 13.1.0
+    """
+    cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
+    )
+    if result.returncode == 0:
+        current_version = result.stdout.strip().replace('"', "")
+    else:
+        logger.info(f"Unable to run command. Error: {result.stderr}")
+        logger.info(f"Unable to run command. Output: {result.stdout}")
+    logger.info(f"Current Version: {current_version}")
+    logger.info(f"MinVersion: {min_release_version}")
+    try:
+        parsed_current = Version(current_version)
+        CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
+        if CALVER_RE.match(current_version):
+            # CALVER version
+            return Version(min_release_version) >= parsed_current
+        else:
+            # SEMVER version
+            return Version(min_sem_version) >= parsed_current
+    except InvalidVersion:
+        # If the branch is master/main/branch with alphabets,
+        # it will return False to execute the test
+        return False
