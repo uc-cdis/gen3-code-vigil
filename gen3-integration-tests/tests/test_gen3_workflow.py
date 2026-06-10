@@ -306,6 +306,36 @@ class TestGen3WorkflowService(TestGen3Workflow):
             input_content.decode() == response_contents
         ), "Stored and retrieved content should match"
 
+    def test_s3_download_range_parameter(self):
+        """
+        Check that gen3-workflow correctly forwards the `range` header to S3, enabling the
+        parallel download of file parts.
+
+        Regression test for TES issues:
+        - (no ticket) Getting 18MB when downloading a 10MB file through gen3-workflow
+        """
+        # Upload a 10MB file
+        input_content = b"A" * (10 * 1024 * 1024)
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content=input_content,
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        # Download the first 10 bytes of the file
+        n_bytes = 10
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=206,
+            range=n_bytes,
+        )
+        response_contents = response_s3_object["Body"].read().decode("utf-8")
+        assert len(response_contents) == n_bytes
+
 
 class TestGen3WorkflowTES(TestGen3Workflow):
     def test_unauthorized_user_cannot_list_tes_tasks(self):
@@ -1180,11 +1210,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
 
 @pytest.mark.skipif(
-    "localhost" in pytest.hostname, reason="currently broken in Kind CI"
+    "localhost" in pytest.hostname, reason="currently broken in Kind CI, see docstring"
 )
 class TestGen3WorkflowNextflow(TestGen3Workflow):
     """
     Nextflow tests are currently broken in the Kind CI.
+    https://ctds-planx.atlassian.net/browse/MIDRC-1292
 
     - Nextflow logs:
     nextflow.exception.AbortOperationException: Cannot create work-dir 's3://gen3wf-localhost-1/ga4gh-tes' -- Make sure you have write permissions or specify a different directory by using the `-w` command line option
