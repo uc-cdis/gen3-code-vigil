@@ -52,7 +52,7 @@ indexd_files = {
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.ras
-@pytest.mark.skip(reason="RAS Passport creation is broken")
+# @pytest.mark.skip(reason="RAS Passport creation is broken")
 class TestRasDrs:
     @classmethod
     def setup_class(cls):
@@ -82,7 +82,7 @@ class TestRasDrs:
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     # TODO: Need to finish test case, once passports can be retrieved for RAS
-    @pytest.mark.wip("RAS Passport creation is broken")
+    # @pytest.mark.wip("RAS Passport creation is broken")
     def test_single_valid_passport_single_visa(self, page: Page):
         """
         Scenario: Send DRS request - Single Valid Passport Single VISA
@@ -95,6 +95,8 @@ class TestRasDrs:
         """
         # Validate creds required for test are defined as env variable
         creds_dict = self.ras.validate_creds(test_creds=self.env_vars)
+        print("Creds_dict:  ", creds_dict.items())
+        logger.info("Creds_Dict", creds_dict.items())
 
         # Get tokens
         tokens = self.ras.get_tokens(
