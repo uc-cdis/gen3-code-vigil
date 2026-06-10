@@ -5,15 +5,13 @@ DRS Endpoint
 import os
 
 import pytest
-from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from gen3.tools.download.drs_download import list_drs_object
 from packaging.version import Version
 from services.drs import Drs
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 indexd_files = {
     "allowed": {
@@ -63,18 +61,16 @@ class TestDrsEndpoints:
         # Removing test indexd records
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
+    @pytest.mark.gen3sdk
     def test_get_drs_object(self):
         """
         Scenario: get drs object
         Steps:
             1. Get the drs object for indexd record (allowed).
-            2. Get the drs object and compare the records are same.
+            2. Confirm the drs object is present
         """
-        drs_record = self.drs.get_drs_object(file=indexd_files["allowed"])
-        res = self.drs.get_drs_object(drs_record.json())
-        assert (
-            drs_record.json() == res.json()
-        ), f"Expected same values but got different.\ndrs_record: {drs_record}\nResponse: {res}"
+        res = self.drs.get_drs_object_using_gen3sdk(indexd_files["allowed"])
+        assert res, f"Expected drs object to be present but got {res}"
 
     def test_get_drs_no_record_found(self):
         """
@@ -121,3 +117,24 @@ class TestDrsEndpoints:
         assert (
             expected_msg in signed_url_res.content.decode()
         ), f"{expected_msg} not found in {signed_url_res.content.decode()}"
+
+    @pytest.mark.gen3sdk
+    def test_dowload_drs_object(self):
+        """
+        Scenario: download drs object
+        Steps:
+            1. Download drs object for indexd record (allowed).
+            2. Validate the content of the file checkout.
+        """
+        did = indexd_files["allowed"]["did"]
+        response = self.drs.get_drs_download(file=indexd_files["allowed"])
+        assert (
+            response[did].status == "downloaded"
+        ), f"Expected status to be downloaded but got {response[did].status}"
+        file_content = open(
+            TEST_DATA_PATH_OBJECT / "drs_download" / response[did].filename
+        ).read()
+        expected_content = "Hi Zac!\ncdis-data-client uploaded this!\n"
+        assert (
+            file_content == expected_content
+        ), f"Data don't match.\n{file_content}\n{expected_content}"
