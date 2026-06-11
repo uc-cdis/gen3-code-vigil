@@ -52,6 +52,7 @@ indexd_files = {
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.ras
+@pytest.mark.requires_fence_client
 # @pytest.mark.skip(reason="RAS Passport creation is broken")
 class TestRasDrs:
     @classmethod
