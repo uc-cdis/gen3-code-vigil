@@ -52,7 +52,7 @@ indexd_files = {
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.ras
-@pytest.mark.skip(reason="RAS Passport creation is broken")
+# @pytest.mark.skip(reason="RAS Passport creation is broken")
 class TestRasDrs:
     @classmethod
     def setup_class(cls):
@@ -65,9 +65,11 @@ class TestRasDrs:
         cls.env_vars = [
             "CI_TEST_RAS_EMAIL",
             "CI_TEST_RAS_PASSWORD",
-            "CLIENT_ID",
-            "SECRET_ID",
+            # "CLIENT_ID",
+            # "SECRET_ID",
         ]
+        cls.client_id = pytest.clients["ras-test-client"]["client_id"]
+        cls.secret_id = pytest.clients["ras-test-client"]["client_secret"]
         cls.scope = "openid profile email ga4gh_passport_v1"
         cls.ga4gh_url = f"{pytest.hostname}/ga4gh/drs/v1/objects"
         # Upload new Indexd records
@@ -82,7 +84,7 @@ class TestRasDrs:
         cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     # TODO: Need to finish test case, once passports can be retrieved for RAS
-    @pytest.mark.wip("RAS Passport creation is broken")
+    # @pytest.mark.wip("RAS Passport creation is broken")
     def test_single_valid_passport_single_visa(self, page: Page):
         """
         Scenario: Send DRS request - Single Valid Passport Single VISA
@@ -98,8 +100,8 @@ class TestRasDrs:
 
         # Get tokens
         tokens = self.ras.get_tokens(
-            client_id=creds_dict["CLIENT_ID"],
-            secret_id=creds_dict["SECRET_ID"],
+            client_id=self.client_id,
+            secret_id=self.secret_id,
             scope=self.scope,
             username=creds_dict["CI_TEST_RAS_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD"],
@@ -122,7 +124,7 @@ class TestRasDrs:
             )
 
     # TODO: Need to finish test case, once passports can be retrieved for RAS
-    @pytest.mark.wip("RAS Passport creation is broken")
+    # @pytest.mark.wip("RAS Passport creation is broken")
     def test_single_valid_passport_single_visa_no_permission(self):
         """
         Scenario: Send DRS request - Single Valid Passport Single VISA With No Permission
@@ -138,8 +140,8 @@ class TestRasDrs:
 
         # Get tokens
         tokens = self.ras.get_tokens(
-            client_id=creds_dict["CLIENT_ID"],
-            secret_id=creds_dict["SECRET_ID"],
+            client_id=self.client_id,
+            secret_id=self.secret_id,
             scope=self.scope,
             username=creds_dict["CI_TEST_RAS_2_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD_2"],
@@ -159,7 +161,7 @@ class TestRasDrs:
         assert "401" in drs_access_req, f"Expected 401, but got {drs_access_req}"
 
     # TODO: Need to finish test case, once passports can be retrieved for RAS
-    @pytest.mark.wip("RAS Passport creation is broken")
+    # @pytest.mark.wip("RAS Passport creation is broken")
     def test_single_valid_passport_single_visa_incorrect_access(self):
         """
         Scenario: Send DRS request - Single Valid Passport Single VISA With Incorrect Access
@@ -175,8 +177,8 @@ class TestRasDrs:
 
         # Get tokens
         tokens = self.ras.get_tokens(
-            client_id=creds_dict["CLIENT_ID"],
-            secret_id=creds_dict["SECRET_ID"],
+            client_id=self.client_id,
+            secret_id=self.secret_id,
             scope=self.scope,
             username=creds_dict["CI_TEST_RAS_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD"],
