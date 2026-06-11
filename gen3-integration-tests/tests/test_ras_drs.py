@@ -70,7 +70,7 @@ class TestRasDrs:
             # "SECRET_ID",
         ]
         cls.client_id = pytest.clients["ras-test-client"]["client_id"]
-        cls.secret_id = pytest.clients["ras-test-client"]["client_secret"]
+        cls.client_secret = pytest.clients["ras-test-client"]["client_secret"]
         cls.scope = "openid profile email ga4gh_passport_v1"
         cls.ga4gh_url = f"{pytest.hostname}/ga4gh/drs/v1/objects"
         # Upload new Indexd records
@@ -91,7 +91,7 @@ class TestRasDrs:
         Scenario: Send DRS request - Single Valid Passport Single VISA
         Steps:
             1. Validate required RAS credentials are present.
-            2. Get the access token based on client_id, secret_id and RAS credentials.
+            2. Get the access token based on client_id, client_secret and RAS credentials.
             3. Get the passport.
             4. Retrieve indexd record using accessible_drs_object_url.
             5. Validate the response is 200 and contains url key in response.
@@ -102,7 +102,7 @@ class TestRasDrs:
         # Get tokens
         tokens = self.ras.get_tokens(
             client_id=self.client_id,
-            secret_id=self.secret_id,
+            client_secret=self.client_secret,
             scope=self.scope,
             username=creds_dict["CI_TEST_RAS_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD"],
@@ -131,7 +131,7 @@ class TestRasDrs:
         Scenario: Send DRS request - Single Valid Passport Single VISA With No Permission
         Steps:
             1. Validate required RAS credentials are present.
-            2. Get the access token based on client_id, secret_id and RAS credentials (without permission).
+            2. Get the access token based on client_id, client_secret and RAS credentials (without permission).
             3. Get the passport.
             4. Retrieve indexd record using accessible_drs_object_url.
             5. Validate the response is 401.
@@ -142,7 +142,7 @@ class TestRasDrs:
         # Get tokens
         tokens = self.ras.get_tokens(
             client_id=self.client_id,
-            secret_id=self.secret_id,
+            client_secret=self.client_secret,
             scope=self.scope,
             username=creds_dict["CI_TEST_RAS_2_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD_2"],
@@ -168,7 +168,7 @@ class TestRasDrs:
         Scenario: Send DRS request - Single Valid Passport Single VISA With Incorrect Access
         Steps:
             1. Validate required RAS credentials are present.
-            2. Get the access token based on client_id, secret_id and RAS credentials.
+            2. Get the access token based on client_id, client_secret and RAS credentials.
             3. Get the passport.
             4. Retrieve indexd record using inaccessible_drs_object_url.
             5. Validate the response is 401.
@@ -179,7 +179,7 @@ class TestRasDrs:
         # Get tokens
         tokens = self.ras.get_tokens(
             client_id=self.client_id,
-            secret_id=self.secret_id,
+            client_secret=self.client_secret,
             scope=self.scope,
             username=creds_dict["CI_TEST_RAS_EMAIL"].split("@")[0],
             password=creds_dict["CI_TEST_RAS_PASSWORD"],
@@ -204,7 +204,7 @@ class TestRasDrs:
         Scenario: Send DRS request - Single Valid Passport With Invalid Signature
         Steps:
             1. Validate required RAS credentials are present.
-            2. Get the access token based on client_id, secret_id and RAS credentials.
+            2. Get the access token based on client_id, client_secret and RAS credentials.
             3. Get the passport with invalid signature
             4. Retrieve indexd record using accessible_drs_object_url.
             5. Validate the response is 401.
@@ -218,7 +218,7 @@ class TestRasDrs:
         Scenario: Get Access Token from Refresh Token
         Steps:
             1. Validate required RAS credentials are present.
-            2. Get the refresh token based on client_id, secret_id and RAS credentials.
+            2. Get the refresh token based on client_id, client_secret and RAS credentials.
             3. Get the passport with refresh token
             4. Retrieve indexd record using accessible_drs_object_url.
             5. Validate the response is 200 and contains url key in response.
