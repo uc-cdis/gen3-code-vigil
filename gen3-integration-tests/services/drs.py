@@ -22,7 +22,7 @@ class Drs(object):
         response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}")
         return response
 
-    def get_drs_signed_url(self, file, user="main_account"):
+    def get_drs_signed_url(self, file, user="gen3_test_ial2_1"):
         """Get Drs signed url"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         try:
