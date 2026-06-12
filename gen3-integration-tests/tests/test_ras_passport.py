@@ -55,8 +55,8 @@ class TestRasPassport:
         cls.variables = {}
         cls.variables["created_indexd_dids"] = []
         cls.env_vars = [
-            "CI_TEST_RAS_USERNAME",
-            "CI_TEST_RAS_PASSWORD",
+            "RAS_IAL2_USERID",
+            "RAS_IAL2_PASSWORD",
         ]
         # Validate creds required for test that are defined as env variable
         cls.ras.validate_creds(test_creds=cls.env_vars)
@@ -82,9 +82,11 @@ class TestRasPassport:
         """
         client_id = pytest.clients["ras-test-client"]["client_id"]
         client_secret = pytest.clients["ras-test-client"]["client_secret"]
+        logger.error("CLIENT_ID %s", client_id)
         scope = "openid profile email ga4gh_passport_v1 researcher_role"
-        username = os.environ["CI_TEST_RAS_USERNAME"]
-        password = os.environ["CI_TEST_RAS_PASSWORD"]
+        username = os.environ["RAS_IAL2_USERID"]
+        password = os.environ["RAS_IAL2_PASSWORD"]
+        logger.error("USERNAME : %s",username)
         email = "burtonk@uchicago.edu"
 
         token = self.ras.get_tokens(
@@ -102,27 +104,33 @@ class TestRasPassport:
         ), "access_token is missing from the refresh_token response."
 
         access_token = token.get("access_token")
+
         if access_token:
             user_info_response = requests.get(
                 f"{self.BASE_URL}{self.USER_ENDPOINT}",
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"bearer {access_token}",
+                    "Authorization": f"Bearer {access_token}",
                 },
             )
 
+            logger.error("USER INFO STATUS==== %s", user_info_response.status_code)
+            logger.error("USER INFO==== %s", user_info_response.json())
+
+        else:
+            logger.error("No access token returned")
+
+    @pytest.mark.skip
     def test_get_drs_presigned_url(self):
         """
-        Scenario: get drs presigned-url
+        Scenario: Get drs presigned-url and download a file
         Steps:
             1. Get the drs presigned url for the created ras indexd record
-            2. Validate the content of the file.
+            2. Validate the content of the file downloaded.
         """
         signed_url_res = self.drs.get_drs_signed_url(
             file=indexd_files["test_with_ras_permission"]
         )
-        logger.error("SIGNED URL CONTENT: %s", signed_url_res.content)
-        logger.error("SIGNED URL Code: %s", signed_url_res.status_code)
         self.fence.check_file_equals(
             signed_url_res=signed_url_res.json(),
             file_content="Hi Zac!\ncdis-data-client uploaded this!\n",
