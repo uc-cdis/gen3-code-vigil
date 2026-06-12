@@ -1293,7 +1293,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             raise
         assert len(input_file_contents) == len(output_file_contents)
 
-        # Check the contents of the outputfile: increment appends to a file in the working
+        # Check the contents of the output file: incremental appends to a file in the working
         # directory should work
         response = self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/{output_with_appends_file_name}",

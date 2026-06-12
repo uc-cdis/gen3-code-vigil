@@ -224,7 +224,7 @@ class Gen3Workflow:
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
         logger.info(
-            f"Performing {action=} on {bucket=} and {key=}. More info: {user=}{f' and {content=}' if len(content) <= 100 else ''}"
+            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
         )
         response = None
         try:
