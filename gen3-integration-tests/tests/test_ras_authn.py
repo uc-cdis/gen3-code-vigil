@@ -5,14 +5,11 @@ RAS AuthN
 import os
 
 import pytest
-from cdislogging import get_logger
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.fence import Fence
 from services.ras import RAS
 from utils import gen3_admin_tasks as gat
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "error"))
 
 
 @pytest.mark.skipif(
@@ -62,8 +59,6 @@ class TestRasAuthN:
         # Get client_id and client_secret with ga4gh_passport_v1 scope from test_data/fence_clients list
         client_id = pytest.clients["ras-test-client"]["client_id"]
         client_secret = pytest.clients["ras-test-client"]["client_secret"]
-        logger.error("/CLIENT ID==== %s", client_id)
-        logger.error("/CLIENT SECRET==== %s", client_secret)
         # Login with RAS user 128, click GRANT button on /authorize/consent url
         # and click on 'Yes. I authorize' button
         # Get code from the url
@@ -71,7 +66,6 @@ class TestRasAuthN:
         username = os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = os.environ["CI_TEST_RAS_PASSWORD"]
         email = os.environ["CI_TEST_RAS_EMAIL"]
-
         token = self.ras.get_tokens(
             client_id=client_id,
             client_secret=client_secret,
@@ -95,12 +89,9 @@ class TestRasAuthN:
 
         # Extracting access_token and refresh token from the token response
         access_token = token.get("access_token")
-        logger.error("/ACCESS_TOKEN==== %s", access_token)
-        print(f"LOG_LEVEL={os.getenv('LOG_LEVEL')}")
         refresh_token = token.get("refresh_token")
         # Check user_info to have ga4gh_passport_v1 permissions
         user_permission = self.fence.get_user_info(access_token=access_token)
-        logger.error("/USER INFO==== %s", user_permission)
         assert (
             "ga4gh_passport_v1" in user_permission
         ), "User does not have 'ga4gh_passport_v1' permission in /user/user"
