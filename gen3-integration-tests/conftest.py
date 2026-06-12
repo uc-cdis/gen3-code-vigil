@@ -84,11 +84,13 @@ def pytest_collection_finish(session):
             if (
                 item.get_closest_marker("requires_google_bucket")
                 and not requires_google_bucket_marker_present
+                and not os.getenv("RUNNING_TESTS_LOCALLY")
             ):
                 setup.setup_google_buckets()
                 requires_google_bucket_marker_present = True
         # Run Usersync job
-        setup.run_usersync()
+        if not os.getenv("RUNNING_TESTS_LOCALLY"):
+            setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -99,8 +101,9 @@ def get_fence_clients():
 
 def pytest_configure(config):
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users()
-    assert result.lower() == "success"
+    if not os.getenv("RUNNING_TESTS_LOCALLY"):
+        result = generate_api_keys_for_test_users()
+        assert result.lower() == "success"
 
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
@@ -180,7 +183,11 @@ def pytest_runtest_logreport(report):
 
     test_results[test_nodeid][report.when] = report.outcome
 
-    if "setup" in test_results[test_nodeid] and "call" in test_results[test_nodeid]:
+    if (
+        "setup" in test_results[test_nodeid]
+        and "call" in test_results[test_nodeid]
+        and not os.getenv("RUNNING_TESTS_LOCALLY")
+    ):
         phase_outcomes = test_results[test_nodeid].values()
         if "failed" in phase_outcomes:
             final_test_result = "failed"
@@ -252,7 +259,9 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-        if not os.getenv("RERUNNING_TESTS") == "true":
+        if not os.getenv("RERUNNING_TESTS") == "true" and not os.getenv(
+            "RUNNING_TESTS_LOCALLY"
+        ):
             # Add failed test suites to GITHUB variable
             with open(os.getenv("GITHUB_ENV"), "a") as f:
                 f.write(f"FAILED_TEST_SUITES={' or '.join(failed_test_suites)}")
