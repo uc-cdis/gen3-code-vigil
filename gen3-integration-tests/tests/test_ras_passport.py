@@ -36,24 +36,30 @@ indexd_files = {
     reason="Test is being run for ras auth which is only on nightly-build namespaces",
 )
 @pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
     "indexd" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
+@pytest.mark.frontend
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.ras
+@pytest.mark.requires_fence_client
 class TestRasPassport:
     @classmethod
     def setup_class(cls):
         cls.BASE_URL = pytest.root_url
         cls.USER_ENDPOINT = "/user/user"
-        cls.login_page = LoginPage()
-        cls.indexd = Indexd()
         cls.fence = Fence()
         cls.drs = Drs()
         cls.ras = RAS()
+        cls.indexd = Indexd()
         cls.variables = {}
         cls.variables["created_indexd_dids"] = []
+        cls.login_page = LoginPage()
         cls.env_vars = [
             "RAS_IAL2_USERID",
             "RAS_IAL2_PASSWORD",
