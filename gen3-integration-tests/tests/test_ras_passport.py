@@ -1,11 +1,13 @@
 """
-RAS Passports
+RAS Passports Parse Check.
+1. Create an indexd record with an authz for one of the permissions in the passport
+2. Call the user/user endpoint to see that the passport is parsed correctly
+3. Finally, get the presigned URL to download the file.
 """
-
 import os
-
 import pytest
 import requests
+
 from cdislogging import get_logger
 from pages.login import LoginPage
 from playwright.sync_api import Page
@@ -29,7 +31,6 @@ indexd_files = {
         ],
     },
 }
-
 
 @pytest.mark.skipif(
     "nightly-build" not in pytest.hostname,
@@ -88,11 +89,9 @@ class TestRasPassport:
         """
         client_id = pytest.clients["ras-test-client"]["client_id"]
         client_secret = pytest.clients["ras-test-client"]["client_secret"]
-        logger.error("CLIENT_ID %s", client_id)
         scope = "openid profile email ga4gh_passport_v1 researcher_role"
         username = os.environ["RAS_IAL2_USERID"]
         password = os.environ["RAS_IAL2_PASSWORD"]
-        logger.error("USERNAME : %s",username)
         email = "burtonk@uchicago.edu"
 
         token = self.ras.get_tokens(
@@ -104,13 +103,12 @@ class TestRasPassport:
             page=page,
             email=email,
         )
-
         assert (
             "access_token" in token
         ), "access_token is missing from the refresh_token response."
-
         access_token = token.get("access_token")
 
+        # Call the user/user endpoint to see if passport has been parsed.
         if access_token:
             user_info_response = requests.get(
                 f"{self.BASE_URL}{self.USER_ENDPOINT}",
@@ -119,13 +117,17 @@ class TestRasPassport:
                     "Authorization": f"Bearer {access_token}",
                 },
             )
+            resources = user_info_response["resources"]
+            phs_resources = [
+                r for r in resources
+                if r.startswith("/programs/phs")
+            ]
+            # Assert there are 600 or so phs studies.
+            assert len(phs_resources) >= 600, (
+                f"Expected at least 600 phs resources, found {len(phs_resources)}"
+            )
 
-            logger.error("USER INFO STATUS==== %s", user_info_response.status_code)
-            logger.error("USER INFO==== %s", user_info_response.json())
-
-        else:
-            logger.error("No access token returned")
-
+    # TODO: Need to finish the final piece of getting the presigned url and downloading the file.
     @pytest.mark.skip
     def test_get_drs_presigned_url(self):
         """
