@@ -43,7 +43,7 @@ indexd_files = {
 
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
-    reason="fence service is not running on this environment",
+    reason="DRS endpoint tests require both fence and indexd",
 )
 @pytest.mark.fence
 @pytest.mark.drs
