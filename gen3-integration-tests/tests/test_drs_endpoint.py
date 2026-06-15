@@ -42,7 +42,7 @@ indexd_files = {
 
 
 @pytest.mark.skipif(
-    "fence" not in pytest.deployed_services,
+    "fence" not in pytest.deployed_services or "indexd" not in pytest.deployed_services,
     reason="DRS endpoint tests require both fence and indexd",
 )
 @pytest.mark.fence
