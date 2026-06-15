@@ -2,16 +2,11 @@
 DRS Endpoint
 """
 
-import os
-
 import pytest
-from cdislogging import get_logger
-from packaging.version import Version
 from services.drs import Drs
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 indexd_files = {
     "allowed": {
@@ -119,3 +114,24 @@ class TestDrsEndpoints:
         assert (
             expected_msg in signed_url_res.content.decode()
         ), f"{expected_msg} not found in {signed_url_res.content.decode()}"
+
+    @pytest.mark.gen3sdk
+    def test_dowload_drs_object(self):
+        """
+        Scenario: download drs object
+        Steps:
+            1. Download drs object for indexd record (allowed).
+            2. Validate the content of the file checkout.
+        """
+        did = indexd_files["allowed"]["did"]
+        response = self.drs.get_drs_download(file=indexd_files["allowed"])
+        assert (
+            response[did].status == "downloaded"
+        ), f"Expected status to be downloaded but got {response[did].status}"
+        file_content = open(
+            TEST_DATA_PATH_OBJECT / "drs_download" / response[did].filename
+        ).read()
+        expected_content = "Hi Zac!\ncdis-data-client uploaded this!\n"
+        assert (
+            file_content == expected_content
+        ), f"Data don't match.\n{file_content}\n{expected_content}"
