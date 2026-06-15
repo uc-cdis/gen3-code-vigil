@@ -493,9 +493,6 @@ class TestCentralizedAuth:
         assert (
             "url" in signed_url_abc_res.keys()
         ), "Could not find url keyword in abc signed url"
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url"
 
         # Verify the contents of /abc signed url
         self.fence.check_file_equals(
@@ -518,16 +515,12 @@ class TestCentralizedAuth:
         ).json()["access_token"]
 
         # Create Signed URLs for /gen3 project using access_token
-        signed_url_gen3_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expected_status=401,
             access_token=access_token,
         )
-
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url"
 
     def test_client_without_access_with_user_token_in_namespace(self, page: Page):
         """
@@ -546,17 +539,14 @@ class TestCentralizedAuth:
         ).json()["access_token"]
 
         # Create Signed URLs for /gen3 project using access_token
-        signed_url_gen3_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expected_status=401,
             access_token=access_token,
         )
 
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url"
-
+    @pytest.mark.gen3sdk
     def test_user_with_access_can_create_sgined_urls_records_namespace(self):
         """
         Scenario: User with access can create signed urls for records in namespace, not outside namespace
@@ -580,9 +570,6 @@ class TestCentralizedAuth:
         assert (
             "url" in signed_url_abc_res.keys()
         ), "Could not find url keyword in abc signed url"
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url for /gen3 project"
 
         # Verify the contents of /abc signed url
         self.fence.check_file_equals(
@@ -629,16 +616,12 @@ class TestCentralizedAuth:
         ).json()["access_token"]
 
         # Create Signed URL using access_token
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["two_projects_file"]["did"],
             user=None,
             expected_status=401,
             access_token=access_token,
         )
-
-        assert (
-            401 == signed_url_res.status_code
-        ), "Expected 401 status when creating signed url"
 
     def test_client_token_with_permission_cannot_create_signed_url(self, page: Page):
         """
@@ -715,6 +698,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_consent_codes_multiple_policies(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (multiple policies).
         signed_url_res = self.fence.create_signed_url(
@@ -733,6 +717,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_consent_codes_single_policy(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (single policy).
         signed_url_res = self.fence.create_signed_url(
@@ -751,19 +736,16 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_cannot_create_signed_url_unauthorized_consent_codes_(self):
         # Create Signed URLs for file in authorized namespace with UNauthorized consent code.
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["abc_hmb_research_file"]["did"],
             user="main_account",
             expected_status=401,
         )
 
-        # Verify signed url is not created for file in authorized namespace with UNauthorized consent code.
-        assert (
-            401 == signed_url_res.status_code
-        ), "Expected 401 status when creating signed url"
-
+    @pytest.mark.gen3sdk
     def test_create_signed_url_implied_authorized_consent_codes(self):
         # Create Signed URLs for file in authorized namespace with IMPLIED authorized consent code (based on DUO hierarchy).
         signed_url_res = self.fence.create_signed_url(

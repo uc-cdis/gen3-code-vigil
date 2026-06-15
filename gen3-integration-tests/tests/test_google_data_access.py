@@ -16,6 +16,7 @@ from utils import logger
 )
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
+@pytest.mark.gen3sdk
 class TestGoogleDataAccess:
     @classmethod
     def setup_class(cls):
@@ -66,7 +67,7 @@ class TestGoogleDataAccess:
         self.fence.delete_google_sa_keys(page=page, user="user0_account")
         qa_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["qa_file"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="user0_account",
             expected_status=200,
         )
@@ -76,7 +77,7 @@ class TestGoogleDataAccess:
 
         test_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["test_file"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="user0_account",
             expected_status=401,
         )

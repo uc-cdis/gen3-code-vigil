@@ -159,6 +159,7 @@ class TestAuditService:
         )
 
     @pytest.mark.indexd
+    @pytest.mark.gen3sdk
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,
         reason="indexd is not running on this environment",
