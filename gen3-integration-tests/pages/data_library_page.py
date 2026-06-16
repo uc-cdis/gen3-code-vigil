@@ -9,7 +9,11 @@ from utils.test_execution import screenshot
 
 class DataLibraryPage(object):
     def __init__(self):
-        if pytest.frontend_url:
+        if pytest.navigation_urls.get("Data Library"):
+            self.BASE_URL = {pytest.root_url_portal} + pytest.navigation_urls[
+                "Data Library"
+            ]
+        else:
             self.BASE_URL = f"{pytest.root_url_portal}/DataLibrary"
 
         # LOCATORS

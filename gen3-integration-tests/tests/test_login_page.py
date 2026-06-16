@@ -18,8 +18,10 @@ class TestLoginPage:
     @classmethod
     def setup_class(cls):
         cls.login_page = LoginPage()
-        if pytest.frontend_url:
-            cls.WORKSPACE_URL = f"{pytest.root_url_portal}/Workspace"
+        if pytest.navigation_urls.get("Workspace"):
+            cls.WORKSPACE_URL = {pytest.root_url_portal} + pytest.navigation_urls[
+                "Workspace"
+            ]
         else:
             cls.WORKSPACE_URL = f"{pytest.root_url_portal}/workspace"
         cls.QUERY_PARAM_URL = (

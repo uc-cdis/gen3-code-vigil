@@ -9,9 +9,14 @@ from utils.test_execution import screenshot
 
 class WorkspacePage(object):
     def __init__(self):
+        if pytest.navigation_urls.get("Workspace"):
+            self.BASE_URL = {pytest.root_url_portal} + pytest.navigation_urls[
+                "Workspace"
+            ]
+        else:
+            self.BASE_URL = f"{pytest.root_url_portal}/workspace"
         # Endpoints
         if pytest.frontend_url:
-            self.BASE_URL = f"{pytest.root_url_portal}/Workspace"
             self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
             self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), 'mantine-Grid-inner')]"  # Workspace Options
             self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')]"
@@ -22,7 +27,6 @@ class WorkspacePage(object):
                 "//span[contains(text(),'Confirm')]"  # terminate 'confirm' button
             )
         else:
-            self.BASE_URL = f"{pytest.root_url_portal}/workspace"
             self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
             self.WORKSPACE_OPTIONS = (
                 "//div[@class='workspace__options']"  # Workspace Options

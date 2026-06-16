@@ -10,7 +10,12 @@ class DicomPage(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url_portal}"
         # Endpoints
-        self.EXPLORER_ENDPOINT = f"{self.BASE_URL}/explorer"
+        if pytest.navigation_urls.get("Exploration"):
+            self.EXPLORER_ENDPOINT = {self.BASE_URL} + pytest.navigation_urls[
+                "Exploration"
+            ]
+        else:
+            self.EXPLORER_ENDPOINT = f"{self.BASE_URL}/explorer"
         # Locators
         self.IMAGING_STUDIES_TAB = "//h3[normalize-space()='Imaging Studies']"
         self.CORNERSTONE_CANVAS = "//*[@class='cornerstone-canvas']"

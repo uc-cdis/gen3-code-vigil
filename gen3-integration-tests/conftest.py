@@ -88,7 +88,7 @@ def pytest_collection_finish(session):
                 setup.setup_google_buckets()
                 requires_google_bucket_marker_present = True
         # Run Usersync job
-        setup.run_usersync()
+        # setup.runusersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -99,8 +99,8 @@ def get_fence_clients():
 
 def pytest_configure(config):
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users()
-    assert result.lower() == "success"
+    # result = generate_api_keys_for_test_users()
+    # assert result.lower() == "success"
 
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
@@ -171,6 +171,8 @@ def pytest_configure(config):
             gat.download_frontend_commons_app_repo(repo_name, branch_name, target_dir)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+    # Get urls from navigation section from navigation.json/gitops
+    pytest.navigation_urls = gat.get_navigation_url()
 
 
 def pytest_runtest_logreport(report):

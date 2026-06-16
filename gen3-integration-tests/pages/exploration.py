@@ -16,11 +16,15 @@ class ExplorationPage(object):
     def __init__(self):
         # Endpoints
         self.BASE_URL = f"{pytest.root_url_portal}"
-        if pytest.frontend_url:
-            self.EXPLORATION_URL = f"{self.BASE_URL}/Explorer"
-            self.FILE_URL = f"{self.BASE_URL}/Files"
+        if pytest.navigation_urls.get("Exploration"):
+            self.EXPLORATION_URL = {self.BASE_URL} + pytest.navigation_urls[
+                "Exploration"
+            ]
         else:
             self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
+        if pytest.frontend_url:
+            self.FILE_URL = f"{self.BASE_URL}/Files"
+        else:
             self.FILE_URL = f"{self.BASE_URL}/files"
         # Locators
         self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
