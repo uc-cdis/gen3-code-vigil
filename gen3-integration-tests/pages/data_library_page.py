@@ -9,12 +9,9 @@ from utils.test_execution import screenshot
 
 class DataLibraryPage(object):
     def __init__(self):
-        if pytest.navigation_urls.get("Data Library"):
-            self.BASE_URL = (
-                f"{pytest.root_url_portal}{pytest.navigation_urls["Data Library"]}"
-            )
-        else:
-            self.BASE_URL = f"{pytest.root_url_portal}/DataLibrary"
+        # Endpoints
+        data_library_path = pytest.navigation_urls.get("Data Library", "/DataLibrary")
+        self.BASE_URL = f"{pytest.root_url_portal}{data_library_path}"
 
         # LOCATORS
         self.READY_CUE = "button:has-text('Data Library')"

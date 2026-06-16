@@ -8,14 +8,10 @@ from utils.test_execution import screenshot
 
 class DicomPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}"
         # Endpoints
-        if pytest.navigation_urls.get("Exploration"):
-            self.EXPLORER_ENDPOINT = (
-                f"{self.BASE_URL}{pytest.navigation_urls["Exploration"]}"
-            )
-        else:
-            self.EXPLORER_ENDPOINT = f"{self.BASE_URL}/explorer"
+        self.BASE_URL = f"{pytest.root_url_portal}"
+        exploration_path = pytest.navigation_urls.get("Exploration", "/explorer")
+        self.EXPLORER_ENDPOINT = f"{self.BASE_URL}{exploration_path}"
         # Locators
         self.IMAGING_STUDIES_TAB = "//h3[normalize-space()='Imaging Studies']"
         self.CORNERSTONE_CANVAS = "//*[@class='cornerstone-canvas']"

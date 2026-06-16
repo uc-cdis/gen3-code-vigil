@@ -9,12 +9,8 @@ from utils.test_execution import screenshot
 
 class WorkspacePage(object):
     def __init__(self):
-        if pytest.navigation_urls.get("Workspace"):
-            self.BASE_URL = (
-                f"{pytest.root_url_portal}{pytest.navigation_urls["Workspace"]}"
-            )
-        else:
-            self.BASE_URL = f"{pytest.root_url_portal}/workspace"
+        workspace_path = pytest.navigation_urls.get("Workspace", "/workspace")
+        self.BASE_URL = f"{pytest.root_url_portal}{workspace_path}"
         # Endpoints
         if pytest.frontend_url:
             self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
