@@ -129,15 +129,19 @@ class TestRasPassport:
             ), f"Expected at least 600 phs resources, found {len(phs_resources)}"
 
     @pytest.mark.gen3sdk
-    def test_get_drs_presigned_url(self):
+    def test_get_drs_presigned_url(self, page: Page):
         """
         Scenario: Get drs presigned-url and download a file
         Steps:
             1. Get the drs presigned url for the created ras indexd record
             2. Validate the content of the file downloaded.
         """
+        login_page = LoginPage()
+        login_page.go_to(page)
+        access_token = login_page.login(page, idp="RAS")["value"]
         response, status_code = self.drs.get_drs_signed_url_using_gen3sdk(
-            file=indexd_files["test_with_ras_permission"]
+            file=indexd_files["test_with_ras_permission"],
+            access_token=access_token,
         )
         assert (
             status_code == 200
@@ -146,3 +150,5 @@ class TestRasPassport:
             signed_url_res=response.json(),
             file_content="Hi Zac!\ncdis-data-client uploaded this!\n",
         )
+        # Perform Logout
+        login_page.logout(page)

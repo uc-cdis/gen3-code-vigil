@@ -52,9 +52,9 @@ class Drs(object):
         response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}/access/{access_id}")
         return response
 
-    def get_drs_signed_url_using_gen3sdk(self, file, user="main_account"):
+    def get_drs_signed_url_using_gen3sdk(self, file, access_token):
         """Get Drs signed url"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        auth = Gen3Auth(access_token=access_token, endpoint=self.BASE_URL)
         access_id = file["urls"][0][:2]
         response, status_code = get_download_url_using_drs(
             drs_hostname=pytest.hostname,
