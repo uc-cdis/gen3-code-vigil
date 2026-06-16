@@ -13,7 +13,9 @@ class GWASPage(object):
         self.BASE_URL = f"{pytest.root_url_portal}"
         # Endpoints
         if pytest.navigation_urls.get("Apps"):
-            self.ANALYSIS_ENDPOINT = {self.BASE_URL} + pytest.navigation_urls["Apps"]
+            self.ANALYSIS_ENDPOINT = (
+                f"{pytest.root_url_portal}{pytest.navigation_urls["Apps"]}"
+            )
         else:
             self.ANALYSIS_ENDPOINT = f"{self.BASE_URL}/analysis"
         self.GWAS_UI_APP_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASUIApp"

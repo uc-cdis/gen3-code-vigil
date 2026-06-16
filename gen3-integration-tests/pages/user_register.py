@@ -8,9 +8,9 @@ class UserRegister(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url_portal}/login"
         if pytest.navigation_urls.get("Exploration"):
-            self.EXPLORER_ENDPOINT = {pytest.root_url_portal} + pytest.navigation_urls[
-                "Exploration"
-            ]
+            self.EXPLORER_ENDPOINT = (
+                f"{pytest.root_url_portal}{pytest.navigation_urls["Exploration"]}"
+            )
         else:
             self.EXPLORER_ENDPOINT = f"{pytest.root_url_portal}/explorer"
         self.REGISTER_ENDPOINT = f"{pytest.root_url_portal}/user/register/"

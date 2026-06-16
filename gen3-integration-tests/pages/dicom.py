@@ -11,9 +11,9 @@ class DicomPage(object):
         self.BASE_URL = f"{pytest.root_url_portal}"
         # Endpoints
         if pytest.navigation_urls.get("Exploration"):
-            self.EXPLORER_ENDPOINT = {self.BASE_URL} + pytest.navigation_urls[
-                "Exploration"
-            ]
+            self.EXPLORER_ENDPOINT = (
+                f"{self.BASE_URL}{pytest.navigation_urls["Exploration"]}"
+            )
         else:
             self.EXPLORER_ENDPOINT = f"{self.BASE_URL}/explorer"
         # Locators

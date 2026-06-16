@@ -17,9 +17,9 @@ class ExplorationPage(object):
         # Endpoints
         self.BASE_URL = f"{pytest.root_url_portal}"
         if pytest.navigation_urls.get("Exploration"):
-            self.EXPLORATION_URL = {self.BASE_URL} + pytest.navigation_urls[
-                "Exploration"
-            ]
+            self.EXPLORATION_URL = (
+                f"{self.BASE_URL}{pytest.navigation_urls["Exploration"]}"
+            )
         else:
             self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
         if pytest.frontend_url:
