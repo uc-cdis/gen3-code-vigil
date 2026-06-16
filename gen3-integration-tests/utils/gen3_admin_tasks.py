@@ -57,7 +57,7 @@ def get_navigation_url():
         for item in res["components"]["navigation"]["items"]:
             naviagtion_urls[item["name"]] = item["link"]
     else:
-        for item in res["navigation"]["items"]:
+        for item in res["navigation"]["href"]:
             naviagtion_urls[item["name"]] = item["href"]
     return naviagtion_urls
 
