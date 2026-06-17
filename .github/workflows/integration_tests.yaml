@@ -15,7 +15,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/run_test_against_namespace
     with:
       WORKING_DIR: gen3-integration-tests
     secrets:
