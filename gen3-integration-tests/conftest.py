@@ -84,11 +84,13 @@ def pytest_collection_finish(session):
             if (
                 item.get_closest_marker("requires_google_bucket")
                 and not requires_google_bucket_marker_present
+                and not os.getenv("RUNNING_LOCAL")
             ):
                 setup.setup_google_buckets()
                 requires_google_bucket_marker_present = True
         # Run Usersync job
-        setup.run_usersync()
+        if not os.getenv("RUNNING_LOCAL"):
+            setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -99,8 +101,9 @@ def get_fence_clients():
 
 def pytest_configure(config):
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users()
-    assert result.lower() == "success"
+    if not os.getenv("RUNNING_LOCAL"):
+        result = generate_api_keys_for_test_users()
+        assert result.lower() == "success"
 
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
@@ -159,7 +162,9 @@ def pytest_configure(config):
     pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
-    pytest.google_enabled = gat.is_google_enabled()
+    # Google tests dont run on local
+    if not os.getenv("RUNNING_LOCAL"):
+        pytest.google_enabled = gat.is_google_enabled()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
     # Flag for identifying if root_url_portal is for frontend or not
@@ -180,7 +185,11 @@ def pytest_runtest_logreport(report):
 
     test_results[test_nodeid][report.when] = report.outcome
 
-    if "setup" in test_results[test_nodeid] and "call" in test_results[test_nodeid]:
+    if (
+        "setup" in test_results[test_nodeid]
+        and "call" in test_results[test_nodeid]
+        and not os.getenv("RUNNING_LOCAL")
+    ):
         phase_outcomes = test_results[test_nodeid].values()
         if "failed" in phase_outcomes:
             final_test_result = "failed"
@@ -252,7 +261,9 @@ def pytest_unconfigure(config):
             shutil.rmtree(directory_path)
         if requires_fence_client_marker_present:
             setup.delete_all_fence_clients()
-        if not os.getenv("RERUNNING_TESTS") == "true":
+        if not os.getenv("RERUNNING_TESTS") == "true" and not os.getenv(
+            "RUNNING_LOCAL"
+        ):
             # Add failed test suites to GITHUB variable
             with open(os.getenv("GITHUB_ENV"), "a") as f:
                 f.write(f"FAILED_TEST_SUITES={' or '.join(failed_test_suites)}")
