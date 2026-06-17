@@ -176,6 +176,8 @@ def pytest_configure(config):
             gat.download_frontend_commons_app_repo(repo_name, branch_name, target_dir)
     # Register the custom distribution plugin defined above
     config.pluginmanager.register(XDistCustomPlugin())
+    # Get urls from navigation section from navigation.json/gitops
+    pytest.navigation_urls = gat.get_navigation_url()
 
 
 def pytest_runtest_logreport(report):

@@ -15,13 +15,12 @@ from utils.test_execution import screenshot
 class ExplorationPage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url_portal}"
+        exploration_path = pytest.navigation_urls.get("Exploration", "/explorer")
+        self.BASE_URL = f"{pytest.root_url_portal}{exploration_path}"
         if pytest.frontend_url:
-            self.EXPLORATION_URL = f"{self.BASE_URL}/Explorer"
-            self.FILE_URL = f"{self.BASE_URL}/Files"
+            self.FILE_URL = f"{pytest.root_url_portal}/Files"
         else:
-            self.EXPLORATION_URL = f"{self.BASE_URL}/explorer"
-            self.FILE_URL = f"{self.BASE_URL}/files"
+            self.FILE_URL = f"{pytest.root_url_portal}/files"
         # Locators
         self.NAV_BAR = "//div[@class='nav-bar__nav--items']"
         self.GUPPY_TABS = "//div[@id='guppy-explorer-main-tabs']"
@@ -58,7 +57,7 @@ class ExplorationPage(object):
         files_link = navbar_element.locator("a").filter(has_text="Files").first
         if exploration_link:
             logger.info("Navigating to exploration page...")
-            page.goto(self.EXPLORATION_URL)
+            page.goto(self.BASE_URL)
             screenshot(page, "ExplorationPage")
             self.check_pfbExport_button(page)
         elif files_link:
@@ -117,7 +116,7 @@ class ExplorationPage(object):
 
     def goto_explorer_page(self, page):
         # Goto explorer page
-        page.goto(self.EXPLORATION_URL, wait_until="load")
+        page.goto(self.BASE_URL, wait_until="load")
         screenshot(page, "ExplorerPage")
 
         # Verify /explorer page is loaded
