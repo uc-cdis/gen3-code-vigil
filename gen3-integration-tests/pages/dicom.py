@@ -9,15 +9,14 @@ from utils.test_execution import screenshot
 class DicomPage(object):
     def __init__(self):
         # Endpoints
-        self.BASE_URL = f"{pytest.root_url_portal}"
         exploration_path = pytest.navigation_urls.get("Exploration", "/explorer")
-        self.EXPLORER_ENDPOINT = f"{self.BASE_URL}{exploration_path}"
+        self.BASE_URL = f"{pytest.root_url_portal}{exploration_path}"
         # Locators
         self.IMAGING_STUDIES_TAB = "//h3[normalize-space()='Imaging Studies']"
         self.CORNERSTONE_CANVAS = "//*[@class='cornerstone-canvas']"
 
     def goto_explorer_page(self, page: Page, study_id):
-        page.goto(self.EXPLORER_ENDPOINT)
+        page.goto(self.BASE_URL)
         time.sleep(2)  # wait for page to load
         screenshot(page, "ExplorerPage")
         imaging_studies_tab = page.locator(self.IMAGING_STUDIES_TAB)
