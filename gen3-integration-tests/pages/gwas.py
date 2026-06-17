@@ -13,7 +13,7 @@ class GWASPage(object):
         self.BASE_URL = f"{pytest.root_url_portal}"
         # Endpoints
         apps_path = pytest.navigation_urls.get("Apps", "/analysis")
-        self.EXPLORATION_URL = f"{self.BASE_URL}{apps_path}"
+        self.ANALYSIS_ENDPOINT = f"{self.BASE_URL}{apps_path}"
         self.GWAS_UI_APP_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASUIApp"
         self.GWAS_RESULTS_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASResults"
         self.GWAS_WORKFLOW_API_ENDPOINT = "/ga4gh/wes/v2/workflows"
