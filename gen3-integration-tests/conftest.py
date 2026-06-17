@@ -162,7 +162,9 @@ def pytest_configure(config):
     pytest.use_agg_mdg_flag = gat.is_agg_mds_enabled()
     # Is indexs3client job deployed
     pytest.indexs3client_job_deployed = gat.check_indexs3client_job_deployed()
-    pytest.google_enabled = gat.is_google_enabled()
+    # Google tests dont run on local
+    if not os.getenv("RUNNING_TESTS_LOCALLY"):
+        pytest.google_enabled = gat.is_google_enabled()
     # Is REGISTER_USERS_ON enabled
     pytest.is_register_user_enabled = gat.is_register_user_enabled(pytest.namespace)
     # Flag for identifying if root_url_portal is for frontend or not
