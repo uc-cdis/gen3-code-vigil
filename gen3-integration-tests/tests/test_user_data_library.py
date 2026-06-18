@@ -17,7 +17,6 @@ def page_setup(page):
     reason="gen3-user-data-library service is not running on this environment",
 )
 @pytest.mark.gen3_user_data_library
-@pytest.mark.frontend
 class TestUserDataLibrary(object):
     def setup_class(cls):
         cls.test_data_create = {
@@ -113,9 +112,10 @@ class TestUserDataLibrary(object):
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
 
+    @pytest.mark.frontend
     @pytest.mark.skipif(
-        "frontend-framework" not in pytest.deployed_services,
-        reason="Frontend-framework services are not running on this environment",
+        pytest.manifest.get("global", {}).get("frontend_root", "") != "gen3ff",
+        reason="Skipping test as frontend_root is not gen3ff",
     )
     def test_data_library_page(self, page_setup):
         """
