@@ -62,6 +62,7 @@ class Drs(object):
             access_method="s3",
             access_token=auth.get_access_token(),
         )
+        logger.info(result)
         response, status_code = result
         logger.info(response)
         logger.info(status_code)
