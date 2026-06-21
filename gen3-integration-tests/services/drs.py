@@ -54,13 +54,13 @@ class Drs(object):
 
     def get_drs_signed_url_using_gen3sdk(self, file, access_token):
         """Get Drs signed url"""
-        auth = Gen3Auth(access_token=access_token, endpoint=self.BASE_URL)
+        # auth = Gen3Auth(access_token=access_token, endpoint=self.BASE_URL)
         access_id = file["urls"][0][:2]
         result = get_download_url_using_drs(
             drs_hostname=pytest.hostname,
             object_id=access_id,
             access_method="s3",
-            access_token=auth.get_access_token(),
+            access_token=access_token,
         )
         logger.info(result)
         response, status_code = result
