@@ -21,7 +21,7 @@ logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "error"))
 
 indexd_files = {
     "test_with_ras_permission": {
-        "acl": [],
+        # "acl": [],
         "authz": ["/programs/phs000000.c11"],
         "file_name": "ras_passport_test_file",
         "hashes": {
