@@ -196,7 +196,7 @@ class LoginPage(object):
     ):
         username = username or os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
-        email = email or os.environ["CI_TEST_RAS_PASSWORD"]
+        email = email or os.environ["CI_TEST_RAS_EMAIL"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
             page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()

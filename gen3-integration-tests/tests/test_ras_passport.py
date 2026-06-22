@@ -169,3 +169,35 @@ class TestRasPassport:
         )
         # Perform Logout
         login_page.logout(page)
+
+    @pytest.mark.gen3sdk
+    def test_failed_get_drs_presigned_url(self, page: Page):
+        """
+        Scenario: Pre-signed url fails for RAS user without access
+        Steps:
+            1. Get the drs presigned url for the created ras indexd record
+            2. Validate the content of the file downloaded.
+        """
+        login_page = LoginPage()
+        login_page.go_to(page)
+        login_page.ras_login(
+            page,
+        )
+        access_token_cookie = next(
+            (
+                cookie
+                for cookie in page.context.cookies()
+                if cookie["name"] == "access_token"
+            ),
+            None,
+        )
+        access_token = access_token_cookie["value"]
+        logger.info(access_token)
+        response, status_code = self.drs.get_drs_signed_url_using_gen3sdk(
+            file=indexd_files["test_with_ras_permission"],
+            access_token=access_token,
+        )
+        assert (
+            status_code == 401
+        ), f"Expected status_code to be 401 but got {status_code}"
+        login_page.logout(page)
