@@ -63,14 +63,6 @@ class RAS(object):
         logger.info(f"Navigating to url - {url}")
         page.goto(url)
         login.ras_login(page, username=username, password=password, portal_test=False)
-        page.wait_for_load_state("load")
-        current_url = page.url
-        if "/user/register" in current_url:
-            logger.info(f"Registering User {username}@perf.nih.gov")
-            user_register = UserRegister()
-            user_register.register_user(page, user_email=email)
-            page.wait_for_load_state("load")
-        expect(page).to_have_url(re.compile(rf".*{pytest.namespace}.*"), timeout=20000)
         if page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
             logger.info("Clicking on Authorization button")
             page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()

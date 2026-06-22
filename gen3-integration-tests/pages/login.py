@@ -191,10 +191,12 @@ class LoginPage(object):
         page: Page,
         username="",
         password="",
+        email="",
         portal_test=True,
     ):
         username = username or os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
+        email = email or os.environ["CI_TEST_RAS_PASSWORD"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
             page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()
@@ -203,6 +205,14 @@ class LoginPage(object):
             screenshot(page, "RASAfterClickingGrantButton")
         else:
             self.ras_login_form(page, username, password)
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {username}@perf.nih.gov")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=email)
+            page.wait_for_load_state("load")
+        expect(page).to_have_url(re.compile(rf".*{pytest.namespace}.*"), timeout=20000)
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")

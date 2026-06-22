@@ -141,7 +141,21 @@ class TestRasPassport:
         """
         login_page = LoginPage()
         login_page.go_to(page)
-        access_token = login_page.login(page, idp="RAS")["value"]
+        login_page.ras_login(
+            page,
+            username=os.getenv("RAS_IAL2_USERID"),
+            password=os.getenv("RAS_IAL2_PASSWORD"),
+        )
+        access_token_cookie = next(
+            (
+                cookie
+                for cookie in page.context.cookies()
+                if cookie["name"] == "access_token"
+            ),
+            None,
+        )
+        access_token = access_token_cookie["value"]
+        logger.info(access_token)
         response, status_code = self.drs.get_drs_signed_url_using_gen3sdk(
             file=indexd_files["test_with_ras_permission"],
             access_token=access_token,
