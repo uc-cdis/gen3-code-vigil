@@ -25,9 +25,9 @@ indexd_files = {
         "authz": ["/programs/phs000000.c11"],
         "file_name": "ras_passport_test_file",
         "hashes": {
-            "md5": "587efb5d96f695710a8df9c0dbb96eb0"
+            "md5": "73d643ec3f4beb9020eef0beed440ad0"
         },  # pragma: allowlist secret
-        "size": 15,
+        "size": 9,
         "urls": [
             "s3://cdis-presigned-url-test/testdata",
             "gs://cdis-presigned-url-test/testdata",
@@ -77,10 +77,10 @@ class TestRasPassport:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        # Deleting indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
+    # @classmethod
+    # def teardown_class(cls):
+    # Deleting indexd records
+    # cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     def test_ras_passport_is_parsed(self, page: Page):
         """
