@@ -78,9 +78,9 @@ class TestRasPassport:
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
     # @classmethod
-    # def teardown_class(cls):
-    # Deleting indexd records
-    # cls.indexd.delete_records(cls.variables["created_indexd_dids"])
+    def teardown_class(cls):
+        # Deleting indexd records
+        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     def test_ras_passport_is_parsed(self, page: Page):
         """
@@ -93,7 +93,7 @@ class TestRasPassport:
         """
         client_id = pytest.clients["ras-test-ial2"]["client_id"]
         client_secret = pytest.clients["ras-test-ial2"]["client_secret"]
-        scope = "openid ga4gh_passport_v1"
+        scope = "openid profile email ga4gh_passport_v1 researcher_role"
         username = os.environ["RAS_IAL2_USERID"]
         password = os.environ["RAS_IAL2_PASSWORD"]
         email = "burtonk@uchicago.edu"
@@ -145,6 +145,7 @@ class TestRasPassport:
             page,
             username=os.getenv("RAS_IAL2_USERID"),
             password=os.getenv("RAS_IAL2_PASSWORD"),
+            email="burtonk@uchicago.edu",
         )
         access_token_cookie = next(
             (
@@ -164,7 +165,7 @@ class TestRasPassport:
             status_code == 200
         ), f"Expected status_code to be 200 but got {status_code}"
         self.fence.check_file_equals(
-            signed_url_res=response.json(),
+            signed_url_res=response,
             file_content="Hi Zac!\ncdis-data-client uploaded this!\n",
         )
         # Perform Logout
@@ -176,7 +177,7 @@ class TestRasPassport:
         Scenario: Pre-signed url fails for RAS user without access
         Steps:
             1. Get the drs presigned url for the created ras indexd record
-            2. Validate the content of the file downloaded.
+            2. Validate the presigned url is not created as user doesn't have access
         """
         login_page = LoginPage()
         login_page.go_to(page)

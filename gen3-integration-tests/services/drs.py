@@ -66,10 +66,7 @@ class Drs(object):
             access_method=access_id,
             access_token=access_token,
         )
-        logger.info(result)
         response, status_code = result
-        logger.info(response)
-        logger.info(status_code)
         return response, status_code
 
     def get_drs_download(self, file, user="main_account"):
