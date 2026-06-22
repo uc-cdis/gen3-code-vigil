@@ -261,8 +261,8 @@ def pytest_unconfigure(config):
         directory_path = TEST_DATA_PATH_OBJECT / "fence_clients"
         if os.path.exists(directory_path):
             shutil.rmtree(directory_path)
-        if requires_fence_client_marker_present:
-            setup.delete_all_fence_clients()
+        # if requires_fence_client_marker_present:
+        # setup.delete_all_fence_clients()
         if not os.getenv("RERUNNING_TESTS") == "true" and not os.getenv(
             "RUNNING_LOCAL"
         ):
