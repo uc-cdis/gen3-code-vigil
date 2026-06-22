@@ -121,6 +121,7 @@ class TestRasPassport:
                     "Authorization": f"Bearer {access_token}",
                 },
             )
+            logger.info(user_info_response)
             resources = user_info_response["resources"]
             logger.info(resources)
             phs_resources = [r for r in resources if r.startswith("/programs/phs")]
