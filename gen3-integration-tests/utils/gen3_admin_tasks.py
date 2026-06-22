@@ -49,6 +49,19 @@ def get_portal_config(json_file_name=None):
     return res
 
 
+def get_navigation_url():
+    naviagtion_urls = {}
+    res = get_portal_config(json_file_name="navigation")
+    # This key is part of gitops for portal
+    if res.get("components"):
+        for item in res["components"]["navigation"]["items"]:
+            naviagtion_urls[item["name"]] = item["link"]
+    else:
+        for item in res["navigation"]["items"]:
+            naviagtion_urls[item["name"]] = item["href"]
+    return naviagtion_urls
+
+
 def check_button_is_present(data, search_button):
     # Checks manifest download button for Register User tests
     for button in data:

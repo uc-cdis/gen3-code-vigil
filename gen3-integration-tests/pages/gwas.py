@@ -10,11 +10,11 @@ from utils.test_execution import screenshot
 
 class GWASPage(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}"
         # Endpoints
-        self.ANALYSIS_ENDPOINT = f"{self.BASE_URL}/analysis"
-        self.GWAS_UI_APP_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASUIApp"
-        self.GWAS_RESULTS_ENDPOINT = f"{self.ANALYSIS_ENDPOINT}/GWASResults"
+        apps_path = pytest.navigation_urls.get("Apps", "/analysis")
+        self.BASE_URL = f"{pytest.root_url_portal}{apps_path}"
+        self.GWAS_UI_APP_ENDPOINT = f"{self.BASE_URL}/GWASUIApp"
+        self.GWAS_RESULTS_ENDPOINT = f"{self.BASE_URL}/GWASResults"
         self.GWAS_WORKFLOW_API_ENDPOINT = "/ga4gh/wes/v2/workflows"
         self.GWAS_WORKFLOW_STATUS_API_ENDPOINT = "/ga4gh/wes/v2/status"
         # Locators
@@ -88,7 +88,7 @@ class GWASPage(object):
         )
 
     def goto_analysis_page(self, page: Page):
-        page.goto(self.ANALYSIS_ENDPOINT)
+        page.goto(self.BASE_URL)
         screenshot(page, "GWASAnalysisPage")
 
     def goto_gwas_ui_app_page(self, page: Page):
