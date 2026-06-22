@@ -164,7 +164,7 @@ class TestRasPassport:
         assert (
             status_code == 200
         ), f"Expected status_code to be 200 but got {status_code}"
-        file_content = ("Hi Zac!\ncdis-data-client uploaded this!\n",)
+        file_content = "Hi Zac!\ncdis-data-client uploaded this!\n"
         contents = self.fence.get_file(response)
         assert (
             contents == file_content

@@ -62,7 +62,9 @@ class RAS(object):
         url = f"{self.RAS_AUTH_ENDPOINT}?response_type=code&client_id={client_id}&redirect_uri={pytest.root_url}&scope={scope}&idp=ras"
         logger.info(f"Navigating to url - {url}")
         page.goto(url)
-        login.ras_login(page, username=username, password=password, portal_test=False)
+        login.ras_login(
+            page, username=username, password=password, email=email, portal_test=False
+        )
         if page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
             logger.info("Clicking on Authorization button")
             page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
