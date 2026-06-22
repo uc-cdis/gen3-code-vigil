@@ -91,8 +91,8 @@ class TestRasPassport:
             3. With access_token, check the /user/user endpoint to have ga4gh_passport_v1 parsed with 600
                consent codes in it.
         """
-        client_id = pytest.clients["ras-test-client"]["client_id"]
-        client_secret = pytest.clients["ras-test-client"]["client_secret"]
+        client_id = pytest.clients["ras-test-ial2"]["client_id"]
+        client_secret = pytest.clients["ras-test-ial2"]["client_secret"]
         scope = "openid profile email ga4gh_passport_v1 researcher_role"
         username = os.environ["RAS_IAL2_USERID"]
         password = os.environ["RAS_IAL2_PASSWORD"]
@@ -122,7 +122,9 @@ class TestRasPassport:
                 },
             )
             resources = user_info_response["resources"]
+            logger.info(resources)
             phs_resources = [r for r in resources if r.startswith("/programs/phs")]
+            logger.info(phs_resources)
             # Assert there are 600 or so phs studies.
             assert (
                 len(phs_resources) >= 600
