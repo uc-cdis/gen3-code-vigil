@@ -93,7 +93,7 @@ class TestRasPassport:
         """
         client_id = pytest.clients["ras-test-ial2"]["client_id"]
         client_secret = pytest.clients["ras-test-ial2"]["client_secret"]
-        scope = "openid profile email ga4gh_passport_v1 researcher_role"
+        scope = "openid ga4gh_passport_v1"
         username = os.environ["RAS_IAL2_USERID"]
         password = os.environ["RAS_IAL2_PASSWORD"]
         email = "burtonk@uchicago.edu"
