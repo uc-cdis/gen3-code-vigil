@@ -270,7 +270,7 @@ class TestPresignedURL:
         )
 
         assert "urls" in res, f"'urls' missing in response: {res}"
-        assert "failed_file_ids" in res, f"'failed_file_ids' missing in response: {res}"
+        assert "failed_guids" in res, f"'failed_guids' missing in response: {res}"
 
         dids = []
         signed_url_res = None
@@ -290,11 +290,11 @@ class TestPresignedURL:
         )
 
         failed_ids = []
-        for failure in res.get("failed_file_ids"):
+        for failure in res.get("failed_guids"):
             for id in failure.get("object_ids", []):
                 failed_ids.append(id)
 
         # Validate failure case
         assert (
             not_allowed_record["did"] in failed_ids
-        ), "Unauthorized GUID should be in failed_file_ids"
+        ), "Unauthorized GUID should be in failed_guids"
