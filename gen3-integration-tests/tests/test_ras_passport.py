@@ -9,15 +9,13 @@ import os
 
 import pytest
 import requests
-from cdislogging import get_logger
 from pages.login import LoginPage
 from playwright.sync_api import Page
 from services.drs import Drs
 from services.fence import Fence
 from services.indexd import Indexd
 from services.ras import RAS
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "error"))
+from utils import logger
 
 indexd_files = {
     "test_with_ras_permission": {
