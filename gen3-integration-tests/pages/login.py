@@ -212,7 +212,6 @@ class LoginPage(object):
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
             page.wait_for_load_state("load")
-        expect(page).to_have_url(re.compile(rf".*{pytest.namespace}.*"), timeout=20000)
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")

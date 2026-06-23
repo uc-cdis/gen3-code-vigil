@@ -65,6 +65,7 @@ class RAS(object):
         login.ras_login(
             page, username=username, password=password, email=email, portal_test=False
         )
+        expect(page).to_have_url(re.compile(rf".*{pytest.namespace}.*"), timeout=20000)
         if page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).is_visible():
             logger.info("Clicking on Authorization button")
             page.locator(login.RAS_ACCEPT_AUTHORIZATION_BUTTON).click()
