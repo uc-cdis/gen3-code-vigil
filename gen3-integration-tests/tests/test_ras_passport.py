@@ -97,9 +97,6 @@ class TestRasPassport:
         password = os.environ["RAS_IAL2_PASSWORD"]
         email = "burtonk@uchicago.edu"
 
-        logger.info(client_id)
-        logger.info(client_secret)
-
         token = self.ras.get_tokens(
             client_id=client_id,
             client_secret=client_secret,
@@ -117,11 +114,8 @@ class TestRasPassport:
         # Call the user/user endpoint to see if passport has been parsed.
         if access_token:
             user_info_response = self.fence.get_user_info(access_token=access_token)
-            logger.info(user_info_response)
             resources = user_info_response["resources"]
-            logger.info(resources)
             phs_resources = [r for r in resources if r.startswith("/programs/phs")]
-            logger.info(phs_resources)
             # Assert there are 600 or so phs studies.
             assert (
                 len(phs_resources) >= 600
@@ -176,7 +170,7 @@ class TestRasPassport:
         Steps:
             1. 1. Login with user CI_TEST_RAS_EMAIL
             2. Get the drs presigned url for the created ras indexd record
-            3. Validate the presigned url is not created as user doesn't have access
+            3. Validate the presigned url is not created as user doesn't have permission
         """
         login_page = LoginPage()
         login_page.go_to(page)
