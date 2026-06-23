@@ -52,6 +52,23 @@ class Drs(object):
         response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}/access/{access_id}")
         return response
 
+    def get_drs_signed_url_using_gen3sdk(self, file, access_token):
+        """Get Drs signed url"""
+        try:
+            id = file.get("did") or file.get("id")
+        except Exception:
+            # id is set to None to test the negative test scenario
+            id = None
+        access_id = file["urls"][0][:2]
+        result = get_download_url_using_drs(
+            drs_hostname=pytest.hostname,
+            object_id=id,
+            access_method=access_id,
+            access_token=access_token,
+        )
+        response, status_code = result
+        return response, status_code
+
     def get_drs_download(self, file, user="main_account"):
         """Get Drs signed url"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
