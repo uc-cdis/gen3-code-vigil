@@ -98,6 +98,9 @@ class TestRasPassport:
         password = os.environ["RAS_IAL2_PASSWORD"]
         email = "burtonk@uchicago.edu"
 
+        logger.info(client_id)
+        logger.info(client_secret)
+
         token = self.ras.get_tokens(
             client_id=client_id,
             client_secret=client_secret,

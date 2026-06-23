@@ -208,7 +208,7 @@ class LoginPage(object):
         page.wait_for_load_state("load")
         current_url = page.url
         if "/user/register" in current_url:
-            logger.info(f"Registering User {username}@perf.nih.gov")
+            logger.info(f"Registering User {email}")
             user_register = UserRegister()
             user_register.register_user(page, user_email=email)
             page.wait_for_load_state("load")
