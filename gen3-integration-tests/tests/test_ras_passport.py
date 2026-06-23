@@ -116,13 +116,7 @@ class TestRasPassport:
 
         # Call the user/user endpoint to see if passport has been parsed.
         if access_token:
-            user_info_response = requests.get(
-                f"{self.BASE_URL}{self.USER_ENDPOINT}",
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {access_token}",
-                },
-            )
+            user_info_response = self.fence.get_user_info(access_token=access_token)
             logger.info(user_info_response)
             resources = user_info_response["resources"]
             logger.info(resources)
