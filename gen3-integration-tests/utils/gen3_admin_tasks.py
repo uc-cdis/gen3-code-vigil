@@ -53,7 +53,7 @@ def get_navigation_url():
     naviagtion_urls = {}
     res = get_portal_config(json_file_name="navigation")
     if not res:
-        logger.info("Portal config not found. Skipping navigation url fetch.")
+        logger.info("Portal/FeFF config not found. Skipping navigation url fetch.")
         return naviagtion_urls
     # This key is part of gitops for portal
     if res.get("components"):
