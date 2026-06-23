@@ -19,7 +19,6 @@ from utils import logger
 
 indexd_files = {
     "test_with_ras_permission": {
-        # "acl": [],
         "authz": ["/programs/phs000000.c11"],
         "file_name": "ras_passport_test_file",
         "hashes": {
@@ -66,6 +65,8 @@ class TestRasPassport:
         cls.env_vars = [
             "RAS_IAL2_USERID",
             "RAS_IAL2_PASSWORD",
+            "CI_TEST_RAS_EMAIL",
+            "CI_TEST_RAS_PASSWORD",
         ]
         # Validate creds required for test that are defined as env variable
         cls.ras.validate_creds(test_creds=cls.env_vars)
@@ -137,8 +138,9 @@ class TestRasPassport:
         """
         Scenario: Get drs presigned-url and download a file
         Steps:
-            1. Get the drs presigned url for the created ras indexd record
-            2. Validate the content of the file downloaded.
+            1. Login with user RAS_IAL2_USERID
+            2. Get the drs presigned url for the created ras indexd record
+            3. Validate the content of the file downloaded.
         """
         login_page = LoginPage()
         login_page.go_to(page)
@@ -178,8 +180,9 @@ class TestRasPassport:
         """
         Scenario: Pre-signed url fails for RAS user without access
         Steps:
-            1. Get the drs presigned url for the created ras indexd record
-            2. Validate the presigned url is not created as user doesn't have access
+            1. 1. Login with user CI_TEST_RAS_EMAIL
+            2. Get the drs presigned url for the created ras indexd record
+            3. Validate the presigned url is not created as user doesn't have access
         """
         login_page = LoginPage()
         login_page.go_to(page)
