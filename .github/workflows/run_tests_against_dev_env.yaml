@@ -132,7 +132,7 @@ jobs:
             mkdir $HOME/.gen3
             mkdir logs
             echo "****** Prepare CI Environment ******" > logs/gh_action_logs.txt
-            ./gen3_ci/scripts/generate_api_keys.sh test_data/test_setup/users.csv ${HOSTNAME} ${NAMESPACE} >> logs/gh_action_logs.txt 2>&1
+            ./gen3_ci/scripts/generate_api_keys.sh test_data/test_setup/users.csv ${HOSTNAME_PROTOCOL} ${HOSTNAME} ${NAMESPACE} >> logs/gh_action_logs.txt 2>&1
 
       - name: Get test labels
         id: get_test_labels
