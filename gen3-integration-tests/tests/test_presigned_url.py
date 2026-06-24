@@ -74,11 +74,6 @@ class TestPresignedURL:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        logger.info("Deleting Indexd Records")
-        cls.indexd.delete_records(guids=cls.variables["created_indexd_dids"])
-
     def get_indexd_record(cls, filename):
         for record in cls.indexd_records:
             if (
