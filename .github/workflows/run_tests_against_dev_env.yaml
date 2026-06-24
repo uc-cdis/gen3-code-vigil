@@ -98,7 +98,6 @@ jobs:
             sed -i "s|^gen3 = \".*\"|gen3 = { git = \"https://github.com/uc-cdis/gen3sdk-python\", rev = \"$BRANCH\" }|" pyproject.toml
           fi
           pip install uv
-          uv lock
           uv sync
           uv pip list
           sudo apt update && uv run playwright install-deps && uv run playwright install --with-deps chromium
