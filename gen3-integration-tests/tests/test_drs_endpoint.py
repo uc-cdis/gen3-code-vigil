@@ -135,3 +135,20 @@ class TestDrsEndpoints:
         assert (
             file_content == expected_content
         ), f"Data don't match.\n{file_content}\n{expected_content}"
+
+    @pytest.mark.gen3sdk
+    def test_failed_dowload_drs_object(self):
+        """
+        Scenario: Failed to download drs object
+        Steps:
+            1. Download drs object for indexd record (not_allowed).
+            2. Validate download failed and status_code returned was 401
+        """
+        did = indexd_files["not_allowed"]["did"]
+        response = self.drs.get_drs_download(file=indexd_files["not_allowed"])
+        assert (
+            response[did].status == "error"
+        ), f"Expected status to be error but got {response[did].status}"
+        assert (
+            response[did].status_code == 401
+        ), f"Expected 401 status but got {response[did].status_code}"
