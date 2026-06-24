@@ -1042,14 +1042,14 @@ files = [
 
 [[package]]
 name = "gen3"
-version = "4.28.0"
+version = "4.28.1"
 description = "Gen3 CLI and Python SDK"
 optional = false
 python-versions = "<4,>=3.9"
 groups = ["main"]
 files = [
-    {file = "gen3-4.28.0-py3-none-any.whl", hash = "sha256:69d00d318ca7f3e167aa12d68b565b386fc8a8d79fbaa6b8d3b6f4ff814db059"},
-    {file = "gen3-4.28.0.tar.gz", hash = "sha256:9a89914f1a93a2b325ce0daa8b420570a5f34bdfc7db5471eb9ea531af1e5b88"},
+    {file = "gen3-4.28.1-py3-none-any.whl", hash = "sha256:cc70b734c2426d6e10ef1363b2ebf30f4ca503fa1d3bb1a7fd7bf041540ff5ea"},
+    {file = "gen3-4.28.1.tar.gz", hash = "sha256:b0d57f74edf2fcc357961d49daa85c21e03aa6a1c2c5bf914d16f5a6ebaee089"},
 ]
 
 [package.dependencies]
