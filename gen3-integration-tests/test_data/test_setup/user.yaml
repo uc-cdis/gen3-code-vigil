@@ -3,12 +3,30 @@ groups: {}
 authz:
   anonymous_policies:
   - 'open_data_reader'
-  - 'all_dicom_studies_viewer'
 
   all_users_policies:
   - 'requestor_creator'
+  - 'kayako_creator'
 
   groups:
+    - name: registered_users
+      policies: []
+      users:
+        - 'main@example.org'
+        - 'indexing@example.org'
+
+    - name: gwas_teamproject1_users
+      policies:
+        - teamproject1_contributor
+      users:
+        - 'main@example.org'
+
+    - name: gwas_teamproject2_users
+      policies:
+        - teamproject2_contributor
+      users:
+        - 'main@example.org'
+
     - name: 'data_uploaders'
       policies: ['data_upload']
       users:
@@ -32,6 +50,18 @@ authz:
     jnkns: '/programs/jnkns'
 
   policies:
+    - id: 'kayako_creator'
+      description: 'be able to create ticket via kayako wrapper service'
+      resource_paths: ['/kayako']
+      role_ids: ['kayako_creator']
+    - id: "teamproject1_contributor"
+      description: "be able to create and access cohorts of teamproject1 in Atlas, Argo-wrapper and cohort-middleware"
+      resource_paths: ["/gwas_projects/project1"]
+      role_ids: ["teamproject_member"]
+    - id: "teamproject2_contributor"
+      description: "be able to create and access cohorts of teamproject2 in Atlas, Argo-wrapper and cohort-middleware"
+      resource_paths: ["/gwas_projects/project2"]
+      role_ids: ["teamproject_member"]
     - id: 'workspace'
       description: 'be able to use workspace'
       resource_paths: ['/workspace']
@@ -43,16 +73,20 @@ authz:
     - id: 'requestor_creator'
       description: 'be able to create requestor request'
       role_ids: ['requestor_creator']
-      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar']
+      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar', '/services/workflow/gen3-workflow/tasks']
     - id: 'requestor_reader'
       role_ids: ['requestor_reader']
-      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar']
+      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar', '/services/workflow/gen3-workflow/tasks']
     - id: 'requestor_updater'
       role_ids: ['requestor_updater']
-      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar']
+      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar', '/services/workflow/gen3-workflow/tasks']
     - id: 'requestor_deleter'
       role_ids: ['requestor_deleter']
-      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar']
+      resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar', '/services/workflow/gen3-workflow/tasks']
+    - id: 'ttyadmin'
+      description: 'be able to use admin tty'
+      resource_paths: ['/ttyadmin']
+      role_ids: ['ttyadmin_user']
     - id: 'data_upload'
       description: 'upload raw data files to S3'
       role_ids: ['file_uploader']
@@ -88,9 +122,9 @@ authz:
       - '/services/audit/presigned_url'
     - id: 'all_dicom_studies_viewer'
       role_ids:
-      - 'dicom-viewer_reader'
-      - 'orthanc_reader'
-      - 'ohif-viewer_reader'
+        - 'dicom-viewer_reader'
+        - 'orthanc_reader'
+        - 'ohif-viewer_reader'
       resource_paths:
       - '/services/dicom-viewer'
     - id: 'all_dicom_studies_admin'
@@ -98,6 +132,22 @@ authz:
       - 'creator'
       resource_paths:
       - '/services/dicom-viewer'
+    - id: 'all_orthanc_studies_viewer'
+      role_ids:
+        - 'dicom-viewer_reader'
+        - 'orthanc_reader'
+        - 'ohif-viewer_reader'
+        - 'guppy_reader'
+        - 'fence_reader'
+        - 'peregrine_reader'
+        - 'sheepdog_reader'
+      resource_paths:
+      - '/services/orthanc'
+    - id: 'all_orthanc_studies_admin'
+      role_ids:
+      - 'creator'
+      resource_paths:
+      - '/services/orthanc'
     - id: 'all_programs_reader'
       role_ids:
         - 'guppy_reader'
@@ -285,6 +335,10 @@ authz:
         - 'indexd_storage_writer'
       resource_paths: ['/gen3/programs/QA', '/programs/QA']
 
+    - id: 'fence_admin'
+      role_ids: ['fence_admin']
+      resource_paths: ['/services/fence/admin']
+
     - id: 'workflow_admin'
       description: 'admin access to argo workflow API'
       resource_paths: ['/services/workflow/argo/admin']
@@ -315,17 +369,37 @@ authz:
       resource_paths:
       - '/requestor_integration_test'
 
-    - id: workflow_user
+    - id: requestor_admin
       role_ids:
-      - workflow_user
+        - requestor_admin
       resource_paths:
-      - '/services/workflow/gen3-workflow'
-    - id: workflow_storage_deleter
-      role_ids:
-      - workflow_storage_deleter
-      resource_paths:
-      - '/services/workflow/gen3-workflow/user-bucket'
+        - "/programs"
+        - "/services"
+        - "/workspace"
+        - "/gwas_projects"
 
+    # Gen3 Workflow policies
+    - id: gen3_workflow_user
+      description: Allows the creation of workflow tasks
+      role_ids:
+      - gen3_workflow_creator
+      resource_paths:
+      - /services/workflow/gen3-workflow/tasks
+    - id: gen3_workflow_storage_admin
+      description: Allows access to manage all the user buckets
+      role_ids:
+      - gen3_workflow_admin
+      resource_paths:
+      - /services/workflow/gen3-workflow/storage
+    # Policies for Frontend Pages authz
+    - id: see-datalibrary-page
+      description: grants access to DataLibrary page
+      resource_paths: [/pages/see-datalibrary]
+      role_ids: [page-user]
+    - id: see-workspace-page
+      description: grants access to Workspace page
+      resource_paths: [/pages/see-workspace]
+      role_ids: [page-user]
 
   resources:
     # General Access
@@ -335,7 +409,10 @@ authz:
       description: 'test resource for client credentials requestor requests'
     - name: 'cedar'
       description: 'commons /cedar'
+    - name: 'kayako'
+      description: 'commons /kayako'
     - name: 'ttyadmin'
+    - name: 'requestor_admin'
     - name: 'workspace'
     - name: "sower"
     - name: 'query_page'
@@ -343,6 +420,8 @@ authz:
       description: 'commons /mds-admin'
     - name: 'requestor_integration_test'
       description: 'policy used for requestor integration tests'
+    - name: 'kayako'
+      description: 'commons /kayako'
 
     # OLD Data
     - name: 'programs'
@@ -438,6 +517,9 @@ authz:
           subresources:
             - name: 'admin'
             - name: 'bundles'
+        - name: fence
+          subresources:
+            - name: admin
         - name: 'audit'
           subresources:
             - name: 'presigned_url'
@@ -449,8 +531,12 @@ authz:
                 - name: 'admin'
             - name: 'gen3-workflow'
               subresources:
-                - name: 'user-bucket'
+              - name: 'tasks'
+              - name: 'storage'
         - name: 'dicom-viewer'
+          subresources:
+            - name: 'studies'
+        - name: 'orthanc'
           subresources:
             - name: 'studies'
 
@@ -464,8 +550,45 @@ authz:
         - name: 'project1'
         - name: 'project2'
 
+    # page access resources - for controlling who can see pages in configs
+    - name: pages
+      subresources:
+        - name: see-workspace
+          description: lets you see the Workspace page
+        - name: see-datalibrary
+          description: grants access to DataLibrary page
+
   roles:
+    # role with no permissions - to enable FEF page controls
+    - id: "page-user"
+      permissions:
+        - id: user
+          action:
+            service: "frontend"
+            method: access
+    - id: 'kayako_creator'
+      permissions:
+        - id: 'kayako_access'
+          action:
+            service: 'kayako'
+            method: 'create'
     # General Access
+    - id: "teamproject_member"
+      permissions:
+        - id: "teamproject_member"
+          action:
+            service: "atlas-argo-wrapper-and-cohort-middleware"
+            method: "access"
+        - id: "teamproject_reader"
+          action:
+            service: "*"
+            method: "read-storage"
+    - id: 'requestor_admin'
+      permissions:
+        - id: 'requestor_admin_action'
+          action:
+            service: 'requestor'
+            method: "*"
     - id: 'file_uploader'
       description: 'can upload data files'
       permissions:
@@ -503,6 +626,12 @@ authz:
           action:
             service: 'requestor'
             method: 'create'
+    - id: 'ttyadmin_user'
+      permissions:
+        - id: 'ttyadmin_access'
+          action:
+            service: 'ttyadmin'
+            method: 'access'
     - id: 'sower_user'
       permissions:
         - id: 'sower_access'
@@ -559,6 +688,25 @@ authz:
           action:
             service: 'audit'
             method: 'read'
+    - id: 'library_owner'
+      description: ''
+      permissions:
+      - id: 'library_reader'
+        action:
+          method: read
+          service: 'gen3-user-data-library'
+      - id: 'library_creator'
+        action:
+          method: create
+          service: 'gen3-user-data-library'
+      - id: 'library_updater'
+        action:
+          method: update
+          service: 'gen3-user-data-library'
+      - id: 'library_deleter'
+        action:
+          method: delete
+          service: 'gen3-user-data-library'
     # All services
     - id: 'admin'
       description: ''
@@ -606,6 +754,12 @@ authz:
       - id: 'fence_storage_reader'
         action:
           method: 'read-storage'
+          service: 'fence'
+    - id: 'fence_admin'
+      permissions:
+      - id: 'fence_admin'
+        action:
+          method: '*'
           service: 'fence'
     - id: 'peregrine_reader'
       description: ''
@@ -734,18 +888,24 @@ authz:
             method: 'delete'
 
     # Gen3 Workflow
-    - id: workflow_user
+    - id: gen3_workflow_reader
       permissions:
-      - id: workflow_user
+      - id: gen3_workflow_reader_action
+        action:
+          service: gen3-workflow
+          method: read
+    - id: gen3_workflow_creator
+      permissions:
+      - id: gen3_workflow_creator_action
         action:
           service: gen3-workflow
           method: create
-    - id: workflow_storage_deleter
+    - id: gen3_workflow_admin
       permissions:
-      - id: workflow_storage_deleter
+      - id: gen3_workflow_admin_action
         action:
           service: gen3-workflow
-          method: delete
+          method: '*'
 
 clients:
   wts:
@@ -766,12 +926,21 @@ clients:
     - 'requestor_updater'
     - 'requestor_reader'
     - 'indexd_creator'
+  jenkinsClientTester:
+    policies:
+    - 'requestor_creator'
+    - 'requestor_updater'
+    - 'indexd_creator'
+  funnel-plugin-client:
+    policies:
+    - gen3_workflow_storage_admin
 
 users:
   main@example.org:
     admin: true
     policies:
     - 'data_upload'
+    - 'fence_admin'
     - 'workspace'
     - 'mds_admin'
     - 'sower'
@@ -782,11 +951,16 @@ users:
     - 'programs.jnkns-admin'
     - 'abc-admin'
     - 'requestor_integration_test'
+    - 'ttyadmin'
     - 'workflow_admin'
-    - 'workflow_user'
-    - 'workflow_storage_deleter'
+    - 'gen3_workflow_user'
     - 'argo'
+    - 'all_orthanc_studies_viewer'
+    - 'all_orthanc_studies_admin'
     - 'all_dicom_studies_admin'
+    - 'all_dicom_studies_viewer'
+    - 'see-datalibrary-page'
+    - 'see-workspace-page'
     projects:
     - auth_id: 'QA'
       privilege: ['create', 'read', 'update', 'delete', 'upload', 'read-storage']
@@ -813,6 +987,7 @@ users:
     - 'programs.jnkns-admin'
     - 'abc-admin'
     - 'indexd_admin'
+    - 'mds_admin'
     projects:
     - auth_id: 'QA'
       privilege: ['create', 'read', 'update', 'delete', 'upload', 'read-storage', 'write-storage']
@@ -830,6 +1005,7 @@ users:
     admin: false
     policies:
     - 'workspace'
+    - 'gen3_workflow_user'
     - 'sower'
     - 'requestor_creator'
     - 'programs.QA-admin'
@@ -884,6 +1060,7 @@ users:
     - 'data_upload'
     - 'workspace'
     - 'audit_login_reader'
+    - 'services.sheepdog-admin'
     - 'programs.QA-admin'
     - 'programs.test-admin'
     - 'programs.DEV-admin'
