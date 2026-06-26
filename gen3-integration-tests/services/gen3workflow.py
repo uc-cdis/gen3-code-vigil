@@ -216,6 +216,7 @@ class Gen3Workflow:
         content: str = "",
         filename: str = "",
         dest_object_path: str = "",
+        range: str = "",
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
@@ -223,14 +224,16 @@ class Gen3Workflow:
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
         logger.info(
-            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and {content=}"
+            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
         )
         response = None
         try:
             if action == "list":
                 response = client.list_objects_v2(Bucket=bucket, Prefix=key)
             elif action == "get":
-                response = client.get_object(Bucket=bucket, Key=key)
+                response = client.get_object(
+                    Bucket=bucket, Key=key, Range=f"bytes=0-{range-1}" if range else ""
+                )
             elif action == "put":
                 response = client.put_object(Bucket=bucket, Key=key, Body=content or "")
             elif action == "upload_file":
@@ -258,7 +261,7 @@ class Gen3Workflow:
                 response_status = 403
             else:
                 logger.error(
-                    f"Received an error from s3_client when expected_status is {expected_status}. Error: {e.response}"
+                    f"Received an error from s3_client, expected status was {expected_status}. Error: {e.response}"
                 )
                 raise  # Reraise for other errors
         except Exception as e:
@@ -271,7 +274,7 @@ class Gen3Workflow:
                 if response
                 else None
             )
-        logger.info(f"S3 {action.upper()} response:  {response}")
+        logger.debug(f"S3 {action.upper()} response:  {response}")
 
         assert (
             response_status == expected_status
@@ -427,10 +430,11 @@ class Gen3Workflow:
         s3_storage_config: WorkflowStorageConfig,
         user: str = "main_account",
         expected_status=200,
+        range: str = "",
     ):
         """Retrieves an S3 object."""
         return self._perform_s3_action(
-            "get", object_path, s3_storage_config, user, expected_status
+            "get", object_path, s3_storage_config, user, expected_status, range=range
         )
 
     def list_bucket_objects_with_boto3(
