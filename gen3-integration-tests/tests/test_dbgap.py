@@ -128,12 +128,6 @@ class TestDbgap:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        # Removing test indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
-        cls.indexd.delete_records(cls.variables["created_dbgap_dids"])
-
     @pytest.mark.skip(
         reason="To avoid running usersync multiple times and since ONLY_DBGAP is not used in real time."
     )

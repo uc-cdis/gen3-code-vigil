@@ -76,11 +76,6 @@ class TestRasPassport:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    # @classmethod
-    def teardown_class(cls):
-        # Deleting indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
-
     def test_ras_passport_is_parsed(self, page: Page):
         """
         Scenario: Ensure the RAS Passport is parsed correctly for a IAL2 RAS User on login.

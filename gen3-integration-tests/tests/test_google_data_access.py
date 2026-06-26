@@ -48,11 +48,6 @@ class TestGoogleDataAccess:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["indexd_record_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        # Deleting indexd records
-        cls.indexd.delete_records(cls.variables["indexd_record_dids"])
-
     def test_google_data_access(self, page: Page):
         """
         Scenario: Google Data Access dcf-integration-test-0
