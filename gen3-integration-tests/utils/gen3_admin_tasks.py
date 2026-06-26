@@ -65,30 +65,35 @@ def get_navigation_url():
     return naviagtion_urls
 
 
-def check_button_is_present(data, search_button):
+def check_button_is_present(data, search_button_or_title):
     # Checks manifest download button for Register User tests
     for button in data:
-        if search_button in button.get("type", "") and button.get("enabled"):
+        if (
+            search_button_or_title in button.get("type", "")
+            or search_button_or_title in button.get("title", "")
+        ) and button.get("enabled"):
             return True
     return False
 
 
-def validate_button_in_portal_config(data, search_button):
+def validate_button_in_portal_config(data, search_button_or_title):
     if isinstance(data, dict):
         if "buttons" in data and check_button_is_present(
-            data["buttons"], search_button
+            data["buttons"], search_button_or_title
         ):
-            if search_button == "export-to-pfb":
+            if search_button_or_title == "export-to-pfb":
                 return True
-            if search_button == "manifest":
+            if search_button_or_title == "Export All to Terra":
+                return True
+            if search_button_or_title == "manifest":
                 return data["tabTitle"]
         for val in data.values():
-            result = validate_button_in_portal_config(val, search_button)
+            result = validate_button_in_portal_config(val, search_button_or_title)
             if result:
                 return result
     elif isinstance(data, list):
         for item in data:
-            result = validate_button_in_portal_config(item, search_button)
+            result = validate_button_in_portal_config(item, search_button_or_title)
             if result:
                 return result
     return False

@@ -1,4 +1,5 @@
 import pytest
+import utils.gen3_admin_tasks as gat
 from pages.data_library_page import DataLibraryPage
 from pages.login import LoginPage
 from services.userdatalibrary import UserDataLibrary
@@ -116,6 +117,13 @@ class TestUserDataLibrary(object):
     @pytest.mark.skipif(
         pytest.manifest.get("global", {}).get("frontend_root", "") != "gen3ff",
         reason="Skipping test as frontend_root is not gen3ff",
+    )
+    @pytest.mark.skipif(
+        not gat.validate_button_in_portal_config(
+            data=gat.get_portal_config(json_file_name="explorer"),
+            search_button_or_title="Export All to Terra",
+        ),
+        reason="Export All to Terra button not present in gitops.json",
     )
     def test_data_library_page(self, page_setup):
         """
