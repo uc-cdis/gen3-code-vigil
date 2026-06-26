@@ -262,8 +262,8 @@ class TestRequestor:
         ), "Authz contains policy '/requestor_integration_test'"
 
     @pytest.mark.skipif(
-        not gat.service_version_greater_than("fence", "2026.02", "2.0.0"),
-        reason="requestor was patched to prevent creation of signed requests after 2026.02",
+        gat.service_version_greater_than("fence", "2026.06", "1.10.0"),
+        reason="Requestor version is below 2026.06 and can't run this test",
     )
     def test_approve_signed_request(self):
         """
