@@ -51,11 +51,6 @@ class TestDrsEndpoints:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        # Removing test indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
-
     def test_get_drs_object(self):
         """
         Scenario: get drs object
