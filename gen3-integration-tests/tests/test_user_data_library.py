@@ -1,4 +1,5 @@
 import pytest
+import utils.gen3_admin_tasks as gat
 from pages.data_library_page import DataLibraryPage
 from pages.login import LoginPage
 from services.userdatalibrary import UserDataLibrary
@@ -156,15 +157,19 @@ class TestUserDataLibrary(object):
         data_library_page.retrieve_selected_data(page_setup)
         screenshot(page_setup, "RetrieveSelectedData")
 
-        # Select all entries on "Retrieve Data" dialog and select Tera Option
-        data_library_page.select_all_entries(page_setup)
-        data_library_page.select_export_to_terra(page_setup)
-        screenshot(page_setup, "TerraExportSelected")
+        if gat.validate_button_in_portal_config(
+            data=gat.get_portal_config(json_file_name="explorer"),
+            search_button_or_title="Export All to Terra",
+        ):
+            # Select all entries on "Retrieve Data" dialog and select Tera Option
+            data_library_page.select_all_entries(page_setup)
+            data_library_page.select_export_to_terra(page_setup)
+            screenshot(page_setup, "TerraExportSelected")
 
-        # Do the Export and close dialog window
-        data_library_page.export_data(page_setup)
-        data_library_page.close_modal(page_setup)
-        screenshot(page_setup, "ExportPerformed")
+            # Do the Export and close dialog window
+            data_library_page.export_data(page_setup)
+            data_library_page.close_modal(page_setup)
+            screenshot(page_setup, "ExportPerformed")
 
         # Delete list
         data_library_page.delete_list(page_setup)

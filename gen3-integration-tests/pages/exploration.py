@@ -133,7 +133,7 @@ class ExplorationPage(object):
         # Click on the Download Button
         tab = gat.validate_button_in_portal_config(
             data=gat.get_portal_config(json_file_name="explorer"),
-            search_button="manifest",
+            search_button_or_title="manifest",
         )
         if not tab:
             raise Exception("No other tab has manifest download button")
