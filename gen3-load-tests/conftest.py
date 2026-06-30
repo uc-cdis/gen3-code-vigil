@@ -51,6 +51,7 @@ def pytest_runtest_logreport(report):
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
     output = json.loads(output_path.read_text())
+    metrics = output.get("metrics", {})
     message = {
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
@@ -58,19 +59,40 @@ def pytest_runtest_logreport(report):
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
-        "checks_fails": output["metrics"]["checks"]["fails"],
-        "checks_passes": output["metrics"]["checks"]["passes"],
-        "checks_value": output["metrics"]["checks"]["value"],
-        "http_req_duration_avg": output["metrics"]["http_req_duration"]["avg"],
-        "http_req_duration_min": output["metrics"]["http_req_duration"]["min"],
-        "http_req_duration_med": output["metrics"]["http_req_duration"]["med"],
-        "http_req_duration_max": output["metrics"]["http_req_duration"]["max"],
-        "http_req_duration_p90": output["metrics"]["http_req_duration"]["p(90)"],
-        "http_req_duration_p95": output["metrics"]["http_req_duration"]["p(95)"],
-        "data_sent_count": output["metrics"]["data_sent"]["count"],
-        "data_sent_rate": output["metrics"]["data_sent"]["rate"],
-        "iterations_count": output["metrics"]["iterations"]["count"],
-        "iterations_rate": output["metrics"]["iterations"]["rate"],
+        "checks_fails": metrics["checks"]["fails"],
+        "checks_passes": metrics["checks"]["passes"],
+        "checks_value": metrics["checks"]["value"],
+        "http_req_duration_avg": metrics["http_req_duration"]["avg"],
+        "http_req_duration_min": metrics["http_req_duration"]["min"],
+        "http_req_duration_med": metrics["http_req_duration"]["med"],
+        "http_req_duration_max": metrics["http_req_duration"]["max"],
+        "http_req_duration_p90": metrics["http_req_duration"]["p(90)"],
+        "http_req_duration_p95": metrics["http_req_duration"]["p(95)"],
+        "data_sent_count": metrics["data_sent"]["count"],
+        "data_sent_rate": metrics["data_sent"]["rate"],
+        "iterations_count": metrics["iterations"]["count"],
+        "iterations_rate": metrics["iterations"]["rate"],
+        "bulk_objects_requested_count": metrics.get("bulk_objects_requested", {}).get(
+            "count"
+        ),
+        "bulk_objects_requested_rate": metrics.get("bulk_objects_requested", {}).get(
+            "rate"
+        ),
+        "bulk_objects_resolved_count": metrics.get("bulk_objects_resolved", {}).get(
+            "count"
+        ),
+        "bulk_objects_resolved_rate": metrics.get("bulk_objects_resolved", {}).get(
+            "rate"
+        ),
+        "bulk_objects_unresolved_count": metrics.get("bulk_objects_unresolved", {}).get(
+            "count"
+        ),
+        "bulk_objects_unresolved_rate": metrics.get("bulk_objects_unresolved", {}).get(
+            "rate"
+        ),
+        "partial_bulk_responses_rate": metrics.get("partial_bulk_responses", {}).get(
+            "rate"
+        ),
     }
 
     try:
