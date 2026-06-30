@@ -22,10 +22,6 @@ class DataLibraryPage(object):
 
         self.EXPORT_BUTTON = "css=button:has-text('Export')"
 
-        self.CLOSE_MODAL_BUTTON = "internal:role=button[name='Close Modal'i]"
-
-        self.DELETE_LIST_BUTTON = 'button[aria-label="delete list"]'
-
     def go_to(self, page: Page):
         page.goto(self.BASE_URL)
         screenshot(page, "DataLibraryPage")
@@ -77,4 +73,4 @@ class DataLibraryPage(object):
         page.get_by_role("button", name="Close Modal").click(timeout=30000)
 
     def delete_list(self, page: Page):
-        page.locator(self.DELETE_LIST_BUTTON).click(timeout=30000)
+        page.get_by_role("button", name="delete list").click(timeout=30000)

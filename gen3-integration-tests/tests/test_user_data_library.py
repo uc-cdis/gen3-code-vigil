@@ -49,8 +49,8 @@ class TestUserDataLibrary(object):
         }
 
     @classmethod
-    def teardown_class(cls):
-        # Delete the list after all tests are run.
+    def teardown_method(cls):
+        # Delete the list in case
         gen3_udl = UserDataLibrary()
         gen3_udl.delete_list(user="main_account")
 
@@ -133,9 +133,7 @@ class TestUserDataLibrary(object):
         """
         gen3_udl = UserDataLibrary()
         # Create the data library list
-        data_library_list = gen3_udl.create_list(
-            user="main_account", data=self.test_data_create
-        )
+        gen3_udl.create_list(user="main_account", data=self.test_data_create)
         # Login
         login_page = LoginPage()
         login_page.go_to(page_setup)
@@ -168,8 +166,9 @@ class TestUserDataLibrary(object):
 
             # Do the Export and close dialog window
             data_library_page.export_data(page_setup)
-            data_library_page.close_modal(page_setup)
-            screenshot(page_setup, "ExportPerformed")
+
+        data_library_page.close_modal(page_setup)
+        screenshot(page_setup, "ExportPerformed")
 
         # Delete list
         data_library_page.delete_list(page_setup)
