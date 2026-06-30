@@ -38,6 +38,7 @@ jobs:
         with:
           repository: uc-cdis/gen3-gitops
           path: gen3-gitops
+          ref: chore/test_user_data_library_issue
 
       - name: Set up Python
         uses: actions/setup-python@v5
