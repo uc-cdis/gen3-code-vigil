@@ -26,6 +26,7 @@ jobs:
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
       NAMESPACE: ${{ inputs.NAMESPACE }}
       SOURCE_CONFIG: ${{ inputs.SOURCE_CONFIG }}
+      CI_ENV: gen3ff
     steps:
       - name: Checkout integration test code
         uses: actions/checkout@v4
