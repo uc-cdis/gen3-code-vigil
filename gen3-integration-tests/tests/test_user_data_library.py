@@ -50,7 +50,7 @@ class TestUserDataLibrary(object):
 
     @classmethod
     def teardown_method(cls):
-        # Delete the list in case
+        # Delete the list in case test fails to delete
         gen3_udl = UserDataLibrary()
         gen3_udl.delete_list(user="main_account")
 
