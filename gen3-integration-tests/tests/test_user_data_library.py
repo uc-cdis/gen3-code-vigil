@@ -48,7 +48,7 @@ class TestUserDataLibrary(object):
             },
         }
 
-    @classmethod
+    # @classmethod
     # def teardown_class(cls):
     #     # Delete the list after all tests are run.
     #     gen3_udl = UserDataLibrary()
