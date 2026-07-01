@@ -76,6 +76,9 @@ class TestRasPassport:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
+    @pytest.mark.skip(
+        reason="RAS Passport is missing phs for testing. (GQE-670)"
+    )
     def test_ras_passport_is_parsed(self, page: Page):
         """
         Scenario: Ensure the RAS Passport is parsed correctly for a IAL2 RAS User on login.
@@ -117,6 +120,9 @@ class TestRasPassport:
             ), f"Expected at least 600 phs resources, found {len(phs_resources)}"
 
     @pytest.mark.gen3sdk
+    @pytest.mark.skip(
+        reason="RAS Passport is missing phs for testing. (GQE-670)"
+    )
     def test_get_drs_presigned_url(self, page: Page):
         """
         Scenario: Get drs presigned-url and download a file
