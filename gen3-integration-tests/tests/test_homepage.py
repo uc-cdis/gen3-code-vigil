@@ -9,6 +9,7 @@ from pages import home, login
 )
 @pytest.mark.sanity
 @pytest.mark.frontend
+@pytest.mark.gen3_embedding
 class TestHomePage:
     def test_home_page_navigation(self, page):
         """
