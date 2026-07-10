@@ -455,6 +455,11 @@ common_param_updates=(
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
+  ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  # TODO: Remove the next line after funnel helm chart is completely removed as a dependent chart.
+  # The legacy chart still expects `funnel.funnel.Kubernetes.JobsNamespace`,
+  # while the standalone chart uses `funnel.Kubernetes.JobsNamespace`.
+  # Keep both values in sync until the migration is complete.
   ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
