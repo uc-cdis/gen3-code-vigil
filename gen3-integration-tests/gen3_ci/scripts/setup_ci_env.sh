@@ -231,7 +231,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
-      elif [ "$service_enabled_value" = null ] || [ "$gen3_helm_enabled_value" = "false" ]; then
+      elif [ "$service_enabled_value" = null ] && [ "$gen3_helm_enabled_value" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values and ${gen3_helm_enabled_value} in gen3-helm"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       elif [ "$image_tag_value" = "null" ]; then
