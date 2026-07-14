@@ -117,6 +117,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Check if multiple yaml files are present and convert them into values.yaml
     new_manifest_values_file_path=$ci_default_manifest_dir/manifest_values.yaml
+    git clone https://github.com/uc-cdis/gen3-helm.git gen3-helm-ci
+    gen3_helm_values_file_path=gen3-helm-ci/helm/gen3/values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
         echo >> "$new_manifest_values_file_path"
@@ -223,10 +225,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
+      gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
+          yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
+      elif [ "$service_enabled_value" = null ] || [ "$gen3_helm_enabled_value" = "false" ]; then
+          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values and ${gen3_helm_enabled_value} in gen3-helm"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
