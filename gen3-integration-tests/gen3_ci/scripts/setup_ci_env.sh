@@ -228,8 +228,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
       gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
-      if [ "$service_enabled_value" = "false" ] || [ "$gen3_helm_enabled_value" = "false" ]; then
+      if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
+          yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
+      elif [ "$service_enabled_value" = null ] || [ "$gen3_helm_enabled_value" = "false" ]; then
+          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values and ${gen3_helm_enabled_value} in gen3-helm"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
