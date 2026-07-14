@@ -117,7 +117,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Check if multiple yaml files are present and convert them into values.yaml
     new_manifest_values_file_path=$ci_default_manifest_dir/manifest_values.yaml
-    gen3_helm_values_file_path=gen3-helm/helm/gen3/values.yaml
+    git clone https://github.com/uc-cdis/gen3-helm.git gen3-helm-ci
+    gen3_helm_values_file_path=gen3-helm-ci/helm/gen3/values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
         echo >> "$new_manifest_values_file_path"
