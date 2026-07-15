@@ -8,6 +8,10 @@ from services.embedding import Embedding
 from utils import TEST_DATA_PATH_OBJECT, logger
 
 
+@pytest.mark.skipif(
+    "gen3-embeddings" not in pytest.deployed_services,
+    reason="gen3-embeddings service is not running on this environment",
+)
 @pytest.mark.gen3_embedding
 class TestGen3Embedding:
     @classmethod
