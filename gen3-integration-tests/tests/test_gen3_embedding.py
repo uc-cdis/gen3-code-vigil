@@ -8,6 +8,7 @@ from services.embedding import Embedding
 from utils import TEST_DATA_PATH_OBJECT, logger
 
 
+@pytest.mark.gen3_embedding
 class TestGen3Embedding:
     @classmethod
     def setup_class(cls):
