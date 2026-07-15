@@ -17,13 +17,14 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@nss10-custom-gitops-branch
     with:
       WORKING_DIR: gen3-integration-tests
       EXTERNAL_TO_CTDS: "true"
       SERVICE_TO_TEST: gen3_workflow
+      HELM_BRANCH: copy/pr-635
       SETUP_SCRIPT_1: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/master/.github/workflows/integration_tests_on_kind/ci_start_kind_cluster.sh
-      SETUP_SCRIPT_2: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/master/.github/workflows/integration_tests_on_kind/ci_override_config_and_start_minio.sh
+      SETUP_SCRIPT_2: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/chore/update_kind_ci/.github/workflows/integration_tests_on_kind/ci_override_config_and_start_minio.sh
       SETUP_SCRIPT_3: https://raw.githubusercontent.com/uc-cdis/gen3-workflow/refs/heads/master/.github/workflows/integration_tests_on_kind/ci_expose_kind_cluster.sh
     secrets:
       CI_TEST_ORCID_USERID: ""
