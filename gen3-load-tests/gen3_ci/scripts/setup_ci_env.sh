@@ -180,7 +180,7 @@ fi
 # Update replicaCount for certain services
 yq eval ".fence.replicaCount = \"6\"" -i "$manifest_values_yaml"
 yq eval ".indexd.replicaCount = \"3\"" -i "$manifest_values_yaml"
-yq eval ".gen3-embeddings.replicaCount = \"3\"" -i "$manifest_values_yaml"
+yq eval ".gen3-embeddings.replicaCount = \"2\"" -i "$manifest_values_yaml"
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
 kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
