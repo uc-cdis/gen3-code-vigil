@@ -38,7 +38,7 @@ def modify_env_for_test_repo_pr(namespace):
     )
     arguments = [
         os.getenv("NAMESPACE"),
-        "master",
+        os.getenv("HELM_BRANCH"),
         perf_default_manifest,
     ]
     return setup_env_for_helm(arguments)

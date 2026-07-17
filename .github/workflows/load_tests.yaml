@@ -24,6 +24,11 @@ on:
       RELEASE_VERSION:
         description: 'Release version'
         required: true
+      HELM_BRANCH:
+        description: 'Helm Branch to use for setting up env'
+        required: false
+        default: 'feat/add-gen3-embeddings'
+
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -78,6 +83,7 @@ jobs:
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
+          HELM_BRANCH: ${{ github.event.inputs.HELM_BRANCH }}
 
 
         steps:
@@ -108,7 +114,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-gitops
-              ref: 'master'
+              ref: 'chore/add_gen3_embedding_ci'
               path: gen3-gitops-ci
 
           - name: Get commit time
