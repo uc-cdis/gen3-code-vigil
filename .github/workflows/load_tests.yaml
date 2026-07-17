@@ -24,10 +24,6 @@ on:
       RELEASE_VERSION:
         description: 'Release version'
         required: true
-      HELM_BRANCH:
-        description: 'Helm Branch to use for setting up env'
-        required: false
-        default: 'feat/add-gen3-embeddings'
 
 
 concurrency:
@@ -83,7 +79,7 @@ jobs:
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          HELM_BRANCH: ${{ github.event.inputs.HELM_BRANCH }}
+          HELM_BRANCH: 'feat/add-gen3-embeddings'
 
 
         steps:
