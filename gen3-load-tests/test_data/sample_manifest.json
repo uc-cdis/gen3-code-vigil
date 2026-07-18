@@ -1,0 +1,92 @@
+[
+  {
+    "_case_id": [
+      "custom-test-case-1"
+    ],
+    "object_id": "dg.MD1R/96a3869f-d99b-49eb-90e8-193ac0d3bd22",
+    "md5sum": "placeholder_md5_1",
+    "file_name": "96a3869f-d99b-49eb-90e8-193ac0d3bd22",
+    "file_size": 1467626494
+  },
+  {
+    "_case_id": [
+      "custom-test-case-2"
+    ],
+    "object_id": "dg.MD1R/4b582f25-82f0-48a6-bf35-5d45400719bc",
+    "md5sum": "placeholder_md5_2",
+    "file_name": "4b582f25-82f0-48a6-bf35-5d45400719bc",
+    "file_size": 1465503350
+  },
+  {
+    "_case_id": [
+      "custom-test-case-3"
+    ],
+    "object_id": "dg.MD1R/c39ebe93-7fab-471f-aa80-9e7c3c88cc34",
+    "md5sum": "placeholder_md5_3",
+    "file_name": "c39ebe93-7fab-471f-aa80-9e7c3c88cc34",
+    "file_size": 1444383348
+  },
+  {
+    "_case_id": [
+      "custom-test-case-4"
+    ],
+    "object_id": "dg.MD1R/4820ab06-c83f-4c0f-9667-ce3704bd8ee3",
+    "md5sum": "placeholder_md5_4",
+    "file_name": "4820ab06-c83f-4c0f-9667-ce3704bd8ee3",
+    "file_size": 1427385774
+  },
+  {
+    "_case_id": [
+      "custom-test-case-5"
+    ],
+    "object_id": "dg.MD1R/24d4795b-1e59-4c81-9117-e5ac50d0463f",
+    "md5sum": "placeholder_md5_5",
+    "file_name": "24d4795b-1e59-4c81-9117-e5ac50d0463f",
+    "file_size": 1385855348
+  },
+  {
+    "_case_id": [
+      "custom-test-case-6"
+    ],
+    "object_id": "dg.MD1R/ccce6a45-e04f-47fd-ab4b-3cb87c0cf2cb",
+    "md5sum": "placeholder_md5_6",
+    "file_name": "ccce6a45-e04f-47fd-ab4b-3cb87c0cf2cb",
+    "file_size": 1355040438
+  },
+  {
+    "_case_id": [
+      "custom-test-case-7"
+    ],
+    "object_id": "dg.MD1R/80cea5c8-377f-4a1c-96a2-b403b7e74563",
+    "md5sum": "placeholder_md5_7",
+    "file_name": "80cea5c8-377f-4a1c-96a2-b403b7e74563",
+    "file_size": 1354440244
+  },
+  {
+    "_case_id": [
+      "custom-test-case-8"
+    ],
+    "object_id": "dg.MD1R/9aed787c-3ae5-4743-aad7-11143d19a1ce",
+    "md5sum": "placeholder_md5_8",
+    "file_name": "9aed787c-3ae5-4743-aad7-11143d19a1ce",
+    "file_size": 1353293866
+  },
+  {
+    "_case_id": [
+      "custom-test-case-9"
+    ],
+    "object_id": "dg.MD1R/c9acb188-ffb6-4de2-9c73-b0de5070644b",
+    "md5sum": "placeholder_md5_9",
+    "file_name": "c9acb188-ffb6-4de2-9c73-b0de5070644b",
+    "file_size": 1351143158
+  },
+  {
+    "_case_id": [
+      "custom-test-case-10"
+    ],
+    "object_id": "dg.MD1R/1fe4665b-91d6-4402-ae61-30194994cc38",
+    "md5sum": "placeholder_md5_10",
+    "file_name": "1fe4665b-91d6-4402-ae61-30194994cc38",
+    "file_size": 1348566864
+  }
+]
