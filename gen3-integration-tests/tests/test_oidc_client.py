@@ -108,7 +108,8 @@ class TestOIDCClient:
         logger.info(f"Getting client_id and client_secret for client {client_name} ...")
         client_id = pytest.clients[client_name]["client_id"]
         client_secret = pytest.clients[client_name]["client_secret"]
-        logger.info(client_id, client_secret)
+        logger.info(f"Client id: {client_id}")
+        logger.info(f"Client secret: {client_secret}")
 
         # Client is rotated as part of the setup, to enable test execution in parallel for this test suite.
         # Rotated client_id and client_secret are retrieved from pytest.rotated_clients.
