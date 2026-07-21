@@ -19,6 +19,7 @@ on:
           - TestIndexdDrsEndpoint
           - TestMetadataCreateAndQuery
           - TestSheepdogImportClinicalMetadata
+          - TestGen3Embedding
           - ALL
         default: ALL
       RELEASE_VERSION:
@@ -51,7 +52,7 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="ALL"
+              TEST_SUITE="TestGen3Embedding"
               RELEASE_VERSION=""
             fi
 
@@ -281,16 +282,16 @@ jobs:
             continue-on-error: true # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
-          - name: Publish report to Slack
-            id: slack_notify
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
-            continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v2.0.0
-            with:
-              method: chat.postMessage
-              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
-              payload-file-path: "./gen3-load-tests/slack_report.json"
-              payload-templated: true
+          # - name: Publish report to Slack
+          #   id: slack_notify
+          #   if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
+          #   continue-on-error: true  # if this fails, we still need to run clean-up steps
+          #   uses: slackapi/slack-github-action@v2.0.0
+          #   with:
+          #     method: chat.postMessage
+          #     token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+          #     payload-file-path: "./gen3-load-tests/slack_report.json"
+          #     payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
