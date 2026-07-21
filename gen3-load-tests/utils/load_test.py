@@ -10,7 +10,16 @@ from utils.test_execution import attach_json_file
 def run_load_test(env_vars):
     service = env_vars["SERVICE"]
     load_test_scenario = env_vars["LOAD_TEST_SCENARIO"]
-    js_script_path = LOAD_TESTING_SCRIPTS_PATH / f"{service}-{load_test_scenario}.js"
+    append_file_name = env_vars["APPEND_FILE_NAME"]
+    if append_file_name:
+        js_script_path = (
+            LOAD_TESTING_SCRIPTS_PATH
+            / f"{service}-{load_test_scenario}-{append_file_name}.js"
+        )
+    else:
+        js_script_path = (
+            LOAD_TESTING_SCRIPTS_PATH / f"{service}-{load_test_scenario}.js"
+        )
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
     logger.info(f"Running load test for {service}-{load_test_scenario}")
     result = subprocess.run(
