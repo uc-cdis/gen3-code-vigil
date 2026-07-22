@@ -1179,9 +1179,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         ), f"Expected env var to be set, but `env` returned: {stdout}"
 
 
-@pytest.mark.skipif(
-    "localhost" in pytest.hostname, reason="currently broken in Kind CI"
-)
 class TestGen3WorkflowNextflow(TestGen3Workflow):
     """
     Nextflow tests are currently broken in the Kind CI.
@@ -1238,6 +1235,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             assert (
                 task_category in expected_task_outputs
             ), f"Unexpected task name: {task_name}. Expected one of {list(expected_task_outputs.keys())}"
+            expected_task_outputs[task_category]["ran"] = True
 
             assert task["workDir"].startswith(
                 f"{self.s3_storage_config.bucket_name}/"
@@ -1362,6 +1360,11 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                     f"Expected to find: `{expected_file_contents}`\n"
                     f"Actual content: `{file_contents}`"
                 }
+
+        for task_category in expected_task_outputs.keys():
+            assert (
+                expected_task_outputs[task_category].get("ran") == True
+            ), f"Expected to see completed '{task_category}' tasks"
 
     @pytest.mark.parametrize(
         "run_gpu_test",
