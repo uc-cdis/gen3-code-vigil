@@ -124,7 +124,7 @@ class TestGen3EmbeddingBulkContentRetrieval:
             append_file_name=env_vars["APPEND_FILE_NAME"],
         )
 
-    def test_gen3_embedding_small_embeddings(self):
+    def test_embedding_bulk_content_retieval_small(self):
         self.prepare_embeddings(
             collection_name="test_expr", dimensions=256, file_name="expr.tsv"
         )
