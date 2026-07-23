@@ -10,8 +10,15 @@ from utils.test_execution import attach_json_file
 def run_load_test(env_vars):
     service = env_vars["SERVICE"]
     load_test_scenario = env_vars["LOAD_TEST_SCENARIO"]
+    append_file_name = env_vars["APPEND_FILE_NAME"]
     js_script_path = LOAD_TESTING_SCRIPTS_PATH / f"{service}-{load_test_scenario}.js"
-    output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
+    if append_file_name:
+        output_path = (
+            LOAD_TESTING_OUTPUT_PATH
+            / f"{service}-{load_test_scenario}-{append_file_name}.json"
+        )
+    else:
+        output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
     logger.info(f"Running load test for {service}-{load_test_scenario}")
     result = subprocess.run(
         ["k6", "run", js_script_path, f"--summary-export={output_path}"],
@@ -24,14 +31,18 @@ def run_load_test(env_vars):
     return result
 
 
-def get_results(result, service, load_test_scenario):
+def get_results(result, service, load_test_scenario, append_file_name=None):
     logger.info(f"Validating logs for {service}-{load_test_scenario}")
-    output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
+    if append_file_name:
+        file_name = f"{service}-{load_test_scenario}-{append_file_name}.json"
+    else:
+        file_name = f"{service}-{load_test_scenario}.json"
+    output_path = LOAD_TESTING_OUTPUT_PATH / file_name
     output = json.loads(output_path.read_text())
     passed = str(output["metrics"]["checks"]["passes"])
     failed = str(output["metrics"]["checks"]["fails"])
     pass_rate = round(float(output["metrics"]["checks"]["value"]) * 100, 2)
-    attach_json_file(f"{service}-{load_test_scenario}.json")
+    attach_json_file(file_name)
     logger.info(f"Load Test Metrics for {service}-{load_test_scenario}:")
     logger.info(f"Passed   : {passed}")
     logger.info(f"Failed   : {failed}")

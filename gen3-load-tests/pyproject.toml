@@ -12,11 +12,11 @@ include = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.13,<3.15"
 cdislogging = "<2"
 data-simulator = {git = "https://github.com/uc-cdis/data-simulator", rev = "1.6.5"}
 filelock = "<4"
-gen3 = "<5"
+gen3 = { git = "https://github.com/uc-cdis/gen3sdk-python.git", branch = "feat/embeddings" }
 jinja2 = "^3.1.6"
 pytest = "^7.4.0"
 pytest-datadir = "^1.4.1"
@@ -27,7 +27,7 @@ pytest-playwright = "^0.4.3"
 pytest-xdist = "^3.3.1"
 python-dotenv = "^1.0.0"
 requests = "^2.32.4"
-pypfb = "^0.5.29"
+pypfb = "^0.6.2"
 fastavro = "^1.8.2"
 psutil = "^5.9.8"
 nest-asyncio = "^1.6.0"

@@ -160,6 +160,9 @@ yq eval ".funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $
 yq eval ".funnel.funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
+# Gen3-embeddig update ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES
+yq -i ".fence.FENCE_CONFIG_PUBLIC.ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES = [\"https://${HOSTNAME}/ai\"]" "$manifest_values_yaml"
+
 # Remove aws-es-proxy block
 yq -i 'del(.aws-es-proxy)' $manifest_values_yaml
 
@@ -180,6 +183,7 @@ fi
 # Update replicaCount for certain services
 yq eval ".fence.replicaCount = \"6\"" -i "$manifest_values_yaml"
 yq eval ".indexd.replicaCount = \"3\"" -i "$manifest_values_yaml"
+yq eval ".gen3-embeddings.replicaCount = \"3\"" -i "$manifest_values_yaml"
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
 kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
