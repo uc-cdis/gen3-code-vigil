@@ -1,6 +1,7 @@
 import json
 import os
-import zipfile
+import subprocess
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -12,17 +13,7 @@ from utils import test_setup as setup
 
 
 @pytest.mark.gen3_embedding
-class TestGen3EmbeddingSearch:
-    # @classmethod
-    # def setup_class(cls):
-    #     zip_path = TEST_DATA_PATH_OBJECT / "embedding.zip"
-    #     zip_dir = os.path.dirname(zip_path)
-    #     folder_name = os.path.splitext(os.path.basename(zip_path))[0]
-    #     extract_to = os.path.join(zip_dir, folder_name)
-    #     os.makedirs(extract_to, exist_ok=True)
-    #     with zipfile.ZipFile(zip_path, "r") as zip_ref:
-    #         zip_ref.extractall(extract_to)
-
+class TestGen3EmbeddingBulkContentRetrieval:
     def setup_method(self):
         # Initialize gen3sdk objects needed
         self.auth = Gen3Auth(
@@ -38,86 +29,84 @@ class TestGen3EmbeddingSearch:
     def teardown_method(self):
         for did in self.guids_list:
             self.index.delete_record(guid=did)
-        response = self.gen3_embedding.delete_collection(collection_name="public")
+        response = self.gen3_embedding.delete_collection(collection_name="test_expr")
         assert (
             response.status_code == 204
         ), f"Expected status to be 204 but got {response.status_code}"
 
     def prepare_embeddings(self, collection_name, dimensions, file_name):
-        # Prepare data for submitting to embedding service
+        url_prefix = f"{pytest.root_url}/ai"
+        main_file_path = (
+            Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
+        )
+        indexing_file_path = (
+            Path.home() / ".gen3" / f"{pytest.namespace}_{"indexing_account"}.json"
+        )
+        # Create Embeddings Collections
         self.collection_data = {
-            "public": {
+            collection_name: {
                 "collection_name": collection_name,
                 "description": "Create collection for small dimensions testing",
                 "dimensions": dimensions,
             },
         }
         response = self.gen3_embedding.create_collection(
-            data=self.collection_data["public"]
+            data=self.collection_data[collection_name]
         )
         assert (
             response.status_code == 200
         ), f"Expected status to be 200 but got {response.status_code}"
+        # Publish Data into Embeddings Collections
         embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / file_name
-        df = pd.read_csv(embedding_tsv_file, sep="\t")
-        split = int(len(df) * 0.8)
-        embeddings_to_submit = df[:split]
-        embeddins_to_search = df[split:]
-        for embedding, authz, file_id, model, case_id in zip(
-            embeddings_to_submit["embedding"][50:],
-            embeddings_to_submit["authz"][50:],
-            embeddings_to_submit["file_id"][50:],
-            embeddings_to_submit["model"][50:],
-            embeddings_to_submit["case_id"][50:],
-        ):
-            embedding = json.loads(embedding)
-            # Create embedding data
-            embedding_data = {
-                "embeddings": [
-                    {
-                        "embedding": embedding,
-                        "metadata": {
-                            "file_id": file_id,
-                            "model": model,
-                            "case_id": case_id,
-                        },
-                    }
-                ]
-            }
-            response = self.gen3_embedding.create_embedding(
-                collection_name="public", data=embedding_data
-            )
-            assert (
-                response.status_code == 200
-            ), f"Expected status to be 200 but got {response.status_code}"
-            # Create indexd records
-            self_value = response.json()["embeddings"][0]["info"]["self"]
-            url_prefix = f"{pytest.root_url}/ai"
-            indexd_data = {
-                "file_name": file_id,
-                "urls": [f"{url_prefix}{self_value}"],
-                "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
-                "authz": [authz],
-                "size": 0,
-            }
+        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 50"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        # Convert Published Embeddings Manifests into Indexing Manifests
+        expr_output_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / "expr_output.tsv"
+        cmd = f"gen3 --auth {main_file_path} ai embeddings convert {expr_output_tsv_file} --url-prefix {url_prefix}"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        expr_output_converted_file = (
+            TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted.tsv"
+        )
+        cmd = f'gen3 objects manifest validate-manifest-format {expr_output_converted_file} --allowed-protocols "https http"'
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        # Create Gen3 Indexed Records with the Indexing Manifest
+        expr_output_converted_indexed_file = (
+            TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted_indexed.tsv"
+        )
+        cmd = f"gen3 --auth {indexing_file_path} objects manifest publish {expr_output_converted_file} --out-manifest-file {expr_output_converted_indexed_file} --thread-num 1"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
 
-            record = self.index.create_record(**indexd_data)
-            self.guids_list.append(record["did"])
-
-            search_embeddings = []
-            for embedding in embeddins_to_search["embedding"][10:]:
-                embedding = json.loads(embedding)
-                search_embeddings.append(embedding)
-        return search_embeddings
-
-    def perform_load_test(self, search_embeddings, append_file_name):
+    def perform_load_test(self, append_file_name):
+        expr_output_converted_indexed_file = (
+            TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted_indexed.tsv"
+        )
+        df = pd.read_csv(
+            expr_output_converted_indexed_file, sep="\t", header=None, names=["guids"]
+        )
+        self.guids_list = df["guids"][:500].astype(str).tolist()
         # Setup env_vars to pass into load runner
         env_vars = {
             "SERVICE": "embedding",
-            "LOAD_TEST_SCENARIO": "search-embeddings",
+            "LOAD_TEST_SCENARIO": "bulk-content-retieval",
             "APPEND_FILE_NAME": append_file_name,
-            "SEARCH_EMBEDDING_LIST": json.dumps(search_embeddings),
-            "COLLECTIONS_NAME": "public",
+            "GUIDS_LIST": json.dumps(self.guids_list),
+            "COLLECTIONS_NAME": "test_expr",
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
@@ -129,21 +118,14 @@ class TestGen3EmbeddingSearch:
 
         # Process the results
         load_test.get_results(
-            result, env_vars["SERVICE"], env_vars["LOAD_TEST_SCENARIO"]
+            result,
+            service=env_vars["SERVICE"],
+            load_test_scenario=env_vars["LOAD_TEST_SCENARIO"],
+            append_file_name=env_vars["APPEND_FILE_NAME"],
         )
 
     def test_gen3_embedding_small_embeddings(self):
-        search_embeddings = self.prepare_embeddings(
-            collection_name="public", dimensions=256, file_name="expr.tsv"
+        self.prepare_embeddings(
+            collection_name="test_expr", dimensions=256, file_name="expr.tsv"
         )
-        self.perform_load_test(
-            search_embeddings=search_embeddings, append_file_name="small"
-        )
-
-    # def test_gen3_embedding_medium_embeddings(self):
-    #     search_embeddings = self.prepare_embeddings(
-    #         collection_name="public", dimensions=1536, file_name="hist.tsv"
-    #     )
-    #     self.perform_load_test(
-    #         search_embeddings=search_embeddings, append_file_name="medium"
-    #     )
+        self.perform_load_test(append_file_name="small")
