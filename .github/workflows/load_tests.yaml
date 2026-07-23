@@ -223,11 +223,11 @@ jobs:
               THOR_REPO_LIST_PATH="$(pwd)/repo_list.txt"
               echo "THOR_REPO_LIST_PATH=$THOR_REPO_LIST_PATH" >> $GITHUB_ENV
 
-          - name: Download embedding tests file
-            if: ${{ env.SKIP_TESTS != 'true' }}
-            run: |
-              aws s3 cp s3://ci-embedding-test/expr_hist_summ_as_tsvs.zip ./test_data/embedding.zip
-              unzip -o ./test_data/embedding.zip -d ./test_data/embedding/
+          # - name: Download embedding tests file
+          #   if: ${{ env.SKIP_TESTS != 'true' }}
+          #   run: |
+          #     aws s3 cp s3://ci-embedding-test/expr_hist_summ_as_tsvs.zip ./test_data/embedding.zip
+          #     unzip -o ./test_data/embedding.zip -d ./test_data/embedding/
 
           - name: Prepare CI environment
             id: prep_ci_env
