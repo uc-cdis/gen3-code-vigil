@@ -44,7 +44,7 @@ for filename in os.listdir(folder_path):
                 "metadata-service-create-and-query.json": "TestMetadataCreateAndQuery",
                 "metadata-service-filter-large-database.json": "TestMetadataFilterLargeDatabase",
                 "sheepdog-import-clinical-metadata.json": "TestSheepdogImportClinicalMetadata",
-                "embedding-bulk-content-retieval-small.json": "TestGen3EmbeddingBulkContentRetrieval",
+                "embedding-bulk-content-retieval-medium.json": "TestGen3EmbeddingBulkContentRetrieval",
             }
             test_case = {
                 "fence-presigned-url.json": "test_fence_presigned_url",
@@ -54,7 +54,7 @@ for filename in os.listdir(folder_path):
                 "metadata-service-create-and-query.json": "test_metadata_service_create_and_query",
                 "metadata-service-filter-large-database.json": "test_metadata_service_filter_large_database",
                 "sheepdog-import-clinical-metadata.json": "test_sheepdog_import_clinical_metadata",
-                "embedding-bulk-content-retieval-small.json": "test_embedding_bulk_content_retieval_small",
+                "embedding-bulk-content-retieval-medium.json": "test_embedding_bulk_content_retieval_medium",
             }
             row = {
                 "run_date": str(start_time),
