@@ -3,7 +3,6 @@ const http = require('k6/http'); // eslint-disable-line import/no-unresolved
 
 const {
   GUIDS_LIST,
-  COLLECTIONS_NAME,
   RELEASE_VERSION,
   GEN3_HOST,
   ACCESS_TOKEN,
@@ -79,6 +78,7 @@ export default function () {
   const payload = JSON.stringify({
     guids: guids_list,
   });
+
 
   group('Sending Embedding Search Request', () => {
     console.log(`Shooting requests against: ${url}`);

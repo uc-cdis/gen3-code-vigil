@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -26,13 +27,13 @@ class TestGen3EmbeddingBulkContentRetrieval:
         self.guids_list = []
         self.gen3_embedding = Embedding()
 
-    def teardown_method(self):
-        for did in self.guids_list:
-            self.index.delete_record(guid=did)
-        response = self.gen3_embedding.delete_collection(collection_name="test_expr")
-        assert (
-            response.status_code == 204
-        ), f"Expected status to be 204 but got {response.status_code}"
+    # def teardown_method(self):
+    #     for did in self.guids_list:
+    #         self.index.delete_record(guid=did)
+    #     response = self.gen3_embedding.delete_collection(collection_name="test_expr")
+    #     assert (
+    #         response.status_code == 204
+    #     ), f"Expected status to be 204 but got {response.status_code}"
 
     def prepare_embeddings(self, collection_name, dimensions, file_name):
         url_prefix = f"{pytest.root_url}/ai"
@@ -58,26 +59,38 @@ class TestGen3EmbeddingBulkContentRetrieval:
         ), f"Expected status to be 200 but got {response.status_code}"
         # Publish Data into Embeddings Collections
         embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / file_name
-        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 50"
+        start_time = time.perf_counter()
+        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 50 --overwrite"
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to publish data into embedding: {time.perf_counter() - start_time:.3f}s"
         )
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
         # Convert Published Embeddings Manifests into Indexing Manifests
         expr_output_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / "expr_output.tsv"
+        start_time = time.perf_counter()
         cmd = f"gen3 --auth {main_file_path} ai embeddings convert {expr_output_tsv_file} --url-prefix {url_prefix}"
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to convert into indexing manifests: {time.perf_counter() - start_time:.3f}s"
         )
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
         expr_output_converted_file = (
             TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted.tsv"
         )
+        start_time = time.perf_counter()
         cmd = f'gen3 objects manifest validate-manifest-format {expr_output_converted_file} --allowed-protocols "https http"'
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to validate indexing manifests: {time.perf_counter() - start_time:.3f}s"
         )
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
@@ -85,32 +98,33 @@ class TestGen3EmbeddingBulkContentRetrieval:
         expr_output_converted_indexed_file = (
             TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted_indexed.tsv"
         )
+        start_time = time.perf_counter()
         cmd = f"gen3 --auth {indexing_file_path} objects manifest publish {expr_output_converted_file} --out-manifest-file {expr_output_converted_indexed_file} --thread-num 1"
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to create indexd records: {time.perf_counter() - start_time:.3f}s"
         )
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
 
     def perform_load_test(self, append_file_name):
         expr_output_converted_indexed_file = (
-            TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted_indexed.tsv"
+            TEST_DATA_PATH_OBJECT / "embedding" / "hist_output_converted_indexed.tsv"
         )
-        df = pd.read_csv(
-            expr_output_converted_indexed_file, sep="\t", header=None, names=["guids"]
-        )
-        self.guids_list = df["guids"][:500].astype(str).tolist()
+        df = pd.read_csv(expr_output_converted_indexed_file, sep="\t")
+        self.guids_list = df["guid"][:1000].astype(str).tolist()
         # Setup env_vars to pass into load runner
         env_vars = {
             "SERVICE": "embedding",
             "LOAD_TEST_SCENARIO": "bulk-content-retieval",
             "APPEND_FILE_NAME": append_file_name,
             "GUIDS_LIST": json.dumps(self.guids_list),
-            "COLLECTIONS_NAME": "test_expr",
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
-            "VIRTUAL_USERS": '[{"duration": "5s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "30s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
         }
 
         # Run k6 load test
@@ -124,8 +138,14 @@ class TestGen3EmbeddingBulkContentRetrieval:
             append_file_name=env_vars["APPEND_FILE_NAME"],
         )
 
-    def test_embedding_bulk_content_retieval_small(self):
+    # def test_embedding_bulk_content_retieval_small(self):
+    #     self.prepare_embeddings(
+    #         collection_name="test_expr", dimensions=256, file_name="expr.tsv"
+    #     )
+    #     self.perform_load_test(append_file_name="small")
+
+    def test_embedding_bulk_content_retieval_medium(self):
         self.prepare_embeddings(
-            collection_name="test_expr", dimensions=256, file_name="expr.tsv"
+            collection_name="hist", dimensions=1536, file_name="hist.tsv"
         )
-        self.perform_load_test(append_file_name="small")
+        self.perform_load_test(append_file_name="medium")
