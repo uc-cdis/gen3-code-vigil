@@ -1387,12 +1387,17 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         - TEST_MV_FILE and TEST_MV_FOLDER_CONTENTS. Error:
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
             -- they are not supported by S3 CSI mount (https://github.com/awslabs/mountpoint-s3/issues/506#issuecomment-1709952359)
+        Note: these work in the Kind CI, where we use Minio instead of AWS S3.
 
         Regression test for TES issues:
         - #40 (support Nextflow "publishDir" directive)
         - #60 (dynamic NodeSelector and Toleration configs to support GPU tasks)
         """
-        known_unsupported = ["TEST_MV_FILE", "TEST_MV_FOLDER_CONTENTS"]
+        known_unsupported = (
+            []
+            if "localhost" in pytest.hostname
+            else ["TEST_MV_FILE", "TEST_MV_FOLDER_CONTENTS"]
+        )
 
         # clone the tests repo
         directory = "test_data/gen3_workflow/nf-canary"
