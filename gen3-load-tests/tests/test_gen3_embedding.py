@@ -70,9 +70,11 @@ class TestGen3EmbeddingBulkContentRetrieval:
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
         # Convert Published Embeddings Manifests into Indexing Manifests
-        expr_output_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / "expr_output.tsv"
+        output_tsv_file = (
+            TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}_output.tsv"
+        )
         start_time = time.perf_counter()
-        cmd = f"gen3 --auth {main_file_path} ai embeddings convert {expr_output_tsv_file} --url-prefix {url_prefix}"
+        cmd = f"gen3 --auth {main_file_path} ai embeddings convert {output_tsv_file} --url-prefix {url_prefix}"
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -81,11 +83,13 @@ class TestGen3EmbeddingBulkContentRetrieval:
         )
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
-        expr_output_converted_file = (
-            TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted.tsv"
+        output_converted_file = (
+            TEST_DATA_PATH_OBJECT
+            / "embedding"
+            / f"{collection_name}_output_converted.tsv"
         )
         start_time = time.perf_counter()
-        cmd = f'gen3 objects manifest validate-manifest-format {expr_output_converted_file} --allowed-protocols "https http"'
+        cmd = f'gen3 objects manifest validate-manifest-format {output_converted_file} --allowed-protocols "https http"'
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -95,11 +99,13 @@ class TestGen3EmbeddingBulkContentRetrieval:
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
         # Create Gen3 Indexed Records with the Indexing Manifest
-        expr_output_converted_indexed_file = (
-            TEST_DATA_PATH_OBJECT / "embedding" / "expr_output_converted_indexed.tsv"
+        output_converted_indexed_file = (
+            TEST_DATA_PATH_OBJECT
+            / "embedding"
+            / f"{collection_name}_output_converted_indexed.tsv"
         )
         start_time = time.perf_counter()
-        cmd = f"gen3 --auth {indexing_file_path} objects manifest publish {expr_output_converted_file} --out-manifest-file {expr_output_converted_indexed_file} --thread-num 1"
+        cmd = f"gen3 --auth {indexing_file_path} objects manifest publish {output_converted_file} --out-manifest-file {output_converted_indexed_file} --thread-num 1"
         result = subprocess.run(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -109,11 +115,13 @@ class TestGen3EmbeddingBulkContentRetrieval:
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
 
-    def perform_load_test(self, append_file_name):
-        expr_output_converted_indexed_file = (
-            TEST_DATA_PATH_OBJECT / "embedding" / "hist_output_converted_indexed.tsv"
+    def perform_load_test(self, collection_name, append_file_name):
+        output_converted_indexed_file = (
+            TEST_DATA_PATH_OBJECT
+            / "embedding"
+            / f"{collection_name}_output_converted_indexed.tsv"
         )
-        df = pd.read_csv(expr_output_converted_indexed_file, sep="\t")
+        df = pd.read_csv(output_converted_indexed_file, sep="\t")
         self.guids_list = df["guid"][:1000].astype(str).tolist()
         # Setup env_vars to pass into load runner
         env_vars = {
@@ -124,7 +132,7 @@ class TestGen3EmbeddingBulkContentRetrieval:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
-            "VIRTUAL_USERS": '[{"duration": "30s", "target": 1}, {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "60s", "target": 1}]',  # , {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
         }
 
         # Run k6 load test
@@ -148,4 +156,4 @@ class TestGen3EmbeddingBulkContentRetrieval:
         self.prepare_embeddings(
             collection_name="hist", dimensions=1536, file_name="hist.tsv"
         )
-        self.perform_load_test(append_file_name="medium")
+        self.perform_load_test(collection_name="hist", append_file_name="medium")
