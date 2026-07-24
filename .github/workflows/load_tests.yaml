@@ -228,6 +228,7 @@ jobs:
             run: |
               aws s3 cp s3://ci-embedding-test/expr_hist_summ_as_tsvs.zip ./test_data/embedding.zip
               unzip -o ./test_data/embedding.zip -d ./test_data/embedding/
+              find ./test_data/embedding -type f
 
           - name: Prepare CI environment
             id: prep_ci_env
