@@ -1180,20 +1180,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
-    """
-    Nextflow tests are currently broken in the Kind CI.
-
-    - Nextflow logs:
-    nextflow.exception.AbortOperationException: Cannot create work-dir 's3://gen3wf-localhost-1/ga4gh-tes' -- Make sure you have write permissions or specify a different directory by using the `-w` command line option
-
-    - gen3-workflow logs:
-    Incoming S3 request from user '1': 'PUT gen3wf-localhost-1/ga4gh-tes/'
-    Outgoing S3 request: 'PUT http://minio.gen3-code-vigil-pr-561.svc.cluster.local:9000/gen3wf-localhost-1/ga4gh-tes/'
-    Error from S3: 403 <?xml version="1.0" encoding="UTF-8"?>
-    2026-06-01T23:00:33.9689129Z <Error><Code>SignatureDoesNotMatch</Code><Message>The request signature we calculated does not match the signature you provided. Check your key and signing method.</Message><Key>ga4gh-tes/</Key><BucketName>gen3wf-localhost-1</BucketName><Resource>/gen3wf-localhost-1/ga4gh-tes/</Resource><RequestId>18B5174696300C46</RequestId><HostId>dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8</HostId></Error>
-    "PUT /s3/gen3wf-localhost-1/ga4gh-tes/ HTTP/1.0" 403
-    """
-
     def test_nextflow_workflow(self):
         """
         Test Case: Verify that a Nextflow workflow can be executed successfully.
