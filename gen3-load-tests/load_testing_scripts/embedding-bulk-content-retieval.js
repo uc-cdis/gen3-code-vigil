@@ -85,6 +85,10 @@ export default function () {
 
     const res = http.post(url, payload, params);
 
+    console.log(`Payload: ${payload}`);
+
+    console.log(`Response: ${res.body}`);
+
     if (res.status !== 200) {
       console.log(`Status: ${res.status}`);
       console.log(`Response: ${res.body}`);

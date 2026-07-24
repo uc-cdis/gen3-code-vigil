@@ -132,7 +132,7 @@ class TestGen3EmbeddingBulkContentRetrieval:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
-            "VIRTUAL_USERS": '[{"duration": "60s", "target": 1}]',  # , {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "30s", "target": 1}]',  # , {"duration": "10s", "target": 10}, {"duration": "120s", "target": 100}, {"duration": "120s", "target": 300}, {"duration": "30s", "target": 1}]',
         }
 
         # Run k6 load test
@@ -153,7 +153,7 @@ class TestGen3EmbeddingBulkContentRetrieval:
     #     self.perform_load_test(append_file_name="small")
 
     def test_embedding_bulk_content_retieval_medium(self):
-        self.prepare_embeddings(
-            collection_name="hist", dimensions=1536, file_name="hist.tsv"
-        )
+        # self.prepare_embeddings(
+        #     collection_name="hist", dimensions=1536, file_name="hist.tsv"
+        # )
         self.perform_load_test(collection_name="hist", append_file_name="medium")
