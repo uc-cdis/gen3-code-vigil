@@ -77,7 +77,7 @@ def pytest_runtest_logreport(report):
         sqs = boto3.client("sqs")
         if not os.getenv("RELEASE_VERSION"):
             # If RELEASE_VERSION is not provided, send the data to non-release table
-            queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-sqs-non-release"
+            queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-non-release-sqs"
         else:
             # Else send it to the table with release data
             queue_url = (

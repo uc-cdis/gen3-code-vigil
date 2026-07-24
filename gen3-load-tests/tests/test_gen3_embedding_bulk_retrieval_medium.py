@@ -58,7 +58,7 @@ class TestGen3EmbeddingBulkRetrievalMedium:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
-            "VIRTUAL_USERS": '[{"duration": "30s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "120s", "target": 1}]',
         }
 
         # Run k6 load test
