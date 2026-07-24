@@ -75,9 +75,14 @@ def pytest_runtest_logreport(report):
 
     try:
         sqs = boto3.client("sqs")
-        queue_url = (
-            "https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-sqs"
-        )
+        if not os.getenv("RELEASE_VERSION"):
+            # If RELEASE_VERSION is not provided, send the data to non-release table
+            queue_url = "https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-sqs-non-release"
+        else:
+            # Else send it to the table with release data
+            queue_url = (
+                "https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-sqs"
+            )
         response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
         logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
     except Exception as e:

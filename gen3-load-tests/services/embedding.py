@@ -1,4 +1,7 @@
 import json
+import subprocess
+import time
+from pathlib import Path
 
 import pytest
 import requests
@@ -94,3 +97,97 @@ class Embedding(object):
         )
         logger.info(f"Status code after searching embedding: {response.status_code}")
         return response
+
+    def prepare_embeddings(self, collection_name, dimensions, file_name):
+        url_prefix = f"{pytest.root_url}/ai"
+        main_file_path = (
+            Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
+        )
+        indexing_file_path = (
+            Path.home() / ".gen3" / f"{pytest.namespace}_{"indexing_account"}.json"
+        )
+        # Create Embeddings Collections
+        self.collection_data = {
+            collection_name: {
+                "collection_name": collection_name,
+                "description": "Create collection for small dimensions testing",
+                "dimensions": dimensions,
+            },
+        }
+        response = self.create_collection(data=self.collection_data[collection_name])
+        assert (
+            response.status_code == 200
+        ), f"Expected status to be 200 but got {response.status_code}"
+        # Publish Data into Embeddings Collections
+        embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / file_name
+        start_time = time.perf_counter()
+        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 50 --overwrite"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to publish data into embedding: {time.perf_counter() - start_time:.3f}s"
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        # Convert Published Embeddings Manifests into Indexing Manifests
+        output_tsv_file = (
+            TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}_output.tsv"
+        )
+        start_time = time.perf_counter()
+        cmd = f"gen3 --auth {main_file_path} ai embeddings convert {output_tsv_file} --url-prefix {url_prefix}"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to convert into indexing manifests: {time.perf_counter() - start_time:.3f}s"
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        output_converted_file = (
+            TEST_DATA_PATH_OBJECT
+            / "embedding"
+            / f"{collection_name}_output_converted.tsv"
+        )
+        start_time = time.perf_counter()
+        cmd = f'gen3 objects manifest validate-manifest-format {output_converted_file} --allowed-protocols "https http"'
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to validate indexing manifests: {time.perf_counter() - start_time:.3f}s"
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        # Create Gen3 Indexed Records with the Indexing Manifest
+        output_converted_indexed_file = (
+            TEST_DATA_PATH_OBJECT
+            / "embedding"
+            / f"{collection_name}_output_converted_indexed.tsv"
+        )
+        start_time = time.perf_counter()
+        cmd = f"gen3 --auth {indexing_file_path} objects manifest publish {output_converted_file} --out-manifest-file {output_converted_indexed_file} --thread-num 1"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        logger.info(
+            f"Time Taken to create indexd records: {time.perf_counter() - start_time:.3f}s"
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+
+    def set_embeddings_replica(self, replica_count):
+        cmd = f"kubectl scale deployment gen3-embeddings-deployment --replicas={replica_count} -n {pytest.namespace}"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        cmd = f"kubectl -n {pytest.namespace} rollout status deployment/gen3-embeddings-deployment --timeout=5m"
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        # Give additional buffer time
+        time.sleep(30)
