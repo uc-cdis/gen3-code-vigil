@@ -19,7 +19,8 @@ on:
           - TestIndexdDrsEndpoint
           - TestMetadataCreateAndQuery
           - TestSheepdogImportClinicalMetadata
-          - TestGen3Embedding
+          - TestGen3EmbeddingBulkRetrievalSmall
+          - TestGen3EmbeddingBulkRetrievalMedium
           - ALL
         default: ALL
       RELEASE_VERSION:
