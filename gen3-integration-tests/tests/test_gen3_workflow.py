@@ -1301,11 +1301,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Failed to read or decode content of {out_file_name} from S3. Error: {e}"
             )
             raise
-        with open(f"test_data/gen3_workflow/{out_file_name}", "wb") as f:
-            f.write(output_file_contents)
         if (
             SKIP_BROKEN == "NO" or "localhost" in pytest.hostname
-        ):  # Works in Dev env, not in Kind
+        ):  # Works in Kind, not in Dev env
             assert b"/Width 100\n/Height 200" in output_file_contents  # page 1
             assert b"/Width 300\n/Height 400" in output_file_contents  # page 2
 
@@ -1325,8 +1323,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     f"Failed to read or decode content of {out_file_name} from S3. Error: {e}"
                 )
                 raise
-            with open(f"test_data/gen3_workflow/{out_file_name}", "wb") as f:
-                f.write(output_file_contents)
             with zipfile.ZipFile(f"test_data/gen3_workflow/{out_file_name}", "r") as f:
                 assert f.namelist() == ["output.txt", "output.pdf"]
 
