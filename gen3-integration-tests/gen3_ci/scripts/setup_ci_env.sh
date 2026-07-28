@@ -354,7 +354,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
 
     # Remove workspace-proxy. This is temporary until we add workspace-proxy to CI
-    yq eval "del(.workspace-proxy)" -i $ci_default_manifest_values_yaml
+    yq eval 'del(."workspace-proxy")' -i $ci_default_manifest_values_yaml
 fi
 
 # Check whether specific services are enabled in the final manifest
