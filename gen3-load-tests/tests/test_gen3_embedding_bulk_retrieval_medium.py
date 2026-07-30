@@ -28,6 +28,10 @@ class TestGen3EmbeddingBulkRetrievalMedium:
         cls.guids_list = []
         cls.gen3_embedding = Embedding()
 
+        cls.gen3_embedding.generate_embedding_data(
+            collection_name="hist", number_of_records=10000, embedding_size=1536
+        )
+
         cls.gen3_embedding.prepare_embeddings(
             collection_name="hist", dimensions=1536, file_name="hist.tsv"
         )

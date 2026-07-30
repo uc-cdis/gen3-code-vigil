@@ -1,8 +1,13 @@
+import csv
 import json
+import random
+import string
 import subprocess
 import time
+import uuid
 from pathlib import Path
 
+import numpy as np
 import pytest
 import requests
 from gen3.auth import Gen3Auth
@@ -191,3 +196,46 @@ class Embedding(object):
             raise Exception(result.stderr.decode("utf-8"))
         # Give additional buffer time
         time.sleep(30)
+
+    def generate_embedding_data(
+        self, collection_name, number_of_records, embedding_size, prefix="ABCD"
+    ):
+        rng = np.random.default_rng(0)
+        tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
+        with open(tsv_file, "w+", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, delimiter="\t")
+            writer.writerow(
+                [
+                    "embedding",
+                    "authz",
+                    "collection_name",
+                    "collection_id",
+                    "case_id",
+                    "file_id",
+                    "model",
+                ]
+            )
+            for i in range(number_of_records):
+                embedding = rng.uniform(-1, 1, size=embedding_size).tolist()
+                # Generate collection_id and case_id
+                collection_id = f"{prefix}-{random.randint(0, 99):02d}-{random.randint(0, 9999):04d}"
+                code = "".join(
+                    random.choices(string.ascii_uppercase + string.digits, k=3)
+                )
+                num = f"{random.randint(0, 99):02d}"
+                dx = f"DX{random.randint(0, 9)}"
+                uid = uuid.uuid4()
+                case_id = f"{collection_id}-{code}-{num}-{dx}.{uid}"
+
+                # Write row to tsv file
+                writer.writerow(
+                    [
+                        embedding,
+                        "/programs/dev/projects/testproject1",
+                        collection_name,
+                        "",
+                        collection_id,
+                        case_id,
+                        collection_name,
+                    ]
+                )
