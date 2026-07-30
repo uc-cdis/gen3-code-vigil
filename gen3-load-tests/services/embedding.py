@@ -200,6 +200,8 @@ class Embedding(object):
     def generate_embedding_data(
         self, collection_name, number_of_records, embedding_size, prefix="ABCD"
     ):
+        path = TEST_DATA_PATH_OBJECT / "embedding"
+        path.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(0)
         tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
         with open(tsv_file, "w+", newline="", encoding="utf-8") as f:
