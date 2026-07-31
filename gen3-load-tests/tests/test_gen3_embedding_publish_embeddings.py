@@ -139,7 +139,7 @@ class TestGen3EmbeddingPublishEmbeddings:
             }
         }
 
-        file_name = f"embedding-publish-embedding[{collection_name}-{number_of_records}-{dimensions}].json"
+        file_name = f"embedding-publish-embedding-[{collection_name}-{number_of_records}-{dimensions}].json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
             json.dump(summary, f, indent=2)
