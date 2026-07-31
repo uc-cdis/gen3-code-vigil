@@ -240,12 +240,16 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         if [[ "$ci_enabled_value" == "false" && "$service_enabled_value" == "true" ]]; then
           yq eval ".${key}.enabled = true" -i $ci_default_manifest_values_yaml
         fi
-        echo "Updating ${key} service with ${image_tag_value}"
+        echo "Updating ${key} service to tag ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            repository=$(yq eval ".${key}.image.repository" $new_manifest_values_file_path 2>/dev/null)
             if [[ "$key" == "frontend-framework" ]]; then
               repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
-              yq eval ".frontend-framework.image.repository = \"${repository}\"" -i "$ci_default_manifest_values_yaml"
+            fi
+            if [ "$repository" != "null" ]; then
+              echo "Updating ${key} service to repo ${repository}"
+              yq eval ".${key}.image.repository = \"$repository\"" -i $ci_default_manifest_values_yaml
             fi
         fi
       fi
