@@ -1,5 +1,6 @@
 import csv
 import json
+import os
 import random
 import string
 import subprocess
@@ -204,6 +205,8 @@ class Embedding(object):
         path.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(0)
         tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
+        if os.path.exists(tsv_file):
+            os.remove(tsv_file)
         with open(tsv_file, "w+", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, delimiter="\t")
             writer.writerow(

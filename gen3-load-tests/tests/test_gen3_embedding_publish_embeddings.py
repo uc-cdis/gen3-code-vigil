@@ -8,7 +8,7 @@ from statistics import mean
 import pytest
 from gen3.auth import Gen3Auth
 from services.embedding import Embedding
-from utils import LOAD_TESTING_OUTPUT_PATH, TEST_DATA_PATH_OBJECT, logger
+from utils import LOAD_TESTING_OUTPUT_PATH, TEST_DATA_PATH_OBJECT, load_test, logger
 from utils import test_setup as setup
 from utils.test_execution import attach_json_file
 
@@ -138,15 +138,19 @@ class TestGen3EmbeddingPublishEmbeddings:
                 "data_sent": {"count": 0, "rate": 0},
             }
         }
-        file_name = "publish-embeddings.json"
-        file_name = f"embeddings-publish-embedding[{collection_name}-{number_of_records}-{dimensions}].json"
+
+        file_name = f"embedding-publish-embedding[{collection_name}-{number_of_records}-{dimensions}].json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
             json.dump(summary, f, indent=2)
         attach_json_file(file_name)
 
-        if fails != 0:
-            raise Exception(f"{fails} failures were encountered.")
+        load_test.get_results(
+            result,
+            service="embedding",
+            load_test_scenario="publish-embedding",
+            append_file_name=f"[{collection_name}-{number_of_records}-{dimensions}]",
+        )
 
     @pytest.mark.parametrize(
         "collection_name,number_of_records,dimensions",
@@ -155,7 +159,7 @@ class TestGen3EmbeddingPublishEmbeddings:
             ("hist", 10000, 1536),
         ],
     )
-    def test_embeddings_publish_embedding(
+    def test_embedding_publish_embedding(
         self, collection_name, number_of_records, dimensions
     ):
         self.publish_embeddings(collection_name, number_of_records, dimensions)
