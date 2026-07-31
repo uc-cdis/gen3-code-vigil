@@ -243,9 +243,12 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         echo "Updating ${key} service with ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            repository=$(yq eval ".${key}.image.repository" $new_manifest_values_file_path 2>/dev/null)
             if [[ "$key" == "frontend-framework" ]]; then
               repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
-              yq eval ".frontend-framework.image.repository = \"${repository}\"" -i "$ci_default_manifest_values_yaml"
+            fi
+            if [ ! -z "$repository" ]; then
+              yq eval ".${key}.image.repository = \"$repository\"" -i $ci_default_manifest_values_yaml
             fi
         fi
       fi
