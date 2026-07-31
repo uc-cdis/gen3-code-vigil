@@ -127,7 +127,7 @@ class TestGen3EmbeddingPublishEmbeddings:
                     "count": iterations,
                     "rate": round(iterations / test_duration_seconds, 2),
                 },
-                "command_duration": {
+                "http_req_duration": {
                     "min": round(min(durations), 2),
                     "avg": round(mean(durations), 2),
                     "med": round(self.percentile(durations, 50), 2),
