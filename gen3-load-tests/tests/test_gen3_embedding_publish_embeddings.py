@@ -139,7 +139,7 @@ class TestGen3EmbeddingPublishEmbeddings:
             }
         }
 
-        file_name = f"embedding-publish-embedding-[{collection_name}-{number_of_records}-{dimensions}].json"
+        file_name = f"embedding-publish-embedding-gen3sdk[{collection_name}-{number_of_records}-{dimensions}].json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
             json.dump(summary, f, indent=2)
@@ -148,7 +148,7 @@ class TestGen3EmbeddingPublishEmbeddings:
             result,
             service="embedding",
             load_test_scenario="publish-embedding",
-            append_file_name=f"[{collection_name}-{number_of_records}-{dimensions}]",
+            append_file_name=f"gen3sdk[{collection_name}-{number_of_records}-{dimensions}]",
         )
 
     @pytest.mark.parametrize(
@@ -158,7 +158,7 @@ class TestGen3EmbeddingPublishEmbeddings:
             ("hist", 10000, 1536),
         ],
     )
-    def test_embedding_publish_embedding(
+    def test_embedding_publish_embedding_gen3sdk(
         self, collection_name, number_of_records, dimensions
     ):
         self.publish_embeddings(collection_name, number_of_records, dimensions)
