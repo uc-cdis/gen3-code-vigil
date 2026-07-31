@@ -22,16 +22,6 @@ class TestGen3EmbeddingPublishEmbeddings:
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
         cls.gen3_embedding = Embedding()
-        cls.gen3_embedding.generate_embedding_data(
-            collection_name="hist", number_of_records=10000, embedding_size=1536
-        )
-
-    @classmethod
-    def teardown_class(cls):
-        response = cls.gen3_embedding.delete_collection(collection_name="hist")
-        assert (
-            response.status_code == 204
-        ), f"Expected status to be 204 but got {response.status_code}"
 
     def percentile(self, values, p):
         if not values:
@@ -45,35 +35,46 @@ class TestGen3EmbeddingPublishEmbeddings:
 
         return values[index]
 
-    def test_publish_embeddings(self):
+    def publish_embeddings(self, collection_name, number_of_records, dimensions):
+        # Generate the embeddings and store in tsv file
+        self.gen3_embedding.generate_embedding_data(
+            collection_name=collection_name,
+            number_of_records=number_of_records,
+            embedding_size=dimensions,
+        )
+        # Delete collection
+        response = self.gen3_embedding.delete_collection(
+            collection_name=collection_name
+        )
+        assert (
+            response.status_code == 204
+        ), f"Expected status to be 204 but got {response.status_code}"
         iterations = 10
         durations = []
         passes = 0
         fails = 0
         test_start = time.perf_counter()
-        # Run the publish command 10 times
         for i in range(iterations):
-            response = self.gen3_embedding.delete_collection(collection_name="hist")
-            assert (
-                response.status_code == 204
-            ), f"Expected status to be 204 but got {response.status_code}"
             self.collection_data = {
-                "hist": {
-                    "collection_name": "hist",
+                collection_name: {
+                    "collection_name": collection_name,
                     "description": "Create collection for dimensions testing",
-                    "dimensions": 1536,
+                    "dimensions": dimensions,
                 },
             }
             response = self.gen3_embedding.create_collection(
-                data=self.collection_data["hist"]
+                data=self.collection_data[collection_name]
             )
             start = time.perf_counter()
             try:
                 main_file_path = (
                     Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
                 )
-                embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / "hist.tsv"
-                cmd = f'gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection "hist" --batch-size 1000'
+                embedding_tsv_file = (
+                    TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
+                )
+                # Run the publish command
+                cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 1000"
                 result = subprocess.run(
                     cmd,
                     shell=True,
@@ -101,6 +102,13 @@ class TestGen3EmbeddingPublishEmbeddings:
             except Exception as e:
                 fails += 1
                 logger.info(f"Iteration {i + 1} error: {e}")
+            finally:
+                response = self.gen3_embedding.delete_collection(
+                    collection_name=collection_name
+                )
+                assert (
+                    response.status_code == 204
+                ), f"Expected status to be 204 but got {response.status_code}"
 
         test_duration_seconds = time.perf_counter() - test_start
         summary = {
@@ -124,6 +132,7 @@ class TestGen3EmbeddingPublishEmbeddings:
             }
         }
         file_name = "publish-embeddings.json"
+        file_name = f"embeddings-publish-embedding[{collection_name}-{number_of_records}-{dimensions}].json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
             json.dump(summary, f, indent=2)
@@ -131,3 +140,15 @@ class TestGen3EmbeddingPublishEmbeddings:
 
         if fails != 0:
             raise Exception(f"{fails} failures were encountered.")
+
+    @pytest.mark.parametrize(
+        "collection_name,number_of_records,dimensions",
+        [
+            ("expr", 10000, 256),
+            ("hist", 10000, 1536),
+        ],
+    )
+    def test_embeddings_publish_embedding(
+        self, collection_name, number_of_records, dimensions
+    ):
+        self.publish_embeddings(collection_name, number_of_records, dimensions)
