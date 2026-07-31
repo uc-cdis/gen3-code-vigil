@@ -62,6 +62,7 @@ for filename in os.listdir(folder_path):
                 "embedding-bulk-content-retieval-small[3-500].json": "TestGen3EmbeddingBulkRetrievalSmall",
                 "embedding-bulk-content-retieval-small[3-1000].json": "TestGen3EmbeddingBulkRetrievalSmall",
                 "embedding-bulk-content-retieval-small[3-2000].json": "TestGen3EmbeddingBulkRetrievalSmall",
+                "publish-embeddings.json": "TestGen3EmbeddingPublishEmbeddings",
             }
             test_case = {
                 "fence-presigned-url.json": "test_fence_presigned_url",
@@ -89,6 +90,7 @@ for filename in os.listdir(folder_path):
                 "embedding-bulk-content-retieval-small[3-500].json": "test_embedding_bulk_content_retrieval_small[3-500]",
                 "embedding-bulk-content-retieval-small[3-1000].json": "test_embedding_bulk_content_retrieval_small[3-1000]",
                 "embedding-bulk-content-retieval-small[3-2000].json": "test_embedding_bulk_content_retrieval_small[3-2000]",
+                "publish-embeddings.json": "test_publish_embeddings",
             }
             row = {
                 "run_date": str(start_time),

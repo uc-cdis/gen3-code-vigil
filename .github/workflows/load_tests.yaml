@@ -21,6 +21,7 @@ on:
           - TestSheepdogImportClinicalMetadata
           - TestGen3EmbeddingBulkRetrievalSmall
           - TestGen3EmbeddingBulkRetrievalMedium
+          - TestGen3EmbeddingPublishEmbeddings
           - ALL
         default: ALL
       RELEASE_VERSION:
@@ -53,7 +54,7 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="TestGen3EmbeddingBulkRetrievalMedium"
+              TEST_SUITE="TestGen3EmbeddingPublishEmbeddings"
               RELEASE_VERSION=""
             fi
 
