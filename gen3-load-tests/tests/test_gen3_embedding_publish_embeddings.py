@@ -116,14 +116,21 @@ class TestGen3EmbeddingPublishEmbeddings:
                 "checks": {
                     "passes": passes,
                     "fails": fails,
-                    "rate": round((passes / iterations) * 100, 2),
+                    "value": (
+                        round(passes / (passes + fails), 4) if (passes + fails) else 0
+                    ),
+                    "rate": (
+                        round((passes / iterations) * 100, 2) if (passes + fails) else 0
+                    ),
                 },
                 "iterations": {
                     "count": iterations,
                     "rate": round(iterations / test_duration_seconds, 2),
                 },
                 "command_duration": {
+                    "min": round(min(durations), 2),
                     "avg": round(mean(durations), 2),
+                    "med": round(self.percentile(durations, 50), 2),
                     "max": round(max(durations), 2),
                     "p(90)": round(self.percentile(durations, 90), 2),
                     "p(95)": round(self.percentile(durations, 95), 2),
