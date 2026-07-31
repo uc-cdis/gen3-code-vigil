@@ -22,6 +22,9 @@ class TestGen3EmbeddingPublishEmbeddings:
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
         cls.gen3_embedding = Embedding()
+        cls.gen3_embedding.generate_embedding_data(
+            collection_name="hist", number_of_records=10000, embedding_size=1536
+        )
 
     @classmethod
     def teardown_class(cls):
