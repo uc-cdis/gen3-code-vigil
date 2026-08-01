@@ -9,7 +9,6 @@ import random
 import string
 
 import pytest
-from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from pages.login import LoginPage
 from pages.submission import SubmissionPage
@@ -17,8 +16,7 @@ from playwright.sync_api import Page
 from services.fence import Fence
 from services.graph import GraphDataTools
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 def create_large_file(filePath, megabytes, text):

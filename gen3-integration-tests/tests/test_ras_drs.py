@@ -7,13 +7,11 @@ import time
 
 import pytest
 import requests
-from cdislogging import get_logger
 from playwright.sync_api import Page
 from services.fence import Fence
 from services.indexd import Indexd
 from services.ras import RAS
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 indexd_files = {
     "Permission_test_user_should_have": {

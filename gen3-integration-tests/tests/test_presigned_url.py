@@ -5,12 +5,9 @@ PRESIGNED URL
 import os
 
 import pytest
-from cdislogging import get_logger
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
-
+from utils import logger
 
 indexd_files = {
     "allowed": {
