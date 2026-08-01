@@ -99,8 +99,8 @@ spec:
                     iterations_rate
                 ) VALUES (
                     '$RUN_DATE',
-                    $RUN_NUM,,
-                    $ATTEMPT_NUM
+                    $RUN_NUM,
+                    $ATTEMPT_NUM,
                     '$RELEASE_VERSION',
                     '$SUITE',
                     '$CASE',
