@@ -1207,6 +1207,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         limitations. Fixed by switching PVs to S3Files.
         This is written as a single test to keep all the PV-related POSIX issues together, and to
         run fewer TES tasks to speed up testing.
+        - (no ticket) Input file >8MB
+          `failed creating file: open /opt/funnel/funnel-work-dir/d9odv3lquh2c73fnkt80/work/
+          10mb-file-in.txt: operation not permitted`
+          `"stdout": "cp: can't open '10mb-file-in.txt': Bad file descriptor\n"`
         - MIDRC-1298 (output files truncated at 8MB)
         - (no ticket) Rename, move and delete file in workdir
         - Incremental/append writes to files already flushed to S3
@@ -1227,6 +1231,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         SKIP_BROKEN = "YES"
 
         # python script which includes some of the test cases
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
         script_file_name = "test_pv_posix_ops.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
@@ -1239,8 +1244,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Upload a 10MB file
         input_10mb_file_name = "10mb-file-in.txt"
         output_10mb_file_name = "10mb-file-out.txt"
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        input_file_contents = b"A" * (10 * 1024 * 1024)
+        size = 8 if SKIP_BROKEN == "YES" else 10
+        input_file_contents = b"A" * (size * 1024 * 1024)
         self.gen3_workflow.put_bucket_object_with_boto3(
             content=input_file_contents,
             object_path=f"{s3_path_prefix}/{input_10mb_file_name}",
@@ -1379,21 +1384,20 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 assert f.namelist() == ["output.txt", "output.pdf"]
 
         # Check the size of the output file: output files should not be truncated at 8MB
-        if SKIP_BROKEN == "NO":
-            response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
-                s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
-                expected_status=200,
+        response = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        try:
+            output_file_contents = response["Body"].read().decode("utf-8").strip()
+        except Exception as e:
+            logger.error(
+                f"Failed to read or decode content of '{output_10mb_file_name}' from S3. Error: {e}"
             )
-            try:
-                output_file_contents = response["Body"].read().decode("utf-8").strip()
-            except Exception as e:
-                logger.error(
-                    f"Failed to read or decode content of '{output_10mb_file_name}' from S3. Error: {e}"
-                )
-                raise
-            assert len(input_file_contents) == len(output_file_contents)
+            raise
+        assert len(input_file_contents) == len(output_file_contents)
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
