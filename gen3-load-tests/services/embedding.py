@@ -104,7 +104,9 @@ class Embedding(object):
         logger.info(f"Status code after searching embedding: {response.status_code}")
         return response
 
-    def prepare_embeddings(self, collection_name, dimensions, file_name):
+    def prepare_embeddings(
+        self, collection_name, dimensions, file_name, number_of_records
+    ):
         url_prefix = f"{pytest.root_url}/ai"
         main_file_path = (
             Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
@@ -134,6 +136,9 @@ class Embedding(object):
         logger.info(
             f"Time Taken to publish data into embedding: {time.perf_counter() - start_time:.3f}s"
         )
+        assert f"Published {number_of_records} embeddings" in result.stdout.decode(
+            "utf-8"
+        ), f"Expected {number_of_records} but got {result.stdout.decode("utf-8")}"
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
         # Convert Published Embeddings Manifests into Indexing Manifests

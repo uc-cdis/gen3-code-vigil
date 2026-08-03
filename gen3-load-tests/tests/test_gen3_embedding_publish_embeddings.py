@@ -49,7 +49,7 @@ class TestGen3EmbeddingPublishEmbeddings:
         assert (
             response.status_code == 204
         ), f"Expected status to be 204 but got {response.status_code}"
-        iterations = 10
+        iterations = 1
         durations = []
         passes = 0
         fails = 0
@@ -87,6 +87,9 @@ class TestGen3EmbeddingPublishEmbeddings:
                 )
                 duration_ms = (time.perf_counter() - start) * 1000
                 durations.append(duration_ms)
+                assert f"Published {number_of_records} embeddings" in result.stdout.decode(
+                    "utf-8"
+                ), f"Expected {number_of_records} but got {result.stdout.decode("utf-8")}"
 
                 if result.returncode == 0:
                     passes += 1

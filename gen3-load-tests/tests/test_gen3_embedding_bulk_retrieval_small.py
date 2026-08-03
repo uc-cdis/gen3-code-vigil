@@ -33,7 +33,10 @@ class TestGen3EmbeddingBulkRetrievalSmall:
         )
 
         cls.gen3_embedding.prepare_embeddings(
-            collection_name="expr", dimensions=256, file_name="expr.tsv"
+            collection_name="expr",
+            dimensions=256,
+            file_name="expr.tsv",
+            number_of_records=10000,
         )
 
     @classmethod
@@ -52,6 +55,7 @@ class TestGen3EmbeddingBulkRetrievalSmall:
             / f"{collection_name}_output_converted_indexed.tsv"
         )
         df = pd.read_csv(output_converted_indexed_file, sep="\t")
+        logger.info(f"Dimensions for indexd_df: {df.shape}")
         self.guids_list = df["guid"][:bulk_content].astype(str).tolist()
         # Setup env_vars to pass into load runner
         env_vars = {
