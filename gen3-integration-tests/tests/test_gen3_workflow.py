@@ -269,7 +269,15 @@ class TestGen3WorkflowService(TestGen3Workflow):
             expected_status=404,
         )
 
-    def test_multipart_upload(self):
+    def test_multipart_upload_and_range_param(self):
+        """
+        Check that multipart uploads work.
+        Also check that gen3-workflow correctly forwards the `range` header to S3, enabling the
+        parallel download of file parts.
+
+        Regression test for TES issues:
+        - (no ticket) Getting 18MB when downloading a 10MB file through gen3-workflow
+        """
         # Create a 6MB file (multipart can only be used for files >=5MB) and upload it
         input_content = b"A" * (6 * 1024 * 1024)
         with tempfile.NamedTemporaryFile(delete=True) as file_to_upload:
@@ -306,6 +314,18 @@ class TestGen3WorkflowService(TestGen3Workflow):
         assert (
             input_content.decode() == response_contents
         ), "Stored and retrieved content should match"
+
+        # Download the first 10 bytes of the file
+        n_bytes = 10
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=206,
+            range=n_bytes,
+        )
+        response_contents = response_s3_object["Body"].read().decode("utf-8")
+        assert len(response_contents) == n_bytes
 
 
 class TestGen3WorkflowTES(TestGen3Workflow):
@@ -367,7 +387,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         echo_message = "done!"
         if with_input_output:
             tes_task_payload = {
-                "name": "Hello world with Word Count",
+                "name": "Hello world with input/output",
                 "description": "Demonstrates the most basic echo task.",
                 "inputs": [
                     {
@@ -1072,7 +1092,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Create a TES task
         tes_task_payload = {
-            "name": "Request and check CPUs",
+            "name": "Sleep a minute",
             "executors": [
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -1392,6 +1412,118 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 raise
             assert len(input_content) == len(output_contents)
 
+    @pytest.mark.skip(reason="will be fixed by changing PV type")
+    def test_multiple_executors_and_pv_features(self):
+        """
+        Test that a single task can have multiple executors.
+
+        Regression test for TES issues related to persistent volumes:
+        - MIDRC-1298 (output files truncated at 8MB)
+        - (no ticket) Write to a file with incremental appends
+        - TODO (no ticket) "upload error: out-of-order write is NOT supported by Mountpoint,
+          aborting the upload; expected offset 18154 but got 0" (Victoria's PLP workflow)
+        - TODO (no ticket) delete file in workdir
+        - TODO (no ticket) rename file in workdir
+        - TODO (no ticket) unzip file in workdir
+        - TODO MIDRC-1278 gzip file as input
+        """
+        # Upload a 10MB file
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        input_file_contents = b"A" * (10 * 1024 * 1024)
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content=input_file_contents,
+            object_path=f"{s3_path_prefix}/input.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
+        output_10mb_file_name = "output_10mb_file.txt"
+        output_with_appends_file_name = "output_with_appends.txt"
+
+        tes_task_payload = {
+            "name": "Persistent drive testing",
+            "inputs": [
+                {
+                    "url": f"s3://{s3_path_prefix}/input.txt",
+                    "path": "/work/input.txt",
+                }
+            ],
+            "outputs": [
+                {
+                    "path": f"/work/{output_10mb_file_name}",
+                    "url": f"s3://{s3_path_prefix}/{output_10mb_file_name}",
+                    "type": "FILE",
+                },
+                {
+                    "path": f"/work/{output_with_appends_file_name}",
+                    "url": f"s3://{s3_path_prefix}/{output_with_appends_file_name}",
+                    "type": "FILE",
+                },
+            ],
+            "executors": [
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "workdir": "/work",
+                    "command": [f"cp input.txt {output_10mb_file_name}"],
+                },
+                {
+                    "image": "public.ecr.aws/docker/library/alpine:latest",
+                    "workdir": "/work",
+                    "command": [
+                        f"echo Hello > {output_with_appends_file_name} && echo World >> {output_with_appends_file_name}"
+                    ],
+                },
+            ],
+        }
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=tes_task_payload,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Poll until the TES task completes
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        # Check the size of the output file: output files should not be truncated at 8MB
+        response = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        try:
+            output_file_contents = response["Body"].read().decode("utf-8").strip()
+        except Exception as e:
+            logger.error(
+                f"Failed to read or decode content of '{output_10mb_file_name}' from S3. Error: {e}"
+            )
+            raise
+        assert len(input_file_contents) == len(output_file_contents)
+
+        # Check the contents of the output file: incremental appends to a file in the working
+        # directory should work
+        response = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/{output_with_appends_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        try:
+            output_file_contents = response["Body"].read().decode("utf-8").strip()
+        except Exception as e:
+            logger.error(
+                f"Failed to read or decode content of '{output_with_appends_file_name}' from S3. Error: {e}"
+            )
+            raise
+        assert output_file_contents == "Hello World"
+
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
     def test_nextflow_workflow(self):
@@ -1588,6 +1720,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             mv: cannot move 'test.txt' to 'output.txt': Operation not permitted
             -- they are not supported by S3 CSI mount (https://github.com/awslabs/mountpoint-s3/issues/506#issuecomment-1709952359)
         Note: these work in the Kind CI, where we use Minio instead of AWS S3.
+        Will be fixed by changing PV type (S3Files)
 
         Regression test for TES issues:
         - #40 (support Nextflow "publishDir" directive)
