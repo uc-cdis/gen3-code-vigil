@@ -1199,20 +1199,24 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
 
-    def test_pv_posix_ops(self):
+    def test_multiple_executors_and_pv_features(self):
         """
-        Regression test for various issues caused by S3-CSI driver limitations. Fixed by switching
-        PVs to S3Files.
+        Test that a single task can have multiple executors.
+
+        Also a regression test for various persistent volumes issues caused by S3-CSI driver
+        limitations. Fixed by switching PVs to S3Files.
         This is written as a single test to keep all the PV-related POSIX issues together, and to
         run fewer TES tasks to speed up testing.
-
-        - Rename and move operations
+        - MIDRC-1298 (output files truncated at 8MB)
+        - (no ticket) Rename, move and delete file in workdir
         - Incremental/append writes to files already flushed to S3
           Note: unable to reproduce issue at this time
         - Random-access writes - creation of binary formats requiring non sequential writes (eg
-          ZIP, PDF, FastQ, GZ)
-          Note: unable to reproduce PDF, FastQ and GZ issues at this time
-          MIDRC-1278: GZ files - It works when the input is `s3://{s3_path_prefix}/input.txt.gz`.
+          ZIP, PDF, FastQ, GZ). Unzip a file in workdir.
+          "upload error: out-of-order write is NOT supported by Mountpoint, aborting the upload;
+          expected offset 18154 but got 0" (Victoria's PLP workflow)
+          Note: unable to reproduce PDF, FastQ and GZ issues at this time.
+          MIDRC-1278 GZ file input: it works when the input is `s3://{s3_path_prefix}/input.txt.gz`.
           We may be able to reproduce the issue by using a presigned URL instead, but that case is
           not trivial to write since existing tests assume the files they download are already
           present in the S3 bucket, and here we need to upload a new GZ file to a bucket we have
@@ -1222,25 +1226,41 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # TODO remove this once we have switched to S3Files
         SKIP_BROKEN = "YES"
 
-        # run python script which includes some of the test cases
-        input_file_name = "test_pv_posix_ops.py"
+        # python script which includes some of the test cases
+        script_file_name = "test_pv_posix_ops.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
-            filename=f"test_data/gen3_workflow/{input_file_name}",
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{input_file_name}",
+            filename=f"test_data/gen3_workflow/{script_file_name}",
+            object_path=f"{s3_path_prefix}/{script_file_name}",
             s3_storage_config=self.s3_storage_config,
             expected_status=None,
         )
+
+        # Upload a 10MB file
+        input_10mb_file_name = "10mb-file-in.txt"
+        output_10mb_file_name = "10mb-file-out.txt"
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        input_file_contents = b"A" * (10 * 1024 * 1024)
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content=input_file_contents,
+            object_path=f"{s3_path_prefix}/{input_10mb_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+
         task_response = self.gen3_workflow.create_tes_task(
-            request_body={
+            {
                 "name": "test_pv_posix_ops",
-                "description": "test_pv_posix_ops",
                 "inputs": [
                     {
-                        "url": f"s3://{s3_path_prefix}/{input_file_name}",
-                        "path": f"/work/{input_file_name}",
-                    }
+                        "url": f"s3://{s3_path_prefix}/{script_file_name}",
+                        "path": f"/work/{script_file_name}",
+                    },
+                    {
+                        "url": f"s3://{s3_path_prefix}/{input_10mb_file_name}",
+                        "path": f"/work/{input_10mb_file_name}",
+                    },
                 ],
                 "outputs": [
                     {
@@ -1257,6 +1277,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "url": f"s3://{s3_path_prefix}/output.pdf",
                         "type": "FILE",
                     },
+                    {
+                        "path": f"/work/{output_10mb_file_name}",
+                        "url": f"s3://{s3_path_prefix}/{output_10mb_file_name}",
+                        "type": "FILE",
+                    },
                 ],
                 "executors": [
                     {
@@ -1264,14 +1289,21 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "image": "quay.io/cdis/gen3-workflow:integration_tests_dicom_image",
                         "workdir": "/work",
                         "command": [
-                            # test renaming+moving a file (if not SKIP_BROKEN)
+                            # this includes renaming+moving+deleting a file (if not SKIP_BROKEN)
                             (
-                                f"SKIP_BROKEN={SKIP_BROKEN} python3 {input_file_name}"
+                                f"SKIP_BROKEN={SKIP_BROKEN} python3 {script_file_name}"
                                 if SKIP_BROKEN == "YES"
-                                else f"SKIP_BROKEN={SKIP_BROKEN} python3 {input_file_name} && mv output.pdf moved_output.pdf"
+                                else f"SKIP_BROKEN={SKIP_BROKEN} python3 {script_file_name} && mv output.pdf moved_output.pdf && rm {script_file_name}"
                             ),
                         ],
-                    }
+                    },
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "workdir": "/work",
+                        "command": [
+                            f"cp {input_10mb_file_name} {output_10mb_file_name}"
+                        ],
+                    },
                 ],
             },
             user=self.valid_user,
@@ -1346,183 +1378,22 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             with zipfile.ZipFile(f"test_data/gen3_workflow/{out_file_name}", "r") as f:
                 assert f.namelist() == ["output.txt", "output.pdf"]
 
-        # MIDRC-1298: output files truncated at 8mb
+        # Check the size of the output file: output files should not be truncated at 8MB
         if SKIP_BROKEN == "NO":
-            input_content = b"A" * (10 * 1024 * 1024)  # 10MB file
-            s3_path_prefix = (
-                f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-            )
-            with tempfile.NamedTemporaryFile(delete=True) as file_to_upload:
-                file_to_upload.write(input_content)
-                file_to_upload.flush()
-                self.gen3_workflow._perform_s3_action(
-                    "upload_file",
-                    filename=file_to_upload.name,
-                    object_path=f"{s3_path_prefix}/10mb-file-in.txt",
-                    s3_storage_config=self.s3_storage_config,
-                    expected_status=None,
-                )
-            task_response = self.gen3_workflow.create_tes_task(
-                request_body={
-                    "name": "test_pv_posix_ops",
-                    "description": "test_pv_posix_ops",
-                    "inputs": [
-                        {
-                            "url": f"s3://{s3_path_prefix}/10mb-file-in.txt",
-                            "path": f"/work/10mb-file-in.txt",
-                        }
-                    ],
-                    "outputs": [
-                        {
-                            "path": "/work/10mb-file-out.txt",
-                            "url": f"s3://{s3_path_prefix}/10mb-file-out.txt",
-                            "type": "FILE",
-                        },
-                    ],
-                    "executors": [
-                        {
-                            "image": "public.ecr.aws/docker/library/alpine:latest",
-                            "workdir": "/work",
-                            "command": ["cp 10mb-file-in.txt 10mb-file-out.txt"],
-                        }
-                    ],
-                },
-                user=self.valid_user,
-                expected_status=200,
-            )
-            task_id = task_response.get("id", None)
-            assert task_id, f"Expected 'id' in response, but got: {task_response}"
-            self.gen3_workflow.poll_until_task_reaches_expected_state(
-                task_id=task_id,
-                user=self.valid_user,
-                expected_final_state="COMPLETE",
-            )
             response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{s3_path_prefix}/10mb-file-out.txt",
+                object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
                 expected_status=200,
             )
             try:
-                output_contents = response["Body"].read().decode("utf-8").strip()
+                output_file_contents = response["Body"].read().decode("utf-8").strip()
             except Exception as e:
                 logger.error(
-                    f"Failed to read or decode output file contents from S3. Error: {e}"
+                    f"Failed to read or decode content of '{output_10mb_file_name}' from S3. Error: {e}"
                 )
                 raise
-            assert len(input_content) == len(output_contents)
-
-    @pytest.mark.skip(reason="will be fixed by changing PV type")
-    def test_multiple_executors_and_pv_features(self):
-        """
-        Test that a single task can have multiple executors.
-
-        Regression test for TES issues related to persistent volumes:
-        - MIDRC-1298 (output files truncated at 8MB)
-        - (no ticket) Write to a file with incremental appends
-        - TODO (no ticket) "upload error: out-of-order write is NOT supported by Mountpoint,
-          aborting the upload; expected offset 18154 but got 0" (Victoria's PLP workflow)
-        - TODO (no ticket) delete file in workdir
-        - TODO (no ticket) rename file in workdir
-        - TODO (no ticket) unzip file in workdir
-        - TODO MIDRC-1278 gzip file as input
-        """
-        # Upload a 10MB file
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        input_file_contents = b"A" * (10 * 1024 * 1024)
-        self.gen3_workflow.put_bucket_object_with_boto3(
-            content=input_file_contents,
-            object_path=f"{s3_path_prefix}/input.txt",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
-
-        output_10mb_file_name = "output_10mb_file.txt"
-        output_with_appends_file_name = "output_with_appends.txt"
-
-        tes_task_payload = {
-            "name": "Persistent drive testing",
-            "inputs": [
-                {
-                    "url": f"s3://{s3_path_prefix}/input.txt",
-                    "path": "/work/input.txt",
-                }
-            ],
-            "outputs": [
-                {
-                    "path": f"/work/{output_10mb_file_name}",
-                    "url": f"s3://{s3_path_prefix}/{output_10mb_file_name}",
-                    "type": "FILE",
-                },
-                {
-                    "path": f"/work/{output_with_appends_file_name}",
-                    "url": f"s3://{s3_path_prefix}/{output_with_appends_file_name}",
-                    "type": "FILE",
-                },
-            ],
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "workdir": "/work",
-                    "command": [f"cp input.txt {output_10mb_file_name}"],
-                },
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "workdir": "/work",
-                    "command": [
-                        f"echo Hello > {output_with_appends_file_name} && echo World >> {output_with_appends_file_name}"
-                    ],
-                },
-            ],
-        }
-        task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
-            user=self.valid_user,
-            expected_status=200,
-        )
-        task_id = task_response.get("id", None)
-        assert task_id, f"Expected 'id' in response, but got: {task_response}"
-
-        # Poll until the TES task completes
-        self.gen3_workflow.poll_until_task_reaches_expected_state(
-            task_id=task_id,
-            user=self.valid_user,
-            expected_final_state="COMPLETE",
-        )
-
-        # Check the size of the output file: output files should not be truncated at 8MB
-        response = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
-        try:
-            output_file_contents = response["Body"].read().decode("utf-8").strip()
-        except Exception as e:
-            logger.error(
-                f"Failed to read or decode content of '{output_10mb_file_name}' from S3. Error: {e}"
-            )
-            raise
-        assert len(input_file_contents) == len(output_file_contents)
-
-        # Check the contents of the output file: incremental appends to a file in the working
-        # directory should work
-        response = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{s3_path_prefix}/{output_with_appends_file_name}",
-            s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
-            expected_status=200,
-        )
-        try:
-            output_file_contents = response["Body"].read().decode("utf-8").strip()
-        except Exception as e:
-            logger.error(
-                f"Failed to read or decode content of '{output_with_appends_file_name}' from S3. Error: {e}"
-            )
-            raise
-        assert output_file_contents == "Hello World"
+            assert len(input_file_contents) == len(output_file_contents)
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
