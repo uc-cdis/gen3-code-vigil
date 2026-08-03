@@ -355,7 +355,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
     @pytest.mark.parametrize("with_input_output", [True, False])
-    def test_happy_path_create_tes_task(self, with_input_output):
+    def test_happy_path_create_tes_task(self, request, with_input_output):
         """
         Test Case: Happy Path for TES Task Creation
         - Upload input file to S3
@@ -387,7 +387,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         echo_message = "done!"
         if with_input_output:
             tes_task_payload = {
-                "name": "Hello world with input/output",
+                "name": request.node.name,
                 "description": "Demonstrates the most basic echo task.",
                 "inputs": [
                     {
@@ -419,7 +419,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             }
         else:
             tes_task_payload = {
-                "name": "Hello world without input/output",
+                "name": request.node.name,
                 "description": "Demonstrates the most basic echo task.",
                 "executors": [
                     {
@@ -499,7 +499,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 input_file_contents == output_file_contents
             ), f"File '{file_name}' does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
 
-    def test_happy_path_cancel_tes_task(self):
+    def test_happy_path_cancel_tes_task(self, request):
         """
         Verify that an authorized user can cancel a TES task.
         Expects: HTTP 200 and task status changes to 'Cancelled'.
@@ -511,7 +511,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - #74 (successful task cancelation)
         """
         payload = {
-            "name": "Hello world",
+            "name": request.node.name,
             "description": "Demonstrates the most basic echo task.",
             "executors": [
                 {
@@ -582,7 +582,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
     #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
     #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
     @pytest.mark.skip(reason="test needs to be updated")
-    def test_access_internal_endpoints(self):
+    def test_access_internal_endpoints(self, request):
         """
         Test Case: Access internal endpoints must be restricted
         - Create and submit a TES task where we try to curl into arborist service
@@ -591,7 +591,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Step 1: Create a TES task where we try to curl into arborist service
         tes_task_payload = {
-            "name": "Hello world after hitting arborist",
+            "name": request.node.name,
             "description": "Tries to reach arborist-service before saying HelloWorld!",
             "executors": [
                 {
@@ -651,7 +651,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             },
         ],
     )
-    def test_command_failure_in_tes_task(self, test_case):
+    def test_command_failure_in_tes_task(self, request, test_case):
         """
         Test Case: Verify that a TES task with a failing command is marked as failed and logs are captured.
         - Create a TES task with a command from the test case
@@ -666,7 +666,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Step 1: Create a TES task
         tes_task_payload = {
-            "name": f"Task with failing command: {test_case['command']}",
+            "name": request.node.name,
             "description": f"This task is expected to fail due to a non-zero exit code: {test_case['command']}",
             "executors": [
                 {
@@ -705,7 +705,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             executor_logs == test_case["expected_logs"]
         ), f"Expected logs to be '{test_case['expected_logs']}', but found '{executor_logs}' instead. Response: {json.dumps(task_info, indent=2)}"
 
-    def test_multi_user_task_isolation(self):
+    def test_multi_user_task_isolation(self, request):
         """
         Test Case: Verify that users can only see and access their own TES tasks and storage,
         unless they are granted explicit access.
@@ -725,7 +725,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # User B creates a TES task
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
-                "name": "User B's Task",
+                "name": request.node.name,
                 "executors": [
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -755,7 +755,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
-                "name": "User A's Task",
+                "name": request.node.name,
                 "executors": [
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -874,11 +874,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         [
             {
                 # Missing required 'executors' field
-                "name": "Invalid Task 1",
+                "name": "test_create_task_format_error Invalid Task 1",
                 "description": "This task is missing the 'executors' field.",
             },
             {
-                "name": "Invalid Task 2",
+                "name": "test_create_task_format_error Invalid Task 2",
                 "description": "This task has an invalid command format.",
                 "executors": [
                     {
@@ -928,7 +928,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             ),
         ],
     )
-    def test_command_with_special_char(self, echo_message, expected_stdout):
+    def test_command_with_special_char(self, request, echo_message, expected_stdout):
         """
         This is a regression test for an issue when the command contains quotes:
         `Error: yaml: line 33: did not find expected ',' or ']'`
@@ -943,7 +943,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - #59 (comma in command)
         """
         tes_task_payload = {
-            "name": "Task with special char",
+            "name": request.node.name,
             "executors": [
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -982,7 +982,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
     @pytest.mark.parametrize(
         "requests", [{"cpu": 1, "mem": 2, "disk": 3}, {"cpu": 3, "mem": 1, "disk": 2}]
     )
-    def test_request_cpu(self, requests):
+    def test_request_cpu(self, request, requests):
         """
         Verify that the resources requested in the TES task body are indeed what the executor
         container requests.
@@ -993,7 +993,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Create a TES task
         tes_task_payload = {
-            "name": "Request and check CPUs",
+            "name": request.node.name,
             "resources": {
                 "cpu_cores": requests["cpu"],
                 "ram_gb": requests["mem"],
@@ -1057,7 +1057,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Note: no need to wait for the task to finish running in this case
 
-    def test_no_secrets_in_logs(self):
+    def test_no_secrets_in_logs(self, request):
         """
         Verify no secrets are being dumped in the Funnel or Funnel worker logs.
 
@@ -1092,7 +1092,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Create a TES task
         tes_task_payload = {
-            "name": "Sleep a minute",
+            "name": request.node.name,
             "executors": [
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -1154,13 +1154,13 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Note: no need to wait for the task to finish running in this case
 
-    def test_task_with_environment_variable(self):
+    def test_task_with_environment_variable(self, request):
         """
         Regression test for TES issues:
         - #61 (set specified env vars)
         """
         tes_task_payload = {
-            "name": "Env var test",
+            "name": request.node.name,
             "executors": [
                 {
                     "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -1199,7 +1199,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
 
-    def test_multiple_executors_and_pv_features(self):
+    def test_multiple_executors_and_pv_features(self, request):
         """
         Test that a single task can have multiple executors.
 
@@ -1256,7 +1256,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         task_response = self.gen3_workflow.create_tes_task(
             {
-                "name": "test_pv_posix_ops",
+                "name": request.node.name,
                 "inputs": [
                     {
                         "url": f"s3://{s3_path_prefix}/{script_file_name}",
