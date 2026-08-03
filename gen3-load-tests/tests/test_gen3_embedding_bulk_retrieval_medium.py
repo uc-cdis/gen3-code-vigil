@@ -29,14 +29,14 @@ class TestGen3EmbeddingBulkRetrievalMedium:
         cls.gen3_embedding = Embedding()
 
         cls.gen3_embedding.generate_embedding_data(
-            collection_name="hist", number_of_records=2000, embedding_size=1536
+            collection_name="hist", number_of_records=10000, embedding_size=1536
         )
 
         cls.gen3_embedding.prepare_embeddings(
             collection_name="hist",
             dimensions=1536,
             file_name="hist.tsv",
-            number_of_records=2000,
+            number_of_records=10000,
         )
 
     @classmethod
