@@ -17,6 +17,7 @@ Not fixed yet:
 As of this writing, the last issue was #87. Any newer issues may require additional tests.
 """
 
+import io
 import json
 import os
 import re
@@ -725,7 +726,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # User B creates a TES task
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
-                "name": request.node.name,
+                "name": f"{request.node.name} user B",
                 "executors": [
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -755,7 +756,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
-                "name": request.node.name,
+                "name": f"{request.node.name} user A",
                 "executors": [
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -1274,6 +1275,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "type": "FILE",
                     },
                     {
+                        "path": "/work/output.zip",
+                        "url": f"s3://{s3_path_prefix}/output.zip",
+                        "type": "FILE",
+                    },
+                    {
                         "path": (
                             "/work/moved_output.pdf"
                             if SKIP_BROKEN == "NO"
@@ -1331,7 +1337,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=200,
         )
         try:
-            output_file_contents = response["Body"].read().decode("utf-8").strip()
+            output_file_contents = response["Body"].read().decode("utf-8")
         except Exception as e:
             logger.error(
                 f"Failed to read or decode content of {out_file_name} from S3. Error: {e}"
@@ -1374,16 +1380,16 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 expected_status=200,
             )
             try:
-                output_file_contents = response["Body"].read().decode("utf-8").strip()
+                output_file_contents = response["Body"].read()
             except Exception as e:
                 logger.error(
                     f"Failed to read or decode content of {out_file_name} from S3. Error: {e}"
                 )
                 raise
-            with zipfile.ZipFile(f"test_data/gen3_workflow/{out_file_name}", "r") as f:
+            with zipfile.ZipFile(io.BytesIO(output_file_contents), "r") as f:
                 assert f.namelist() == ["output.txt", "output.pdf"]
 
-        # Check the size of the output file: output files should not be truncated at 8MB
+        # check the size of the 10MB output file: output files should not be truncated at 8MB
         response = self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
             s3_storage_config=self.s3_storage_config,
@@ -1391,7 +1397,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=200,
         )
         try:
-            output_file_contents = response["Body"].read().decode("utf-8").strip()
+            output_file_contents = response["Body"].read().decode("utf-8")
         except Exception as e:
             logger.error(
                 f"Failed to read or decode content of '{output_10mb_file_name}' from S3. Error: {e}"

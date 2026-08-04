@@ -3,8 +3,8 @@ import zipfile
 
 from PIL import Image, ImageDraw
 
-print("SKIP_BROKEN:", os.environ.get("SKIP_BROKEN"))
 SKIP_BROKEN = os.environ.get("SKIP_BROKEN") == "YES"
+print(f"SKIP_BROKEN: {os.environ.get('SKIP_BROKEN')} => {SKIP_BROKEN}")
 
 
 # Test sequential file writes
