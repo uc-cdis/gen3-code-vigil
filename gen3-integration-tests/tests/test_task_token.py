@@ -1,23 +1,17 @@
 """
 TODO Link to task token docs here
 
-- obtain a TES token with a lifetime >1h
-- check that the expiration matches the expected lifetime
-- fail to obtain a TES token if you don't have access
-Audience check
-- fail to use it for something else than TES
-- succeed using it on a TES endpoint
-- fail to use a non-TES task token on a TES endpoint
-- fail to use a non-task token on a TES endpoint
+requires:
+- MAX_TASK_TOKEN_TTL: {"WORKFLOW": 4000}
+- ALLOWED_TASK_TOKEN_TYPES: ["WORKFLOW", "FOO"]
+- main_account access to create task tokens up to 4000 (or less?)
+
 JA4 enforcement
 - use SDK proxy
+  - with nextflow
+  - with TES
 - change the JA4 (how?)
 - check that the TES server rejects the token
-Blacklisting
-- revoke the token through the "/credentials/token/blacklisted" endpoint
-- check that the TES server rejects the token
-Requestor integration
-- TBD
 """
 
 import time
@@ -25,6 +19,7 @@ import time
 import jwt
 import pytest
 import requests
+from services.fence import Fence
 from services.gen3workflow import Gen3Workflow
 
 
@@ -41,20 +36,13 @@ def get_task_token(
 class TestTaskToken(object):
     @classmethod
     def setup_class(cls):
+        cls.fence = Fence()
         cls.gen3_workflow = Gen3Workflow()
 
-    def test_task_token_endpoints(self):
+    def test_obtain_task_token(self):
         """
         TODO
-
-        requires:
-        - MAX_TASK_TOKEN_TTL: {"WORKFLOW": 4000}
-        - ALLOWED_TASK_TOKEN_TYPES: ["WORKFLOW", "FOO"]
-        - main_account access to create task tokens up to 4000 (or less?)
         """
-        user = "main_account"
-        regular_token = self.gen3_workflow._get_access_token(user)
-
         # MAX_ACCESS_TOKEN_TTL is 3600 and MAX_TASK_TOKEN_TTL.WORKFLOW is 4000. Check that we can
         # request a WORKFLOW task token > 3600 and <= 4000
         default_max_exp = 3600
@@ -79,11 +67,20 @@ class TestTaskToken(object):
         # requesting a task token with a non-allowed type should not work
         get_task_token("BAR", expected_status_code=400)
 
-        # a user without access should not be able to obtain a task token
+        # a user without access to task tokens should not be able to obtain one
         # TODO enable - my arborist allows everything
         # get_task_token(user="dummy_one", expected_status_code=401)
 
-        # fail to use a WORKFLOW task token on non-WORKFLOW endpoints in Fence
+    def test_task_token_audience(self):
+        """
+        TODO
+        """
+        user = "main_account"
+        regular_token = self.gen3_workflow._get_access_token(user)
+        workflow_task_token = get_task_token()
+        other_task_token = get_task_token("FOO")
+
+        # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint in Fence
         url = f"{pytest.root_url}/user/user"
         res = requests.get(
             url, headers={"Authorization": f"bearer {workflow_task_token}"}
@@ -91,11 +88,13 @@ class TestTaskToken(object):
         assert res.status_code == 401, res.text
         assert "token audience validation failed" in res.text
 
-        # fail to use a WORKFLOW task token on non-WORKFLOW endpoints outside of Fence
+        # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint outside of Fence
         # TODO uncomment once go-authutils is updated in arborist
+        # TODO maybe nvm? https://cdis.slack.com/archives/C02SH3UB2T0/p1785954635381709?thread_ts=1785953406.385109&cid=C02SH3UB2T0
         # url = f"{pytest.root_url}/authz/mapping"
         # res = requests.get(url, headers={"Authorization": f"bearer {workflow_task_token}"})
         # assert res.status_code == 401, res.text
+        # assert "token audience validation failed" in res.text
 
         # fail to use a non-task token on a WORKFLOW endpoint
         # TODO uncomment once gen3-workflow is updated to reject non-task tokens
@@ -117,3 +116,32 @@ class TestTaskToken(object):
             url, headers={"Authorization": f"bearer {workflow_task_token}"}
         )
         assert res.status_code == 200, res.text
+
+    def test_denylist_task_token(self):
+        """
+        TODO
+        """
+        workflow_task_token = get_task_token()
+
+        # check that the token can be used
+        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
+        res = requests.get(
+            url, headers={"Authorization": f"bearer {workflow_task_token}"}
+        )
+        assert res.status_code == 200, res.text
+
+        # denylist the token
+        self.fence.revoke_token(workflow_task_token)
+
+        # the server should now reject the token
+        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
+        res = requests.get(
+            url, headers={"Authorization": f"bearer {workflow_task_token}"}
+        )
+        assert res.status_code == 403, res.text
+
+    def test_dpop_proxy(self):
+        """
+        TODO
+        """
+        pass
