@@ -244,14 +244,11 @@ def prepare_ci_environment(namespace):
             with open(os.getenv("GITHUB_ENV"), "a") as f:
                 f.write("SKIP_TESTS=true\n")
             return
-        elif len(updated_folders) > 1:
-            # Raise Error if more than 1 folder is updated per PR
-            raise Exception(
-                "More than 1 folder updated, please update only 1 folder per PR..."
-            )
-        logger.info(f"Setting up env using folder: {updated_folder}")
-        result = modify_env_for_manifest_pr(namespace, updated_folder, repo)
-        assert result.lower() == "success"
+        for i in range(len(updated_folders)):
+            folder = updated_folder[i]
+            logger.info(f"Setting up env using folder: {folder}")
+            result = modify_env_for_manifest_pr(namespace, folder, repo)
+            assert result.lower() == "success"
     else:  # Service repos
         quay_tag = (
             os.getenv("BRANCH").replace("(", "_").replace(")", "_").replace("/", "_")
