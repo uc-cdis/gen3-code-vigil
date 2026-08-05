@@ -207,8 +207,8 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=ci-perf-embedding
-              HOSTNAME=perf-embedding.ci.planx-pla.net
+              NAMESPACE=ci-perf
+              HOSTNAME=perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
