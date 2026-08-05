@@ -2,15 +2,17 @@ const { check, group, sleep } = require('k6'); // eslint-disable-line import/no-
 const http = require('k6/http'); // eslint-disable-line import/no-unresolved
 
 const {
-  SEARCH_EMBEDDING_LIST,
-  COLLECTIONS_NAME,
-  RELEASE_VERSION,
-  GEN3_HOST,
+  EMBEDDING_LIST,
+  COLLECTION_NAME,
+  TOP_K,
+  DISTANCE_METRIC,
   ACCESS_TOKEN,
+  GEN3_HOST,
+  RELEASE_VERSION,
   VIRTUAL_USERS,
 } = __ENV; // eslint-disable-line no-undef
 
-const embeddings = JSON.parse(SEARCH_EMBEDDING_LIST);
+const embeddings = JSON.parse(EMBEDDING_LIST);
 
 export const options = {
   tags: {
@@ -63,7 +65,10 @@ function parseVirtualUsers(virtualUsersStr) {
 }
 
 export default function () {
-  const url = `https://${GEN3_HOST}/ai/vectorstore/collections/${COLLECTIONS_NAME}/search`;
+  const known_collection_search_url = `https://${GEN3_HOST}/ai/vectorstore/collections/${COLLECTION_NAME}/search`;
+  const unknown_collection_search_url = `https://${GEN3_HOST}/ai/vectorstore/search`;
+
+  const url = COLLECTION_NAME? known_collection_search_url : unknown_collection_search_url
 
   const params = {
     headers: {
@@ -76,12 +81,12 @@ export default function () {
   };
 
   const embedding =
-    embeddings[Math.floor(Math.random() * embeddings.length)];
+    JSON.parse(embeddings[Math.floor(Math.random() * embeddings.length)]);
 
   const payload = JSON.stringify({
     input: embedding,
-    top_k: 10,
-    range: 0,
+    top_k: TOP_K,
+    distance_metric: DISTANCE_METRIC,
   });
 
   group('Sending Embedding Search Request', () => {

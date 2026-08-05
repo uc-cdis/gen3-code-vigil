@@ -22,6 +22,9 @@ on:
           - TestGen3EmbeddingBulkRetrievalSmall
           - TestGen3EmbeddingBulkRetrievalMedium
           - TestGen3EmbeddingPublishEmbeddings
+          - TestGen3EmbeddingSearchKnownCollection
+          - TestGen3EmbeddingSearchUnKnownCollection
+          - TestGen3EmbeddingLoadData
           - ALL
         default: ALL
       RELEASE_VERSION:
@@ -54,7 +57,7 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="TestGen3EmbeddingBulkRetrievalSmall"
+              TEST_SUITE="TestGen3EmbeddingLoadData"
               RELEASE_VERSION=""
             fi
 
@@ -84,6 +87,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           HELM_BRANCH: 'feat/add-gen3-embeddings'
+          CHUNK_ID: "0"
 
 
         steps:
@@ -207,17 +211,10 @@ jobs:
             if: ${{ env.SKIP_TESTS != 'true' }}
             # Change the HOSTNAME with full domain name
             run: |
-              NAMESPACE=ci-perf
-              HOSTNAME=perf.ci.planx-pla.net
+              NAMESPACE=ci-perf-embedding
+              HOSTNAME=perf-embedding.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-              if [ -n "$namespace_exists" ]; then
-                echo "Namespace $NAMESPACE exists, performing teardown..."
-                helm delete $NAMESPACE -n $NAMESPACE || true
-                kubectl delete ns $NAMESPACE
-              fi
-              kubectl create namespace $NAMESPACE
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}

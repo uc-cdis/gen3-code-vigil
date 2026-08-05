@@ -64,6 +64,18 @@ for filename in os.listdir(folder_path):
                 "embedding-bulk-content-retieval-small[3-2000].json": "TestGen3EmbeddingBulkRetrievalSmall",
                 "embedding-publish-embedding-gen3sdk[expr-10000-256].json": "TestGen3EmbeddingPublishEmbeddings",
                 "embedding-publish-embedding-gen3sdk[hist-10000-1536].json": "TestGen3EmbeddingPublishEmbeddings",
+                "embedding-search-embedding-unknown-collection[5-cosine-similarity].json": "TestGen3EmbeddingSearchUnKnownCollection",
+                "embedding-search-embedding-unknown-collection[5-l1-distance].json": "TestGen3EmbeddingSearchUnKnownCollection",
+                "embedding-search-embedding-unknown-collection[5-inner-product].json": "TestGen3EmbeddingSearchUnKnownCollection",
+                "embedding-search-embedding-unknown-collection[10-cosine-similarity].json": "TestGen3EmbeddingSearchUnKnownCollection",
+                "embedding-search-embedding-unknown-collection[5-l1-distance].json": "TestGen3EmbeddingSearchUnKnownCollection",
+                "embedding-search-embedding-unknown-collection[5-inner-product].json": "TestGen3EmbeddingSearchUnKnownCollection",
+                "embedding-search-embedding-known-collection[5-cosine-similarity].json": "TestGen3EmbeddingSearchKnownCollection",
+                "embedding-search-embedding-known-collection[5-l1-distance].json": "TestGen3EmbeddingSearchKnownCollection",
+                "embedding-search-embedding-known-collection[5-inner-product].json": "TestGen3EmbeddingSearchKnownCollection",
+                "embedding-search-embedding-known-collection[10-cosine-similarity].json": "TestGen3EmbeddingSearchKnownCollection",
+                "embedding-search-embedding-known-collection[5-l1-distance].json": "TestGen3EmbeddingSearchKnownCollection",
+                "embedding-search-embedding-known-collection[5-inner-product].json": "TestGen3EmbeddingSearchKnownCollection",
             }
             test_case = {
                 "fence-presigned-url.json": "test_fence_presigned_url",

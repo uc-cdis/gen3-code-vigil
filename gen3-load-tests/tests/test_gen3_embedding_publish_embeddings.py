@@ -55,42 +55,16 @@ class TestGen3EmbeddingPublishEmbeddings:
         fails = 0
         test_start = time.perf_counter()
         for i in range(iterations):
-            self.collection_data = {
-                collection_name: {
-                    "collection_name": collection_name,
-                    "description": "Create collection for dimensions testing",
-                    "dimensions": dimensions,
-                },
-            }
             response = self.gen3_embedding.create_collection(
-                data=self.collection_data[collection_name]
+                collection_name, dimensions
             )
-            main_file_path = (
-                Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
-            )
-            embedding_tsv_file = (
-                TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
-            )
+            file_name = f"{collection_name}.tsv"
             start = time.perf_counter()
             try:
                 # Run the publish command
-                cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 1000"
-                result = subprocess.run(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    timeout=300,
+                duration_ms, result = self.gen3_embedding.publish_embeddings(
+                    collection_name, file_name, number_of_records
                 )
-                logger.info(
-                    f"Time Taken to publish data into embedding: {time.perf_counter() - start:.3f}s"
-                )
-                duration_ms = (time.perf_counter() - start) * 1000
-                durations.append(duration_ms)
-                assert f"Published {number_of_records} embeddings" in result.stdout.decode(
-                    "utf-8"
-                ), f"Expected {number_of_records} but got {result.stdout.decode("utf-8")}"
-
                 if result.returncode == 0:
                     passes += 1
                 else:

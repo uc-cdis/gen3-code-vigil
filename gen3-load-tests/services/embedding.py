@@ -22,11 +22,18 @@ class Embedding(object):
         self.COLLECTIONS_ENDPOINT = "/collections"
         self.EMBEDDINGS_ENDPOINT = "/embeddings"
 
-    def create_collection(self, data, user="main_account"):
+    def create_collection(self, collection_name, dimensions, user="main_account"):
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        collection_data = {
+            collection_name: {
+                "collection_name": collection_name,
+                "description": "Create collection for dimensions testing",
+                "dimensions": dimensions,
+            },
+        }
         response = requests.post(
             url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}",
-            json=data,
+            json=collection_data[collection_name],
             auth=auth,
         )
         logger.info(f"Status code after creating collection: {response.status_code}")
@@ -115,32 +122,12 @@ class Embedding(object):
             Path.home() / ".gen3" / f"{pytest.namespace}_{"indexing_account"}.json"
         )
         # Create Embeddings Collections
-        self.collection_data = {
-            collection_name: {
-                "collection_name": collection_name,
-                "description": "Create collection for small dimensions testing",
-                "dimensions": dimensions,
-            },
-        }
-        response = self.create_collection(data=self.collection_data[collection_name])
+        response = self.create_collection(collection_name, dimensions)
         assert (
             response.status_code == 200
         ), f"Expected status to be 200 but got {response.status_code}"
         # Publish Data into Embeddings Collections
-        embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / file_name
-        start_time = time.perf_counter()
-        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 1000"
-        result = subprocess.run(
-            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        logger.info(
-            f"Time Taken to publish data into embedding: {time.perf_counter() - start_time:.3f}s"
-        )
-        assert f"Published {number_of_records} embeddings" in result.stdout.decode(
-            "utf-8"
-        ), f"Expected {number_of_records} but got {result.stdout.decode("utf-8")}"
-        if result.returncode != 0:
-            raise Exception(result.stderr.decode("utf-8"))
+        self.publish_embeddings(collection_name, file_name, number_of_records)
         # Convert Published Embeddings Manifests into Indexing Manifests
         output_tsv_file = (
             TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}_output.tsv"
@@ -186,6 +173,31 @@ class Embedding(object):
         )
         if result.returncode != 0:
             raise Exception(result.stderr.decode("utf-8"))
+
+    def publish_embeddings(self, collection_name, file_name, number_of_records):
+        main_file_path = (
+            Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
+        )
+        embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / file_name
+        start_time = time.perf_counter()
+        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 1000"
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=300,
+        )
+        logger.info(
+            f"Time Taken to publish data into embedding: {time.perf_counter() - start_time:.3f}s"
+        )
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        assert f"Published {number_of_records} embeddings" in result.stdout.decode(
+            "utf-8"
+        ), f"Expected {number_of_records} but got {result.stdout.decode("utf-8")}"
+        if result.returncode != 0:
+            raise Exception(result.stderr.decode("utf-8"))
+        return duration_ms, result
 
     def set_embeddings_replica(self, replica_count):
         cmd = f"kubectl scale deployment gen3-embeddings-deployment --replicas={replica_count} -n {pytest.namespace}"
