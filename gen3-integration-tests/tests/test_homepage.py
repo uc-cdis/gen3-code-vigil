@@ -27,7 +27,7 @@ class TestHomePage:
         login_page.go_to(page)
         login_page.login(page)
         # Verify summary and cards elements
-        assert page.locator(home_page.SUMMARY) is not None
+        assert page.locator(home_page.SUMMARY) is None
         assert page.locator(home_page.CARDS) is not None
         # Logout
         login_page.logout(page)
