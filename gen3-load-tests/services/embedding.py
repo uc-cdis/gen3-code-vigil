@@ -186,7 +186,7 @@ class Embedding(object):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=300,
+            timeout=3600,
         )
         logger.info(
             f"Time Taken to publish data into embedding: {time.perf_counter() - start_time:.3f}s"
