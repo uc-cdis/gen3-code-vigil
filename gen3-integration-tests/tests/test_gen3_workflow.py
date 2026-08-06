@@ -781,7 +781,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             )
             requestor = Requestor()
             user_A_id = jwt.decode(
-                self.gen3_workflow._get_access_token(user_A),
+                self.gen3_workflow.get_access_token(user_A),
                 algorithms=["RS256"],
                 options={"verify_signature": False},
             )["sub"]

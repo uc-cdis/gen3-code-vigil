@@ -140,6 +140,37 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             )
 
 
+# TODO move it
+@pytest.fixture
+def mock_auth_endpoint():
+    """Fixture to conditionally patch auth.endpoint_from_token based on URL."""
+    # Import the real function to use in the side_effect fallback
+    from gen3.auth import endpoint_from_token
+
+    def _configure_mock(base_url, mock_instance=None):
+        # If a mock is already provided (e.g., via a class property), use it.
+        # Otherwise, start a new patch context.
+        if mock_instance is not None:
+            _apply_logic(mock_instance, base_url)
+            yield mock_instance
+        else:
+            with patch("auth.endpoint_from_token") as new_mock:
+                _apply_logic(new_mock, base_url)
+                yield new_mock
+
+    def _apply_logic(mock_obj, base_url):
+        if "localhost" in base_url:
+            # Assumes this helper function is imported and available
+            clean_url = remove_trailing_whitespace_and_slashes_in_url(base_url)
+            mock_obj.return_value = clean_url
+            mock_obj.side_effect = None  # Clear any previous side effects
+        else:
+            mock_obj.return_value = None  # Clear any previous return values
+            mock_obj.side_effect = lambda arg: endpoint_from_token(arg)
+
+    return _configure_mock
+
+
 class Gen3Workflow:
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}"
@@ -152,10 +183,10 @@ class Gen3Workflow:
     ############################
 
     @patch("gen3.auth.endpoint_from_token")
-    def _get_access_token(
+    def get_access_token(
         self, user: str = "main_account", endpoint_from_token_mock=None
     ) -> str:
-        """Helper function to retrieve an access token."""
+        """Helper function that patches Gen3Auth when needed."""
 
         if not user:
             return None
@@ -188,6 +219,62 @@ class Gen3Workflow:
             logger.info("Failed to get access token with Gen3Auth")
             raise
 
+    @patch("gen3.auth.endpoint_from_token")
+    def _get_auth_module(
+        self, endpoint_from_token_mock=None, user: str = "main_account"
+    ) -> str:
+        """Helper function that patches Gen3Auth when needed."""
+
+        if not user:
+            return None
+
+        # print('user', user)
+        try:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        except:
+            import traceback
+
+            traceback.print_exc()
+            raise
+
+        # When running the tests in a Kind cluster (or other local cluster):
+        # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
+        #   API keys and access tokens have that as their issuer. This allows other pods in the
+        #   cluster to reach Fence to validate tokens.
+        # - However, the tests cannot reach this URL from outside the cluster. The cluster is
+        #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
+        #   access tokens.
+        # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
+        #   this method to return `http://localhost:8000` instead of `http://fence-service.
+        #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
+        # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
+        #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
+        #   (because within a container, localhost refers to the container itself).
+        if "localhost" in self.BASE_URL:
+            endpoint_from_token_mock.return_value = (
+                remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
+            )
+        else:  # otherwise, no mocking
+            endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
+
+        import gen3
+
+        print(
+            "endpoint_from_token",
+            gen3.auth.endpoint_from_token(pytest.api_keys[user]["api_key"]),
+        )
+
+        try:
+            return auth
+        except Exception:
+            logger.info("Failed to get access token with Gen3Auth")
+            raise
+
+    # def get_access_token(self, user: str = "main_account") -> str:
+    #     """Helper function to retrieve an access token."""
+    #     print('self._get_auth_module(user).get_access_token()', self._get_auth_module(user))
+    #     return self._get_auth_module(user).get_access_token()
+
     def _get_s3_client(
         self, access_token: str, s3_storage_config: WorkflowStorageConfig
     ):
@@ -219,7 +306,7 @@ class Gen3Workflow:
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
         logger.info(
@@ -345,7 +432,7 @@ class Gen3Workflow:
         storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/setup"
         headers = (
             {
-                "Authorization": f"bearer {self._get_access_token(user)}",
+                "Authorization": f"bearer {self.get_access_token(user)}",
             }
             if user
             else {}
@@ -388,7 +475,7 @@ class Gen3Workflow:
         )
         headers = (
             {
-                "Authorization": f"bearer {self._get_access_token(user)}",
+                "Authorization": f"bearer {self.get_access_token(user)}",
             }
             if user
             else {}
@@ -413,7 +500,7 @@ class Gen3Workflow:
         self, object_path: str, user: str = "main_account", expected_status=401
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         s3_url = f"{self.S3_ENDPOINT_URL}/{object_path}"
         headers = {"Authorization": f"bearer {access_token}"}
         response = requests.get(url=s3_url, headers=headers)
@@ -492,7 +579,7 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a string containing the task_id
         """
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks"
         headers = {"Authorization": f"bearer {access_token}"} if user else {}
         response = requests.post(
@@ -511,7 +598,7 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a list of task objects
         """
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks"
         response = requests.get(
             url=tes_task_url,
@@ -530,7 +617,7 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object
         """
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks/{task_id}?view=FULL"
 
         response = requests.get(
@@ -550,7 +637,7 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
         """
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         tes_task_url = f"{self.TES_URL}/tasks/{task_id}:cancel"
 
         response = requests.post(
@@ -586,7 +673,7 @@ class Gen3Workflow:
         Returns:
             str: Contents of the Nextflow log file (.nextflow.log).
         """
-        access_token = self._get_access_token(user)
+        access_token = self.get_access_token(user)
         os.environ["GEN3_TOKEN"] = access_token
         os.environ["HOSTNAME"] = pytest.hostname
         os.environ["HOSTNAME_PROTOCOL"] = os.getenv("HOSTNAME_PROTOCOL")

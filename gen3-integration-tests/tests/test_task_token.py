@@ -8,8 +8,8 @@ requires:
 
 JA4 enforcement
 - use SDK proxy
-  - with nextflow
-  - with TES
+  - with `gen3 run`
+  - with `curl`
 - change the JA4 (how?)
 - check that the TES server rejects the token
 """
@@ -20,7 +20,7 @@ import jwt
 import pytest
 import requests
 from services.fence import Fence
-from services.gen3workflow import Gen3Workflow
+from services.gen3workflow import Gen3Workflow, mock_auth_endpoint
 
 
 def get_task_token(
@@ -31,6 +31,10 @@ def get_task_token(
     assert res.status_code == expected_status_code, res.text
     if res.status_code == 200:
         return res.json()["access_token"]
+
+
+import gen3
+from gen3.dpop import dpop_proxy_context
 
 
 class TestTaskToken(object):
@@ -76,7 +80,7 @@ class TestTaskToken(object):
         TODO
         """
         user = "main_account"
-        regular_token = self.gen3_workflow._get_access_token(user)
+        regular_token = self.gen3_workflow.get_access_token(user)
         workflow_task_token = get_task_token()
         other_task_token = get_task_token("FOO")
 
@@ -121,27 +125,37 @@ class TestTaskToken(object):
         """
         TODO
         """
-        workflow_task_token = get_task_token()
+        task_token = get_task_token()
 
         # check that the token can be used
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        res = requests.get(
-            url, headers={"Authorization": f"bearer {workflow_task_token}"}
-        )
+        res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
         assert res.status_code == 200, res.text
 
         # denylist the token
-        self.fence.revoke_token(workflow_task_token)
+        self.fence.revoke_token(task_token)
 
         # the server should now reject the token
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        res = requests.get(
-            url, headers={"Authorization": f"bearer {workflow_task_token}"}
-        )
+        res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
         assert res.status_code == 403, res.text
 
-    def test_dpop_proxy(self):
+    def test_dpop_proxy(self, mock_auth_endpoint):
         """
         TODO
         """
-        pass
+        # from gen3.auth import Gen3Auth
+        # auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url)
+        auth = self.gen3_workflow._get_auth_module()
+        # print('auth.endpoint', auth.endpoint)
+        print(
+            "endpoint_from_token",
+            gen3.auth.endpoint_from_token(pytest.api_keys["main_account"]["api_key"]),
+        )  # should be localhost.....
+
+        with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
+            task_token,
+            proxy_port,
+        ):
+            # Anything sent to 127.0.0.1:{proxy_port} is signed and forwarded.
+            print("task_token", task_token)

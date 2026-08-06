@@ -482,3 +482,10 @@ class Fence(object):
         url = f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/reactivate"
         response = requests.post(url=url, auth=auth)
         return response
+
+    def revoke_token(self, token):
+        """
+        TODO
+        """
+        res = requests.post(f"{self.BASE_URL}/oauth2/revoke", data={"token": token})
+        assert res.status_code == 200, res.text
