@@ -216,7 +216,7 @@ class Gen3Workflow:
         content: str = "",
         filename: str = "",
         dest_object_path: str = "",
-        range: str = "",
+        range: int = 0,
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
@@ -429,10 +429,21 @@ class Gen3Workflow:
         object_path: str,
         s3_storage_config: WorkflowStorageConfig,
         user: str = "main_account",
+        range: int = 0,
         expected_status=200,
-        range: str = "",
     ):
-        """Retrieves an S3 object."""
+        """
+        Retrieves an S3 object.
+
+        Args:
+            object_path (str): object to retrieve
+            s3_storage_config (WorkflowStorageConfig)
+            user (str)
+            range (int): range requests allow you to retrieve a specific portion (byte range) of an
+                object instead of downloading the entire file. This parameter currently only
+                supports getting the first N bytes (bytes 0 to `range`).
+            expected_status (str)
+        """
         return self._perform_s3_action(
             "get", object_path, s3_storage_config, user, expected_status, range=range
         )

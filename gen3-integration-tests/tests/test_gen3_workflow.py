@@ -322,8 +322,8 @@ class TestGen3WorkflowService(TestGen3Workflow):
             object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
-            expected_status=206,
             range=n_bytes,
+            expected_status=206,
         )
         response_contents = response_s3_object["Body"].read().decode("utf-8")
         assert len(response_contents) == n_bytes
