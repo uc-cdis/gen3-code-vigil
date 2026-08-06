@@ -1215,7 +1215,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - MIDRC-1298 (output files truncated at 8MB)
         - (no ticket) Rename, move and delete file in workdir
         - Incremental/append writes to files already flushed to S3
-          Note: unable to reproduce issue at this time
         - Random-access writes - creation of binary formats requiring non sequential writes (eg
           ZIP, PDF, FastQ, GZ). Unzip a file in workdir.
           "upload error: out-of-order write is NOT supported by Mountpoint, aborting the upload;
