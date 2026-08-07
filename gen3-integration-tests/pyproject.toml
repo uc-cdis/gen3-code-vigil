@@ -71,6 +71,7 @@ markers = [
   "fence: test for fence service",
   "frontend: tests for frontend/gui",
   "gen3_client: tests for gen3-client / cdis-data-client",
+  "gen3_embedding: tests for gen3-embedding/gen3-ai",
   "gen3_workflow: tests for gen3-workflow",
   "gen3_user_data_library: tests for gen3-user-data-library",
   "guppy: tests for guppy-service",

@@ -36,6 +36,10 @@ def wait_for_quay_build(repo, tag):
     logger.info(f"[wait_for_quay_build] Repo - {quay_org}/{repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
+            # Check if repo name is in dict then fetch the quay repo name
+            repo_dict = {"gen3-ai": "gen3_embeddings"}
+            if repo_item in repo_dict.keys():
+                repo_item = repo_dict[repo_item]
             logger.info(
                 f"[wait_for_quay_build] Waiting for image '{quay_org}/{repo_item}:{tag}' to be built in quay"
             )
@@ -119,6 +123,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     )
     helm_service_names = {
         "audit-service": "audit",
+        "gen3-ai": "gen3-embedding",
         "tube": "etl",
         "data-portal": "portal",
         "metadata-service": "metadata",
