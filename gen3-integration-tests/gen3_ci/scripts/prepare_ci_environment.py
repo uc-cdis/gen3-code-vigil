@@ -33,6 +33,10 @@ def wait_for_quay_build(repo, tag):
     found = False
     i = 0
     repo_list = repo.split(",")
+    # Check if repo name is in dict then fetch the quay repo name
+    repo_dict = {"gen3-ai": "gen3_embeddings"}
+    if repo in repo_dict.keys():
+        repo = repo_dict["repo"]
     logger.info(f"[wait_for_quay_build] Repo - {quay_org}/{repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
