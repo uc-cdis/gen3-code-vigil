@@ -66,13 +66,13 @@ def generate_api_keys_for_test_users(namespace):
 
 def prepare_ci_environment(namespace):
     """Calls other functions in this module depending on the type of repo under test"""
-    # repo = os.getenv("REPO")
+    repo = os.getenv("REPO")
     # if quay repo name is different from github repo name
-    # if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
-    #     result = modify_env_for_test_repo_pr(namespace)
-    #     assert result.lower() == "success"
-    # else:
-    #     raise Exception("Load tests are run from test repository only.")
+    if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
+        result = modify_env_for_test_repo_pr(namespace)
+        assert result.lower() == "success"
+    else:
+        raise Exception("Load tests are run from test repository only.")
     # generate api keys for test users for the ci env
     result = generate_api_keys_for_test_users(namespace)
     assert result.lower() == "success"
