@@ -123,7 +123,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     )
     helm_service_names = {
         "audit-service": "audit",
-        "gen3-ai": "gen3-embedding",
+        "gen3-ai": "gen3-embeddings",
         "tube": "etl",
         "data-portal": "portal",
         "metadata-service": "metadata",
