@@ -1232,7 +1232,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # python script which includes some of the test cases
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        script_file_name = "test_pv_posix_ops.py"
+        script_file_name = "test_multiple_executors_and_pv_features.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
             filename=f"test_data/gen3_workflow/{script_file_name}",
