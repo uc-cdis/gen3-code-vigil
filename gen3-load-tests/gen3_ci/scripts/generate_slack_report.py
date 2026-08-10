@@ -52,7 +52,7 @@ def get_test_result_and_metrics():
 
 
 def generate_slack_report():
-    report_link = f"https://allure.ci.planx-pla.net/load-tests/{datetime.now().strftime('%Y%m%d')}/index.html"
+    report_link = f"https://allure.ci.planx-pla.net/load-tests/{datetime.now().strftime('%Y%m%d')}/{os.getenv("RUN_NUM")}/index.html"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()

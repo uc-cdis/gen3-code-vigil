@@ -2,12 +2,10 @@ import os
 
 import pytest
 import requests
-from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from gen3.jobs import Gen3Jobs
 from gen3.query import Gen3Query
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 @pytest.mark.gen3sdk

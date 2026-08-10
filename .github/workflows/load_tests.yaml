@@ -268,7 +268,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               DATE=$(date +%Y%m%d)
-              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE
+              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE/$RUN_NUM
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
