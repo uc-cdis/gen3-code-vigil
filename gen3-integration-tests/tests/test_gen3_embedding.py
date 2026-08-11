@@ -40,9 +40,10 @@ class TestGen3Embedding:
             3. Verify the collection expr is updated
             4. Create embeddings in collection expr using main_account
             5. Verify the embeddings are created
-            6. Add a new embedding to collection expr
-            7. Delete the embeddings using main_account
-            8. Delete the collection using main_account
+            6. Update the model metadata of the embedding
+            7. Verify the update was successful
+            8. Delete the embeddings using main_account
+            9. Delete the collection using main_account
         """
         try:
             collection_name = "expr"
@@ -281,9 +282,10 @@ class TestGen3Embedding:
                 response.status_code == 204
             ), f"Expected status to be 204 but got {response.status_code}"
 
+    @pytest.mark.gen3sdk
     def test_bulk_retrieval(self):
         """
-        Scenario: Search embedding in a known/unknown collection
+        Scenario: Bulk retrieve embeddings using indexd guids
         Steps:
             1. Create a collection named hist using main_account
             2. Prepare the embeddings including the indexding records
@@ -323,6 +325,7 @@ class TestGen3Embedding:
                 response.status_code == 204
             ), f"Expected status to be 204 but got {response.status_code}"
 
+    @pytest.mark.gen3sdk
     def test_search_embedding(self):
         """
         Scenario: Search embedding in a known/unknown collection

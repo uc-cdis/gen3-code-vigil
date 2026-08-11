@@ -24,6 +24,13 @@ class Embedding(object):
         self.BULK_CONTENT_RETRIEVAL_URL = f"{pytest.root_url}/user/data/content"
 
     def create_collection(self, collection_name, dimensions, user="main_account"):
+        """
+        Helper function to create collection
+        Inputs:
+            collection_name: name of the collection
+            dimensions: dimension size of the embedding
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         collection_data = {
             collection_name: {
@@ -41,12 +48,25 @@ class Embedding(object):
         return response
 
     def get_collection(self, collection_name, user="main_account"):
+        """
+        Helper function to get collection
+        Inputs:
+            collection_name: name of the collection
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = auth.curl(path=f"{self.COLLECTIONS_ENDPOINT}/{collection_name}")
         logger.info(f"Status code after getting collection: {response.status_code}")
         return response.json()
 
     def update_collection(self, collection_name, data, user="main_account"):
+        """
+        Helper function to update collection
+        Inputs:
+            collection_name: name of the collection
+            data: dictionary with the updated value(s)
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = requests.patch(
             url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}",
@@ -57,6 +77,12 @@ class Embedding(object):
         return response
 
     def delete_collection(self, collection_name, user="main_account"):
+        """
+        Helper function to delete collection
+        Inputs:
+            collection_name: name of the collection
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = requests.delete(
             url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}",
@@ -66,17 +92,29 @@ class Embedding(object):
         return response
 
     def create_embedding(self, collection_name, data, user="main_account"):
+        """
+        Helper function to create embedding
+        Inputs:
+            collection_name: name of the collection
+            data: embeddings data containing embedding and metadata
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = requests.post(
             url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}",
             json=data,
             auth=auth,
         )
-        logger.info(response.content)
         logger.info(f"Status code after creating embedding: {response.status_code}")
         return response
 
     def get_embedding(self, collection_name, user="main_account"):
+        """
+        Helper function to get embedding
+        Inputs:
+            collection_name: name of the collection
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = auth.curl(
             path=f"{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}"
@@ -87,6 +125,14 @@ class Embedding(object):
     def update_embedding(
         self, collection_name, data, embedding_id, user="main_account"
     ):
+        """
+        Helper function to update embedding
+        Inputs:
+            collection_name: name of the collection
+            data: data containing updated values
+            embedding_id: embedding id where update needs to happen
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = requests.put(
             url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}/{embedding_id}",
@@ -97,6 +143,13 @@ class Embedding(object):
         return response
 
     def delete_embedding(self, collection_name, embedding_id, user="main_account"):
+        """
+        Helper function to delete embedding
+        Inputs:
+            collection_name: name of the collection
+            embedding_id: embedding id where update needs to happen
+            user: user used to perform the operation
+        """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = requests.delete(
             url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}/{embedding_id}",
@@ -108,6 +161,14 @@ class Embedding(object):
     def prepare_embeddings(
         self, collection_name, dimensions, file_name, number_of_records
     ):
+        """
+        Helper function to prepare embeddings
+        Inputs:
+            collection_name: name of the collection
+            dimensions: dimension size of the embedding
+            file_name: file name containing the embedding data
+            number_of_records: number of records to be created
+        """
         url_prefix = f"{pytest.root_url}/ai"
         main_file_path = (
             Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
@@ -169,6 +230,13 @@ class Embedding(object):
             raise Exception(result.stderr.decode("utf-8"))
 
     def publish_embeddings(self, collection_name, file_name, number_of_records):
+        """
+        Helper function to publish embeddings
+        Inputs:
+            collection_name: name of the collection
+            file_name: file name containing the embedding data
+            number_of_records: number of records to be created
+        """
         main_file_path = (
             Path.home() / ".gen3" / f"{pytest.namespace}_{"main_account"}.json"
         )
@@ -196,6 +264,14 @@ class Embedding(object):
     def generate_embedding_data(
         self, collection_name, number_of_records, embedding_size, prefix="ABCD"
     ):
+        """
+        Helper function to generate embeddings data
+        Inputs:
+            collection_name: name of the collection
+            number_of_records: number of records to be created
+            embedding_size: dimension size of the embedding
+            prefix: prefix name for case id
+        """
         path = TEST_DATA_PATH_OBJECT / "embedding"
         path.mkdir(parents=True, exist_ok=True)
         rng = np.random.default_rng(0)
@@ -218,14 +294,14 @@ class Embedding(object):
             for i in range(number_of_records):
                 embedding = rng.uniform(-1, 1, size=embedding_size).tolist()
                 # Generate collection_id and case_id
-                collection_id = f"{prefix}-{random.randint(0, 99):02d}-{random.randint(0, 9999):04d}"
+                case_id = f"{prefix}-{random.randint(0, 99):02d}-{random.randint(0, 9999):04d}"
                 code = "".join(
                     random.choices(string.ascii_uppercase + string.digits, k=3)
                 )
                 num = f"{random.randint(0, 99):02d}"
                 dx = f"DX{random.randint(0, 9)}"
                 uid = uuid.uuid4()
-                case_id = f"{collection_id}-{code}-{num}-{dx}.{uid}"
+                file_id = f"{case_id}-{code}-{num}-{dx}.{uid}"
 
                 # Write row to tsv file
                 writer.writerow(
@@ -234,13 +310,19 @@ class Embedding(object):
                         "/programs/dev/projects/testproject1",
                         collection_name,
                         "",
-                        collection_id,
                         case_id,
+                        file_id,
                         collection_name,
                     ]
                 )
 
     def embedding_bulk_retrieval(self, guid_list, user="main_account"):
+        """
+        Helper function to perform bulk embedding retrieval
+        Inputs:
+            guid_list: list of indexd guids
+            user: user used to perform the operation
+        """
         data = {"guids": guid_list}
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         response = requests.post(
@@ -256,6 +338,14 @@ class Embedding(object):
     def search_known_collection(
         self, collection_name, embedding, top_k, distance_metric, user="main_account"
     ):
+        """
+        Helper function to perform embedding search
+        Inputs:
+            collection_name: name of the collection
+            top_k: top k records to get
+            distance_metric: distance metric to use
+            user: user used to perform the operation
+        """
         data = {
             "input": embedding,
             "top_k": top_k,
@@ -273,6 +363,13 @@ class Embedding(object):
     def search_unknown_collection(
         self, embedding, top_k, distance_metric, user="main_account"
     ):
+        """
+        Helper function to perform embedding search
+        Inputs:
+            top_k: top k records to get
+            distance_metric: distance metric to use
+            user: user used to perform the operation
+        """
         data = {
             "input": embedding,
             "top_k": top_k,
