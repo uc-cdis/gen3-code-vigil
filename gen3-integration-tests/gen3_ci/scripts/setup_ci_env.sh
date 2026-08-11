@@ -566,6 +566,9 @@ if yq -e '.["embedding-management-service"]' "$ci_default_manifest_values_yaml" 
   yq eval '.["embedding-management-service"].enabled = false' -i "$ci_default_manifest_values_yaml"
 fi
 
+# Gen3-embeddig update ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES
+yq -i ".fence.FENCE_CONFIG_PUBLIC.ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES = [\"https://${HOSTNAME}/ai\"]" "$ci_default_manifest_values_yaml"
+
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
   install_funnel_chart_branch=$?
