@@ -14,7 +14,7 @@ from utils import TEST_DATA_PATH_OBJECT, logger
     "gen3-embeddings" not in pytest.deployed_services,
     reason="gen3-embeddings service is not running on this environment",
 )
-@pytest.mark.gen3_embedding
+@pytest.mark.gen3_embeddings
 class TestGen3Embedding:
     @classmethod
     def setup_class(cls):
