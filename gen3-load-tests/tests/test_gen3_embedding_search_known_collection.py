@@ -1,16 +1,12 @@
 import json
 import os
-import subprocess
-import time
-from pathlib import Path
 
 import pandas as pd
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from services.embedding import Embedding
-from utils import TEST_DATA_PATH_OBJECT, load_test, logger
-from utils import test_setup as setup
+from utils import TEST_DATA_PATH_OBJECT, load_test
 
 
 @pytest.mark.gen3_embedding
@@ -26,29 +22,13 @@ class TestGen3EmbeddingSearchKnownCollection:
         )
         cls.index = Gen3Index(cls.index_auth)
         cls.gen3_embedding = Embedding()
-        for collection_name, embedding_size in [
-            ("expr_search", 256)
-        ]:  # , ("hist_expr", 1536)]:
-            # Delete existing collection
-            response = cls.gen3_embedding.delete_collection(
-                collection_name=collection_name
-            )
-            assert (
-                response.status_code == 204
-            ), f"Expected status to be 204 but got {response.status_code}"
+        for collection_name, embedding_size in [("hist_search", 1536)]:
             # Generate Embedding data (~/test_data/embedding/{collection_name}.tsv)
             cls.gen3_embedding.generate_embedding_data(
                 collection_name=collection_name,
-                number_of_records=15000000,
+                number_of_records=100,
                 embedding_size=embedding_size,
             )
-
-    # @classmethod
-    # def teardown_class(cls):
-    #     response = cls.gen3_embedding.delete_collection(collection_name="expr_search")
-    #     assert (
-    #         response.status_code == 204
-    #     ), f"Expected status to be 204 but got {response.status_code}"
 
     def perform_load_test(
         self, collection_name, top_k, distance_metric, append_file_name
@@ -85,12 +65,12 @@ class TestGen3EmbeddingSearchKnownCollection:
     @pytest.mark.parametrize(
         "collection_name,top_k,distance_metric",
         [
-            ("expr_search", 5, "cosine_similarity"),
-            ("expr_search", 5, "l1_distance"),
-            ("expr_search", 5, "inner_product"),
-            ("expr_search", 10, "cosine_similarity"),
-            ("expr_search", 10, "l1_distance"),
-            ("expr_search", 10, "inner_product"),
+            ("hist_search", 5, "cosine_similarity"),
+            ("hist_search", 5, "l1_distance"),
+            ("hist_search", 5, "inner_product"),
+            ("hist_search", 10, "cosine_similarity"),
+            ("hist_search", 10, "l1_distance"),
+            ("hist_search", 10, "inner_product"),
         ],
     )
     def test_embedding_search_embedding_known_collection(

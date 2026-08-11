@@ -1,16 +1,12 @@
 import json
 import os
-import subprocess
-import time
-from pathlib import Path
 
 import pandas as pd
 import pytest
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from services.embedding import Embedding
-from utils import TEST_DATA_PATH_OBJECT, load_test, logger
-from utils import test_setup as setup
+from utils import TEST_DATA_PATH_OBJECT, load_test
 
 
 @pytest.mark.gen3_embedding
@@ -26,37 +22,20 @@ class TestGen3EmbeddingSearchUnKnownCollection:
         )
         cls.index = Gen3Index(cls.index_auth)
         cls.gen3_embedding = Embedding()
-        for collection_name, embedding_size in [("expr", 256), ("hist", 1536)]:
+        for collection_name, embedding_size in [
+            ("expr_search", 256),
+            ("hist_search", 1536),
+        ]:
             # Generate Embedding data (~/test_data/embedding/{collection_name}.tsv)
             cls.gen3_embedding.generate_embedding_data(
                 collection_name=collection_name,
-                number_of_records=10000,
+                number_of_records=100,
                 embedding_size=embedding_size,
             )
-            # Create the collection
-            cls.gen3_embedding.create_collection(
-                collection_name=collection_name, dimensions=embedding_size
-            )
-            # Publish the embeddings from {collection_name}.tsv file
-            cls.gen3_embedding.publish_embeddings(
-                collection_name=collection_name,
-                file_name=f"{collection_name}.tsv",
-                number_of_records=10000,
-            )
-
-    @classmethod
-    def teardown_class(cls):
-        for collection_name in ["hist", "expr"]:
-            response = cls.gen3_embedding.delete_collection(
-                collection_name=collection_name
-            )
-            assert (
-                response.status_code == 204
-            ), f"Expected status to be 204 but got {response.status_code}"
 
     def perform_load_test(self, top_k, distance_metric, append_file_name):
-        expr_input_file = TEST_DATA_PATH_OBJECT / "embedding" / "expr.tsv"
-        hist_input_file = TEST_DATA_PATH_OBJECT / "embedding" / "hist.tsv"
+        expr_input_file = TEST_DATA_PATH_OBJECT / "embedding" / "expr_search.tsv"
+        hist_input_file = TEST_DATA_PATH_OBJECT / "embedding" / "hist_search.tsv"
         df_expr = pd.read_csv(expr_input_file, sep="\t")
         df_hist = pd.read_csv(hist_input_file, sep="\t")
         embedding_list = (

@@ -80,7 +80,7 @@ export default function () {
   });
 
 
-  group('Sending Embedding Search Request', () => {
+  group('Sending Embedding Bulk Retrieval', () => {
     console.log(`Shooting requests against: ${url}`);
 
     const res = http.post(url, payload, params);

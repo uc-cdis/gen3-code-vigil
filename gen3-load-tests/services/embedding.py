@@ -39,22 +39,6 @@ class Embedding(object):
         logger.info(f"Status code after creating collection: {response.status_code}")
         return response
 
-    def get_collection(self, collection_name, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = auth.curl(path=f"{self.COLLECTIONS_ENDPOINT}/{collection_name}")
-        logger.info(f"Status code after getting collection: {response.status_code}")
-        return response.json()
-
-    def update_collection(self, collection_name, data, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = requests.patch(
-            url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}",
-            json=data,
-            auth=auth,
-        )
-        logger.info(f"Status code after updating collection: {response.status_code}")
-        return response
-
     def delete_collection(self, collection_name, user="main_account"):
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         response = requests.delete(
@@ -62,43 +46,6 @@ class Embedding(object):
             auth=auth,
         )
         logger.info(f"Status code after deleting collection: {response.status_code}")
-        return response
-
-    def create_embedding(self, collection_name, data, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = requests.post(
-            url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}",
-            json=data,
-            auth=auth,
-        )
-        logger.info(f"Status code after creating embedding: {response.status_code}")
-        return response
-
-    def get_embedding(self, collection_name, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = auth.curl(
-            path=f"{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}"
-        )
-        logger.info(f"Status code after getting embedding: {response.status_code}")
-        return response.json()
-
-    def update_embedding(self, collection_name, data, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = requests.put(
-            url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}",
-            json=data,
-            auth=auth,
-        )
-        logger.info(f"Status code after updating embedding: {response.status_code}")
-        return response
-
-    def delete_embedding(self, collection_name, embedding_id, user="main_account"):
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        response = requests.delete(
-            url=f"{self.BASE_URL}{self.COLLECTIONS_ENDPOINT}/{collection_name}{self.EMBEDDINGS_ENDPOINT}/{embedding_id}",
-            auth=auth,
-        )
-        logger.info(f"Status code after deleting embedding: {response.status_code}")
         return response
 
     def search_embedding(self, collection_name, data, user="main_account"):
@@ -240,14 +187,14 @@ class Embedding(object):
             for i in range(number_of_records):
                 embedding = rng.uniform(-1, 1, size=embedding_size).tolist()
                 # Generate collection_id and case_id
-                collection_id = f"{prefix}-{random.randint(0, 99):02d}-{random.randint(0, 9999):04d}"
+                case_id = f"{prefix}-{random.randint(0, 99):02d}-{random.randint(0, 9999):04d}"
                 code = "".join(
                     random.choices(string.ascii_uppercase + string.digits, k=3)
                 )
                 num = f"{random.randint(0, 99):02d}"
                 dx = f"DX{random.randint(0, 9)}"
                 uid = uuid.uuid4()
-                case_id = f"{collection_id}-{code}-{num}-{dx}.{uid}"
+                file_id = f"{case_id}-{code}-{num}-{dx}.{uid}"
 
                 # Write row to tsv file
                 writer.writerow(
@@ -256,8 +203,8 @@ class Embedding(object):
                         "/programs/dev/projects/testproject1",
                         collection_name,
                         "",
-                        collection_id,
                         case_id,
+                        file_id,
                         collection_name,
                     ]
                 )

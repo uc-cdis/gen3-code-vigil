@@ -31,7 +31,7 @@ class TestGen3EmbeddingLoadData:
         )
         cls.index = Gen3Index(cls.index_auth)
         cls.gen3_embedding = Embedding()
-        cls.collection_name = "expr_search"
+        cls.collection_name = "hist_search"
         cls.embedding_size = 1536
         cls.records_per_chunk = 5000000
         cls.batch_size = 100000
