@@ -86,7 +86,7 @@ jobs:
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          HELM_BRANCH: 'feat/add-gen3-embeddings'
+          HELM_BRANCH: 'master'
           CHUNK_ID: "0"
 
 
