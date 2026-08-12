@@ -1,15 +1,5 @@
 {
-    "query": "query ($filter: JSON) {
-      subject (offset: 0, first: 10000, sort: [ { breed: \"asc\" } ], filter: $filter) {
-        project_id
-        breed
-        auth_resource_path
-        primary_site
-        gender
-        _mRNA_microarrays_count
-        submitter_id
-      }
-    }",
+    "query": "query ($filter: JSON) {subject (offset: 0, first: 10000, sort: [ { breed: \"asc\" } ], filter: $filter) {project_id breed auth_resource_path primary_site gender _mRNA_microarrays_count submitter_id}}",
     "variables": {
       "filter": {
         "AND": [

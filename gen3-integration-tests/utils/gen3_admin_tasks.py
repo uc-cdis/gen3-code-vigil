@@ -49,30 +49,51 @@ def get_portal_config(json_file_name=None):
     return res
 
 
-def check_button_is_present(data, search_button):
+def get_navigation_url():
+    naviagtion_urls = {}
+    res = get_portal_config(json_file_name="navigation")
+    if not res:
+        logger.info("Portal/FeFF config not found. Skipping navigation url fetch.")
+        return naviagtion_urls
+    # This key is part of gitops for portal
+    if res.get("components"):
+        for item in res["components"]["navigation"]["items"]:
+            naviagtion_urls[item["name"]] = item["link"]
+    else:
+        for item in res["navigation"]["items"]:
+            naviagtion_urls[item["name"]] = item["href"]
+    return naviagtion_urls
+
+
+def check_button_is_present(data, search_button_or_title):
     # Checks manifest download button for Register User tests
     for button in data:
-        if search_button in button.get("type", "") and button.get("enabled"):
+        if (
+            search_button_or_title in button.get("type", "")
+            or search_button_or_title in button.get("title", "")
+        ) and button.get("enabled"):
             return True
     return False
 
 
-def validate_button_in_portal_config(data, search_button):
+def validate_button_in_portal_config(data, search_button_or_title):
     if isinstance(data, dict):
         if "buttons" in data and check_button_is_present(
-            data["buttons"], search_button
+            data["buttons"], search_button_or_title
         ):
-            if search_button == "export-to-pfb":
+            if search_button_or_title == "export-to-pfb":
                 return True
-            if search_button == "manifest":
+            if search_button_or_title == "Export All to Terra":
+                return True
+            if search_button_or_title == "manifest":
                 return data["tabTitle"]
         for val in data.values():
-            result = validate_button_in_portal_config(val, search_button)
+            result = validate_button_in_portal_config(val, search_button_or_title)
             if result:
                 return result
     elif isinstance(data, list):
         for item in data:
-            result = validate_button_in_portal_config(item, search_button)
+            result = validate_button_in_portal_config(item, search_button_or_title)
             if result:
                 return result
     return False

@@ -5,12 +5,9 @@ PRESIGNED URL
 import os
 
 import pytest
-from cdislogging import get_logger
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
-
+from utils import logger
 
 indexd_files = {
     "allowed": {
@@ -89,11 +86,6 @@ class TestPresignedURL:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        logger.info("Deleting Indexd Records")
-        cls.indexd.delete_records(guids=cls.variables["created_indexd_dids"])
-
     def get_indexd_record(cls, filename):
         for record in cls.indexd_records:
             if (
@@ -135,9 +127,9 @@ class TestPresignedURL:
             id=indexd_record["did"], user="main_account", expected_status=401
         )
         msg = "You don&#39;t have access permission on this file"
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_with_invalid_protocol(self):
@@ -153,12 +145,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=400,
-            params=["protocol=s2"],
+            protocol="s2",
         )
         msg = "The specified protocol s2 is not supported"
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_with_protocol_not_available(self):
@@ -174,12 +166,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s2"],
+            protocol="s2",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s2."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_with_protocol_not_exist_for_file(self):
@@ -195,12 +187,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s3"],
+            protocol="s3",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_no_data(self):
@@ -216,12 +208,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s3"],
+            protocol="s3",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_no_requested_protocol_no_data(self):
@@ -237,9 +229,9 @@ class TestPresignedURL:
             id=indexd_record["did"], user="main_account", expected_status=404
         )
         msg = "Can&#39;t find any file locations."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_bulk_presigned_urls(self):

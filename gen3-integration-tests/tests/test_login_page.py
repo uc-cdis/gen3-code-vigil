@@ -5,12 +5,10 @@ Logn Page
 import os
 
 import pytest
-from cdislogging import get_logger
 from pages.login import LoginPage
 from playwright.sync_api import Page, expect
+from utils import logger
 from utils.test_execution import screenshot
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.frontend
@@ -18,10 +16,8 @@ class TestLoginPage:
     @classmethod
     def setup_class(cls):
         cls.login_page = LoginPage()
-        if pytest.frontend_url:
-            cls.WORKSPACE_URL = f"{pytest.root_url_portal}/Workspace"
-        else:
-            cls.WORKSPACE_URL = f"{pytest.root_url_portal}/workspace"
+        workspace_path = pytest.navigation_urls.get("Workspace", "/workspace")
+        cls.WORKSPACE_URL = f"{pytest.root_url_portal}{workspace_path}"
         cls.QUERY_PARAM_URL = (
             f"{pytest.root_url_portal}/DEV-test/search?node_type=summary_clinical"
         )

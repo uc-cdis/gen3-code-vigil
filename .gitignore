@@ -15,6 +15,7 @@ gen3-integration-tests/test_data/configuration/
 gen3-integration-tests/test_data/graph_data/
 gen3-integration-tests/test_data/fence_clients/
 gen3-integration-tests/test_data/google_creds/
+gen3-integration-tests/test_data/drs_download/
 gen3-integration-tests/test_data/gen3_workflow/.nextflow/
 gen3-integration-tests/test_data/gen3_workflow/.nextflow.*
 gen3-integration-tests/test_data/gen3_workflow/rc.txt

@@ -112,9 +112,8 @@ def generate_slack_report():
         rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
     else:
-        pr_link = (
-            f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
-        )
+        pull_or_action = "actions" if os.getenv("RUNNING_DEV_ENV_TESTS") else "pull"
+        pr_link = f"https://github.com/{os.getenv('REPO_FN')}/{pull_or_action}/{os.getenv('PR_NUM')}"
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
         rerun_report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"

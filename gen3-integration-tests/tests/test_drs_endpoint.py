@@ -13,8 +13,7 @@ from packaging.version import Version
 from services.drs import Drs
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import TEST_DATA_PATH_OBJECT, logger
 
 indexd_files = {
     "allowed": {
@@ -60,11 +59,6 @@ class TestDrsEndpoints:
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
-
-    @classmethod
-    def teardown_class(cls):
-        # Removing test indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     def test_get_drs_object(self):
         """

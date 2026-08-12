@@ -1,6 +1,7 @@
 import json
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from pages.login import LoginPage
 from services.fence import Fence
 from services.requestor import Requestor
@@ -260,6 +261,10 @@ class TestRequestor:
             "/requestor_integration_test" not in user_policy["authz"]
         ), "Authz contains policy '/requestor_integration_test'"
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("fence", "2026.06", "1.10.0"),
+        reason="Requestor version is below 2026.06 and can't run this test",
+    )
     def test_approve_signed_request(self):
         """
         Check that only users with access to update access requests can create a request that

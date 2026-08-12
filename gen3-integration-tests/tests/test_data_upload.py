@@ -9,7 +9,6 @@ import random
 import string
 
 import pytest
-from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from pages.login import LoginPage
 from pages.submission import SubmissionPage
@@ -17,8 +16,7 @@ from playwright.sync_api import Page
 from services.fence import Fence
 from services.graph import GraphDataTools
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 
 def create_large_file(filePath, megabytes, text):
@@ -236,9 +234,7 @@ class TestDataUpload:
         signed_url_res = self.fence.create_signed_url(
             id=file_guid, user="main_account", expected_status=404
         )
-        assert (
-            "url" not in signed_url_res.content.decode()
-        ), f"URL key is missing.\n{signed_url_res}"
+        assert "url" not in signed_url_res, f"URL key is missing.\n{signed_url_res}"
 
         # Upload the file to the S3 bucket using the presigned URL
         self.fence.upload_file_using_presigned_url(presigned_url, file_path, file_size)

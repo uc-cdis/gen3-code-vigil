@@ -22,6 +22,7 @@ The API keys should be saved to `~/.gen3` directory
     HOSTNAME_PROTOCOL=https
     HOSTNAME="<hostname>"
     NAMESPACE="<namespace>"
+    RUNNING_LOCAL="true" -> Only needed when running locally for faster test execution
     ```
 Note: Please make sure the usersync job is configured on the environment, as the usersync job is run during pytest setup.
 1. Run tests with pytest

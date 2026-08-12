@@ -26,6 +26,8 @@ jobs:
       CI_TEST_RAS_PASSWORD: ${{ secrets.CI_TEST_RAS_PASSWORD }}
       CI_TEST_RAS_2_EMAIL: ${{ secrets.CI_TEST_RAS_2_EMAIL }}
       CI_TEST_RAS_2_PASSWORD: ${{ secrets.CI_TEST_RAS_2_PASSWORD }}
+      RAS_IAL2_USERID: ${{ secrets.RAS_IAL2_USERID }}
+      RAS_IAL2_PASSWORD: ${{ secrets.RAS_IAL2_PASSWORD }}
       CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
       CI_SLACK_CHANNEL_ID: ${{ secrets.CI_SLACK_CHANNEL_ID }}
       EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}

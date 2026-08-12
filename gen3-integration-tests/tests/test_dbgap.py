@@ -6,13 +6,10 @@ import os
 import uuid
 
 import pytest
-from cdislogging import get_logger
 from playwright.sync_api import Page
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
-
+from utils import logger
 
 indexd_files = {
     "phs000178File": {
@@ -110,6 +107,7 @@ new_dbgap_records = {
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
+@pytest.mark.gen3sdk
 class TestDbgap:
     @classmethod
     def setup_class(cls):
@@ -127,12 +125,6 @@ class TestDbgap:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        # Removing test indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
-        cls.indexd.delete_records(cls.variables["created_dbgap_dids"])
-
     @pytest.mark.skip(
         reason="To avoid running usersync multiple times and since ONLY_DBGAP is not used in real time."
     )
@@ -149,13 +141,13 @@ class TestDbgap:
         # Create S3 signed url. main_account has access to phs000178 through dbgap
         phs000178_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000178File"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=200,
         )
         phs000178_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000178File"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="main_account",
             expected_status=200,
         )
@@ -172,25 +164,25 @@ class TestDbgap:
         # Create S3 signed url. main_account doesn't have access to phs000179 through dbgap
         phs000179_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000179File"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=401,
         )
         phs000179_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000179File"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="main_account",
             expected_status=401,
         )
         another_phs000179_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["anotherPhs000179File"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=401,
         )
         another_phs000179_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["anotherPhs000179File"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="main_account",
             expected_status=401,
         )
@@ -227,13 +219,13 @@ class TestDbgap:
         # Create S3 signed url. main_account has access to phs000178 through dbgap
         phs000178_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["phs000178File"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=200,
         )
         qa_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["QAFile"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=200,
         )
@@ -375,13 +367,13 @@ class TestDbgap:
         # Create S3 signed url. main_account has access to phs001194 through dbgap
         phs001194_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["parentPhs001194File"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=200,
         )
         phs001194_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["parentPhs001194File"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="main_account",
             expected_status=200,
         )
@@ -398,13 +390,13 @@ class TestDbgap:
         # Create S3 signed url. main_account has access to phs000571 as its child of phs001194
         phs000571_s3_signed_url = self.fence.create_signed_url(
             id=indexd_files["childPhs000571File"]["did"],
-            params=["protocol=s3"],
+            protocol="s3",
             user="main_account",
             expected_status=200,
         )
         phs000571_gs_signed_url = self.fence.create_signed_url(
             id=indexd_files["childPhs000571File"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="main_account",
             expected_status=200,
         )

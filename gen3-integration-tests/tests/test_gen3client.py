@@ -49,7 +49,7 @@ class TestGen3Client:
         profile = f"{pytest.namespace}_profile"
 
         # create a file that can be uploaded
-        file_data = f"This is a test file uploaded via gen3-client test"
+        file_data = "This is a test file uploaded via gen3-client test"
         current_time = datetime.datetime.now().strftime("%Y_%m_%d_%H_%S")
         file_name = f"file_{current_time}.txt"
         file_path = f"./{file_name}"
@@ -66,10 +66,10 @@ class TestGen3Client:
         if configure.returncode == 0:
             logger.info(f"Successfully configure profile {profile}")
         else:
-            logger.info(f"Failed to configure profile {profile}")
+            raise Exception(f"Failed to configure profile {profile}")
 
         # Upload file via gen3-client
-        logger.info(f"Uploading file via gen3-client ...")
+        logger.info("Uploading file via gen3-client ...")
         upload_cmd = [
             f"gen3-client upload --profile={profile} --upload-path={file_path}"
         ]
@@ -95,7 +95,7 @@ class TestGen3Client:
                     guid = guid_match[0]
                     logger.info(f"Uploaded File GUID : {guid}")
         except Exception as e:
-            logger.info(
+            raise Exception(
                 f"Upload error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
             )
 
@@ -110,7 +110,7 @@ class TestGen3Client:
         os.mkdir(f"{download_path}/")
         os.chdir(f"{download_path}")
 
-        logger.info(f"Downloading file via gen3-client ...")
+        logger.info("Downloading file via gen3-client ...")
         download_cmd = [
             f"gen3-client download-single --profile={profile} --guid={guid} --download-path={download_path}/ --no-prompt"
         ]
@@ -126,7 +126,7 @@ class TestGen3Client:
             else:
                 logger.info(f"File {file_name} is not downloaded successfully")
         except Exception as e:
-            logger.info(
+            raise Exception(
                 f"Download error : Error occurred {type(e).__name__} and Error Message is {str(e)} "
             )
 
@@ -135,7 +135,7 @@ class TestGen3Client:
             if file_path.exists:
                 logger.info(f"The downloaded file {file_name} exists")
         except FileNotFoundError:
-            logger.info(f"The file {file_name} does not exist")
+            raise Exception(f"The file {file_name} does not exist")
 
         # Delete the indexd record
         delete_record = indexd.delete_record_via_api(guid, rev)
@@ -144,6 +144,6 @@ class TestGen3Client:
         # Deleting the folder src from filesystem
         try:
             shutil.rmtree(f"{self.go_path}/src")
-            logger.info(f"Folder src deleted successfully ...")
+            logger.info("Folder src deleted successfully ...")
         except OSError as e:
-            raise OSError(f"Error removing directory {self.go_path}/src: {e.message}")
+            raise Exception(f"Error removing directory {self.go_path}/src: {e.message}")

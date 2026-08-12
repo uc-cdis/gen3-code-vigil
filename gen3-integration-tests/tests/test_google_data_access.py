@@ -16,6 +16,7 @@ from utils import logger
 )
 @pytest.mark.fence
 @pytest.mark.requires_google_bucket
+@pytest.mark.gen3sdk
 class TestGoogleDataAccess:
     @classmethod
     def setup_class(cls):
@@ -47,11 +48,6 @@ class TestGoogleDataAccess:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["indexd_record_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        # Deleting indexd records
-        cls.indexd.delete_records(cls.variables["indexd_record_dids"])
-
     def test_google_data_access(self, page: Page):
         """
         Scenario: Google Data Access dcf-integration-test-0
@@ -66,7 +62,7 @@ class TestGoogleDataAccess:
         self.fence.delete_google_sa_keys(page=page, user="user0_account")
         qa_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["qa_file"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="user0_account",
             expected_status=200,
         )
@@ -76,7 +72,7 @@ class TestGoogleDataAccess:
 
         test_presigned_url = self.fence.create_signed_url(
             id=self.indexd_files["test_file"]["did"],
-            params=["protocol=gs"],
+            protocol="gs",
             user="user0_account",
             expected_status=401,
         )

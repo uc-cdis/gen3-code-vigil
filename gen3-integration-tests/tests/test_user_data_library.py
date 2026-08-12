@@ -1,4 +1,5 @@
 import pytest
+import utils.gen3_admin_tasks as gat
 from pages.data_library_page import DataLibraryPage
 from pages.login import LoginPage
 from services.userdatalibrary import UserDataLibrary
@@ -17,7 +18,6 @@ def page_setup(page):
     reason="gen3-user-data-library service is not running on this environment",
 )
 @pytest.mark.gen3_user_data_library
-@pytest.mark.frontend
 class TestUserDataLibrary(object):
     def setup_class(cls):
         cls.test_data_create = {
@@ -49,8 +49,8 @@ class TestUserDataLibrary(object):
         }
 
     @classmethod
-    def teardown_class(cls):
-        # Delete the list after all tests are run.
+    def teardown_method(cls):
+        # Delete the list in case test fails to delete
         gen3_udl = UserDataLibrary()
         gen3_udl.delete_list(user="main_account")
 
@@ -113,9 +113,10 @@ class TestUserDataLibrary(object):
         # Delete the data library list
         gen3_udl.delete_list(user="main_account", list_id=list_id)
 
+    @pytest.mark.frontend
     @pytest.mark.skipif(
-        "frontend-framework" not in pytest.deployed_services,
-        reason="Frontend-framework services are not running on this environment",
+        pytest.manifest.get("global", {}).get("frontend_root", "") != "gen3ff",
+        reason="Skipping test as frontend_root is not gen3ff",
     )
     def test_data_library_page(self, page_setup):
         """
@@ -132,9 +133,7 @@ class TestUserDataLibrary(object):
         """
         gen3_udl = UserDataLibrary()
         # Create the data library list
-        data_library_list = gen3_udl.create_list(
-            user="main_account", data=self.test_data_create
-        )
+        gen3_udl.create_list(user="main_account", data=self.test_data_create)
         # Login
         login_page = LoginPage()
         login_page.go_to(page_setup)
@@ -156,13 +155,18 @@ class TestUserDataLibrary(object):
         data_library_page.retrieve_selected_data(page_setup)
         screenshot(page_setup, "RetrieveSelectedData")
 
-        # Select all entries on "Retrieve Data" dialog and select Tera Option
-        data_library_page.select_all_entries(page_setup)
-        data_library_page.select_export_to_terra(page_setup)
-        screenshot(page_setup, "TerraExportSelected")
+        if gat.validate_button_in_portal_config(
+            data=gat.get_portal_config(json_file_name="explorer"),
+            search_button_or_title="Export All to Terra",
+        ):
+            # Select all entries on "Retrieve Data" dialog and select Tera Option
+            data_library_page.select_all_entries(page_setup)
+            data_library_page.select_export_to_terra(page_setup)
+            screenshot(page_setup, "TerraExportSelected")
 
-        # Do the Export and close dialog window
-        data_library_page.export_data(page_setup)
+            # Do the Export and close dialog window
+            data_library_page.export_data(page_setup)
+
         data_library_page.close_modal(page_setup)
         screenshot(page_setup, "ExportPerformed")
 

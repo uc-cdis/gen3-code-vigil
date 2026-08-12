@@ -9,8 +9,9 @@ from utils.test_execution import screenshot
 
 class DataLibraryPage(object):
     def __init__(self):
-        if pytest.frontend_url:
-            self.BASE_URL = f"{pytest.root_url_portal}/DataLibrary"
+        # Endpoints
+        data_library_path = pytest.navigation_urls.get("Data Library", "/DataLibrary")
+        self.BASE_URL = f"{pytest.root_url_portal}{data_library_path}"
 
         # LOCATORS
         self.READY_CUE = "button:has-text('Data Library')"
@@ -20,10 +21,6 @@ class DataLibraryPage(object):
         self.EXPORT_DROPDOWN = "input.mantine-Select-input"
 
         self.EXPORT_BUTTON = "css=button:has-text('Export')"
-
-        self.CLOSE_MODAL_BUTTON = "internal:role=button[name='Close Modal'i]"
-
-        self.DELETE_LIST_BUTTON = "internal:role=button[name='delete list'i]"
 
     def go_to(self, page: Page):
         page.goto(self.BASE_URL)
@@ -70,10 +67,10 @@ class DataLibraryPage(object):
         page.get_by_role("option", name="Export: Terra").click()
 
     def export_data(self, page: Page):
-        page.click(self.EXPORT_BUTTON)
+        page.locator(self.EXPORT_BUTTON).click(timeout=30000)
 
     def close_modal(self, page: Page):
-        page.click(self.CLOSE_MODAL_BUTTON)
+        page.get_by_role("button", name="Close Modal").click(timeout=30000)
 
     def delete_list(self, page: Page):
-        page.click(self.DELETE_LIST_BUTTON)
+        page.get_by_role("button", name="delete list").click(timeout=30000)
