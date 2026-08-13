@@ -183,8 +183,8 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# This is to make sure any changes for ci/default are run with portal for now
-echo "Current change is in ci/default, removing frontend-framework config"
+# This is to make sure any changes for ci/perf are run with portal for now
+echo "Current change is in ci/perf, removing frontend-framework config"
 yq eval "del(.frontend-framework)" -i $manifest_values_yaml
 
 
@@ -217,31 +217,6 @@ install_helm_chart() {
 }
 
 ci_es_indices_setup() {
-  echo "Setting up ES port-forward..."
-  label="app=gen3-elasticsearch-master"
-  max_retries=3
-  delay=30
-
-  for attempt in $(seq 0 $max_retries); do
-    echo "Attempt $((attempt + 1))..."
-    if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
-      if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
-        echo "Pod is ready!"
-        break
-      fi
-    else
-      echo "Elasticsearch Pod not found."
-    fi
-
-    if [ "$attempt" -lt "$max_retries" ]; then
-      echo "Retrying in $delay seconds..."
-      sleep "$delay"
-    else
-      echo "Failed after $((max_retries + 1)) attempts."
-      exit 1
-    fi
-  done
-
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
   touch output.txt
