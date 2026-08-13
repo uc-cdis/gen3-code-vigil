@@ -72,12 +72,14 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           RUN_NUM: ${{ github.run_number }}
+          ATTEMPT_NUM: ${{ github.run_attempt }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           MTLS_CRT: ${{ secrets.MTLS_CRT }}
           MTLS_KEY: ${{ secrets.MTLS_KEY }}
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
+          HELM_BRANCH: 'master'
 
 
         steps:
@@ -268,7 +270,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               DATE=$(date +%Y%m%d)
-              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE/$RUN_NUM
+              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE/$RUN_NUM/$ATTEMPT_NUM
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
