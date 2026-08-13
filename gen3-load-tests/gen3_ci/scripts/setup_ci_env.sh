@@ -301,7 +301,7 @@ wait_for_pods_ready() {
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
-  ci_es_indices_setup
+  # ci_es_indices_setup
   kubectl rollout restart guppy-deployment
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
