@@ -226,30 +226,30 @@ install_helm_chart() {
 }
 
 ci_es_indices_setup() {
-  echo "Setting up ES port-forward..."
-  label="app=gen3-elasticsearch-master"
-  max_retries=3
-  delay=30
+  # echo "Setting up ES port-forward..."
+  # label="app=gen3-elasticsearch-master"
+  # max_retries=3
+  # delay=30
 
-  for attempt in $(seq 0 $max_retries); do
-    echo "Attempt $((attempt + 1))..."
-    if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
-      if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
-        echo "Pod is ready!"
-        break
-      fi
-    else
-      echo "Elasticsearch Pod not found."
-    fi
+  # for attempt in $(seq 0 $max_retries); do
+  #   echo "Attempt $((attempt + 1))..."
+  #   if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
+  #     if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
+  #       echo "Pod is ready!"
+  #       break
+  #     fi
+  #   else
+  #     echo "Elasticsearch Pod not found."
+  #   fi
 
-    if [ "$attempt" -lt "$max_retries" ]; then
-      echo "Retrying in $delay seconds..."
-      sleep "$delay"
-    else
-      echo "Failed after $((max_retries + 1)) attempts."
-      exit 1
-    fi
-  done
+  #   if [ "$attempt" -lt "$max_retries" ]; then
+  #     echo "Retrying in $delay seconds..."
+  #     sleep "$delay"
+  #   else
+  #     echo "Failed after $((max_retries + 1)) attempts."
+  #     exit 1
+  #   fi
+  # done
 
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
@@ -301,7 +301,7 @@ wait_for_pods_ready() {
 
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
-  # ci_es_indices_setup
+  ci_es_indices_setup
   kubectl rollout restart guppy-deployment
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
