@@ -55,6 +55,7 @@ def pytest_runtest_logreport(report):
     message = {
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
+        "attempt_num": os.getenv("ATTEMPT_NUM"),
         "release_version": os.getenv("RELEASE_VERSION"),
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
