@@ -1485,6 +1485,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             (expected_file,) = overlapped_filenames
             if "dicom_to_png" in task_name:
                 expected_file = f"/outputs/{expected_file}"
+            is_binary_file = expected_file.lower().endswith(".png")
 
             # - Check that the output file in S3 is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
@@ -1493,20 +1494,21 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 user=self.valid_user,
             )
             contents_in_s3 = response["Body"].read()
-            try:
-                # some output files need decoding
+            if not is_binary_file:
                 contents_in_s3 = contents_in_s3.decode("utf-8")
-            except Exception:
-                pass
             assert (
                 response["ContentLength"] > 0
             ), f"Expected to have some data in {expected_file}. But found empty file instead. Response: {response}"
+            assert response["ContentLength"] == len(contents_in_s3)
 
-            # - Check that the output file downloaded locally by Nextflow is non-empty and matches
-            #   the output file in S3
-            with open(f"{workflow_dir}results/{expected_file}", "r") as f:
+            # - Check that the output file downloaded automatically by Nextflow matches exactly the
+            #   output file in S3
+            with open(
+                f"{workflow_dir}results/{expected_file}",
+                "rb" if is_binary_file else "r",
+            ) as f:
                 contents_in_local = f.read()
-            # assert contents_in_local == contents_in_s3 # TODO this is broken. Enable once fixed
+            assert contents_in_local == contents_in_s3
 
             def get_nextflow_output_file_contents(test_file_name):
                 matching_keys = [
