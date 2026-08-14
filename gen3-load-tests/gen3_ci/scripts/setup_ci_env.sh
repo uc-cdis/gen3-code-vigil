@@ -153,11 +153,6 @@ yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $manifest_values_ya
 yq eval ".funnel.externalSecrets.dbcreds = \"${namespace}-funnel-creds\"" -i $manifest_values_yaml
 yq eval ".funnel.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
 yq eval ".funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
-# TODO: Remove the next line after funnel helm chart is completely removed as a dependent chart.
-# The legacy chart still expects `funnel.funnel.Kubernetes.JobsNamespace`,
-# while the standalone chart uses `funnel.Kubernetes.JobsNamespace`.
-# Keep both values in sync until the migration is complete.
-yq eval ".funnel.funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
 # Gen3-embeddig update ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES
@@ -226,31 +221,6 @@ install_helm_chart() {
 }
 
 ci_es_indices_setup() {
-  # echo "Setting up ES port-forward..."
-  # label="app=gen3-elasticsearch-master"
-  # max_retries=3
-  # delay=30
-
-  # for attempt in $(seq 0 $max_retries); do
-  #   echo "Attempt $((attempt + 1))..."
-  #   if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
-  #     if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
-  #       echo "Pod is ready!"
-  #       break
-  #     fi
-  #   else
-  #     echo "Elasticsearch Pod not found."
-  #   fi
-
-  #   if [ "$attempt" -lt "$max_retries" ]; then
-  #     echo "Retrying in $delay seconds..."
-  #     sleep "$delay"
-  #   else
-  #     echo "Failed after $((max_retries + 1)) attempts."
-  #     exit 1
-  #   fi
-  # done
-
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
   touch output.txt
