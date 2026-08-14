@@ -55,7 +55,7 @@ class TestGen3EmbeddingLoadData:
         path = TEST_DATA_PATH_OBJECT / "embedding"
         path.mkdir(parents=True, exist_ok=True)
         seed = np.random.SeedSequence(0)
-        child_seed = seed.spawn(3)[self.chunk_id]
+        child_seed = seed.spawn(10)[self.chunk_id]
         rng = np.random.default_rng(child_seed)
 
         start_record = self.chunk_id * self.records_per_chunk
