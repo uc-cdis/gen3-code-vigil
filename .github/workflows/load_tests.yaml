@@ -206,22 +206,22 @@ jobs:
             env:
               EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
 
-          # Create PR namespace and PR hostname env var
-          # - name: Create namespace and env vars
-          #   if: ${{ env.SKIP_TESTS != 'true' }}
-          #   # Change the HOSTNAME with full domain name
-          #   run: |
-          #     NAMESPACE=ci-perf
-          #     HOSTNAME=perf.ci.planx-pla.net
-          #     echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
-          #     echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-          #     namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-          #     if [ -n "$namespace_exists" ]; then
-          #       echo "Namespace $NAMESPACE exists, performing teardown..."
-          #       helm delete $NAMESPACE -n $NAMESPACE || true
-          #       kubectl delete ns $NAMESPACE
-          #     fi
-          #     kubectl create namespace $NAMESPACE
+          Create PR namespace and PR hostname env var
+          - name: Create namespace and env vars
+            if: ${{ env.SKIP_TESTS != 'true' }}
+            # Change the HOSTNAME with full domain name
+            run: |
+              NAMESPACE=ci-perf
+              HOSTNAME=perf.ci.planx-pla.net
+              echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
+              echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              if [ -n "$namespace_exists" ]; then
+                echo "Namespace $NAMESPACE exists, performing teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE || true
+                kubectl delete ns $NAMESPACE
+              fi
+              kubectl create namespace $NAMESPACE
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
