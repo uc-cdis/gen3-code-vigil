@@ -13,7 +13,7 @@ from utils import TEST_DATA_PATH_OBJECT, load_test, logger
 from utils import test_setup as setup
 
 
-@pytest.mark.gen3_embedding
+@pytest.mark.gen3_embeddings
 class TestGen3EmbeddingBulkRetrievalMedium:
     @classmethod
     def setup_class(cls):

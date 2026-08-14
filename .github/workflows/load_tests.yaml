@@ -87,7 +87,7 @@ jobs:
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           HELM_BRANCH: 'master'
-          CHUNK_ID: "1"
+          CHUNK_ID: "2"
 
 
         steps:

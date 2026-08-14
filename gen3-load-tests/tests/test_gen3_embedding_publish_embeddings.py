@@ -13,7 +13,7 @@ from utils import test_setup as setup
 from utils.test_execution import attach_json_file
 
 
-@pytest.mark.gen3_embedding
+@pytest.mark.gen3_embeddings
 class TestGen3EmbeddingPublishEmbeddings:
     @classmethod
     def setup_class(cls):
