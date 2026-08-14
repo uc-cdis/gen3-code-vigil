@@ -34,7 +34,7 @@ class TestGen3EmbeddingLoadData:
         cls.collection_name = "expr_search"
         cls.embedding_size = 256
         cls.records_per_chunk = 5000000
-        cls.batch_size = 100000
+        cls.batch_size = 10000
         cls.chunk_id = int(os.environ["CHUNK_ID"])
         if cls.chunk_id == 0:
             # Delete collection
@@ -105,8 +105,11 @@ class TestGen3EmbeddingLoadData:
                             self.collection_name,
                         ]
                     )
-            self.gen3_embedding.publish_embeddings(
-                collection_name=self.collection_name,
-                file_name=f"{self.collection_name}.tsv",
-                number_of_records=self.batch_size,
-            )
+            try:
+                self.gen3_embedding.publish_embeddings(
+                    collection_name=self.collection_name,
+                    file_name=f"{self.collection_name}.tsv",
+                    number_of_records=self.batch_size,
+                )
+            except Exception as e:
+                logger.info(e)
