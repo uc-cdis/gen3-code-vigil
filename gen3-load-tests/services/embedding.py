@@ -127,7 +127,7 @@ class Embedding(object):
         )
         embedding_tsv_file = TEST_DATA_PATH_OBJECT / "embedding" / file_name
         start_time = time.perf_counter()
-        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 500"
+        cmd = f"gen3 --auth {main_file_path} ai embeddings publish {embedding_tsv_file} --default-collection {collection_name} --batch-size 1000"
         result = subprocess.run(
             cmd,
             shell=True,

@@ -33,7 +33,7 @@ class TestGen3EmbeddingLoadData:
         cls.gen3_embedding = Embedding()
         cls.collection_name = "expr_search"
         cls.embedding_size = 256
-        cls.records_per_chunk = 5000000
+        cls.records_per_chunk = 8000000
         cls.batch_size = 10000
         cls.chunk_id = int(os.environ["CHUNK_ID"])
         if cls.chunk_id == 0:
