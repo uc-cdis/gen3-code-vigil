@@ -31,9 +31,9 @@ class TestGen3EmbeddingLoadData:
         )
         cls.index = Gen3Index(cls.index_auth)
         cls.gen3_embedding = Embedding()
-        cls.collection_name = "expr_search"
-        cls.embedding_size = 256
-        cls.records_per_chunk = 10000
+        cls.collection_name = "hist_search"
+        cls.embedding_size = 1536
+        cls.records_per_chunk = 3000000
         cls.batch_size = 10000
         cls.chunk_id = int(os.environ["CHUNK_ID"])
         if cls.chunk_id == 0:
@@ -54,7 +54,7 @@ class TestGen3EmbeddingLoadData:
         # Generate Embedding data (~/test_data/embedding/{collection_name}.tsv)
         path = TEST_DATA_PATH_OBJECT / "embedding"
         path.mkdir(parents=True, exist_ok=True)
-        seed = np.random.SeedSequence(0)
+        seed = np.random.SeedSequence(10)
         child_seed = seed.spawn(10)[self.chunk_id]
         rng = np.random.default_rng(child_seed)
 
