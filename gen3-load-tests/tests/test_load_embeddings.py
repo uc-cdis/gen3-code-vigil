@@ -56,7 +56,7 @@ class TestGen3EmbeddingLoadData:
         path.mkdir(parents=True, exist_ok=True)
         run_num = int(os.getenv("RUN_NUM"))
         attempt_num = int(os.getenv("ATTEMPT_NUM"))
-        seed = np.random.SeedSequence([run_num, attempt_num])
+        seed = np.random.SeedSequence([attempt_num, run_num])
         rng = np.random.default_rng(seed)
 
         start_record = 0
