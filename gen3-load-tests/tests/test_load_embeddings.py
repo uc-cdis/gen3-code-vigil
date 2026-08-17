@@ -59,8 +59,8 @@ class TestGen3EmbeddingLoadData:
         seed = np.random.SeedSequence([run_num, attempt_num])
         rng = np.random.default_rng(seed)
 
-        start_record = self.chunk_id * self.records_per_chunk
-        end_record = start_record + self.records_per_chunk
+        start_record = 0
+        end_record = self.records_per_chunk
         for batch_start in range(start_record, end_record, self.batch_size):
             tsv_file = (
                 TEST_DATA_PATH_OBJECT / "embedding" / f"{self.collection_name}.tsv"
