@@ -19,12 +19,11 @@ class TestFenceBulkPresignedURL:
             refresh_token=pytest.api_keys["indexing_account"], endpoint=pytest.root_url
         )
         self.index = Gen3Index(self.index_auth)
-        self.created_guids = []
         self.guids_list = []
 
     def teardown_method(self):
         """Delete the indexd records the test created"""
-        for did in self.created_guids:
+        for did in self.guids_list:
             self.index.delete_record(guid=did)
 
     @staticmethod
@@ -80,7 +79,6 @@ class TestFenceBulkPresignedURL:
                 "urls": ["s3://cdis-presigned-url-test/testdata"],
             }
             record = self.index.create_record(**record_data)
-            self.created_guids.append(record["did"])
             self.guids_list.append(record["did"])
 
     def test_fence_bulk_presigned_url(self):
