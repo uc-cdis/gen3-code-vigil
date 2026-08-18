@@ -50,7 +50,7 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="TestFenceBulkPresignedURL"
+              TEST_SUITE="ALL"
               RELEASE_VERSION=""
             fi
 
