@@ -17,7 +17,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/update_to_uv
     with:
       WORKING_DIR: gen3-integration-tests
       EXTERNAL_TO_CTDS: "true"
