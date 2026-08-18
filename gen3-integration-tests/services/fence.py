@@ -83,7 +83,7 @@ class Fence(object):
             response = requests.get(self.BASE_URL + url, auth={})
             status_code = response.status_code
             response = response.content.decode()
-        logger.info("Status code : " + str(status_code))
+        logger.info(f"Status code: {status_code} - {response}")
         assert (
             expected_status == status_code
         ), f"Expected response {expected_status}, but got {status_code}"

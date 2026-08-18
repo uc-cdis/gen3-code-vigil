@@ -5,12 +5,10 @@ Logn Page
 import os
 
 import pytest
-from cdislogging import get_logger
 from pages.login import LoginPage
 from playwright.sync_api import Page, expect
+from utils import logger
 from utils.test_execution import screenshot
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.frontend

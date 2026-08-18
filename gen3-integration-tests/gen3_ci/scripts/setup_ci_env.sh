@@ -117,6 +117,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Check if multiple yaml files are present and convert them into values.yaml
     new_manifest_values_file_path=$ci_default_manifest_dir/manifest_values.yaml
+    git clone https://github.com/uc-cdis/gen3-helm.git gen3-helm-ci
+    gen3_helm_values_file_path=gen3-helm-ci/helm/gen3/values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
         echo >> "$new_manifest_values_file_path"
@@ -223,10 +225,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
+      gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
+          yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
+      elif [ "$service_enabled_value" = null ] && [ "$gen3_helm_enabled_value" = "false" ]; then
+          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values and ${gen3_helm_enabled_value} in gen3-helm"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
@@ -234,12 +240,16 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         if [[ "$ci_enabled_value" == "false" && "$service_enabled_value" == "true" ]]; then
           yq eval ".${key}.enabled = true" -i $ci_default_manifest_values_yaml
         fi
-        echo "Updating ${key} service with ${image_tag_value}"
+        echo "Updating ${key} service to tag ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            repository=$(yq eval ".${key}.image.repository" $new_manifest_values_file_path 2>/dev/null)
             if [[ "$key" == "frontend-framework" ]]; then
               repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
-              yq eval ".frontend-framework.image.repository = \"${repository}\"" -i "$ci_default_manifest_values_yaml"
+            fi
+            if [ "$repository" != "null" ]; then
+              echo "Updating ${key} service to repo ${repository}"
+              yq eval ".${key}.image.repository = \"$repository\"" -i $ci_default_manifest_values_yaml
             fi
         fi
       fi
@@ -346,6 +356,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
+
+    # Remove workspace-proxy. This is temporary until we add workspace-proxy to CI
+    yq eval 'del(."workspace-proxy")' -i $ci_default_manifest_values_yaml
 fi
 
 # Check whether specific services are enabled in the final manifest
@@ -455,7 +468,7 @@ common_param_updates=(
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
