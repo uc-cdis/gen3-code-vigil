@@ -79,7 +79,6 @@ spec:
                         BULK_OBJECTS_RESOLVED_RATE=$(echo "$BODY" | jq -r '.bulk_objects_resolved_rate')
                         BULK_OBJECTS_UNRESOLVED_COUNT=$(echo "$BODY" | jq -r '.bulk_objects_unresolved_count')
                         BULK_OBJECTS_UNRESOLVED_RATE=$(echo "$BODY" | jq -r '.bulk_objects_unresolved_rate')
-                        PARTIAL_BULK_RESPONSES_RATE=$(echo "$BODY" | jq -r '.partial_bulk_responses_rate')
 
 
                         psql "$METRICS_DB_DSN" <<EOF
@@ -109,8 +108,7 @@ spec:
                     bulk_objects_resolved_count,
                     bulk_objects_resolved_rate,
                     bulk_objects_unresolved_count,
-                    bulk_objects_unresolved_rate,
-                    partial_bulk_responses_rate
+                    bulk_objects_unresolved_rate
                 ) VALUES (
                     '$RUN_DATE',
                     $RUN_NUM,
@@ -137,8 +135,7 @@ spec:
                     $BULK_OBJECTS_RESOLVED_COUNT,
                     $BULK_OBJECTS_RESOLVED_RATE,
                     $BULK_OBJECTS_UNRESOLVED_COUNT,
-                    $BULK_OBJECTS_UNRESOLVED_RATE,
-                    $PARTIAL_BULK_RESPONSES_RATE
+                    $BULK_OBJECTS_UNRESOLVED_RATE
                 );
                 EOF
 

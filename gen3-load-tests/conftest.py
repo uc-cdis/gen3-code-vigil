@@ -91,9 +91,6 @@ def pytest_runtest_logreport(report):
         "bulk_objects_unresolved_rate": metrics.get("bulk_objects_unresolved", {}).get(
             "rate"
         ),
-        "partial_bulk_responses_rate": metrics.get("partial_bulk_responses", {}).get(
-            "rate"
-        ),
     }
 
     try:

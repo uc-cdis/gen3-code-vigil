@@ -1,10 +1,11 @@
 import json
-from uuid import uuid4
 import os
 import shutil
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
+import requests
 from gen3.auth import Gen3Auth
 from gen3.tools.download.drs_download import (
     Downloadable,
@@ -61,6 +62,7 @@ class Drs(object):
         """Get Drs signed url without header"""
         auth = self._auth(user)
         id = self._extract_id(file)
+
     def get_drs_signed_url_using_gen3sdk(self, file, access_token):
         """Get Drs signed url"""
         try:
