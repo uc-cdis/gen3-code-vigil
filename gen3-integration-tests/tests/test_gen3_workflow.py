@@ -1403,6 +1403,65 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             raise
         assert len(input_file_contents) == len(output_file_contents)
 
+    def test_output_directory(self, request):
+        """
+        Check that the system can handle outputting all files in a directory
+        """
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        files = [
+            ("directory/subdir/file1.txt", "hello world"),
+            ("directory/subdir/file2.txt", "goodbye world"),
+        ]
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body={
+                **base_tes_payload(request),
+                "outputs": [
+                    {
+                        "path": "/work/directory",
+                        "url": f"s3://{s3_path_prefix}/directory",
+                        "type": "FILE",
+                    }
+                ],
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "workdir": "/work",
+                        "command": [
+                            f"mkdir -p directory/subdir && echo '{files[0][1]}' > {files[0][0]} && echo '{files[1][1]}' > {files[1][0]}",
+                        ],
+                    }
+                ],
+            },
+            user=self.valid_user,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        for file_path, file_contents in files:
+            response = self.gen3_workflow.get_bucket_object_with_boto3(
+                object_path=f"{s3_path_prefix}/{file_path}",
+                s3_storage_config=self.s3_storage_config,
+                user=self.valid_user,
+                expected_status=200,
+            )
+            try:
+                s3_file_contents = response["Body"].read().decode("utf-8").strip()
+            except Exception as e:
+                logger.error(
+                    f"Failed to read or decode content of {file_path} from S3. Error: {e}"
+                )
+                raise
+            assert (
+                file_contents == s3_file_contents
+            ), f"File '{file_path}' does not have the expected contents"
+
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
     def test_nextflow_workflow(self):

@@ -62,6 +62,7 @@ class WorkflowStorageConfig:
 
 
 def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
+    return
     apps = ["gen3-workflow", "funnel"]
     if with_arborist:
         apps.append("arborist")
