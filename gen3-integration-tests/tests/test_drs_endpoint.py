@@ -205,7 +205,8 @@ class TestDrsMetadata:
         cls.drs = Drs()
         cls.indexd = Indexd()
         cls.fence = Fence()
-        cls.variables = {"created_indexd_dids": []}
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
 
         # skip all these tests if DRS < 1.5
         try:
@@ -220,15 +221,6 @@ class TestDrsMetadata:
             pytest.skip("DRS 1.5 not deployed on this environment")
 
         # Create DRS 1.5 test records
-        auth = Gen3Auth(
-            refresh_token=pytest.api_keys["indexing_account"],
-            endpoint=pytest.root_url,
-        )
-        access_token = auth.get_access_token()
-        headers = {
-            "Authorization": f"bearer {access_token}",
-            "Content-Type": "application/json",
-        }
         # Adding indexd files
         for key, val in drs_15_indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})

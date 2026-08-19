@@ -58,11 +58,6 @@ class Drs(object):
         response = auth.curl(path=f"{self.DRS_ENDPOINT}/{id}/access/{access_id}")
         return response
 
-    def get_drs_signed_url_without_header(self, file, user="main_account"):
-        """Get Drs signed url without header"""
-        auth = self._auth(user)
-        id = self._extract_id(file)
-
     def get_drs_signed_url_using_gen3sdk(self, file, access_token):
         """Get Drs signed url"""
         try:
@@ -135,7 +130,15 @@ class Drs(object):
         """Get multiple DRS objects (POST /objects)"""
         auth = self._auth(user)
         body = json.dumps({"bulk_object_ids": object_ids})
-        response = auth.curl(path=self.DRS_ENDPOINT, request="POST", data=body)
+        # response = auth.curl(path=self.DRS_ENDPOINT, request="POST", data=body)
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.DRS_ENDPOINT}",
+            data=body,
+            auth=auth,
+        )
+        logger.info(
+            f"Status code after getting bulk drs objects: {response.status_code}"
+        )
         return response
 
     def get_bulk_signed_urls(
@@ -144,7 +147,15 @@ class Drs(object):
         """Get bulk presigned URLs (POST /objects/access)"""
         auth = self._auth(user)
         body = json.dumps({"bulk_object_access_ids": bulk_access_ids})
-        response = auth.curl(
-            path=f"{self.DRS_ENDPOINT}/access", request="POST", data=body
+        # response = auth.curl(
+        #     path=f"{self.DRS_ENDPOINT}/access", request="POST", data=body
+        # )
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.DRS_ENDPOINT}/access",
+            data=body,
+            auth=auth,
+        )
+        logger.info(
+            f"Status code after getting bulk drs objects: {response.status_code}"
         )
         return response
