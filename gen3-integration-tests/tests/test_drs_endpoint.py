@@ -129,7 +129,6 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
         "size": 9,
         "urls_metadata": {
             "s3://cdis-presigned-url-test/testdata": {
@@ -144,7 +143,6 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
         "size": 9,
         "urls_metadata": {
             "s3://cdis-presigned-url-test/testdata": {"available": False}
@@ -156,7 +154,6 @@ drs_15_indexd_files = {
         "urls": ["gs://some-gs-bucket/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
         "size": 9,
         "urls_metadata": {"gs://some-gs-bucket/testdata": {"available": True}},
     },
@@ -166,7 +163,6 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
         "size": 9,
     },
     # Unknown protocol "s2"
@@ -175,7 +171,6 @@ drs_15_indexd_files = {
         "urls": ["s2://some-bucket/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
         "size": 9,
     },
     # Open access record
@@ -505,7 +500,8 @@ class TestDrsBulkEndpoints:
     def setup_class(cls):
         cls.drs = Drs()
         cls.indexd = Indexd()
-        cls.variables = {"created_indexd_dids": []}
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
 
         # bulk endpoints require DRS >= 1.4
         try:
@@ -555,8 +551,10 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk objects, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk drs objects: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert summary.get("requested") == len(object_ids), (
             f"Expected summary.requested={len(object_ids)}, "
             f"got {summary.get('requested')}"
@@ -565,7 +563,7 @@ class TestDrsBulkEndpoints:
             object_ids
         ), f"Expected all objects resolved, got resolved={summary.get('resolved')}"
 
-        resolved = data.get("resolved_drs_object", [])
+        resolved = data.get("resolved_drs_objects", [])
         assert len(resolved) == len(
             object_ids
         ), f"Expected {len(object_ids)} resolved objects, got {len(resolved)}"
@@ -603,8 +601,10 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk objects, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk drs objects: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert (
             summary.get("requested") == 2
         ), f"Expected summary.requested=2, got {summary.get('requested')}"
@@ -655,18 +655,21 @@ class TestDrsBulkEndpoints:
             drs_15_indexd_files["default_available"]["did"],
         ]
         resp = self.drs.get_bulk_object_authorizations(object_ids=object_ids)
+        logger.info(resp.content)
         assert (
             resp.status_code == 200
         ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk object authorization: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert summary.get("requested") == len(object_ids), (
             f"Expected summary.requested={len(object_ids)}, "
             f"got {summary.get('requested')}"
         )
 
-        resolved = data.get("resolved_drs_object", [])
+        resolved = data.get("resolved_drs_objects", [])
         assert len(resolved) == len(
             object_ids
         ), f"Expected {len(object_ids)} resolved auth entries, got {len(resolved)}"
@@ -697,8 +700,9 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk object authorization: {data}")
 
-        resolved = data.get("resolved_drs_object", [])
+        resolved = data.get("resolved_drs_objects", [])
 
         # Build a lookup by drs_object_id
         auth_by_id = {
@@ -771,14 +775,15 @@ class TestDrsBulkEndpoints:
                 "bulk_access_ids": [default_methods[0]["access_id"]],
             },
         ]
-
         resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
         assert (
             resp.status_code == 200
         ), f"Expected 200 from bulk signed URLs, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk drs objects: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert (
             summary.get("requested") == 2
         ), f"Expected summary.requested=2, got {summary.get('requested')}"

@@ -118,7 +118,7 @@ class Drs(object):
     ) -> requests.Response:
         """Get bulk authorization info (OPTIONS /objects)"""
         auth = self._auth(user)
-        url = f"{self.BASE_URL}{self.DRS_ENDPOINT}"
+        url = f"{self.BASE_URL}{self.DRS_ENDPOINT}/access"
         response = requests.options(
             url, json={"bulk_object_ids": object_ids}, auth=auth
         )
@@ -130,7 +130,6 @@ class Drs(object):
         """Get multiple DRS objects (POST /objects)"""
         auth = self._auth(user)
         body = json.dumps({"bulk_object_ids": object_ids})
-        # response = auth.curl(path=self.DRS_ENDPOINT, request="POST", data=body)
         response = requests.post(
             url=f"{self.BASE_URL}{self.DRS_ENDPOINT}",
             data=body,
@@ -147,9 +146,6 @@ class Drs(object):
         """Get bulk presigned URLs (POST /objects/access)"""
         auth = self._auth(user)
         body = json.dumps({"bulk_object_access_ids": bulk_access_ids})
-        # response = auth.curl(
-        #     path=f"{self.DRS_ENDPOINT}/access", request="POST", data=body
-        # )
         response = requests.post(
             url=f"{self.BASE_URL}{self.DRS_ENDPOINT}/access",
             data=body,
@@ -158,4 +154,5 @@ class Drs(object):
         logger.info(
             f"Status code after getting bulk drs objects: {response.status_code}"
         )
+        logger.info(response.content)
         return response
