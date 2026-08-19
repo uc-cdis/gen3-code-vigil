@@ -36,6 +36,14 @@ from services.requestor import Requestor
 from utils import logger
 
 
+def base_tes_payload(request):
+    return {
+        "name": request.node.name,
+        "description": request.node.name,
+        "tags": {"_IMAGE_PULL_POLICY": "IfNotPresent"},
+    }
+
+
 def _nextflow_parse_completed_line(log_line):
     """
     Parses a line from the nextflow log that indicates a completed task.
@@ -388,8 +396,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         echo_message = "done!"
         if with_input_output:
             tes_task_payload = {
-                "name": request.node.name,
-                "description": "Demonstrates the most basic echo task.",
+                **base_tes_payload(request),
                 "inputs": [
                     {
                         "url": f"s3://{s3_path_prefix}/input.txt",
@@ -420,8 +427,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             }
         else:
             tes_task_payload = {
-                "name": request.node.name,
-                "description": "Demonstrates the most basic echo task.",
+                **base_tes_payload(request),
                 "executors": [
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
@@ -511,19 +517,17 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Regression test for TES issues:
         - #74 (successful task cancelation)
         """
-        payload = {
-            "name": request.node.name,
-            "description": "Demonstrates the most basic echo task.",
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": ["echo", "hello beautiful world!"],
-                }
-            ],
-        }
         # Step 1: Create a TES task
         task_info = self.gen3_workflow.create_tes_task(
-            request_body=payload,
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": ["echo", "hello beautiful world!"],
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -591,22 +595,20 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
 
         # Step 1: Create a TES task where we try to curl into arborist service
-        tes_task_payload = {
-            "name": request.node.name,
-            "description": "Tries to reach arborist-service before saying HelloWorld!",
-            "executors": [
-                {
-                    "image": "quay.io/curl/curl:latest",
-                    "command": [
-                        # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
-                        # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
-                        "sleep 10 && curl http://arborist-service/user"
-                    ],
-                }
-            ],
-        }
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {
+                        "image": "quay.io/curl/curl:latest",
+                        "command": [
+                            # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
+                            # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
+                            "sleep 10 && curl http://arborist-service/user"
+                        ],
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -666,18 +668,16 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
 
         # Step 1: Create a TES task
-        tes_task_payload = {
-            "name": request.node.name,
-            "description": f"This task is expected to fail due to a non-zero exit code: {test_case['command']}",
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": test_case["command"],
-                }
-            ],
-        }
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": test_case["command"],
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -726,6 +726,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # User B creates a TES task
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
+                **base_tes_payload(request),
                 "name": f"{request.node.name} user B",
                 "executors": [
                     {
@@ -756,6 +757,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
+                **base_tes_payload(request),
                 "name": f"{request.node.name} user A",
                 "executors": [
                     {
@@ -943,17 +945,16 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - #12, #41 (quotes in command)
         - #59 (comma in command)
         """
-        tes_task_payload = {
-            "name": request.node.name,
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": [f"echo '{echo_message}'"],
-                }
-            ],
-        }
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": [f"echo '{echo_message}'"],
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -993,23 +994,22 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
 
         # Create a TES task
-        tes_task_payload = {
-            "name": request.node.name,
-            "resources": {
-                "cpu_cores": requests["cpu"],
-                "ram_gb": requests["mem"],
-                "disk_gb": requests["disk"],
-            },
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    # sleep for long enough to describe the pod once it's running
-                    "command": ["sleep 60"],
-                }
-            ],
-        }
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
+            request_body={
+                **base_tes_payload(request),
+                "resources": {
+                    "cpu_cores": requests["cpu"],
+                    "ram_gb": requests["mem"],
+                    "disk_gb": requests["disk"],
+                },
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        # sleep for long enough to describe the pod once it's running
+                        "command": ["sleep 60"],
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -1092,17 +1092,17 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 )
 
         # Create a TES task
-        tes_task_payload = {
-            "name": request.node.name,
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": ["sleep 60"],  # sleep for long enough to get the logs
-                }
-            ],
-        }
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        # sleep for long enough to get the logs
+                        "command": ["sleep 60"],
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -1160,20 +1160,19 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Regression test for TES issues:
         - #61 (set specified env vars)
         """
-        tes_task_payload = {
-            "name": request.node.name,
-            "executors": [
-                {
-                    "image": "public.ecr.aws/docker/library/alpine:latest",
-                    "command": ["env"],
-                    "env": {
-                        "SOMETHING": "VALUE",
-                    },
-                }
-            ],
-        }
         task_response = self.gen3_workflow.create_tes_task(
-            request_body=tes_task_payload,
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "command": ["env"],
+                        "env": {
+                            "SOMETHING": "VALUE",
+                        },
+                    }
+                ],
+            },
             user=self.valid_user,
             expected_status=200,
         )
@@ -1256,7 +1255,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         task_response = self.gen3_workflow.create_tes_task(
             {
-                "name": request.node.name,
+                **base_tes_payload(request),
                 "inputs": [
                     {
                         "url": f"s3://{s3_path_prefix}/{script_file_name}",
@@ -1667,6 +1666,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
             "tes.oauthToken = env('GEN3_TOKEN')",
             "tes.timeout = 120",
+            "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
             "aws.accessKey = env('GEN3_TOKEN')",
             "aws.secretKey = 'N/A'",
             f"aws.region = '{self.s3_storage_config.bucket_region}'",
