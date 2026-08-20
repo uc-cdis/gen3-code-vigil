@@ -118,7 +118,7 @@ class Drs(object):
     ) -> requests.Response:
         """Get bulk authorization info (OPTIONS /objects)"""
         auth = self._auth(user)
-        url = f"{self.BASE_URL}{self.DRS_ENDPOINT}/access"
+        url = f"{self.BASE_URL}{self.DRS_ENDPOINT}"
         response = requests.options(
             url, json={"bulk_object_ids": object_ids}, auth=auth
         )

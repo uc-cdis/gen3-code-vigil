@@ -450,6 +450,7 @@ if [[ "$HOSTNAME_WITHOUT_PORT" == *":"* ]]; then
 fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
+  ".fence.FENCE_CONFIG_PUBLIC.MAX_BULK_DRS_REQUESTS|2"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
   ".indexd.defaultPrefix|$ENV_PREFIX/"
   ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"

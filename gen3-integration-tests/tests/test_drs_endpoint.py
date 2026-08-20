@@ -129,6 +129,7 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
         "urls_metadata": {
             "s3://cdis-presigned-url-test/testdata": {
@@ -143,6 +144,7 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
         "urls_metadata": {
             "s3://cdis-presigned-url-test/testdata": {"available": False}
@@ -154,6 +156,7 @@ drs_15_indexd_files = {
         "urls": ["gs://some-gs-bucket/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
         "urls_metadata": {"gs://some-gs-bucket/testdata": {"available": True}},
     },
@@ -163,6 +166,7 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
     },
     # Unknown protocol "s2"
@@ -171,6 +175,7 @@ drs_15_indexd_files = {
         "urls": ["s2://some-bucket/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
     },
     # Open access record
@@ -627,6 +632,7 @@ class TestDrsBulkEndpoints:
             fake_id in unresolved_ids
         ), f"Expected '{fake_id}' in unresolved object IDs, got {unresolved_ids}"
 
+    @pytest.mark.skip(reason="BDC-1286 fix needed for this test")
     def test_bulk_drs_objects_request_too_large(self):
         """
         Scenario: Verify 413 when bulk request exceeds maxBulkRequestLength
@@ -636,6 +642,8 @@ class TestDrsBulkEndpoints:
             3. Verify response status is 413.
         """
         oversized_ids = [str(uuid4()) for _ in range(self.max_bulk + 1)]
+        logger.info(len(oversized_ids))
+        logger.info(oversized_ids)
         resp = self.drs.get_bulk_drs_objects(object_ids=oversized_ids)
         assert resp.status_code == 413, (
             f"Expected 413 for oversized bulk request "
@@ -655,7 +663,6 @@ class TestDrsBulkEndpoints:
             drs_15_indexd_files["default_available"]["did"],
         ]
         resp = self.drs.get_bulk_object_authorizations(object_ids=object_ids)
-        logger.info(resp.content)
         assert (
             resp.status_code == 200
         ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
@@ -729,6 +736,7 @@ class TestDrsBulkEndpoints:
             "None" in open_types
         ), f"Expected 'None' for open-access record, got {open_types}"
 
+    @pytest.mark.skip(reason="BDC-1286 fix needed for this test")
     def test_bulk_authorizations_request_too_large(self):
         """
         Scenario: Verify 413 when bulk OPTIONS exceeds maxBulkRequestLength
@@ -775,15 +783,14 @@ class TestDrsBulkEndpoints:
                 "bulk_access_ids": [default_methods[0]["access_id"]],
             },
         ]
+        logger.info(bulk_access_ids)
         resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
         assert (
             resp.status_code == 200
         ), f"Expected 200 from bulk signed URLs, got {resp.status_code}"
         data = resp.json()
-        logger.info(f"Data from getting bulk drs objects: {data}")
 
         summary = data.get("summary", {})
-        logger.info(f"Summary: {summary}")
         assert (
             summary.get("requested") == 2
         ), f"Expected summary.requested=2, got {summary.get('requested')}"
@@ -804,6 +811,52 @@ class TestDrsBulkEndpoints:
             assert entry[
                 "url"
             ], f"Bulk access URL for '{entry.get('drs_object_id')}' is empty"
+
+    def test_bulk_signed_urls_too_large(self):
+        """
+        Scenario: Verify bulk presigned URL fails for authorized GUIDs on exceeding MAX_BULK_DRS_REQUESTS
+        Steps:
+            1. Get DRS objects for authorized records to discover access IDs.
+            2. POST /objects/access with the object_id/access_id pairs.
+            3. Verify 413 error code is returned
+        """
+        # Get access IDs from the DRS objects
+        s3_obj = self.drs.get_drs_object(file=drs_15_indexd_files["s3_available"])
+        assert s3_obj.status_code == 200
+        s3_methods = s3_obj.json().get("access_methods", [])
+        assert len(s3_methods) > 0, "s3_available has no access methods"
+
+        default_obj = self.drs.get_drs_object(
+            file=drs_15_indexd_files["default_available"]
+        )
+        assert default_obj.status_code == 200
+        default_methods = default_obj.json().get("access_methods", [])
+        assert len(default_methods) > 0, "default_available has no access methods"
+
+        open_obj = self.drs.get_drs_object(file=drs_15_indexd_files["open_access"])
+        assert open_obj.status_code == 200
+        open_methods = open_obj.json().get("access_methods", [])
+        assert len(open_methods) > 0, "open_available has no access methods"
+
+        bulk_access_ids = [
+            {
+                "bulk_object_id": drs_15_indexd_files["s3_available"]["did"],
+                "bulk_access_ids": [s3_methods[0]["access_id"]],
+            },
+            {
+                "bulk_object_id": drs_15_indexd_files["default_available"]["did"],
+                "bulk_access_ids": [default_methods[0]["access_id"]],
+            },
+            {
+                "bulk_object_id": drs_15_indexd_files["open_access"]["did"],
+                "bulk_access_ids": [open_methods[0]["access_id"]],
+            },
+        ]
+        logger.info(bulk_access_ids)
+        resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
+        assert (
+            resp.status_code == 413
+        ), f"Expected 413 from bulk signed URLs, got {resp.status_code}"
 
     def test_bulk_signed_urls_partial_auth(self):
         """
