@@ -1403,22 +1403,26 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             raise
         assert len(input_file_contents) == len(output_file_contents)
 
-    def test_output_directory(self, request):
+    def test_input_output_directory(self, request):
         """
-        Check that the system can handle outputting all files in a directory
+        Check that the system can take a whole directory as input or output
         """
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        d1 = "mydir"
+        d2 = "mysubdir"
         files = [
-            ("directory/subdir/file1.txt", "hello world"),
-            ("directory/subdir/file2.txt", "goodbye world"),
+            {"name": "file1.txt", "txt": "hello world"},
+            {"name": "file2.txt", "txt": "goodbye world"},
         ]
+
+        # create a task that outputs a directory
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
                 **base_tes_payload(request),
                 "outputs": [
                     {
-                        "path": "/work/directory",
-                        "url": f"s3://{s3_path_prefix}/directory",
+                        "path": f"/work/{d1}",
+                        "url": f"s3://{s3_path_prefix}/{d1}",
                         "type": "FILE",
                     }
                 ],
@@ -1427,7 +1431,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "image": "public.ecr.aws/docker/library/alpine:latest",
                         "workdir": "/work",
                         "command": [
-                            f"mkdir -p directory/subdir && echo '{files[0][1]}' > {files[0][0]} && echo '{files[1][1]}' > {files[1][0]}",
+                            f"mkdir -p {d1}/{d2} && echo '{files[0]['txt']}' > {d1}/{d2}/{files[0]['name']} && echo '{files[1]['txt']}' > {d1}/{d2}/{files[1]['name']}",
                         ],
                     }
                 ],
@@ -1437,16 +1441,17 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
-
         self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
             user=self.valid_user,
             expected_final_state="COMPLETE",
         )
 
-        for file_path, file_contents in files:
+        # check that the expected output files are in S3
+        for file in files:
+            full_path = f"{d1}/{d2}/{file['name']}"
             response = self.gen3_workflow.get_bucket_object_with_boto3(
-                object_path=f"{s3_path_prefix}/{file_path}",
+                object_path=f"{s3_path_prefix}/{full_path}",
                 s3_storage_config=self.s3_storage_config,
                 user=self.valid_user,
                 expected_status=200,
@@ -1455,12 +1460,60 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 s3_file_contents = response["Body"].read().decode("utf-8").strip()
             except Exception as e:
                 logger.error(
-                    f"Failed to read or decode content of {file_path} from S3. Error: {e}"
+                    f"Failed to read or decode content of {full_path} from S3. Error: {e}"
                 )
                 raise
             assert (
-                file_contents == s3_file_contents
-            ), f"File '{file_path}' does not have the expected contents"
+                file["txt"] == s3_file_contents
+            ), f"File '{full_path}' does not have the expected contents"
+
+        # create a task that takes the first task's output directory as input
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body={
+                **base_tes_payload(request),
+                "inputs": [
+                    {
+                        "url": f"s3://{s3_path_prefix}/{d1}",
+                        "path": f"/work/{d1}",
+                        "type": "DIRECTORY",
+                    }
+                ],
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "workdir": "/work",
+                        "command": [f"ls -R && cat {d1}/{d2}/*"],
+                    }
+                ],
+            },
+            user=self.valid_user,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        # check that the task received the expected input files.
+        # expected stdout:
+        #   .:
+        #   mydir
+        #
+        #   ./mydir:
+        #   mysubdir
+        #
+        #   ./mydir/mysubdir:
+        #   file1.txt
+        #   file2.txt
+        #   hello world
+        #   goodbye world
+        task_logs = task_info.get("logs", [])
+        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        expected = f".:\n{d1}\n\n./{d1}:\n{d2}\n\n./{d1}/{d2}:\n{files[0]['name']}\n{files[1]['name']}\n{files[0]['txt']}\n{files[1]['txt']}"
+        assert stdout == expected
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
