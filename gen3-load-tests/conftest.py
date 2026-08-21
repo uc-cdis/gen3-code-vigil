@@ -20,7 +20,8 @@ def pytest_configure(config):
     pytest.namespace = os.getenv("NAMESPACE")
     pytest.hostname = os.getenv("HOSTNAME")
     # Compute root_url
-    pytest.root_url = f"https://{pytest.hostname}"
+    pytest.root_url = f"{os.getenv("HOSTNAME_PROTOCOL")}://{pytest.hostname}"
+    logger.info(f"pytest root_url: '{pytest.root_url}'")
 
     # Generate api key and auth headers
     pytest.users = {
