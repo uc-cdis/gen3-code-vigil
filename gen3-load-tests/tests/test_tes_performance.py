@@ -57,110 +57,112 @@ TESTS = [
 ]
 
 # Nextflow tests
-for concurrency in [5, 10]:
-    for n_tasks in [1, 5]:
-        # Note: Nextflow tests always include inputs/outputs
-        TESTS.append(
-            {
-                "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
-                "type": "Nextflow",
-                "n_sequential_runs": N_SEQ_RUNS,
-                "n_concurrent_runs": concurrency,
-                "n_tasks": n_tasks,
-                "gpu": False,
-                "workflow_file": "hello.nf",
-            }
-        )
-        TESTS.append(
-            {
-                "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-                "type": "Nextflow",
-                "n_sequential_runs": N_SEQ_RUNS,
-                "n_tasks": n_tasks,
-                "n_concurrent_runs": concurrency,
-                "gpu": True,
-                "workflow_file": "gpu.nf",
-            }
-        )
+# for concurrency in [5, 10]:
+#     for n_tasks in [1, 5]:
+#         # Note: Nextflow tests always include inputs/outputs
+#         TESTS.append(
+#             {
+#                 "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
+#                 "type": "Nextflow",
+#                 "n_sequential_runs": N_SEQ_RUNS,
+#                 "n_concurrent_runs": concurrency,
+#                 "n_tasks": n_tasks,
+#                 "gpu": False,
+#                 "workflow_file": "hello.nf",
+#             }
+#         )
+#         TESTS.append(
+#             {
+#                 "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
+#                 "type": "Nextflow",
+#                 "n_sequential_runs": N_SEQ_RUNS,
+#                 "n_tasks": n_tasks,
+#                 "n_concurrent_runs": concurrency,
+#                 "gpu": True,
+#                 "workflow_file": "gpu.nf",
+#             }
+#         )
 
-# TES tests
-for concurrency in [50, 100, 150, 200]:
-    TESTS.append(
-        {
-            "name": f"TES test (concurrency {concurrency})",
-            "type": "TES",
-            "n_sequential_runs": N_SEQ_RUNS,
-            "n_concurrent_runs": concurrency,
-            "body": {
-                "name": f"Hello-World (concurrency {concurrency})",
-                "executors": [
-                    {
-                        "image": "quay.io/nextflow/bash",
-                        "command": [
-                            "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-                        ],
-                    }
-                ],
-            },
-        }
-    )
-    TESTS.append(
-        {
-            "name": f"TES GPU test (concurrency {concurrency})",
-            "type": "TES",
-            "n_sequential_runs": N_SEQ_RUNS,
-            "n_concurrent_runs": concurrency,
-            "body": {
-                "name": f"Hello-World (GPU, concurrency {concurrency})",
-                "tags": {"_GPU": "yes"},
-                "executors": [
-                    {
-                        "image": "quay.io/nextflow/bash",
-                        "command": [
-                            "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-                        ],
-                    }
-                ],
-            },
-        }
-    )
-    TESTS.append(
-        {
-            "name": f"TES test with inputs/outputs (concurrency {concurrency})",
-            "type": "TES",
-            "n_sequential_runs": N_SEQ_RUNS,
-            "n_concurrent_runs": concurrency,
-            "body": {
-                "name": "Input-Output-Test",
-                "inputs": [
-                    {
-                        "url": f"s3://{BUCKET}/inputs/test-file.txt",
-                        "path": "/work/test-file.txt",
-                        "type": "FILE",
-                    }
-                ],
-                "outputs": [
-                    {
-                        "url": f"s3://{BUCKET}/outputs/output.txt",
-                        "path": "/work/output.txt",
-                        "type": "FILE",
-                    }
-                ],
-                "executors": [
-                    {
-                        "image": "quay.io/nextflow/bash",
-                        "workdir": "/work",
-                        "command": [
-                            "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
-                        ],
-                    }
-                ],
-            },
-        }
-    )
+# # TES tests
+# for concurrency in [50, 100, 150, 200]:
+#     TESTS.append(
+#         {
+#             "name": f"TES test (concurrency {concurrency})",
+#             "type": "TES",
+#             "n_sequential_runs": N_SEQ_RUNS,
+#             "n_concurrent_runs": concurrency,
+#             "body": {
+#                 "name": f"Hello-World (concurrency {concurrency})",
+#                 "executors": [
+#                     {
+#                         "image": "quay.io/nextflow/bash",
+#                         "command": [
+#                             "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+#                         ],
+#                     }
+#                 ],
+#             },
+#         }
+#     )
+#     TESTS.append(
+#         {
+#             "name": f"TES GPU test (concurrency {concurrency})",
+#             "type": "TES",
+#             "n_sequential_runs": N_SEQ_RUNS,
+#             "n_concurrent_runs": concurrency,
+#             "body": {
+#                 "name": f"Hello-World (GPU, concurrency {concurrency})",
+#                 "tags": {"_GPU": "yes"},
+#                 "executors": [
+#                     {
+#                         "image": "quay.io/nextflow/bash",
+#                         "command": [
+#                             "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+#                         ],
+#                     }
+#                 ],
+#             },
+#         }
+#     )
+#     TESTS.append(
+#         {
+#             "name": f"TES test with inputs/outputs (concurrency {concurrency})",
+#             "type": "TES",
+#             "n_sequential_runs": N_SEQ_RUNS,
+#             "n_concurrent_runs": concurrency,
+#             "body": {
+#                 "name": "Input-Output-Test",
+#                 "inputs": [
+#                     {
+#                         "url": f"s3://{BUCKET}/inputs/test-file.txt",
+#                         "path": "/work/test-file.txt",
+#                         "type": "FILE",
+#                     }
+#                 ],
+#                 "outputs": [
+#                     {
+#                         "url": f"s3://{BUCKET}/outputs/output.txt",
+#                         "path": "/work/output.txt",
+#                         "type": "FILE",
+#                     }
+#                 ],
+#                 "executors": [
+#                     {
+#                         "image": "quay.io/nextflow/bash",
+#                         "workdir": "/work",
+#                         "command": [
+#                             "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
+#                         ],
+#                     }
+#                 ],
+#             },
+#         }
+#     )
 
 
-CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
+SCRIPTS_DIR = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
+)
 # logger = get_logger("tes-perf", log_level="debug" if VERBOSE else "info")
 # log_file = None
 
@@ -191,7 +193,7 @@ class RunStats:
 
 @pytest.fixture
 def get_log_file():
-    LOG_FILE_NAME = f"{int(time.time())}_logs.txt"  # TODO add test params
+    LOG_FILE_NAME = f"output/{int(time.time())}_logs.txt"  # TODO add test params
     print(f"Printing to {LOG_FILE_NAME}")
     log_file = open(LOG_FILE_NAME, "w")
     yield log_file
@@ -409,53 +411,6 @@ async def run_random_failures(
     return await run_command(log_file, cmd, seq_id, conc_id, config)
 
 
-async def run_nextflow_workflow(
-    log_file, seq_id: int, conc_id: int, config: dict, endpoint: str, bucket: str
-) -> RunStats:
-    cmd = [
-        "gen3",
-        "run",
-        "nextflow",
-        "run",
-        os.path.join(CURRENT_DIR, config["workflow_file"]),
-        "-c",
-        os.path.join(CURRENT_DIR, "base_nextflow.config"),
-        "--n_tasks",
-        f"{config['n_tasks']}",
-    ]
-    return await run_command(
-        log_file,
-        cmd,
-        seq_id,
-        conc_id,
-        config,
-        {
-            "ENDPOINT": endpoint,
-            "BUCKET": bucket,
-            "GPU": "yes" if config["gpu"] else "no",
-        },
-    )
-
-
-async def run_tes_task(
-    log_file, seq_id: int, conc_id: int, config: dict, endpoint: str, bucket: str
-) -> RunStats:
-    sleep_time = random.randint(0, 5)
-    body = config["body"]
-    body["executors"][0]["command"][0] = body["executors"][0]["command"][0].replace(
-        "SLEEP_TIME_PLACEHOLDER", str(sleep_time)
-    )
-    cmd = [
-        "gen3",
-        "run",
-        "python",
-        os.path.join(CURRENT_DIR, "run_tes_task.py"),
-        endpoint,
-        json.dumps(body),
-    ]
-    return await run_command(log_file, cmd, seq_id, conc_id, config)
-
-
 class TestTesPerformance:
     @classmethod
     def setup_class(cls):
@@ -530,6 +485,72 @@ class TestTesPerformance:
         assert isinstance(storage_info, dict), "Expected a valid JSON response"
         return storage_info
 
+    async def run_nextflow_workflow(
+        self,
+        log_file,
+        seq_id: int,
+        conc_id: int,
+        config: dict,
+        endpoint: str,
+        bucket: str,
+    ) -> RunStats:
+        cmd = [
+            # "gen3",
+            # "run",
+            "nextflow",
+            "run",
+            os.path.join(SCRIPTS_DIR, config["workflow_file"]),
+            "-c",
+            os.path.join(SCRIPTS_DIR, "base_nextflow.config"),
+            "--n_tasks",
+            f"{config['n_tasks']}",
+        ]
+        return await run_command(
+            log_file,
+            cmd,
+            seq_id,
+            conc_id,
+            config,
+            {
+                "GEN3_TOKEN": self._get_access_token("main_account"),
+                "ENDPOINT": endpoint,
+                "BUCKET": bucket,
+                "GPU": "yes" if config["gpu"] else "no",
+            },
+        )
+
+    async def run_tes_task(
+        self,
+        log_file,
+        seq_id: int,
+        conc_id: int,
+        config: dict,
+        endpoint: str,
+        bucket: str,
+    ) -> RunStats:
+        sleep_time = random.randint(0, 5)
+        body = config["body"]
+        body["executors"][0]["command"][0] = body["executors"][0]["command"][0].replace(
+            "SLEEP_TIME_PLACEHOLDER", str(sleep_time)
+        )
+        cmd = [
+            # "gen3",
+            # "run",
+            # f"GEN3_TOKEN={self._get_access_token("main_account")}"
+            "python",
+            os.path.join(SCRIPTS_DIR, "run_tes_task.py"),
+            endpoint,
+            json.dumps(body),
+        ]
+        return await run_command(
+            log_file,
+            cmd,
+            seq_id,
+            conc_id,
+            config,
+            {"GEN3_TOKEN": self._get_access_token("main_account")},
+        )
+
     @pytest.mark.asyncio
     async def test_tes_performance(self, get_log_file):
         # try:
@@ -543,6 +564,7 @@ class TestTesPerformance:
         # finally:
 
         log_file = get_log_file
+        concurrency = 2
 
         # NOTE def run_tests(log_file_name) was here
 
@@ -574,11 +596,28 @@ class TestTesPerformance:
         # for test_i, config in enumerate(TESTS, start=1):
         test_i = 1
         if True:
+            # config = {
+            #     "name": "Random failures",
+            #     "type": "Random",
+            #     "n_sequential_runs": N_SEQ_RUNS,
+            #     "n_concurrent_runs": 5,
+            # }
             config = {
-                "name": "Random failures",
-                "type": "Random",
+                "name": f"TES test (concurrency {concurrency})",
+                "type": "TES",
                 "n_sequential_runs": N_SEQ_RUNS,
-                "n_concurrent_runs": 5,
+                "n_concurrent_runs": concurrency,
+                "body": {
+                    "name": f"Hello-World (concurrency {concurrency})",
+                    "executors": [
+                        {
+                            "image": "quay.io/nextflow/bash",
+                            "command": [
+                                "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+                            ],
+                        }
+                    ],
+                },
             }
 
             log(
@@ -596,9 +635,9 @@ class TestTesPerformance:
                 if _type == "Random":
                     method = run_random_failures
                 elif _type == "Nextflow":
-                    method = run_nextflow_workflow
+                    method = self.run_nextflow_workflow
                 elif _type == "TES":
-                    method = run_tes_task
+                    method = self.run_tes_task
                 else:
                     raise Exception(f"Unknown test type '{_type}'")
 
