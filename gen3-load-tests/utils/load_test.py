@@ -37,6 +37,9 @@ def get_results(result, service, load_test_scenario):
     logger.info(f"Failed   : {failed}")
     logger.info(f"Pass Rate: {pass_rate}%")
     if pass_rate < pytest.pass_threshold:
-        logger.info(result.stdout)
-        logger.info(result.stderr)
+        if result:
+            logger.info(result.stdout)
+            logger.info(result.stderr)
+        else:
+            print("TODO - no result object")
         raise f"Pass rate is below threshold of {pytest.pass_threshold}%"
