@@ -42,4 +42,4 @@ def get_results(result, service, load_test_scenario):
             logger.info(result.stderr)
         else:
             print("TODO - no result object")
-        raise f"Pass rate is below threshold of {pytest.pass_threshold}%"
+        raise Exception(f"Pass rate is below threshold of {pytest.pass_threshold}%")

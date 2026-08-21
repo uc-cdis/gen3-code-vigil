@@ -21,7 +21,7 @@ import sys
 import tempfile
 import time
 from dataclasses import dataclass
-from statistics import stdev
+from statistics import mean, stdev
 from typing import Dict, List
 
 import boto3
@@ -165,6 +165,20 @@ CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 # log_file = None
 
 
+# TODO move to utils file
+def percentile(values, p):
+    if not values:
+        return 0
+
+    values = sorted(values)
+    index = int(len(values) * (p / 100))
+
+    # prevent out-of-range index
+    index = min(index, len(values) - 1)
+
+    return values[index]
+
+
 @dataclass
 class RunStats:
     test_name: str
@@ -215,10 +229,12 @@ def print_stats(log_file, stats_list, total_run_time=None):
     n_successful_runs = 0
     avg_run_time = 0
     total_time_failed = 0
+    all_run_times = []
     successful_run_times = []
 
     for m in stats_list:
         avg_run_time += m.run_time
+        all_run_times.append(m.run_time)
         if not m.successful:
             total_time_failed += m.run_time
             continue
@@ -272,6 +288,37 @@ def print_stats(log_file, stats_list, total_run_time=None):
             f"Run time standard deviation (successful runs): {seconds_to_human_format(stdev(successful_run_times))}",
         )
     log(log_file, "info", "")
+
+    summary = {
+        "metrics": {
+            "checks": {
+                "passes": n_successful_runs,
+                "fails": n_failed_runs,
+                "value": (
+                    round(n_successful_runs / (n_successful_runs + n_failed_runs), 4)
+                    if (n_successful_runs + n_failed_runs)
+                    else 0
+                ),
+                # "rate": (
+                #     round((passes / iterations) * 100, 2) if (passes + fails) else 0
+                # ),
+            },
+            "iterations": {
+                # "count": iterations,
+                # "rate": round(iterations / test_duration_seconds, 2),
+            },
+            "http_req_duration": {
+                "min": round(min(all_run_times), 2),
+                "avg": round(mean(all_run_times), 2),
+                "med": round(percentile(all_run_times, 50), 2),
+                "max": round(max(all_run_times), 2),
+                "p(90)": round(percentile(all_run_times, 90), 2),
+                "p(95)": round(percentile(all_run_times, 95), 2),
+            },
+            "data_sent": {"count": 0, "rate": 0},
+        }
+    }
+    return summary
 
 
 async def run_command(
@@ -357,7 +404,7 @@ async def run_random_failures(
     log_file, seq_id: int, conc_id: int, config: dict, endpoint: str, bucket: str
 ) -> RunStats:
     r = random.randint(-2, 3)
-    print(f"{r=}")
+    # print(f"Random failure: {r=}")
     cmd = ["sleep", str(r)]
     return await run_command(log_file, cmd, seq_id, conc_id, config)
 
@@ -583,49 +630,24 @@ class TestTesPerformance:
             "info",
             f"✅ [test {test_i}/{len(TESTS)}] '[{config['name']}]' final stats:",
         )
-        print_stats(log_file, all_stats, test_duration_seconds)
+        summary = print_stats(log_file, all_stats, test_duration_seconds)
         # log(log_file,
         #     "info",
         #     f"Total run time: {seconds_to_human_format(time.time() - total_start_time)}. Find logs at '{log_file_name}'.",
         # )
+        # print(summary)
 
-        # summary = {
-        #     "metrics": {
-        #         "checks": {
-        #             "passes": passes,
-        #             "fails": fails,
-        #             "value": (
-        #                 round(passes / (passes + fails), 4) if (passes + fails) else 0
-        #             ),
-        #             # "rate": (
-        #             #     round((passes / iterations) * 100, 2) if (passes + fails) else 0
-        #             # ),
-        #         },
-        #         "iterations": {
-        #             "count": iterations,
-        #             # "rate": round(iterations / test_duration_seconds, 2),
-        #         },
-        #         "http_req_duration": {
-        #             "min": round(min(durations), 2),
-        #             "avg": round(mean(durations), 2),
-        #             "med": round(self.percentile(durations, 50), 2),
-        #             "max": round(max(durations), 2),
-        #             "p(90)": round(self.percentile(durations, 90), 2),
-        #             "p(95)": round(self.percentile(durations, 95), 2),
-        #         },
-        #         "data_sent": {"count": 0, "rate": 0},
-        #     }
-        # }
+        service = "gen3-workflow"
+        scenario = f"test_tes_performance[{concurrency}]"
+        file_name = f"{service}-{scenario}.json"
+        output_path = LOAD_TESTING_OUTPUT_PATH / file_name
+        with open(output_path, "w") as f:
+            json.dump(summary, f, indent=2)
 
-        # file_name = f"gen3-workflow-test_tes_performance[{concurrency}].json"
-        # output_path = LOAD_TESTING_OUTPUT_PATH / file_name
-        # with open(output_path, "w") as f:
-        #     json.dump(summary, f, indent=2)
-
-        # load_test.get_results(
-        #     # result,
-        #     None,
-        #     service="gen3-workflow",
-        #     load_test_scenario="test_tes_performance",
-        #     # append_file_name=f"gen3sdk[{collection_name}-{number_of_records}-{dimensions}]",
-        # )
+        load_test.get_results(
+            # result,
+            None,
+            service=service,
+            load_test_scenario=scenario,
+            # append_file_name=f"gen3sdk[{collection_name}-{number_of_records}-{dimensions}]",
+        )
