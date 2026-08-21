@@ -20,6 +20,7 @@ on:
           - TestMetadataCreateAndQuery
           - TestSheepdogImportClinicalMetadata
           - TestFenceBulkPresignedURL
+          - TestTesPerformance
           - ALL
         default: ALL
       RELEASE_VERSION:
