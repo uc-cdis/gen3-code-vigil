@@ -901,14 +901,14 @@ files = [
 
 [[package]]
 name = "gen3"
-version = "4.27.5"
+version = "4.28.3"
 description = "Gen3 CLI and Python SDK"
 optional = false
 python-versions = "<4,>=3.9"
 groups = ["main"]
 files = [
-    {file = "gen3-4.27.5-py3-none-any.whl", hash = "sha256:244341900afa5be47cbfdba83271bc93617dd6945388ca751bff6d11347d56f4"},
-    {file = "gen3-4.27.5.tar.gz", hash = "sha256:f7f20888448b48731f99ac2b7b778c88e7f389a1b4de5b4f8ca3278c25ff56b0"},
+    {file = "gen3-4.28.3-py3-none-any.whl", hash = "sha256:2243f5032d0a0d1ddffb982b8da2aa4250ccae219fc44211830cc1b05309c25d"},
+    {file = "gen3-4.28.3.tar.gz", hash = "sha256:accd8fdb8a46d2ecdbb47445db7ff4768d1108ab92c8a444dbffcf28ccfbb124"},
 ]
 
 [package.dependencies]
@@ -920,17 +920,15 @@ click = "*"
 dataclasses-json = "<=0.5.9"
 drsclient = ">=0.3.0"
 gen3users = "*"
-httpx = "*"
 humanfriendly = "*"
+importlib_metadata = ">=8,<9"
 indexclient = ">=2.3.0,<3.0.0"
 jsonschema = "*"
 pandas = ">=1.4.2"
-pypfb = ">=0.5.33"
+pypfb = ">=0.6.2"
 python-dateutil = "*"
-pyyaml = ">=6.0.1"
 requests = "*"
 tqdm = ">=4.61.2,<5.0.0"
-urllib3 = "*"
 xmltodict = ">=0.13.0,<0.14.0"
 
 [package.extras]
@@ -1206,6 +1204,30 @@ files = [
 
 [package.extras]
 all = ["coverage (>=7.10.0)", "hypothesis (>=6.141.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.16.0)", "ty (>=0.0.37)"]
+
+[[package]]
+name = "importlib-metadata"
+version = "8.9.0"
+description = "Read metadata from Python packages"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "importlib_metadata-8.9.0-py3-none-any.whl", hash = "sha256:e0f761b6ea91ced3b0844c14c9d955224d538105921f8e6754c00f6ca79fba7f"},
+    {file = "importlib_metadata-8.9.0.tar.gz", hash = "sha256:58850626cef4bd2df100378b0f2aea9724a7b92f10770d547725b047078f99ee"},
+]
+
+[package.dependencies]
+zipp = ">=3.20"
+
+[package.extras]
+check = ["pytest-checkdocs (>=2.14)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\""]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+enabler = ["pytest-enabler (>=3.4)"]
+perf = ["ipython"]
+test = ["packaging", "pyfakefs", "pytest (>=6,!=8.1.*)", "pytest-perf (>=0.9.2)"]
+type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
 
 [[package]]
 name = "indexclient"
@@ -2195,14 +2217,14 @@ dev = ["black", "build", "flake8", "flake8-black", "isort", "jupyter-console", "
 
 [[package]]
 name = "pypfb"
-version = "0.5.33"
+version = "0.6.2"
 description = "Python SDK for PFB format"
 optional = false
 python-versions = "<4,>=3.9"
 groups = ["main"]
 files = [
-    {file = "pypfb-0.5.33-py3-none-any.whl", hash = "sha256:17f6afea45d41cebb2081c74c8c74c6cd5226f709ef58303308c666890bc3450"},
-    {file = "pypfb-0.5.33.tar.gz", hash = "sha256:00b1a78b75d670b9dcdb85dfac78dce10594834ad8cd2e89ae60fdd3efad017b"},
+    {file = "pypfb-0.6.2-py3-none-any.whl", hash = "sha256:ec0e7a4abb401d79d8f04a95bc4025ad3643abd2f2dfe5f7f766e256d8d243c3"},
+    {file = "pypfb-0.6.2.tar.gz", hash = "sha256:2656e6a5eb0394d94234681beb68057ff6d105036cfaccb7315ff29f7b83c33c"},
 ]
 
 [package.dependencies]
@@ -3255,7 +3277,27 @@ idna = ">=2.0"
 multidict = ">=4.0"
 propcache = ">=0.2.1"
 
+[[package]]
+name = "zipp"
+version = "4.1.0"
+description = "Backport of pathlib-compatible object wrapper for zip files"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "zipp-4.1.0-py3-none-any.whl", hash = "sha256:25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f"},
+    {file = "zipp-4.1.0.tar.gz", hash = "sha256:4cb57381f544315db7688e976e922a2b18cdb513d21cc194eb42232ba2a3e602"},
+]
+
+[package.extras]
+check = ["pytest-checkdocs (>=2.14)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\""]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
+enabler = ["pytest-enabler (>=3.4)"]
+test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more_itertools", "pytest (>=6,!=8.1.*)", "pytest-ignore-flaky"]
+type = ["pytest-mypy (>=1.0.1) ; platform_python_implementation != \"PyPy\""]
+
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "760407ae95f6e6feb48cc67dc3f054b83095022301a554f8edcc5de18b49bfa9"
+content-hash = "e4f3baf3b6b002a85897968d39d28e2b8c16dc7770d1c50b2fb3e31058cc742a"
