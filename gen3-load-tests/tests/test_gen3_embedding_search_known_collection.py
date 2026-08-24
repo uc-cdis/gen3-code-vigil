@@ -26,7 +26,7 @@ class TestGen3EmbeddingSearchKnownCollection:
             # Generate Embedding data (~/test_data/embedding/{collection_name}.tsv)
             cls.gen3_embedding.generate_embedding_data(
                 collection_name=collection_name,
-                number_of_records=100,
+                number_of_records=20,
                 embedding_size=embedding_size,
             )
 
@@ -35,7 +35,7 @@ class TestGen3EmbeddingSearchKnownCollection:
     ):
         input_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
         df = pd.read_csv(input_file, sep="\t")
-        embedding_list = df["embedding"][:20].tolist()
+        embedding_list = df["embedding"].tolist()
         # Setup env_vars to pass into load runner
         env_vars = {
             "SERVICE": "embedding",
