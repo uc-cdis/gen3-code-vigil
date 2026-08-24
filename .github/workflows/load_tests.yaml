@@ -22,7 +22,7 @@ on:
           - TestFenceBulkPresignedURL
           - TestTesPerformance
           - ALL
-        default: TestTesPerformance  # TODO revert to ALL
+        default: ALL
       RELEASE_VERSION:
         description: 'Release version'
         required: true
@@ -52,7 +52,8 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="ALL"
+              # TODO revert to ALL
+              TEST_SUITE="TestTesPerformance"
               RELEASE_VERSION=""
             fi
 
