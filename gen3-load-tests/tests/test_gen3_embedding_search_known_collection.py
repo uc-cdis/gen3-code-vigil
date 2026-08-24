@@ -22,7 +22,7 @@ class TestGen3EmbeddingSearchKnownCollection:
         )
         cls.index = Gen3Index(cls.index_auth)
         cls.gen3_embedding = Embedding()
-        for collection_name, embedding_size in [("hist_search", 1536)]:
+        for collection_name, embedding_size in [("expr_search", 256)]:
             # Generate Embedding data (~/test_data/embedding/{collection_name}.tsv)
             cls.gen3_embedding.generate_embedding_data(
                 collection_name=collection_name,
@@ -69,12 +69,12 @@ class TestGen3EmbeddingSearchKnownCollection:
     @pytest.mark.parametrize(
         "collection_name,top_k,distance_metric",
         [
-            ("hist_search", 5, "cosine_similarity"),
-            ("hist_search", 5, "l1_distance"),
-            ("hist_search", 5, "inner_product"),
-            ("hist_search", 10, "cosine_similarity"),
-            ("hist_search", 10, "l1_distance"),
-            ("hist_search", 10, "inner_product"),
+            ("expr_search", 5, "cosine_similarity"),
+            ("expr_search", 5, "l1_distance"),
+            ("expr_search", 5, "inner_product"),
+            ("expr_search", 10, "cosine_similarity"),
+            ("expr_search", 10, "l1_distance"),
+            ("expr_search", 10, "inner_product"),
         ],
     )
     def test_embedding_search_embedding_known_collection(
