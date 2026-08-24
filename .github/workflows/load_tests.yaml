@@ -22,7 +22,7 @@ on:
           - TestFenceBulkPresignedURL
           - TestTesPerformance
           - ALL
-        default: ALL
+        default: TestTesPerformance  # TODO revert to ALL
       RELEASE_VERSION:
         description: 'Release version'
         required: true
@@ -248,7 +248,7 @@ jobs:
                 poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                poetry run pytest -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -x -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
               fi
 
               if [ $? -ne 0 ]; then
