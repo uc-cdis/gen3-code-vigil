@@ -58,7 +58,7 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="TestGen3EmbeddingLoadData"
+              TEST_SUITE="TestGen3EmbeddingSearchKnownCollection"
               RELEASE_VERSION=""
             fi
 
@@ -88,7 +88,6 @@ jobs:
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           HELM_BRANCH: 'master'
-          CHUNK_ID: "-1"
 
 
         steps:

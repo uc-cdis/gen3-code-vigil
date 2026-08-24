@@ -19,6 +19,7 @@ from utils import test_setup as setup
 
 
 @pytest.mark.gen3_embeddings
+@pytest.mark.skip(reason="Run only when needed")
 class TestGen3EmbeddingLoadData:
     @classmethod
     def setup_class(cls):
@@ -35,19 +36,6 @@ class TestGen3EmbeddingLoadData:
         cls.embedding_size = 1536
         cls.records_per_chunk = 3000000
         cls.batch_size = 10000
-        cls.chunk_id = int(os.environ["CHUNK_ID"])
-        if cls.chunk_id == 0:
-            # Delete collection
-            response = cls.gen3_embedding.delete_collection(
-                collection_name=cls.collection_name
-            )
-            assert (
-                response.status_code == 204
-            ), f"Expected status to be 204 but got {response.status_code}"
-            # Create the collection
-            cls.gen3_embedding.create_collection(
-                collection_name=cls.collection_name, dimensions=cls.embedding_size
-            )
 
     def test_load_data(self):
         prefix = "ABCD"

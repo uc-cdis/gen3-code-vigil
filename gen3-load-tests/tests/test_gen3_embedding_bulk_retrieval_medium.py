@@ -59,7 +59,7 @@ class TestGen3EmbeddingBulkRetrievalMedium:
         # Setup env_vars to pass into load runner
         env_vars = {
             "SERVICE": "embedding",
-            "LOAD_TEST_SCENARIO": "bulk-content-retieval",
+            "LOAD_TEST_SCENARIO": "bulk-content-retrieval",
             "APPEND_FILE_NAME": append_file_name,
             "GUIDS_LIST": json.dumps(self.guids_list),
             "ACCESS_TOKEN": self.auth.get_access_token(),
@@ -93,7 +93,7 @@ class TestGen3EmbeddingBulkRetrievalMedium:
             (3, 2000),
         ],
     )
-    def test_embedding_bulk_content_retieval_medium(self, replica_count, bulk_content):
+    def test_embedding_bulk_content_retrieval_medium(self, replica_count, bulk_content):
         self.gen3_embedding.set_embeddings_replica(replica_count=replica_count)
         self.perform_load_test(
             collection_name="hist",
