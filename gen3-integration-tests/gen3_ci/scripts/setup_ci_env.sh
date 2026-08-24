@@ -164,6 +164,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
+        yq -i 'del(.portal.portalBuild)' $ci_default_manifest_values_yaml
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Found customConfig enabled for Portal. Updating repo and branch..."
@@ -450,6 +451,7 @@ if [[ "$HOSTNAME_WITHOUT_PORT" == *":"* ]]; then
 fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
+  ".fence.FENCE_CONFIG_PUBLIC.MAX_BULK_DRS_REQUESTS|2"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
   ".indexd.defaultPrefix|$ENV_PREFIX/"
   ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"

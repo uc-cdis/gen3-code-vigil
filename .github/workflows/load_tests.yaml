@@ -25,6 +25,7 @@ on:
           - TestGen3EmbeddingSearchKnownCollection
           - TestGen3EmbeddingSearchUnKnownCollection
           - TestGen3EmbeddingLoadData
+          - TestFenceBulkPresignedURL
           - ALL
         default: ALL
       RELEASE_VERSION:

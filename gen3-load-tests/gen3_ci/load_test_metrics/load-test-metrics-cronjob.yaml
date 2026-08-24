@@ -55,6 +55,7 @@ spec:
 
                         RUN_DATE=$(echo "$BODY" | jq -r '.run_date')
                         RUN_NUM=$(echo "$BODY" | jq -r '.run_num')
+                        ATTEMPT_NUM=$(echo "$BODY" | jq -r '.attempt_num')
                         RELEASE_VERSION=$(echo "$BODY" | jq -r '.release_version')
                         SUITE=$(echo "$BODY" | jq -r '.test_suite')
                         CASE=$(echo "$BODY" | jq -r '.test_case')
@@ -72,12 +73,19 @@ spec:
                         DATA_SENT_RATE=$(echo "$BODY" | jq -r '.data_sent_rate')
                         ITERATIONS_COUNT=$(echo "$BODY" | jq -r '.iterations_count')
                         ITERATIONS_RATE=$(echo "$BODY" | jq -r '.iterations_rate')
+                        BULK_OBJECTS_REQUESTED_COUNT=$(echo "$BODY" | jq -r '.bulk_objects_requested_count')
+                        BULK_OBJECTS_REQUESTED_RATE=$(echo "$BODY" | jq -r '.bulk_objects_requested_rate')
+                        BULK_OBJECTS_RESOLVED_COUNT=$(echo "$BODY" | jq -r '.bulk_objects_resolved_count')
+                        BULK_OBJECTS_RESOLVED_RATE=$(echo "$BODY" | jq -r '.bulk_objects_resolved_rate')
+                        BULK_OBJECTS_UNRESOLVED_COUNT=$(echo "$BODY" | jq -r '.bulk_objects_unresolved_count')
+                        BULK_OBJECTS_UNRESOLVED_RATE=$(echo "$BODY" | jq -r '.bulk_objects_unresolved_rate')
 
 
                         psql "$METRICS_DB_DSN" <<EOF
                 INSERT INTO load_test_metrics_data (
                     run_date,
                     run_num,
+                    attempt_num,
                     release_version,
                     test_suite,
                     test_case,
@@ -94,10 +102,17 @@ spec:
                     data_sent_count,
                     data_sent_rate,
                     iterations_count,
-                    iterations_rate
+                    iterations_rate,
+                    bulk_objects_requested_count,
+                    bulk_objects_requested_rate,
+                    bulk_objects_resolved_count,
+                    bulk_objects_resolved_rate,
+                    bulk_objects_unresolved_count,
+                    bulk_objects_unresolved_rate
                 ) VALUES (
                     '$RUN_DATE',
                     $RUN_NUM,
+                    $ATTEMPT_NUM,
                     '$RELEASE_VERSION',
                     '$SUITE',
                     '$CASE',
@@ -114,7 +129,13 @@ spec:
                     $DATA_SENT_COUNT,
                     $DATA_SENT_RATE,
                     $ITERATIONS_COUNT,
-                    $ITERATIONS_RATE
+                    $ITERATIONS_RATE,
+                    $BULK_OBJECTS_REQUESTED_COUNT,
+                    $BULK_OBJECTS_REQUESTED_RATE,
+                    $BULK_OBJECTS_RESOLVED_COUNT,
+                    $BULK_OBJECTS_RESOLVED_RATE,
+                    $BULK_OBJECTS_UNRESOLVED_COUNT,
+                    $BULK_OBJECTS_UNRESOLVED_RATE
                 );
                 EOF
 
