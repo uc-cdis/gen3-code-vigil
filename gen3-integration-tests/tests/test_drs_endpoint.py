@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import pytest
 import requests
+import utils.gen3_admin_tasks as gat
 from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from packaging.version import Version
@@ -752,6 +753,10 @@ class TestDrsBulkEndpoints:
             f"got {resp.status_code}"
         )
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_bulk_signed_urls_success(self):
         """
         Scenario: Verify bulk presigned URL generation for authorized GUIDs
@@ -812,6 +817,10 @@ class TestDrsBulkEndpoints:
                 "url"
             ], f"Bulk access URL for '{entry.get('drs_object_id')}' is empty"
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_bulk_signed_urls_too_large(self):
         """
         Scenario: Verify bulk presigned URL fails for authorized GUIDs on exceeding MAX_BULK_DRS_REQUESTS
@@ -858,6 +867,10 @@ class TestDrsBulkEndpoints:
             resp.status_code == 413
         ), f"Expected 413 from bulk signed URLs, got {resp.status_code}"
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_bulk_signed_urls_partial_auth(self):
         """
         Scenario: Verify partial auth — authorized and unauthorized GUIDs
