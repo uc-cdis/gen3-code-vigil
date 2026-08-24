@@ -1,17 +1,5 @@
 # pylint: disable=missing-function-docstring
 
-"""
-TODO update this
-
-Usage:
-- Install the Gen3 SDK
-- Save your API key at`~/.gen3/credentials.json`
-- Get your bucket and bucket region: `gen3 run sh -c 'curl -X GET <endpoint>/workflows/storage/setup --header "authorization: bearer $GEN3_TOKEN" | jq'`
-- Configure `ENDPOINT`, `BUCKET` and `BUCKET_REGION` below
-- Switch to this directory
-- Launch with `gen3 run python performance_test.py`
-"""
-
 import asyncio
 import json
 import os
