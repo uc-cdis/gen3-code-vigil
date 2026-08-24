@@ -17,174 +17,138 @@ import json
 import os
 import random
 import subprocess
-import sys
 import tempfile
 import time
 from dataclasses import dataclass
 from statistics import mean, stdev
-from typing import Dict, List
+from typing import List
 
 import boto3
 import pytest
-import requests
 from botocore.config import Config
-from gen3.auth import (
-    Gen3Auth,
-    endpoint_from_token,
-    remove_trailing_whitespace_and_slashes_in_url,
-)
-
-# from cdislogging import get_logger
+from services.gen3workflow import _get_access_token, cleanup_user_bucket, setup_storage
 from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
-
-# ENDPOINT = "https://brhstaging.data-commons.org"
-# BUCKET = "gen3wf-brhstaging-data-commons-org-35"
-# BUCKET_REGION = "us-east-1"
-BUCKET = "TODO"
+from utils.misc import percentile
 
 VERBOSE = False  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
-N_SEQ_RUNS = 3  # stats will be the average of the sequential runs stats
 RUN_TIMEOUT = 1200  # 10 min
+LOG_FILE_NAME = f"output/gen3-workflow-test_tes_performance-logs-{int(time.time())}.txt"
 
 TESTS = [
     # {
     #     "name": "Random failures",
     #     "type": "Random",
-    #     "n_sequential_runs": N_SEQ_RUNS,
     #     "n_concurrent_runs": 5,
     # },
 ]
 
+# TES tests
+for concurrency in [50, 100, 150, 200]:
+    TESTS.append(
+        {
+            "name": f"TES test (concurrency {concurrency})",
+            "type": "TES",
+            "n_concurrent_runs": concurrency,
+            "payload": {
+                "name": f"Hello-World (concurrency {concurrency})",
+                "executors": [
+                    {
+                        "image": "quay.io/nextflow/bash",
+                        "command": [
+                            "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+                        ],
+                    }
+                ],
+            },
+        }
+    )
+    TESTS.append(
+        {
+            "name": f"TES GPU test (concurrency {concurrency})",
+            "type": "TES",
+            "n_concurrent_runs": concurrency,
+            "payload": {
+                "name": f"Hello-World (GPU, concurrency {concurrency})",
+                "tags": {"_GPU": "yes"},
+                "executors": [
+                    {
+                        "image": "quay.io/nextflow/bash",
+                        "command": [
+                            "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+                        ],
+                    }
+                ],
+            },
+        }
+    )
+    TESTS.append(
+        {
+            "name": f"TES test with inputs-outputs (concurrency {concurrency})",
+            "type": "TES",
+            "n_concurrent_runs": concurrency,
+            "payload": {
+                "name": "Input-Output-Test",
+                "inputs": [
+                    {
+                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/test-file.txt",
+                        "path": "/work/test-file.txt",
+                        "type": "FILE",
+                    }
+                ],
+                "outputs": [
+                    {
+                        "url": f"s3://BUCKET_PLACEHOLDER/outputs/output.txt",
+                        "path": "/work/output.txt",
+                        "type": "FILE",
+                    }
+                ],
+                "executors": [
+                    {
+                        "image": "quay.io/nextflow/bash",
+                        "workdir": "/work",
+                        "command": [
+                            "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
+                        ],
+                    }
+                ],
+            },
+        }
+    )
+
 # Nextflow tests
-# for concurrency in [5, 10]:
-#     for n_tasks in [1, 5]:
-#         # Note: Nextflow tests always include inputs/outputs
-#         TESTS.append(
-#             {
-#                 "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
-#                 "type": "Nextflow",
-#                 "n_sequential_runs": N_SEQ_RUNS,
-#                 "n_concurrent_runs": concurrency,
-#                 "n_tasks": n_tasks,
-#                 "gpu": False,
-#                 "workflow_file": "hello.nf",
-#             }
-#         )
-#         TESTS.append(
-#             {
-#                 "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-#                 "type": "Nextflow",
-#                 "n_sequential_runs": N_SEQ_RUNS,
-#                 "n_tasks": n_tasks,
-#                 "n_concurrent_runs": concurrency,
-#                 "gpu": True,
-#                 "workflow_file": "gpu.nf",
-#             }
-#         )
-
-# # TES tests
-# for concurrency in [50, 100, 150, 200]:
-#     TESTS.append(
-#         {
-#             "name": f"TES test (concurrency {concurrency})",
-#             "type": "TES",
-#             "n_sequential_runs": N_SEQ_RUNS,
-#             "n_concurrent_runs": concurrency,
-#             "body": {
-#                 "name": f"Hello-World (concurrency {concurrency})",
-#                 "executors": [
-#                     {
-#                         "image": "quay.io/nextflow/bash",
-#                         "command": [
-#                             "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-#                         ],
-#                     }
-#                 ],
-#             },
-#         }
-#     )
-#     TESTS.append(
-#         {
-#             "name": f"TES GPU test (concurrency {concurrency})",
-#             "type": "TES",
-#             "n_sequential_runs": N_SEQ_RUNS,
-#             "n_concurrent_runs": concurrency,
-#             "body": {
-#                 "name": f"Hello-World (GPU, concurrency {concurrency})",
-#                 "tags": {"_GPU": "yes"},
-#                 "executors": [
-#                     {
-#                         "image": "quay.io/nextflow/bash",
-#                         "command": [
-#                             "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-#                         ],
-#                     }
-#                 ],
-#             },
-#         }
-#     )
-#     TESTS.append(
-#         {
-#             "name": f"TES test with inputs/outputs (concurrency {concurrency})",
-#             "type": "TES",
-#             "n_sequential_runs": N_SEQ_RUNS,
-#             "n_concurrent_runs": concurrency,
-#             "body": {
-#                 "name": "Input-Output-Test",
-#                 "inputs": [
-#                     {
-#                         "url": f"s3://{BUCKET}/inputs/test-file.txt",
-#                         "path": "/work/test-file.txt",
-#                         "type": "FILE",
-#                     }
-#                 ],
-#                 "outputs": [
-#                     {
-#                         "url": f"s3://{BUCKET}/outputs/output.txt",
-#                         "path": "/work/output.txt",
-#                         "type": "FILE",
-#                     }
-#                 ],
-#                 "executors": [
-#                     {
-#                         "image": "quay.io/nextflow/bash",
-#                         "workdir": "/work",
-#                         "command": [
-#                             "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
-#                         ],
-#                     }
-#                 ],
-#             },
-#         }
-#     )
-
+for concurrency in [5, 10]:
+    for n_tasks in [1, 5]:
+        # Note: Nextflow tests always include inputs/outputs
+        TESTS.append(
+            {
+                "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
+                "type": "Nextflow",
+                "n_concurrent_runs": concurrency,
+                "n_tasks": n_tasks,
+                "gpu": False,
+                "workflow_file": "hello.nf",
+            }
+        )
+        TESTS.append(
+            {
+                "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
+                "type": "Nextflow",
+                "n_tasks": n_tasks,
+                "n_concurrent_runs": concurrency,
+                "gpu": True,
+                "workflow_file": "gpu.nf",
+            }
+        )
 
 SCRIPTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
 )
-# logger = get_logger("tes-perf", log_level="debug" if VERBOSE else "info")
-# log_file = None
-
-
-# TODO move to utils file
-def percentile(values, p):
-    if not values:
-        return 0
-
-    values = sorted(values)
-    index = int(len(values) * (p / 100))
-
-    # prevent out-of-range index
-    index = min(index, len(values) - 1)
-
-    return values[index]
 
 
 @dataclass
 class RunStats:
     test_name: str
-    seq_id: int
     conc_id: int
     successful: float
     run_time: float
@@ -192,10 +156,9 @@ class RunStats:
 
 
 @pytest.fixture
-def get_log_file():
-    LOG_FILE_NAME = f"output/{int(time.time())}_logs.txt"  # TODO add test params
-    print(f"Printing to {LOG_FILE_NAME}")
-    log_file = open(LOG_FILE_NAME, "w")
+def log_file():
+    logger.info(f"Printing to {LOG_FILE_NAME}")
+    log_file = open(LOG_FILE_NAME, "a")
     yield log_file
     log_file.close()
 
@@ -206,9 +169,9 @@ def log(log_file, level, msg):
         getattr(logger, level)(msg)
     else:
         if level != "debug" or VERBOSE:
-            print(msg)
+            logger.info(msg)
 
-    # print to file
+    # print to log file
     if type(msg) == bytes:
         msg = msg.decode()
     log_file.write(msg + "\n")
@@ -324,13 +287,13 @@ def print_stats(log_file, stats_list, total_run_time=None):
 
 
 async def run_command(
-    log_file, cmd: List[str], seq_id: int, conc_id: int, config: dict, env: dict = {}
+    log_file, cmd: List[str], conc_id: int, config: dict, env: dict = {}
 ) -> RunStats:
     test_name = config["name"]
 
     try:
         loop = asyncio.get_event_loop()
-        start_time = time.time()
+        start_time = time.perf_counter()
         # Each process runs in its own temp directory to avoid conflicts.
         # For example, if multiple Nextflow processes run at the same time in the same dir:
         # `Can't lock file: .nextflow/history -- Nextflow needs to run in a file system that
@@ -347,7 +310,7 @@ async def run_command(
                     cwd=temp_dir,
                 ),
             )
-        run_time = time.time() - start_time
+        run_time = time.perf_counter() - start_time
 
         successful = True
         if result.returncode != 0 or "ERROR" in result.stdout:
@@ -355,7 +318,7 @@ async def run_command(
         log(
             log_file,
             "debug",
-            f"    '{test_name}' run 'seq{seq_id}-conc{conc_id}' {'completed' if successful else 'failed'} in {run_time:.2f}s",
+            f"    '{test_name}' run {conc_id} {'completed' if successful else 'failed'} in {run_time:.2f}s",
         )
         if not successful:
             stdout = f"{result.stdout}\n---\n" if result.stdout else ""
@@ -369,7 +332,6 @@ async def run_command(
 
         return RunStats(
             test_name=test_name,
-            seq_id=seq_id,
             conc_id=conc_id,
             successful=successful,
             run_time=run_time,
@@ -380,7 +342,7 @@ async def run_command(
         log(
             log_file,
             "error",
-            f"❌ '{test_name}' run 'seq{seq_id}-conc{conc_id}' failed: {e}",
+            f"❌ '{test_name}' run {conc_id} failed: {e}",
         )
         run_time = 0
         if type(e) == subprocess.TimeoutExpired:
@@ -394,7 +356,6 @@ async def run_command(
                     log(log_file, "debug", line)
         return RunStats(
             test_name=test_name,
-            seq_id=seq_id,
             conc_id=conc_id,
             successful=False,
             run_time=run_time,
@@ -402,101 +363,43 @@ async def run_command(
         )
 
 
-async def run_random_failures(
-    log_file, seq_id: int, conc_id: int, config: dict, endpoint: str, bucket: str
-) -> RunStats:
-    r = random.randint(-2, 3)
-    # print(f"Random failure: {r=}")
-    cmd = ["sleep", str(r)]
-    return await run_command(log_file, cmd, seq_id, conc_id, config)
-
-
 class TestTesPerformance:
     @classmethod
     def setup_class(cls):
-        cls.BASE_URL = f"{pytest.root_url}"
+        cls.s3_storage_config = setup_storage()
+        cleanup_user_bucket()
 
-    #     cls.auth = Gen3Auth(
-    #         refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
-    #     )
-
-    # TODO any way to import code from gen3-int-tests instead of duplicating?
-    # TODO if not, move these functions to services/gen3-workflow
-    from unittest.mock import patch
-
-    @patch("gen3.auth.endpoint_from_token")
-    def _get_access_token(
-        self, user: str = "main_account", endpoint_from_token_mock=None
-    ) -> str:
-        """Helper function to retrieve an access token."""
-
-        if not user:
-            return None
-
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-
-        # When running the tests in a Kind cluster:
-        # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
-        #   API keys and access tokens have that as their issuer. This allows other pods in the
-        #   cluster to reach Fence to validate tokens.
-        # - However, the tests cannot reach this URL from outside the cluster. The cluster is
-        #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
-        #   access tokens.
-        # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
-        #   this method to return `http://localhost:8000` instead of `http://fence-service.
-        #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
-        # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
-        #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
-        #   (because within a container, localhost refers to the container itself).
-        if "localhost" in self.BASE_URL:
-            endpoint_from_token_mock.return_value = (
-                remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
-            )
-        else:  # otherwise, no mocking
-            endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
-        endpoint_from_token_mock.return_value = (
-            remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
+        # upload the input file used by TES tests
+        s3_client = boto3.client(
+            service_name="s3",
+            aws_access_key_id=_get_access_token("main_account"),
+            aws_secret_access_key="N/A",
+            endpoint_url=f"{pytest.root_url}/workflows/s3",
+            config=Config(region_name=cls.s3_storage_config["region"]),
+        )
+        s3_client.put_object(
+            Bucket=cls.s3_storage_config["bucket"],
+            Key="inputs/test-file.txt",
+            Body="this is my test file\n",
         )
 
-        try:
-            return auth.get_access_token()
-        except Exception:
-            logger.info("Failed to get access token with Gen3Auth")
-            raise
-
-    def setup_storage(self, user: str = "main_account", expected_status=200) -> Dict:
-        """Makes a GET request to the `/storage/setup` endpoint."""
-        storage_url = f"{self.BASE_URL}/workflows/storage/setup"
-        headers = (
-            {
-                "Authorization": f"bearer {self._get_access_token(user)}",
-            }
-            if user
-            else {}
-        )
-
-        response = requests.get(url=storage_url, headers=headers)
-        # if response.status_code != expected_status:
-        #     _print_tes_apps_logs(with_arborist=response.status_code == 403)
-        assert (
-            response.status_code == expected_status
-        ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
-        storage_info = response.json()
-        assert isinstance(storage_info, dict), "Expected a valid JSON response"
-        return storage_info
+    async def run_random_failures(
+        self, log_file, conc_id: int, config: dict, **kwargs
+    ) -> RunStats:
+        r = random.randint(-2, 3)
+        # log(f"Random failure: {r=}")
+        cmd = ["sleep", str(r)]
+        return await run_command(log_file, cmd, conc_id, config)
 
     async def run_nextflow_workflow(
         self,
         log_file,
-        seq_id: int,
         conc_id: int,
         config: dict,
         endpoint: str,
         bucket: str,
     ) -> RunStats:
         cmd = [
-            # "gen3",
-            # "run",
             "nextflow",
             "run",
             os.path.join(SCRIPTS_DIR, config["workflow_file"]),
@@ -508,11 +411,10 @@ class TestTesPerformance:
         return await run_command(
             log_file,
             cmd,
-            seq_id,
             conc_id,
             config,
             {
-                "GEN3_TOKEN": self._get_access_token("main_account"),
+                "GEN3_TOKEN": _get_access_token("main_account"),
                 "ENDPOINT": endpoint,
                 "BUCKET": bucket,
                 "GPU": "yes" if config["gpu"] else "no",
@@ -522,171 +424,91 @@ class TestTesPerformance:
     async def run_tes_task(
         self,
         log_file,
-        seq_id: int,
         conc_id: int,
         config: dict,
         endpoint: str,
         bucket: str,
     ) -> RunStats:
+        # simulate tasks that take 0 to 5s to complete
         sleep_time = random.randint(0, 5)
-        body = config["body"]
-        body["executors"][0]["command"][0] = body["executors"][0]["command"][0].replace(
-            "SLEEP_TIME_PLACEHOLDER", str(sleep_time)
-        )
+        payload = config["payload"]
+        payload["executors"][0]["command"][0] = payload["executors"][0]["command"][
+            0
+        ].replace("SLEEP_TIME_PLACEHOLDER", str(sleep_time))
+        for field in ["inputs", "outputs"]:
+            try:
+                payload[field][0]["url"] = payload[field][0]["url"].replace(
+                    "BUCKET_PLACEHOLDER", bucket
+                )
+            except Exception:
+                pass
+
         cmd = [
-            # "gen3",
-            # "run",
-            # f"GEN3_TOKEN={self._get_access_token("main_account")}"
             "python",
             os.path.join(SCRIPTS_DIR, "run_tes_task.py"),
             endpoint,
-            json.dumps(body),
+            json.dumps(payload),
         ]
         return await run_command(
             log_file,
             cmd,
-            seq_id,
             conc_id,
             config,
-            {"GEN3_TOKEN": self._get_access_token("main_account")},
+            {"GEN3_TOKEN": _get_access_token("main_account")},
         )
 
     @pytest.mark.asyncio
-    async def test_tes_performance(self, get_log_file):
-        # try:
-        #     asyncio.run(run_tests(LOG_FILE_NAME))
-        # except KeyboardInterrupt:
-        #     log(log_file, "exception", "Test interrupted by user")
-        #     sys.exit(1)
-        # except Exception as e:
-        #     log(log_file, "exception", f"❌ Test failed with error: {e}")
-        #     raise
-        # finally:
-
-        log_file = get_log_file
-        concurrency = 2
-
-        # NOTE def run_tests(log_file_name) was here
-
-        s3_storage_config = self.setup_storage()
-        # (
-        #     =data["bucket"],
-        #     =data["workdir"],
-        #     =data["region"],
-        # )
-
-        # upload the input file used by TES tests
-        s3_client = boto3.client(
-            service_name="s3",
-            aws_access_key_id=self._get_access_token(
-                "main_account"
-            ),  # self.auth.get_access_token(), #os.environ["GEN3_TOKEN"],
-            aws_secret_access_key="N/A",
-            endpoint_url=f"{self.BASE_URL}/workflows/s3",
-            config=Config(region_name=s3_storage_config["region"]),
-        )
-        s3_client.put_object(
-            Bucket=s3_storage_config["bucket"],
-            Key="inputs/test-file.txt",
-            Body="this is my test file\n",
-        )
+    @pytest.mark.parametrize(
+        "config", [pytest.param(config, id=config["name"]) for config in TESTS]
+    )
+    async def test_tes_performance(self, log_file, config):
 
         test_start = time.perf_counter()
-        # total_start_time = time.time()
-        # for test_i, config in enumerate(TESTS, start=1):
-        test_i = 1
-        if True:
-            # config = {
-            #     "name": "Random failures",
-            #     "type": "Random",
-            #     "n_sequential_runs": N_SEQ_RUNS,
-            #     "n_concurrent_runs": 5,
-            # }
-            config = {
-                "name": f"TES test (concurrency {concurrency})",
-                "type": "TES",
-                "n_sequential_runs": N_SEQ_RUNS,
-                "n_concurrent_runs": concurrency,
-                "body": {
-                    "name": f"Hello-World (concurrency {concurrency})",
-                    "executors": [
-                        {
-                            "image": "quay.io/nextflow/bash",
-                            "command": [
-                                "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-                            ],
-                        }
-                    ],
-                },
-            }
+        log(log_file, "info", f"'{config['name']}' starting")
 
-            log(
+        all_stats = []
+        _type = config["type"]
+        if _type == "Random":
+            method = self.run_random_failures
+        elif _type == "Nextflow":
+            method = self.run_nextflow_workflow
+        elif _type == "TES":
+            method = self.run_tes_task
+        else:
+            raise Exception(f"Unknown test type '{_type}'")
+
+        # launch `n_concurrent_runs` concurrent runs
+        n_concurrent_runs = config["n_concurrent_runs"]
+        tasks = [
+            method(
                 log_file,
-                "info",
-                f"[test {test_i}/{len(TESTS)}] '{config['name']}' starting",
+                conc_id=conc_run,
+                config=config,
+                endpoint=pytest.root_url,
+                bucket=self.s3_storage_config["bucket"],
             )
-
-            # launch `n_sequential_runs` sequential runs
-            all_stats = []
-            # for seq_run in range(1, config["n_sequential_runs"] + 1):
-            seq_run = 1
-            if True:
-                _type = config["type"]
-                if _type == "Random":
-                    method = run_random_failures
-                elif _type == "Nextflow":
-                    method = self.run_nextflow_workflow
-                elif _type == "TES":
-                    method = self.run_tes_task
-                else:
-                    raise Exception(f"Unknown test type '{_type}'")
-
-                # launch `n_concurrent_runs` concurrent runs
-                n_concurrent_runs = config["n_concurrent_runs"]
-                tasks = [
-                    method(
-                        log_file,
-                        seq_id=seq_run,
-                        conc_id=conc_run,
-                        config=config,
-                        endpoint=self.BASE_URL,
-                        bucket=s3_storage_config["bucket"],
-                    )
-                    for conc_run in range(1, n_concurrent_runs + 1)
-                ]
-                # start_time = time.time()
-                run_stats = await asyncio.gather(*tasks)
-                # log(log_file,
-                #     "info",
-                #     f"[test {test_i}/{len(TESTS)}] [run {seq_run}/{config['n_sequential_runs']}] '{config['name']}' run stats:",
-                # )
-                # print_stats(run_stats, time.time() - start_time)
-                all_stats.extend(run_stats)
+            for conc_run in range(1, n_concurrent_runs + 1)
+        ]
+        run_stats = await asyncio.gather(*tasks)
+        all_stats.extend(run_stats)
 
         test_duration_seconds = time.perf_counter() - test_start
         log(
             log_file,
             "info",
-            f"✅ [test {test_i}/{len(TESTS)}] '[{config['name']}]' final stats:",
+            f"✅ '{config['name']}' stats:",
         )
         summary = print_stats(log_file, all_stats, test_duration_seconds)
-        # log(log_file,
-        #     "info",
-        #     f"Total run time: {seconds_to_human_format(time.time() - total_start_time)}. Find logs at '{log_file_name}'.",
-        # )
-        # print(summary)
 
         service = "gen3-workflow"
-        scenario = f"test_tes_performance[{concurrency}]"
+        scenario = f"test_tes_performance[{config['name']}]"
         file_name = f"{service}-{scenario}.json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
             json.dump(summary, f, indent=2)
 
         load_test.get_results(
-            # result,
             None,
             service=service,
             load_test_scenario=scenario,
-            # append_file_name=f"gen3sdk[{collection_name}-{number_of_records}-{dimensions}]",
         )
