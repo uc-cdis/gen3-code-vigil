@@ -5,6 +5,7 @@ PRESIGNED URL
 import os
 
 import pytest
+import utils.gen3_admin_tasks as gat
 from services.fence import Fence
 from services.indexd import Indexd
 from utils import logger
@@ -234,6 +235,10 @@ class TestPresignedURL:
             logger.error(signed_url_res)
             raise
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_get_bulk_presigned_urls(self):
         """
         Scenario: Get bulk presigned-urls
