@@ -2,7 +2,7 @@ const { check, group, sleep } = require('k6'); // eslint-disable-line import/no-
 const http = require('k6/http'); // eslint-disable-line import/no-unresolved
 
 const {
-  EMBEDDING_LIST,
+  EMBEDDING_FILE,
   COLLECTION_NAME,
   TOP_K,
   DISTANCE_METRIC,
@@ -12,7 +12,8 @@ const {
   VIRTUAL_USERS,
 } = __ENV; // eslint-disable-line no-undef
 
-const embeddings = JSON.parse(EMBEDDING_LIST);
+const embeddingFile = __ENV.EMBEDDING_FILE;
+const embeddings = JSON.parse(open(embeddingFile));
 
 export const options = {
   tags: {
@@ -80,8 +81,7 @@ export default function () {
     },
   };
 
-  const embedding =
-    JSON.parse(embeddings[Math.floor(Math.random() * embeddings.length)]);
+  const embedding = embeddings[Math.floor(Math.random() * embeddings.length)];
 
   const payload = JSON.stringify({
     input: embedding,

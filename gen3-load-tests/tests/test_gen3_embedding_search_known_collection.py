@@ -22,11 +22,11 @@ class TestGen3EmbeddingSearchKnownCollection:
         )
         cls.index = Gen3Index(cls.index_auth)
         cls.gen3_embedding = Embedding()
-        for collection_name, embedding_size in [("expr_search", 256)]:
+        for collection_name, embedding_size in [("hist_search", 1536)]:
             # Generate Embedding data (~/test_data/embedding/{collection_name}.tsv)
             cls.gen3_embedding.generate_embedding_data(
                 collection_name=collection_name,
-                number_of_records=20,
+                number_of_records=100,
                 embedding_size=embedding_size,
             )
 
@@ -35,12 +35,16 @@ class TestGen3EmbeddingSearchKnownCollection:
     ):
         input_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
         df = pd.read_csv(input_file, sep="\t")
-        embedding_list = df["embedding"].tolist()
+        # Write to json file
+        embedding_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.json"
+
+        with open(embedding_file, "w") as f:
+            json.dump(df["embedding"].apply(json.loads).tolist(), f)
         # Setup env_vars to pass into load runner
         env_vars = {
             "SERVICE": "embedding",
             "LOAD_TEST_SCENARIO": "search-embedding",
-            "EMBEDDING_LIST": json.dumps(embedding_list),
+            "EMBEDDING_FILE": str(embedding_file),
             "APPEND_FILE_NAME": append_file_name,
             "COLLECTION_NAME": collection_name,
             "TOP_K": str(top_k),
@@ -65,12 +69,12 @@ class TestGen3EmbeddingSearchKnownCollection:
     @pytest.mark.parametrize(
         "collection_name,top_k,distance_metric",
         [
-            ("expr_search", 5, "cosine_similarity"),
-            ("expr_search", 5, "l1_distance"),
-            ("expr_search", 5, "inner_product"),
-            ("expr_search", 10, "cosine_similarity"),
-            ("expr_search", 10, "l1_distance"),
-            ("expr_search", 10, "inner_product"),
+            ("hist_search", 5, "cosine_similarity"),
+            ("hist_search", 5, "l1_distance"),
+            ("hist_search", 5, "inner_product"),
+            ("hist_search", 10, "cosine_similarity"),
+            ("hist_search", 10, "l1_distance"),
+            ("hist_search", 10, "inner_product"),
         ],
     )
     def test_embedding_search_embedding_known_collection(
