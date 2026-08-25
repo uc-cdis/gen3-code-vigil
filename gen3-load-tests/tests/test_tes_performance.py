@@ -42,7 +42,7 @@ for concurrency in [50, 100, 150, 200]:
                 "name": f"Hello-World (concurrency {concurrency})",
                 "executors": [
                     {
-                        "image": "quay.io/nextflow/bash",
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
                         "command": [
                             "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
                         ],
@@ -61,7 +61,7 @@ for concurrency in [50, 100, 150, 200]:
                 "tags": {"_GPU": "yes"},
                 "executors": [
                     {
-                        "image": "quay.io/nextflow/bash",
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
                         "command": [
                             "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
                         ],
@@ -93,7 +93,7 @@ for concurrency in [50, 100, 150, 200]:
                 ],
                 "executors": [
                     {
-                        "image": "quay.io/nextflow/bash",
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
                         "workdir": "/work",
                         "command": [
                             "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
