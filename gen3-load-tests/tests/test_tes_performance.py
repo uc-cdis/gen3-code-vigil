@@ -143,7 +143,7 @@ class RunStats:
     return_code: int
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def log_file():
     logger.info(f"Printing to {LOG_FILE_NAME}")
     log_file = open(LOG_FILE_NAME, "a")
