@@ -33,20 +33,22 @@ class TestGen3EmbeddingSearchUnKnownCollection:
                 embedding_size=embedding_size,
             )
 
-    def perform_load_test(self, top_k, distance_metric, append_file_name):
-        expr_input_file = TEST_DATA_PATH_OBJECT / "embedding" / "expr_search.tsv"
-        hist_input_file = TEST_DATA_PATH_OBJECT / "embedding" / "hist_search.tsv"
-        df_expr = pd.read_csv(expr_input_file, sep="\t")
-        df_hist = pd.read_csv(hist_input_file, sep="\t")
-        embedding_list = (
-            df_expr["embedding"][:15].tolist() + df_hist["embedding"][:15].tolist()
-        )
+    def perform_load_test(
+        self, collection_name, top_k, distance_metric, append_file_name
+    ):
+        input_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.tsv"
+        df = pd.read_csv(input_file, sep="\t")
+        # Write to json file
+        embedding_file = TEST_DATA_PATH_OBJECT / "embedding" / f"{collection_name}.json"
+
+        with open(embedding_file, "w") as f:
+            json.dump(df["embedding"].apply(json.loads).tolist(), f)
         # Setup env_vars to pass into load runner
         env_vars = {
             "SERVICE": "embedding",
             "LOAD_TEST_SCENARIO": "search-embedding",
-            "EMBEDDING_LIST": json.dumps(embedding_list),
-            "APPEND_FILE_NAME": append_file_name,
+            "EMBEDDING_FILE": embedding_file,
+            "APPEND_FILE_NAME": append_file_name.replace("_", "-"),
             "TOP_K": str(top_k),
             "DISTANCE_METRIC": distance_metric,
             "ACCESS_TOKEN": self.auth.get_access_token(),
@@ -67,23 +69,24 @@ class TestGen3EmbeddingSearchUnKnownCollection:
         )
 
     @pytest.mark.parametrize(
-        "top_k,distance_metric",
+        "collection_name,top_k,distance_metric",
         [
-            (5, "cosine_similarity"),
-            (5, "l1_distance"),
-            (5, "inner_product"),
-            (10, "cosine_similarity"),
-            (10, "l1_distance"),
-            (10, "inner_product"),
+            ("expr_search", 5, "cosine_similarity"),
+            ("expr_search", 5, "l1_distance"),
+            ("expr_search", 5, "inner_product"),
+            ("expr_search", 10, "cosine_similarity"),
+            ("expr_search", 10, "l1_distance"),
+            ("expr_search", 10, "inner_product"),
         ],
     )
     def test_embedding_search_embedding_unknown_collection(
-        self, top_k, distance_metric
+        self, collection_name, top_k, distance_metric
     ):
         self.perform_load_test(
+            collection_name,
             top_k,
             distance_metric,
-            append_file_name=f"unknown-collection[{top_k}-{distance_metric}]".replace(
+            append_file_name=f"unknown-collection[{collection_name}-{top_k}-{distance_metric}]".replace(
                 "_", "-"
             ),
         )
