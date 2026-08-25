@@ -66,8 +66,6 @@ def setup_storage(user: str = "main_account", expected_status=200) -> Dict:
     )
 
     response = requests.get(url=storage_url, headers=headers)
-    # if response.status_code != expected_status:
-    #     _print_tes_apps_logs(with_arborist=response.status_code == 403)
     assert (
         response.status_code == expected_status
     ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
