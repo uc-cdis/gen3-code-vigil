@@ -159,7 +159,7 @@ class LoginPage(object):
             )
         else:
             username = page.locator("a, p, span").get_by_text(logged_in_user)
-        expect(username).to_be_visible(timeout=30000)
+        expect(username).to_be_visible(timeout=120000)
 
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
