@@ -143,6 +143,7 @@ class LoginPage(object):
         return access_token_cookie
 
     def validate_username(self, page, logged_in_user):
+        screenshot(page, "BeforeUsernameValidation")
         res = get_portal_config(json_file_name="navigation")
         # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
@@ -150,15 +151,15 @@ class LoginPage(object):
             accept_button_count = accept_button.count()
             if accept_button_count > 0:
                 logger.info("Clicking on Accept button")
-                screenshot(page, "ClickingOnAcceptButton")
                 accept_button.click()
+                screenshot(page, "AfterClickingOnAcceptButton")
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             username = page.locator("//div[@class='ant-popover-title']").filter(
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
         else:
-            username = page.locator("a, p").get_by_text(logged_in_user)
-        expect(username).to_be_visible(timeout=120000)
+            username = page.locator("a, p, span").get_by_text(logged_in_user)
+        expect(username).to_be_visible(timeout=30000)
 
     def orcid_login(self, page: Page):
         # Click on 'ORCID Login' on Gen3 Login Page
@@ -233,8 +234,6 @@ class LoginPage(object):
             logger.info("Clicking on Grant button")
             page.locator(self.RAS_GRANT_BUTTON).click()
 
-    # TODO: Remove the below handling once GFF-531 is fixed
-    @retry(times=3, delay=10, exceptions=(AssertionError))
     def logout(self, page: Page, capture_screenshot=True):
         """Logs out and wait for Login button on nav bar"""
         res = get_portal_config(json_file_name="navigation")
@@ -246,7 +245,7 @@ class LoginPage(object):
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.locator("a, p").get_by_text("Logout").click(timeout=60000)
+            page.locator("a, p, span").get_by_text("Logout").click(timeout=60000)
             logger.info("Clicked on logout button")
         nav_bar_login_button = page.get_by_text("Login", exact=True)
         # commons-frontend-app may have a pop up after clicking logout
@@ -270,9 +269,11 @@ class LoginPage(object):
                 }
                 """)
             screenshot(page, "DataUsePopup")
-            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
-            if accept_button:
+            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
+            accept_button_count = accept_button.count()
+            if accept_button_count > 0:
+                logger.info("Clicking on Accept button")
                 accept_button.click()
-            screenshot(page, "AfterPopUpAccept")
+                screenshot(page, "AfterPopUpAccept")
         else:
             logger.info("Popup message not found")
