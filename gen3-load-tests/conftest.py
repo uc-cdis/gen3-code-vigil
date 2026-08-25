@@ -50,6 +50,12 @@ def pytest_runtest_logreport(report):
     start_time = datetime.fromtimestamp(report.start)
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
+
+    print(
+        f"pytest_runtest_logreport all files in dir '{LOAD_TESTING_OUTPUT_PATH}':\n",
+        [str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()],
+    )
+
     output = json.loads(output_path.read_text())
     metrics = output.get("metrics", {})
     message = {
