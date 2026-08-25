@@ -32,7 +32,7 @@ TESTS = [
 ]
 
 # TES tests
-for concurrency in [1]: #[50, 100, 150, 200]:
+for concurrency in [50, 100, 150, 200]:
     TESTS.append(
         {
             "name": f"TES test (concurrency {concurrency})",
@@ -455,7 +455,7 @@ class TestTesPerformance:
     @pytest.mark.parametrize(
         "config", [pytest.param(config, id=config["name"]) for config in TESTS]
     )
-    async def test_tes_performance(self, log_file, config):
+    async def test_gen3_workflow_tes_performance(self, log_file, config):
 
         test_start = time.perf_counter()
         log(log_file, "info", f"'{config['name']}' starting")
