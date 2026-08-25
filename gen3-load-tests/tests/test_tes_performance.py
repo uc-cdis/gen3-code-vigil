@@ -18,7 +18,7 @@ from services.gen3workflow import _get_access_token, cleanup_user_bucket, setup_
 from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
 
-VERBOSE = False  # if false, details are not on stdout but are still in the log file
+VERBOSE = True  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
 RUN_TIMEOUT = 1200  # 10 min
 LOG_FILE_NAME = f"output/gen3-workflow-test_tes_performance-logs-{int(time.time())}.txt"
@@ -157,7 +157,7 @@ def log(log_file, level, msg):
         getattr(logger, level)(msg)
     else:
         if level != "debug" or VERBOSE:
-            logger.info(msg)
+            print(msg)
 
     # print to log file
     if type(msg) == bytes:
@@ -370,6 +370,12 @@ class TestTesPerformance:
             Key="inputs/test-file.txt",
             Body="this is my test file\n",
         )
+
+    @pytest.fixture(scope="class", autouse=True)
+    def cleanup_after_class(self):
+        yield
+        with open(LOG_FILE_NAME, "r") as f:
+            logger.info(f"{LOG_FILE_NAME}:\n{f.read()}")
 
     async def run_random_failures(
         self, log_file, conc_id: int, config: dict, **kwargs

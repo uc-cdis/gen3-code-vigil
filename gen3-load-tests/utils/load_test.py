@@ -27,6 +27,12 @@ def run_load_test(env_vars):
 def get_results(result, service, load_test_scenario):
     logger.info(f"Validating logs for {service}-{load_test_scenario}")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{service}-{load_test_scenario}.json"
+
+    print(
+        f"get_results all files in dir '{LOAD_TESTING_OUTPUT_PATH}':",
+        [str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()],
+    )
+
     output = json.loads(output_path.read_text())
     passed = str(output["metrics"]["checks"]["passes"])
     failed = str(output["metrics"]["checks"]["fails"])
