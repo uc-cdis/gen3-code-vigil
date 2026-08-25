@@ -34,6 +34,11 @@ nest-asyncio = "^1.6.0"
 allure-pytest = "^2.13.5"
 boto3 = "^1.38.20"
 
+# We need to support the latest version of Nextflow.
+# DO NOT PIN THIS VERSION WITHOUT REPORTING THE ISSUE YOU ENCOUNTERED TO THE TEAM.
+nextflow = "*"
+nextflowpy = ">=0.13.1" # see https://github.com/goodwright/nextflow.py/issues/14
+
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
 

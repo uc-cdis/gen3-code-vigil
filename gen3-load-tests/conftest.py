@@ -53,7 +53,9 @@ def pytest_runtest_logreport(report):
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
     if not os.path.exists(output_path):
         logger.error(f"{output_path} not found")
-        logger.info(f"If there's a mismatch, you may need to update your test name ('{test_nodeid}'). Files in dir '{LOAD_TESTING_OUTPUT_PATH}': {[str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()]}")
+        logger.info(
+            f"If there's a mismatch, you may need to update your test name ('{test_nodeid}'). Files in dir: '{LOAD_TESTING_OUTPUT_PATH}': {[str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()]}"
+        )
         return
 
     output = json.loads(output_path.read_text())

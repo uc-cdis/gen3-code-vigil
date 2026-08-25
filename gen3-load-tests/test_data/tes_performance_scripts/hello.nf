@@ -3,12 +3,13 @@
 nextflow.enable.dsl=2
 
 process HELLO_TASK {
+    publishDir 'results'
+
     tag "task-${id}"
 
     input:
     val id
 
-    publishDir "results"
     output:
       path "output-${id}.txt"
 

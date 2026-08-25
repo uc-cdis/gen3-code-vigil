@@ -21,7 +21,7 @@ from utils.misc import percentile
 VERBOSE = True  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
 RUN_TIMEOUT = 1200  # 10 min
-LOG_FILE_NAME = f"output/gen3-workflow-test_tes_performance-logs-{int(time.time())}.txt"
+LOG_FILE_NAME = f"output/gen3-workflow-tes_performance-logs-{int(time.time())}.txt"
 
 TESTS = [
     # {
@@ -51,6 +51,7 @@ for concurrency in [50, 100, 150, 200]:
             },
         }
     )
+    # Note: the command doesn't actually need a GPU, we only test scheduling on the GPU node
     TESTS.append(
         {
             "name": f"TES GPU test (concurrency {concurrency})",
@@ -351,6 +352,79 @@ async def run_command(
         )
 
 
+async def run_random_failures(
+    log_file, conc_id: int, config: dict, **kwargs
+) -> RunStats:
+    r = random.randint(-2, 3)
+    # log(f"Random failure: {r=}")
+    cmd = ["sleep", str(r)]
+    return await run_command(log_file, cmd, conc_id, config)
+
+
+async def run_tes_task(
+    log_file,
+    conc_id: int,
+    config: dict,
+    endpoint: str,
+    bucket: str,
+) -> RunStats:
+    # simulate tasks that take 0 to 5s to complete
+    sleep_time = random.randint(0, 5)
+    payload = config["payload"]
+    payload["executors"][0]["command"][0] = payload["executors"][0]["command"][
+        0
+    ].replace("SLEEP_TIME_PLACEHOLDER", str(sleep_time))
+    for field in ["inputs", "outputs"]:
+        try:
+            payload[field][0]["url"] = payload[field][0]["url"].replace(
+                "BUCKET_PLACEHOLDER", bucket
+            )
+        except Exception:
+            pass
+
+    cmd = [
+        "python",
+        os.path.join(SCRIPTS_DIR, "run_tes_task.py"),
+        endpoint,
+        json.dumps(payload),
+    ]
+    return await run_command(
+        log_file,
+        cmd,
+        conc_id,
+        config,
+        {"GEN3_TOKEN": _get_access_token("main_account")},
+    )
+
+
+async def run_nextflow_workflow(
+    log_file,
+    conc_id: int,
+    config: dict,
+    endpoint: str,
+    bucket: str,
+) -> RunStats:
+    cmd = [
+        "python",
+        os.path.join(SCRIPTS_DIR, "run_nextflow_workflow.py"),
+        os.path.join(SCRIPTS_DIR, config["workflow_file"]),
+        os.path.join(SCRIPTS_DIR, "base_nextflow.config"),
+        str(config["n_tasks"]),
+    ]
+    return await run_command(
+        log_file,
+        cmd,
+        conc_id,
+        config,
+        {
+            "GEN3_TOKEN": _get_access_token("main_account"),
+            "ENDPOINT": endpoint,
+            "BUCKET": bucket,
+            "GPU": "yes" if config["gpu"] else "no",
+        },
+    )
+
+
 class TestTesPerformance:
     @classmethod
     def setup_class(cls):
@@ -377,80 +451,6 @@ class TestTesPerformance:
         with open(LOG_FILE_NAME, "r") as f:
             print(f"{LOG_FILE_NAME}:\n{f.read()}")
 
-    async def run_random_failures(
-        self, log_file, conc_id: int, config: dict, **kwargs
-    ) -> RunStats:
-        r = random.randint(-2, 3)
-        # log(f"Random failure: {r=}")
-        cmd = ["sleep", str(r)]
-        return await run_command(log_file, cmd, conc_id, config)
-
-    async def run_nextflow_workflow(
-        self,
-        log_file,
-        conc_id: int,
-        config: dict,
-        endpoint: str,
-        bucket: str,
-    ) -> RunStats:
-        cmd = [
-            "nextflow",
-            "run",
-            os.path.join(SCRIPTS_DIR, config["workflow_file"]),
-            "-c",
-            os.path.join(SCRIPTS_DIR, "base_nextflow.config"),
-            "--n_tasks",
-            f"{config['n_tasks']}",
-        ]
-        return await run_command(
-            log_file,
-            cmd,
-            conc_id,
-            config,
-            {
-                "GEN3_TOKEN": _get_access_token("main_account"),
-                "ENDPOINT": endpoint,
-                "BUCKET": bucket,
-                "GPU": "yes" if config["gpu"] else "no",
-            },
-        )
-
-    async def run_tes_task(
-        self,
-        log_file,
-        conc_id: int,
-        config: dict,
-        endpoint: str,
-        bucket: str,
-    ) -> RunStats:
-        # simulate tasks that take 0 to 5s to complete
-        sleep_time = random.randint(0, 5)
-        payload = config["payload"]
-        payload["executors"][0]["command"][0] = payload["executors"][0]["command"][
-            0
-        ].replace("SLEEP_TIME_PLACEHOLDER", str(sleep_time))
-        for field in ["inputs", "outputs"]:
-            try:
-                payload[field][0]["url"] = payload[field][0]["url"].replace(
-                    "BUCKET_PLACEHOLDER", bucket
-                )
-            except Exception:
-                pass
-
-        cmd = [
-            "python",
-            os.path.join(SCRIPTS_DIR, "run_tes_task.py"),
-            endpoint,
-            json.dumps(payload),
-        ]
-        return await run_command(
-            log_file,
-            cmd,
-            conc_id,
-            config,
-            {"GEN3_TOKEN": _get_access_token("main_account")},
-        )
-
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "config", [pytest.param(config, id=config["name"]) for config in TESTS]
@@ -463,11 +463,11 @@ class TestTesPerformance:
         all_stats = []
         _type = config["type"]
         if _type == "Random":
-            method = self.run_random_failures
+            method = run_random_failures
         elif _type == "Nextflow":
-            method = self.run_nextflow_workflow
+            method = run_nextflow_workflow
         elif _type == "TES":
-            method = self.run_tes_task
+            method = run_tes_task
         else:
             raise Exception(f"Unknown test type '{_type}'")
 
@@ -495,7 +495,7 @@ class TestTesPerformance:
         summary = print_stats(log_file, all_stats, test_duration_seconds)
 
         service = "gen3-workflow"
-        scenario = f"test_tes_performance[{config['name']}]"
+        scenario = f"tes_performance[{config['name']}]"
         file_name = f"{service}-{scenario}.json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
