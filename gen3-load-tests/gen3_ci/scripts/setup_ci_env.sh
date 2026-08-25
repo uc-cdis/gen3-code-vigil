@@ -30,10 +30,6 @@ mv "$master_values_yaml" "$manifest_values_yaml"
 if [[ "$TEST_SUITE" == "ALL" || "$TEST_SUITE" == "TestTesPerformance" ]]; then
   yq eval ".gen3-workflow.enabled = true" -i "$manifest_values_yaml"
 fi
-echo "=============="
-echo "manifest_values_yaml:"
-cat $manifest_values_yaml
-echo "=============="
 
 ####################################################################################
 # Update images for each service
