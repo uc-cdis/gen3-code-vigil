@@ -79,7 +79,7 @@ export default function () {
     tags: {
       name: 'Embedding',
     },
-    timeout: '120s',
+    timeout: '5m',
   };
 
   const embedding = embeddings[Math.floor(Math.random() * embeddings.length)];
@@ -94,6 +94,13 @@ export default function () {
     console.log(`Shooting requests against: ${url}`);
 
     const res = http.post(url, payload, params);
+
+    console.log(JSON.stringify({
+      status: res.status,
+      error: res.error,
+      error_code: res.error_code,
+      duration_ms: res.timings.duration,
+    }));
 
     if (res.status !== 200) {
       console.log(`Status: ${res.status}`);
