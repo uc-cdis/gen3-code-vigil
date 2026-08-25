@@ -79,6 +79,7 @@ export default function () {
     tags: {
       name: 'Embedding',
     },
+    timeout: '120s',
   };
 
   const embedding = embeddings[Math.floor(Math.random() * embeddings.length)];
