@@ -374,8 +374,12 @@ class TestTesPerformance:
     @pytest.fixture(scope="class", autouse=True)
     def cleanup_after_class(self):
         yield
-        with open(LOG_FILE_NAME, "r") as f:
-            logger.info(f"{LOG_FILE_NAME}:\n{f.read()}")
+        try:
+            with open(LOG_FILE_NAME, "r") as f:
+                logger.info(f"{LOG_FILE_NAME}:\n{f.read()}")
+        except Exception as e:
+            print(f"EXCEPTION in cleanup_after_class: {e}")
+        # logger.info(f"{LOG_FILE_NAME}:\n{log_file.read()}")
 
     async def run_random_failures(
         self, log_file, conc_id: int, config: dict, **kwargs
