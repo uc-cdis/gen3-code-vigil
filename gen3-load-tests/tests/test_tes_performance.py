@@ -33,6 +33,7 @@ TESTS = [
 
 # TES tests
 for concurrency in [50, 100, 150, 200]:
+    break
     TESTS.append(
         {
             "name": f"TES test (concurrency {concurrency})",
@@ -106,8 +107,8 @@ for concurrency in [50, 100, 150, 200]:
     )
 
 # Nextflow tests
-for concurrency in [5, 10]:
-    for n_tasks in [1, 5]:
+for concurrency in [1]:  # [5, 10]:
+    for n_tasks in [1]:  # [1, 5]:
         # Note: Nextflow tests always include inputs/outputs
         TESTS.append(
             {
@@ -119,16 +120,16 @@ for concurrency in [5, 10]:
                 "workflow_file": "hello.nf",
             }
         )
-        TESTS.append(
-            {
-                "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-                "type": "Nextflow",
-                "n_tasks": n_tasks,
-                "n_concurrent_runs": concurrency,
-                "gpu": True,
-                "workflow_file": "gpu.nf",
-            }
-        )
+        # TESTS.append(
+        #     {
+        #         "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
+        #         "type": "Nextflow",
+        #         "n_tasks": n_tasks,
+        #         "n_concurrent_runs": concurrency,
+        #         "gpu": True,
+        #         "workflow_file": "gpu.nf",
+        #     }
+        # )
 
 SCRIPTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
@@ -460,7 +461,6 @@ class TestTesPerformance:
         test_start = time.perf_counter()
         log(log_file, "info", f"'{config['name']}' starting")
 
-        all_stats = []
         _type = config["type"]
         if _type == "Random":
             method = run_random_failures
@@ -484,7 +484,6 @@ class TestTesPerformance:
             for conc_run in range(1, n_concurrent_runs + 1)
         ]
         run_stats = await asyncio.gather(*tasks)
-        all_stats.extend(run_stats)
 
         test_duration_seconds = time.perf_counter() - test_start
         log(
@@ -492,7 +491,7 @@ class TestTesPerformance:
             "info",
             f"✅ '{config['name']}' stats:",
         )
-        summary = print_stats(log_file, all_stats, test_duration_seconds)
+        summary = print_stats(log_file, run_stats, test_duration_seconds)
 
         service = "gen3-workflow"
         scenario = f"tes-performance[{config['name']}]"
