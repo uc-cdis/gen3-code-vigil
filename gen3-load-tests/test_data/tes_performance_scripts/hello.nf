@@ -20,5 +20,5 @@ process HELLO_TASK {
 }
 
 workflow {
-  Channel.from(1..params.n_tasks) | HELLO_TASK
+  Channel.from(1..params.n_tasks.toInteger()) | HELLO_TASK
 }
