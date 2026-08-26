@@ -350,6 +350,7 @@ class TestCentralizedAuth:
             user="main_account",
         ), "Delete should have been possible using main_account"
 
+    @pytest.mark.frontend
     def test_client_with_user_token_can_crud_indexd_records_in_namespace(
         self, page: Page
     ):
@@ -453,6 +454,7 @@ class TestCentralizedAuth:
             abc_update_success == 200
         ), f"abc record was not updated. Status: {abc_delete_success}"
 
+    @pytest.mark.frontend
     def test_client_with_user_token_create_signed_url_records_in_namespace(
         self, page: Page
     ):
@@ -494,6 +496,7 @@ class TestCentralizedAuth:
             signed_url_abc_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.frontend
     def test_client_with_access_with_user_token_in_namespace(self, page: Page):
         """
         Scenario: Client (with access) with user token (WITHOUT access) in namespace
@@ -517,6 +520,7 @@ class TestCentralizedAuth:
             access_token=access_token,
         )
 
+    @pytest.mark.frontend
     def test_client_without_access_with_user_token_in_namespace(self, page: Page):
         """
         Scenario: Client (WITHOUT access) with user token (with access) in namespace
@@ -571,6 +575,7 @@ class TestCentralizedAuth:
             signed_url_abc_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.frontend
     def test_userinfo_endpoint_contains_authorization_information(self, page: Page):
         """
         Scenario: Test that userinfo endpoint contains authorization information (resources)
@@ -594,6 +599,7 @@ class TestCentralizedAuth:
         assert resources_of_user != None, "Resources field is None"
         assert len(resources_of_user) != 0, "Length of resouces field is 0."
 
+    @pytest.mark.frontend
     def test_client_token_without_permission_cannot_create_signed_url(self, page: Page):
         """
         Scenario: Client with user token WITHOUT permission CANNOT create signed URL for record with authz AND logic
@@ -618,6 +624,7 @@ class TestCentralizedAuth:
             access_token=access_token,
         )
 
+    @pytest.mark.frontend
     def test_client_token_with_permission_cannot_create_signed_url(self, page: Page):
         """
         Scenario: Client with user token WITH permission CAN create signed URL for record with authz AND logic
