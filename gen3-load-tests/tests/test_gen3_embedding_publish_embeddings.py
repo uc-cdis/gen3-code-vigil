@@ -131,8 +131,8 @@ class TestGen3EmbeddingPublishEmbeddings:
     @pytest.mark.parametrize(
         "collection_name,number_of_records,dimensions",
         [
-            ("expr", 10000, 256),
-            ("hist", 10000, 1536),
+            ("expr", 50000, 256),
+            ("hist", 50000, 1536),
         ],
     )
     def test_embedding_publish_embedding_gen3sdk(
