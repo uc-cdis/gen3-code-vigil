@@ -48,7 +48,9 @@ def pytest_runtest_logreport(report):
 
     # generate the expected output file name from the test name (`report.nodeid`)
     test_nodeid = report.nodeid
-    start_time = datetime.fromtimestamp(report.start)
+    start_time = datetime.fromisoformat(os.environ["GITHUB_RUN_STARTED_AT"]).replace(
+        "Z", "+00:00"
+    )
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
     if not os.path.exists(output_path):
@@ -60,11 +62,14 @@ def pytest_runtest_logreport(report):
 
     output = json.loads(output_path.read_text())
     metrics = output.get("metrics", {})
+    version = (
+        os.getenv("RELEASE_VERSION") or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
+    )
     message = {
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
         "attempt_num": os.getenv("ATTEMPT_NUM"),
-        "release_version": os.getenv("RELEASE_VERSION"),
+        "release_version": version,
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
