@@ -58,7 +58,7 @@ jobs:
               TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
               RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
             else
-              TEST_SUITE="TestGen3EmbeddingSearchUnKnownCollection"
+              TEST_SUITE="TestGen3EmbeddingSearchKnownCollection"
               RELEASE_VERSION=""
             fi
 
