@@ -54,7 +54,7 @@ def pytest_runtest_logreport(report):
     if not os.path.exists(output_path):
         logger.error(f"{output_path} not found")
         logger.info(
-            f"If there's a mismatch, you may need to update your test name ('{test_nodeid}'). Files in dir: '{LOAD_TESTING_OUTPUT_PATH}': {[str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()]}"
+            f"If there's a mismatch, you may need to update your test name ('{test_nodeid}'). Files in dir '{LOAD_TESTING_OUTPUT_PATH}': {[str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()]}"
         )
         return
 

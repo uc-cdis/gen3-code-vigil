@@ -21,7 +21,7 @@ from utils.misc import percentile
 VERBOSE = True  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
 RUN_TIMEOUT = 1200  # 10 min
-LOG_FILE_NAME = f"output/gen3-workflow-tes_performance-logs-{int(time.time())}.txt"
+LOG_FILE_NAME = f"output/gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
 
 TESTS = [
     # {
@@ -495,7 +495,7 @@ class TestTesPerformance:
         summary = print_stats(log_file, all_stats, test_duration_seconds)
 
         service = "gen3-workflow"
-        scenario = f"tes_performance[{config['name']}]"
+        scenario = f"tes-performance[{config['name']}]"
         file_name = f"{service}-{scenario}.json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:
