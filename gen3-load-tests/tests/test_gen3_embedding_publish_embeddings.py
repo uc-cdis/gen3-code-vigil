@@ -49,7 +49,7 @@ class TestGen3EmbeddingPublishEmbeddings:
         assert (
             response.status_code == 204
         ), f"Expected status to be 204 but got {response.status_code}"
-        iterations = 1
+        iterations = 10
         durations = []
         passes = 0
         fails = 0
