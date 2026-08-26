@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import boto3
 import pytest
@@ -48,9 +48,11 @@ def pytest_runtest_logreport(report):
 
     # generate the expected output file name from the test name (`report.nodeid`)
     test_nodeid = report.nodeid
-    start_time = datetime.fromisoformat(os.environ["GITHUB_RUN_STARTED_AT"]).replace(
-        "Z", "+00:00"
+    # start_time = datetime.fromtimestamp(report.start)
+    start_time = datetime.fromisoformat(
+        os.environ["GITHUB_RUN_STARTED_AT"].replace("Z", "+00:00")
     )
+
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
     if not os.path.exists(output_path):
