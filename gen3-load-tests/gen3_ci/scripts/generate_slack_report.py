@@ -79,7 +79,7 @@ def generate_slack_report():
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result_icons[test_result]} {test_result} run for {os.getenv("RELEASE_VERSION")} on :round_pushpin:*{os.getenv('NAMESPACE')}* (took :stopwatch: *{gh_duration} minutes*)",
+            "text": f"{test_result_icons[test_result]} {test_result} {os.environ['TEST_SUITE']} load test run {f'for {os.environ['RELEASE_VERSION']}' if os.getenv('RELEASE_VERSION') else ''} on :round_pushpin:*{os.getenv('NAMESPACE')}* (took :stopwatch: *{gh_duration} minutes*)",
         },
     }
     slack_report_json["blocks"].append(summary_block)
