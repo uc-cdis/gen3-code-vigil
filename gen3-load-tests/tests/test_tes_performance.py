@@ -179,7 +179,7 @@ def seconds_to_human_format(total_seconds):
     return res
 
 
-def print_stats(log_file, stats_list, total_run_time=None):
+def print_stats(log_file, stats_list, run_time_seconds):
     n_runs = len(stats_list)
     n_successful_runs = 0
     avg_run_time = 0
@@ -200,12 +200,11 @@ def print_stats(log_file, stats_list, total_run_time=None):
     n_failed_runs = n_runs - n_successful_runs
 
     log(log_file, "info", f"Number of runs: {n_runs}")
-    if total_run_time:
-        log(
-            log_file,
-            "info",
-            f"Total run time: {seconds_to_human_format(total_run_time)}",
-        )
+    log(
+        log_file,
+        "info",
+        f"Total run time: {seconds_to_human_format(run_time_seconds)}",
+    )
     log(log_file, "info", f"Successful runs: {n_successful_runs}")
     if n_runs:
         log(log_file, "info", f"Success rate: {n_successful_runs / n_runs * 100:.2f}%")
@@ -254,13 +253,10 @@ def print_stats(log_file, stats_list, total_run_time=None):
                     if (n_successful_runs + n_failed_runs)
                     else 0
                 ),
-                # "rate": (
-                #     round((passes / iterations) * 100, 2) if (passes + fails) else 0
-                # ),
             },
             "iterations": {
-                # "count": iterations,
-                # "rate": round(iterations / test_duration_seconds, 2),
+                "count": n_runs,
+                "rate": round(n_runs / run_time_seconds, 2),
             },
             "http_req_duration": {
                 "min": round(min(all_run_times), 2),
