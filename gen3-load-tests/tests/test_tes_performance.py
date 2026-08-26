@@ -32,7 +32,7 @@ TESTS = [
 ]
 
 # TES tests
-for concurrency in [50, 100, 150, 200]:
+for concurrency in [1000]:  # [50, 100, 150, 200]:
     TESTS.append(
         {
             "name": f"TES test (concurrency {concurrency})",
