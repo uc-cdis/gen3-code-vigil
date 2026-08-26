@@ -40,4 +40,6 @@ def get_results(result, service, load_test_scenario):
         if result:
             logger.info(result.stdout)
             logger.info(result.stderr)
-        raise Exception(f"Pass rate is below threshold of {pytest.pass_threshold}%")
+        raise Exception(
+            f"Pass rate {pass_rate}% is below threshold of {pytest.pass_threshold}%"
+        )
