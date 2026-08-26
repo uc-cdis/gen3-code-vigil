@@ -17,11 +17,13 @@ from botocore.config import Config
 from services.gen3workflow import _get_access_token, cleanup_user_bucket, setup_storage
 from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
+from utils.test_execution import attach_output_file
 
 VERBOSE = True  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
 RUN_TIMEOUT = 1200  # 10 min
-LOG_FILE_NAME = f"output/gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
+LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
+LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
 
 TESTS = [
     # {
@@ -32,7 +34,7 @@ TESTS = [
 ]
 
 # TES tests
-for concurrency in [1000]:  # [50, 100, 150, 200]:
+for concurrency in [100, 200, 500, 1000, 5000]:
     TESTS.append(
         {
             "name": f"TES test (concurrency {concurrency})",
@@ -106,8 +108,8 @@ for concurrency in [1000]:  # [50, 100, 150, 200]:
     )
 
 # Nextflow tests
-for concurrency in [5, 10]:
-    for n_tasks in [1, 5]:
+for concurrency in [5, 10, 20]:
+    for n_tasks in [1, 4]:
         # Note: Nextflow tests always include inputs/outputs
         TESTS.append(
             {
@@ -146,8 +148,8 @@ class RunStats:
 
 @pytest.fixture(scope="session")
 def log_file():
-    logger.info(f"Printing to {LOG_FILE_NAME}")
-    log_file = open(LOG_FILE_NAME, "a")
+    logger.info(f"Printing to {LOG_FILE_PATH}")
+    log_file = open(LOG_FILE_PATH, "a")
     yield log_file
     log_file.close()
 
@@ -444,8 +446,8 @@ class TestTesPerformance:
     @pytest.fixture(scope="class", autouse=True)
     def print_logs_at_end_of_tests(self):
         yield
-        with open(LOG_FILE_NAME, "r") as f:
-            print(f"{LOG_FILE_NAME}:\n{f.read()}")
+        with open(LOG_FILE_PATH, "r") as f:
+            print(f"{LOG_FILE_PATH}:\n{f.read()}")
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -500,3 +502,4 @@ class TestTesPerformance:
             service=service,
             load_test_scenario=scenario,
         )
+        attach_output_file(LOG_FILE_NAME)
