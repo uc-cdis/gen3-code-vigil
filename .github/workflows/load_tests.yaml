@@ -79,7 +79,7 @@ jobs:
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
             echo "GITOPS_BRANCH=$GITOPS_BRANCH" >> $GITHUB_OUTPUT
-            echo "PARAMS=$PARAMS" >>  >> $GITHUB_OUTPUT
+            echo "PARAMS=$PARAMS" >> $GITHUB_OUTPUT
     load_tests:
         runs-on: ubuntu-latest
         needs: setup
@@ -103,7 +103,7 @@ jobs:
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           GITOPS_BRANCH: ${{ needs.setup.outputs.GITOPS_BRANCH }}
-          PARAMS: ${{ steps.setvars.outputs.PARAMS }}
+          PARAMS: ${{ needs.setup.outputs.PARAMS }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           HELM_BRANCH: 'master'
 
