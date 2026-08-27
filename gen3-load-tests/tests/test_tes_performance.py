@@ -1,5 +1,24 @@
 # pylint: disable=missing-function-docstring
 
+"""
+Can be configured with PARAMS (as a JSON string); example:
+{
+    "tes": {
+        "concurrency": [500, 1000],
+        "test_case_simple": true,
+        "test_case_inputs_outputs": true,
+        "test_case_gpu": true
+    },
+    "nextflow": {
+        "concurrency": [5, 10],
+        "n_tasks": [1, 5],
+        "test_case_simple": true,
+        "test_case_gpu": true
+    }
+}
+Configuring the TES or Nextflow `concurrency` to `[]` skips those tests.
+"""
+
 import asyncio
 import json
 import os
@@ -23,7 +42,12 @@ VERBOSE = True  # if false, details are not on stdout but are still in the log f
 INCLUDE_TIMESTAMPS_IN_LOGS = False
 RUN_TIMEOUT = 1200  # 10 min
 LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
+
 LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
+SCRIPTS_DIR = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
+)
+PARAMS = json.loads(os.getenv("PARAMS", {}))
 
 TESTS = [
     # {
@@ -34,107 +58,110 @@ TESTS = [
 ]
 
 # TES tests
-for concurrency in [100, 200, 500, 1000, 5000]:
-    TESTS.append(
-        {
-            "name": f"TES test (concurrency {concurrency})",
-            "type": "TES",
-            "n_concurrent_runs": concurrency,
-            "payload": {
-                "name": f"Hello-World (concurrency {concurrency})",
-                "executors": [
-                    {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
-                        "command": [
-                            "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-                        ],
-                    }
-                ],
-            },
-        }
-    )
-    # Note: the command doesn't actually need a GPU, we only test scheduling on the GPU node
-    TESTS.append(
-        {
-            "name": f"TES GPU test (concurrency {concurrency})",
-            "type": "TES",
-            "n_concurrent_runs": concurrency,
-            "payload": {
-                "name": f"Hello-World (GPU, concurrency {concurrency})",
-                "tags": {"_GPU": "yes"},
-                "executors": [
-                    {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
-                        "command": [
-                            "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
-                        ],
-                    }
-                ],
-            },
-        }
-    )
-    TESTS.append(
-        {
-            "name": f"TES test with inputs-outputs (concurrency {concurrency})",
-            "type": "TES",
-            "n_concurrent_runs": concurrency,
-            "payload": {
-                "name": "Input-Output-Test",
-                "inputs": [
-                    {
-                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/test-file.txt",
-                        "path": "/work/test-file.txt",
-                        "type": "FILE",
-                    }
-                ],
-                "outputs": [
-                    {
-                        "url": f"s3://BUCKET_PLACEHOLDER/outputs/output.txt",
-                        "path": "/work/output.txt",
-                        "type": "FILE",
-                    }
-                ],
-                "executors": [
-                    {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
-                        "workdir": "/work",
-                        "command": [
-                            "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
-                        ],
-                    }
-                ],
-            },
-        }
-    )
+for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
+    if PARAMS.get("tes", {}).get("test_case_simple", True):
+        TESTS.append(
+            {
+                "name": f"TES test (concurrency {concurrency})",
+                "type": "TES",
+                "n_concurrent_runs": concurrency,
+                "payload": {
+                    "name": f"Hello-World (concurrency {concurrency})",
+                    "executors": [
+                        {
+                            "image": "public.ecr.aws/docker/library/alpine:latest",
+                            "command": [
+                                "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+                            ],
+                        }
+                    ],
+                },
+            }
+        )
+    if PARAMS.get("tes", {}).get("test_case_inputs_outputs", True):
+        TESTS.append(
+            {
+                "name": f"TES test with inputs-outputs (concurrency {concurrency})",
+                "type": "TES",
+                "n_concurrent_runs": concurrency,
+                "payload": {
+                    "name": "Input-Output-Test",
+                    "inputs": [
+                        {
+                            "url": f"s3://BUCKET_PLACEHOLDER/inputs/test-file.txt",
+                            "path": "/work/test-file.txt",
+                            "type": "FILE",
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "url": f"s3://BUCKET_PLACEHOLDER/outputs/output.txt",
+                            "path": "/work/output.txt",
+                            "type": "FILE",
+                        }
+                    ],
+                    "executors": [
+                        {
+                            "image": "public.ecr.aws/docker/library/alpine:latest",
+                            "workdir": "/work",
+                            "command": [
+                                "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
+                            ],
+                        }
+                    ],
+                },
+            }
+        )
+    if PARAMS.get("tes", {}).get("test_case_gpu", True):
+        # Note: the command doesn't actually need a GPU, we only test scheduling on the GPU node
+        TESTS.append(
+            {
+                "name": f"TES GPU test (concurrency {concurrency})",
+                "type": "TES",
+                "n_concurrent_runs": concurrency,
+                "payload": {
+                    "name": f"Hello-World (GPU, concurrency {concurrency})",
+                    "tags": {"_GPU": "yes"},
+                    "executors": [
+                        {
+                            "image": "public.ecr.aws/docker/library/alpine:latest",
+                            "command": [
+                                "sleep SLEEP_TIME_PLACEHOLDER && echo hello world!"
+                            ],
+                        }
+                    ],
+                },
+            }
+        )
 
 # Nextflow tests
-for concurrency in [5, 10, 20]:
-    for n_tasks in [1, 4]:
-        # Note: Nextflow tests always include inputs/outputs
-        TESTS.append(
-            {
-                "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
-                "type": "Nextflow",
-                "n_concurrent_runs": concurrency,
-                "n_tasks": n_tasks,
-                "gpu": False,
-                "workflow_file": "hello.nf",
-            }
-        )
-        TESTS.append(
-            {
-                "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-                "type": "Nextflow",
-                "n_tasks": n_tasks,
-                "n_concurrent_runs": concurrency,
-                "gpu": True,
-                "workflow_file": "gpu.nf",
-            }
-        )
+for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
+    for n_tasks in PARAMS.get("nextflow", {}).get("n_tasks", [1, 5]):
+        if PARAMS.get("nextflow", {}).get("test_case_simple", True):
+            # Note: Nextflow tests always include inputs/outputs
+            TESTS.append(
+                {
+                    "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
+                    "type": "Nextflow",
+                    "n_concurrent_runs": concurrency,
+                    "n_tasks": n_tasks,
+                    "gpu": False,
+                    "workflow_file": "hello.nf",
+                }
+            )
+        if PARAMS.get("nextflow", {}).get("test_case_gpu", True):
+            TESTS.append(
+                {
+                    "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
+                    "type": "Nextflow",
+                    "n_tasks": n_tasks,
+                    "n_concurrent_runs": concurrency,
+                    "gpu": True,
+                    "workflow_file": "gpu.nf",
+                }
+            )
 
-SCRIPTS_DIR = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
-)
+logger.info(f"Running test cases: {[t['name'] for t in TESTS]}")
 
 
 @dataclass
