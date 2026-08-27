@@ -57,6 +57,33 @@ TESTS = [
     # },
 ]
 
+# Nextflow tests
+for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
+    for n_tasks in PARAMS.get("nextflow", {}).get("n_tasks", [1, 5]):
+        if PARAMS.get("nextflow", {}).get("test_case_simple", True):
+            # Note: Nextflow tests always include inputs/outputs
+            TESTS.append(
+                {
+                    "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
+                    "type": "Nextflow",
+                    "n_concurrent_runs": concurrency,
+                    "n_tasks": n_tasks,
+                    "gpu": False,
+                    "workflow_file": "hello.nf",
+                }
+            )
+        if PARAMS.get("nextflow", {}).get("test_case_gpu", True):
+            TESTS.append(
+                {
+                    "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
+                    "type": "Nextflow",
+                    "n_tasks": n_tasks,
+                    "n_concurrent_runs": concurrency,
+                    "gpu": True,
+                    "workflow_file": "gpu.nf",
+                }
+            )
+
 # TES tests
 for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
     if PARAMS.get("tes", {}).get("test_case_simple", True):
@@ -133,33 +160,6 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-
-# Nextflow tests
-for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
-    for n_tasks in PARAMS.get("nextflow", {}).get("n_tasks", [1, 5]):
-        if PARAMS.get("nextflow", {}).get("test_case_simple", True):
-            # Note: Nextflow tests always include inputs/outputs
-            TESTS.append(
-                {
-                    "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
-                    "type": "Nextflow",
-                    "n_concurrent_runs": concurrency,
-                    "n_tasks": n_tasks,
-                    "gpu": False,
-                    "workflow_file": "hello.nf",
-                }
-            )
-        if PARAMS.get("nextflow", {}).get("test_case_gpu", True):
-            TESTS.append(
-                {
-                    "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-                    "type": "Nextflow",
-                    "n_tasks": n_tasks,
-                    "n_concurrent_runs": concurrency,
-                    "gpu": True,
-                    "workflow_file": "gpu.nf",
-                }
-            )
 
 logger.info(f"Running test cases: {[t['name'] for t in TESTS]}")
 

@@ -214,7 +214,9 @@ jobs:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: "us-east-1"
-                role-duration-seconds: 7200
+                # Set the duration to 6h to ensure the creds are still valid for the
+                # `upload_allure_report` step. All Github workflows are killed after 6h.
+                role-duration-seconds: 21600
 
           # Create kubeconfig to point at cluster.
           - name: Update kube config
@@ -301,7 +303,7 @@ jobs:
 
           - name: Generate Slack report
             id: generate_slack_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
