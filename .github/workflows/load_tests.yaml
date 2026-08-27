@@ -214,7 +214,7 @@ jobs:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: "us-east-1"
-                role-duration-seconds: 600 # 10 min should be long enough to run the next step
+                role-duration-seconds: 900 # long enough to run the next step
 
           # Create kubeconfig to point at cluster.
           - name: Update kube config
@@ -298,7 +298,7 @@ jobs:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: "us-east-1"
-                role-duration-seconds: 600 # 10 min should be long enough to run the next step
+                role-duration-seconds: 900 # long enough to run the next step
 
           - name: Upload allure report to S3
             id: upload_allure_report
