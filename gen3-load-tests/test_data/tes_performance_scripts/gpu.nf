@@ -30,5 +30,5 @@ process TEST_GPU {
 }
 
 workflow {
-    Channel.from(1..params.n_tasks) | TEST_GPU
+    Channel.from(1..params.n_tasks.toInteger()) | TEST_GPU
 }

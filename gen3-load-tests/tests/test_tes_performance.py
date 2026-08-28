@@ -429,6 +429,9 @@ async def run_nextflow_workflow(
     endpoint: str,
     bucket: str,
 ) -> RunStats:
+    # to run multiple Nextflow workflows at the same time, each must run inside its own directory:
+    # generate a unique ID that will be used to generate a unique workdir and log file
+    unique_nf_run_id = f"{str(abs(hash(config['name'])))[:6]}_{conc_id}"
     cmd = [
         "python",
         os.path.join(SCRIPTS_DIR, "run_nextflow_workflow.py"),
@@ -446,6 +449,7 @@ async def run_nextflow_workflow(
             "ENDPOINT": endpoint,
             "BUCKET": bucket,
             "GPU": "yes" if config["gpu"] else "no",
+            "RUN_ID": unique_nf_run_id,
         },
     )
 
