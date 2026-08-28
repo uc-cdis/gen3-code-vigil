@@ -76,7 +76,7 @@ def generate_slack_report():
     gh_duration = round((datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2)
     # Run summary
     version = (
-        os.getenv("RELEASE_VERSION") or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
+        os.getenv("RELEASE_VERSION") or f"gitops branch '{os.getenv("GITOPS_BRANCH")}'"
     )
     summary_block = {
         "type": "section",

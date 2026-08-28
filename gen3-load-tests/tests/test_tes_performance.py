@@ -38,7 +38,7 @@ from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
 from utils.test_execution import attach_output_file
 
-VERBOSE = True  # if false, details are not on stdout but are still in the log file
+VERBOSE = False  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
 RUN_TIMEOUT = 1200  # 10 min
 LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
@@ -516,6 +516,7 @@ class TestTesPerformance:
             f"✅ '{config['name']}' stats:",
         )
         summary = print_stats(log_file, run_stats, test_duration_seconds)
+        log(log_file, "info", json.dumps(summary, indent=2))
 
         service = "gen3-workflow"
         scenario = f"tes-performance[{config['name']}]"
