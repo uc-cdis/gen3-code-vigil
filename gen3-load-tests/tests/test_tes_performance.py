@@ -524,9 +524,10 @@ class TestTesPerformance:
         with open(output_path, "w") as f:
             json.dump(summary, f, indent=2)
 
+        attach_output_file(LOG_FILE_NAME)
+
         load_test.get_results(
             None,
             service=service,
             load_test_scenario=scenario,
         )
-        attach_output_file(LOG_FILE_NAME)

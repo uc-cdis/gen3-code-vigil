@@ -215,7 +215,7 @@ jobs:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
                 aws-region: "us-east-1"
-                role-duration-seconds: 900 # long enough to run the next step
+                role-duration-seconds: 14400 # 4h, the MaxSessionDuration for `github-action-role`
 
           # Create kubeconfig to point at cluster.
           - name: Update kube config
@@ -289,9 +289,7 @@ jobs:
                 echo "PR_ERROR_MSG=Failed to generate allure report" >> $GITHUB_ENV
               fi
 
-          # Configure AWS credentials again: the previous cred may not be valid long enough.
-          # Increasing their `role-duration-seconds` is not enough since this role has a
-          # MaxSessionDuration.
+          # Configure AWS credentials again: the previous creds may have expired
           - name: Configure AWS Credentials
             if: ${{ env.SKIP_TESTS != 'true' }}
             uses: aws-actions/configure-aws-credentials@v3
