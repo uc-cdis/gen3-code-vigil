@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import sys
 import traceback
 from pathlib import Path
@@ -13,11 +14,15 @@ CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def main(workflow_script, nextflow_config_file, n_tasks):
+    run_id = os.environ["RUN_ID"]
+    print(f"Run ID: {run_id}")
     original_cwd = Path.cwd()
-    workflow_dir_path = Path(CURRENT_DIR).resolve()
+    workflow_files_dir = Path(CURRENT_DIR).resolve()
+    workdir = workflow_files_dir / f".nextflow.{run_id}"
+    workdir.mkdir(parents=True, exist_ok=True)
 
     try:
-        os.chdir(workflow_dir_path)
+        os.chdir(workdir)
         try:
             execution = nextflow.run(
                 workflow_script,
@@ -27,11 +32,11 @@ def main(workflow_script, nextflow_config_file, n_tasks):
         except Exception as e:
             traceback.print_exc()
             raise
-        log_file_content = ""
-        with open(".nextflow.log", "r") as log_file:
-            log_file_content = log_file.read()
         if execution.status != "OK":
             # get TES task details for debugging
+            log_file_content = ""
+            with open(".nextflow.log", "r") as log_file:
+                log_file_content = log_file.read()
             try:
                 parts = log_file_content.split("Created task with ID: ")
                 for part in parts[1:]:
@@ -51,8 +56,14 @@ def main(workflow_script, nextflow_config_file, n_tasks):
                 f"Nextflow workflow execution failed with status: {execution.status} and log:\n{log_file_content}"
             )
     finally:
-        # Change back to the original working directory
+        # Change back to the original workdir, move the log file and delete the temp workdir.
+        # Note: we should be able to configure nextflow to use a different log file, but it makes
+        # the `nextflow.py` lib call hang, so moving it manually instead.
         os.chdir(original_cwd)
+        shutil.move(
+            workdir / ".nextflow.log", workflow_files_dir / f".nextflow.log_{run_id}"
+        )
+        shutil.rmtree(workdir)
 
 
 if __name__ == "__main__":
