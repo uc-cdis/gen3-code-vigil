@@ -9,7 +9,10 @@ from utils.test_execution import screenshot
 
 class WorkspacePage(object):
     def __init__(self):
-        workspace_path = pytest.navigation_urls.get("Workspace", "/workspace")
+        if pytest.frontend_url:
+            workspace_path = pytest.navigation_urls.get("Workspace", "/Workspace")
+        else:
+            workspace_path = pytest.navigation_urls.get("Workspace", "/Workspace")
         self.BASE_URL = f"{pytest.root_url_portal}{workspace_path}"
         # Endpoints
         if pytest.frontend_url:
