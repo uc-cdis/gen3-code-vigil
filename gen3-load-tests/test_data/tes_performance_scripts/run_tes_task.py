@@ -8,11 +8,11 @@ import time
 import requests
 from dateutil import parser
 
-VERBOSE = True
+VERBOSE = False
 
 
-def log(msg):
-    if not VERBOSE:
+def log(level, msg):
+    if level == "debug" and not VERBOSE:
         return
     print(msg)
 
@@ -30,7 +30,7 @@ def create_task(endpoint, body):
 
 
 def monitor_task(endpoint, task_id):
-    max_i = 60  # wait up to 5 min
+    max_i = 120  # wait up to 10 min
     status = None
     data = {}
     for i in range(max_i):
@@ -42,15 +42,15 @@ def monitor_task(endpoint, task_id):
         assert response.status_code == 200, response.text
         data = response.json()
         status = data["state"]
-        log(f"Task status: {status}")
+        log("debug", f"Task status: {status}")
         if status == "COMPLETE":
-            log("Task complete!")
+            log("info", "Task complete!")
             break
         if status in ["SYSTEM_ERROR", "EXECUTOR_ERROR"]:
-            log("Task failed")
+            log("info", "Task failed")
             break
         if i == max_i - 1:
-            log("Task did not complete in time")
+            log("info", "Task did not complete in time")
             break
         time.sleep(5)
     return status, data
