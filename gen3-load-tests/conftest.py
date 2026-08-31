@@ -61,7 +61,7 @@ def pytest_runtest_logreport(report):
     output = json.loads(output_path.read_text())
     metrics = output.get("metrics", {})
     version = (
-        os.getenv("RELEASE_VERSION") or f"gitops branch '{os.getenv("GITOPS_BRANCH")}'"
+        os.getenv("RELEASE_VERSION") or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
     )
     message = {
         "run_date": str(start_time.date()),
