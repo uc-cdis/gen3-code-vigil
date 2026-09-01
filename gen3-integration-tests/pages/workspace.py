@@ -9,16 +9,14 @@ from utils.test_execution import screenshot
 
 class WorkspacePage(object):
     def __init__(self):
-        if pytest.frontend_url:
-            workspace_path = pytest.navigation_urls.get("Workspace", "/Workspace")
-        else:
-            workspace_path = pytest.navigation_urls.get("Workspace", "/Workspace")
-        self.BASE_URL = f"{pytest.root_url_portal}{workspace_path}"
         # Endpoints
         if pytest.frontend_url:
-            self.READY_CUE = "//*[@class='flex grow relative']"  # Workspace Page
+            workspace_path = pytest.navigation_urls.get("Workspace", "/Workspace")
+            self.READY_CUE = (
+                "//*[contains(@class, 'flex grow relative')]"  # Workspace Page
+            )
             self.WORKSPACE_OPTIONS = "//div[contains(concat(' ', normalize-space(@class), ' '), 'mantine-Grid-inner')]"  # Workspace Options
-            self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')]"
+            self.LAUNCH_FIRST_WORKSPACE = "//span[contains(text(),'Launch')] | //p[contains(text(),'Launch Local')]"
             self.TERMINATE_BUTTON = (
                 "//span[contains(text(),'Stop Workspace')]"  # terminate nb button
             )
@@ -26,6 +24,7 @@ class WorkspacePage(object):
                 "//span[contains(text(),'Confirm')]"  # terminate 'confirm' button
             )
         else:
+            workspace_path = pytest.navigation_urls.get("Workspace", "/Workspace")
             self.READY_CUE = "//div[@class='workspace ']"  # Workspace Page
             self.WORKSPACE_OPTIONS = (
                 "//div[@class='workspace__options']"  # Workspace Options
@@ -35,6 +34,7 @@ class WorkspacePage(object):
             )
             self.TERMINATE_BUTTON = "//button[contains(text(),'Terminate Workspace')]"  # terminate nb button
             self.YES_BUTTON = "//span[contains(text(),'Yes')]"  # terminate 'yes' button
+        self.BASE_URL = f"{pytest.root_url_portal}{workspace_path}"
         # Locators
         self.WORKSPACE_IFRAME = 'iframe[title="Workspace"]'  # Workspace iframe
         # Locators inside the workspace iframe
