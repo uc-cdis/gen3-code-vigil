@@ -34,6 +34,8 @@ spec:
                 REGION="${AWS_REGION:-us-east-1}"  # fallback if AWS_REGION not set
 
                 while true; do
+                    echo "Checking SQS for messages..."
+
                     RESPONSE=$(aws sqs receive-message \
                         --queue-url "$QUEUE_URL" \
                         --max-number-of-messages 10 \
@@ -48,10 +50,14 @@ spec:
                     fi
 
                     echo "$MESSAGES" | while read -r message; do
+                        MESSAGE_ID=$(echo "$message" | jq -r '.MessageId')
                         RECEIPT_HANDLE=$(echo "$message" | jq -r '.ReceiptHandle')
                         BODY=$(echo "$message" | jq -r '.Body')
-
-                        echo "Processing message: $BODY"
+                        echo "========================================"
+                        echo "Processing SQS message"
+                        echo "MessageId: $MESSAGE_ID"
+                        echo "Body: $BODY"
+                        echo "========================================"
 
                         RUN_DATE=$(echo "$BODY" | jq -r '.run_date')
                         RUN_NUM=$(echo "$BODY" | jq -r '.run_num')
@@ -80,8 +86,9 @@ spec:
                         BULK_OBJECTS_UNRESOLVED_COUNT=$(echo "$BODY" | jq -r '.bulk_objects_unresolved_count')
                         BULK_OBJECTS_UNRESOLVED_RATE=$(echo "$BODY" | jq -r '.bulk_objects_unresolved_rate')
 
+                        echo "Inserting message $MESSAGE_ID into PostgreSQL..."
 
-                        psql "$METRICS_DB_DSN" <<EOF
+                        if psql "$METRICS_DB_DSN" <<EOF
                 INSERT INTO load_test_metrics_data (
                     run_date,
                     run_num,
@@ -136,17 +143,36 @@ spec:
                     $BULK_OBJECTS_RESOLVED_RATE,
                     $BULK_OBJECTS_UNRESOLVED_COUNT,
                     $BULK_OBJECTS_UNRESOLVED_RATE
-                );
+                )
+                ON CONFLICT (
+                    run_date,
+                    run_num,
+                    attempt_num,
+                    release_version,
+                    test_suite,
+                    test_case
+                )
+                DO NOTHING;
                 EOF
+                        then
+                            echo "PostgreSQL processing succeeded for message $MESSAGE_ID"
+                            echo "Deleting SQS message $MESSAGE_ID..."
 
+                            if aws sqs delete-message \
+                                --queue-url "$QUEUE_URL" \
+                                --receipt-handle "$RECEIPT_HANDLE" \
+                                --region "$REGION"; then
 
-                        aws sqs delete-message \
-                            --queue-url "$QUEUE_URL" \
-                            --receipt-handle "$RECEIPT_HANDLE" \
-                            --region "$REGION"
-
-                        echo "Message processed and deleted."
+                                echo "Message $MESSAGE_ID processed and deleted successfully."
+                            else
+                                echo "ERROR: Failed to delete SQS message $MESSAGE_ID."
+                                echo "The message may become visible again and be retried."
+                            fi
+                        else
+                            echo "ERROR: PostgreSQL processing failed for message $MESSAGE_ID."
+                            echo "SQS message will NOT be deleted."
+                            echo "The message will be retried after the visibility timeout."
+                        fi
                     done
                 done
-
                 echo "Finished processing all messages."
