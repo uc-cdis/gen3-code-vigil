@@ -99,6 +99,9 @@ def pytest_runtest_logreport(report):
             "https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-sqs"
         )
         response = sqs.send_message(QueueUrl=queue_url, MessageBody=json.dumps(message))
+        logger.info(f"[SQS] nodeid={report.nodeid}")
+        logger.info(f"worker={os.environ.get('PYTEST_XDIST_WORKER', 'master')}")
+        logger.info(f"pid={os.getpid()}")
         logger.info(f"[SQS MESSAGE SENT] MessageId: {response['MessageId']}")
     except Exception as e:
         logger.error(f"[SQS SEND ERROR] {e}")
