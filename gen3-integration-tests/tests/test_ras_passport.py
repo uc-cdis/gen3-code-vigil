@@ -50,6 +50,7 @@ indexd_files = {
 @pytest.mark.fence
 @pytest.mark.ras
 @pytest.mark.requires_fence_client
+@pytest.mark.skip(reason="RAS login is broken")
 class TestRasPassport:
     @classmethod
     def setup_class(cls):
