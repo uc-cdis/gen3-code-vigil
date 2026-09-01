@@ -33,6 +33,8 @@ spec:
                 QUEUE_URL="https://sqs.us-east-1.amazonaws.com/707767160287/load-test-metrics-sqs"
                 REGION="${AWS_REGION:-us-east-1}"  # fallback if AWS_REGION not set
 
+                JOB_FAILED=false
+
                 while true; do
                     echo "Checking SQS for messages..."
 
@@ -171,8 +173,13 @@ spec:
                         else
                             echo "ERROR: PostgreSQL processing failed for message $MESSAGE_ID."
                             echo "SQS message will NOT be deleted."
-                            echo "The message will be retried after the visibility timeout."
+                            JOB_FAILED=true
                         fi
                     done
                 done
+
+                if [ "$JOB_FAILED" = true ]; then
+                    echo "ERROR: One or more messages failed."
+                    exit 1
+                fi
                 echo "Finished processing all messages."
