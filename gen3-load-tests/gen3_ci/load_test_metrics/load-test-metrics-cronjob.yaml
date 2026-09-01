@@ -42,6 +42,7 @@ spec:
                         --queue-url "$QUEUE_URL" \
                         --max-number-of-messages 10 \
                         --wait-time-seconds 10 \
+                        --visibility-timeout 300 \
                         --region "$REGION")
 
                     MESSAGES=$(echo "$RESPONSE" | jq -c '.Messages[]?')
