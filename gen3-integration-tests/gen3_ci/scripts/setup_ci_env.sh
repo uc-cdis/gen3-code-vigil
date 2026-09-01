@@ -471,6 +471,8 @@ common_param_updates=(
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
   ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".jeg.workspaceNamespace|jupyter-pods-${namespace}"
+  ".jeg.workspaceNamespace.env.EG_NAMESPACE|jupyter-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
