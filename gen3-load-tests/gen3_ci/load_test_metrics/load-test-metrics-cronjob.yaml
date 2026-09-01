@@ -183,3 +183,4 @@ spec:
                     exit 1
                 fi
                 echo "Finished processing all messages."
+                exit 0
