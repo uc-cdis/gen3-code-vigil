@@ -42,7 +42,6 @@ spec:
                         --queue-url "$QUEUE_URL" \
                         --max-number-of-messages 10 \
                         --wait-time-seconds 10 \
-                        --visibility-timeout 300 \
                         --region "$REGION")
 
                     MESSAGES=$(echo "$RESPONSE" | jq -c '.Messages[]?')
@@ -52,10 +51,11 @@ spec:
                         break
                     fi
 
-                    echo "$MESSAGES" | while read -r message; do
+                    while read -r message; do
                         MESSAGE_ID=$(echo "$message" | jq -r '.MessageId')
                         RECEIPT_HANDLE=$(echo "$message" | jq -r '.ReceiptHandle')
                         BODY=$(echo "$message" | jq -r '.Body')
+
                         echo "========================================"
                         echo "Processing SQS message"
                         echo "MessageId: $MESSAGE_ID"
@@ -91,7 +91,7 @@ spec:
 
                         echo "Inserting message $MESSAGE_ID into PostgreSQL..."
 
-                        if psql "$METRICS_DB_DSN" <<EOF
+                        PSQL_OUTPUT=$(psql -v ON_ERROR_STOP=1 "$METRICS_DB_DSN" <<EOF 2>&1
                 INSERT INTO load_test_metrics_data (
                     run_date,
                     run_num,
@@ -157,8 +157,14 @@ spec:
                 )
                 DO NOTHING;
                 EOF
-                        then
+                        )
+
+                        PSQL_EXIT_CODE=$?
+
+                        if [ $PSQL_EXIT_CODE -eq 0 ]; then
                             echo "PostgreSQL processing succeeded for message $MESSAGE_ID"
+                            echo "PostgreSQL output: $PSQL_OUTPUT"
+
                             echo "Deleting SQS message $MESSAGE_ID..."
 
                             if aws sqs delete-message \
@@ -173,15 +179,23 @@ spec:
                             fi
                         else
                             echo "ERROR: PostgreSQL processing failed for message $MESSAGE_ID."
+                            echo "PostgreSQL exit code: $PSQL_EXIT_CODE"
+                            echo "========================================"
+                            echo "PostgreSQL error:"
+                            echo "$PSQL_OUTPUT"
+                            echo "========================================"
                             echo "SQS message will NOT be deleted."
+
                             JOB_FAILED=true
                         fi
-                    done
+
+                    done < <(echo "$MESSAGES")
                 done
 
                 if [ "$JOB_FAILED" = true ]; then
                     echo "ERROR: One or more messages failed."
                     exit 1
                 fi
+
                 echo "Finished processing all messages."
                 exit 0
