@@ -56,7 +56,7 @@ def pytest_runtest_logreport(report):
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
         "attempt_num": os.getenv("ATTEMPT_NUM"),
-        "release_version": "gitops branch 'copy_brh_stg+2-6_replicas'",  # os.getenv("RELEASE_VERSION"),
+        "release_version": os.getenv("RELEASE_VERSION"),
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
