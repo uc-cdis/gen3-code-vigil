@@ -50,6 +50,9 @@ def pytest_runtest_logreport(report):
     start_time = datetime.fromtimestamp(report.start)
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
+    if not os.path.exists(output_path):
+        logger.info(f"{output_path} not found")
+        return
     output = json.loads(output_path.read_text())
     metrics = output.get("metrics", {})
     message = {
