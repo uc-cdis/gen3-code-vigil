@@ -83,6 +83,7 @@ class TestPresignedURL:
         cls.variables["created_indexd_dids"] = []
         logger.info("Creating Indexd Records")
         # Adding indexd files used to test signed urls
+
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
