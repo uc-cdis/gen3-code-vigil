@@ -7,6 +7,7 @@ Can be configured with PARAMS (as a JSON string); example:
         "concurrency": [500, 1000],
         "test_case_simple": true,
         "test_case_inputs_outputs": true,
+        "test_case_10mb_s3_upload": true,
         "test_case_gpu": true
     },
     "nextflow": {
@@ -133,6 +134,33 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                             "workdir": "/work",
                             "command": [
                                 "sleep SLEEP_TIME_PLACEHOLDER && cat test-file.txt && echo hello > output.txt"
+                            ],
+                        }
+                    ],
+                },
+            }
+        )
+    if PARAMS.get("tes", {}).get("test_case_10mb_s3_upload", True):
+        TESTS.append(
+            {
+                "name": f"TES test with 10MB S3 upload (concurrency {concurrency})",
+                "type": "TES",
+                "n_concurrent_runs": concurrency,
+                "payload": {
+                    "name": "TES-S3-Upload-Test-10MB",
+                    "outputs": [
+                        {
+                            "url": f"s3://BUCKET_PLACEHOLDER/outputs/output-10mb.bin",
+                            "path": "/work/output-10mb.bin",
+                            "type": "FILE",
+                        }
+                    ],
+                    "executors": [
+                        {
+                            "image": "public.ecr.aws/docker/library/alpine:latest",
+                            "workdir": "/work",
+                            "command": [
+                                "dd if=/dev/urandom of=/work/output.bin bs=1M count=10"
                             ],
                         }
                     ],
