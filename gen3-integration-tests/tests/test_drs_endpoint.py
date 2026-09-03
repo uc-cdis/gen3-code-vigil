@@ -298,9 +298,9 @@ class TestDrsMetadata:
 
         buckets = buckets_resp.json()
         expected_region = None
-        for bucket_name, info in buckets.items():
-            if "cdis-presigned-url-test" in bucket_name:
-                expected_region = info.get("region")
+        for bucket_type, info in buckets.items():
+            if "cdis-presigned-url-test" in info:
+                expected_region = info.get("cdis-presigned-url-test").get("region")
                 break
         if not expected_region:
             pytest.skip("cdis-presigned-url-test bucket not in Fence bucket config")
@@ -633,7 +633,6 @@ class TestDrsBulkEndpoints:
             fake_id in unresolved_ids
         ), f"Expected '{fake_id}' in unresolved object IDs, got {unresolved_ids}"
 
-    @pytest.mark.skip(reason="BDC-1286 fix needed for this test")
     def test_bulk_drs_objects_request_too_large(self):
         """
         Scenario: Verify 413 when bulk request exceeds maxBulkRequestLength
@@ -737,7 +736,6 @@ class TestDrsBulkEndpoints:
             "None" in open_types
         ), f"Expected 'None' for open-access record, got {open_types}"
 
-    @pytest.mark.skip(reason="BDC-1286 fix needed for this test")
     def test_bulk_authorizations_request_too_large(self):
         """
         Scenario: Verify 413 when bulk OPTIONS exceeds maxBulkRequestLength
