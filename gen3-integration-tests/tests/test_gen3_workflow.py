@@ -70,8 +70,8 @@ def _nextflow_parse_completed_line(log_line):
         "workDir": "-",
         "workDirProtocol": "-",
         "exit_code": "-",
-        "status": "-",
         "timestamp": "-",
+        "status": "-",
     }
     log_regex = (
         r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
