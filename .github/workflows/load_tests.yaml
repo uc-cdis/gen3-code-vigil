@@ -106,7 +106,7 @@ jobs:
           GITOPS_BRANCH: ${{ needs.setup.outputs.GITOPS_BRANCH }}
           PARAMS: ${{ needs.setup.outputs.PARAMS }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          HELM_BRANCH: 'master'
+          HELM_BRANCH: 'hotfix/boolean_force_authz_check'
 
 
         steps:
