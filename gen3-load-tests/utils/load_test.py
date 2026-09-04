@@ -17,7 +17,7 @@ def run_load_test(env_vars):
         ["k6", "run", js_script_path, f"--summary-export={output_path}"],
         capture_output=True,
         text=True,
-        env={**env_vars, **dict(os.environ)},
+        env={**dict(os.environ), **env_vars},
     )
     logger.info(result.stdout)
     logger.info(result.stderr)
