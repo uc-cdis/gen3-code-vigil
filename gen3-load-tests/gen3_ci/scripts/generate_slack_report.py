@@ -75,11 +75,14 @@ def generate_slack_report():
     start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
     gh_duration = round((datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2)
     # Run summary
+    version = (
+        os.getenv("RELEASE_VERSION") or f"gitops branch '{os.getenv("GITOPS_BRANCH")}'"
+    )
     summary_block = {
         "type": "section",
         "text": {
             "type": "mrkdwn",
-            "text": f"{test_result_icons[test_result]} {test_result} run for {os.getenv("RELEASE_VERSION")} on :round_pushpin:*{os.getenv('NAMESPACE')}* (took :stopwatch: *{gh_duration} minutes*)",
+            "text": f"{test_result_icons[test_result]} {test_result} *{os.environ['TEST_SUITE']}* load test run for *{version}* (CI run #{os.getenv("RUN_NUM")}) on :round_pushpin:*{os.getenv('NAMESPACE')}* (took :stopwatch: *{gh_duration} minutes*)",
         },
     }
     slack_report_json["blocks"].append(summary_block)
@@ -100,9 +103,7 @@ def generate_slack_report():
         )
 
     slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
-    # DEBUG LOGS
-    print(slack_report_json)
-
+    logger.debug(f"Generated Slack report: {slack_report_json}")
     json.dump(slack_report_json, open("slack_report.json", "w"))
 
 
