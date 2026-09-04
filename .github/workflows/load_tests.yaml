@@ -72,9 +72,9 @@ jobs:
               TEST_SUITE="TestTesPerformance"
               RELEASE_VERSION=""
               # TODO revert GITOPS_BRANCH to master
-              GITOPS_BRANCH="master" #copy_brh_stg+2-6_replicas
+              GITOPS_BRANCH="master" #test/gen3wf-load-test-memory_spike #copy_brh_stg+2-6_replicas
               # TODO revert PARAMS to "{}"
-              PARAMS='{"tes": {"concurrency": [500, 1000], "test_case_simple": false, "test_case_inputs_outputs": true, "test_case_gpu": false}, "nextflow": {"concurrency": [], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": false}}'
+              PARAMS='{"tes": {"concurrency": [500, 1000], "test_case_simple": false, "test_case_inputs_outputs": true,"test_case_8mb_s3_upload": true, "test_case_gpu": false}, "nextflow": {"concurrency": [10], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": false}}'
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
