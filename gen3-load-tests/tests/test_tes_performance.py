@@ -7,7 +7,7 @@ Can be configured with PARAMS (as a JSON string); example:
         "concurrency": [500, 1000],
         "test_case_simple": true,
         "test_case_inputs_outputs": true,
-        "test_case_10mb_s3_upload": true,
+        "test_case_8mb_s3_upload": true,
         "test_case_gpu": true
     },
     "nextflow": {
