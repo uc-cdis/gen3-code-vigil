@@ -151,7 +151,7 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                     "outputs": [
                         {
                             "url": f"s3://BUCKET_PLACEHOLDER/outputs/output-8mb.bin",
-                            "path": "/work/output-8mb.bin",
+                            "path": "/work/output.bin",
                             "type": "FILE",
                         }
                     ],
