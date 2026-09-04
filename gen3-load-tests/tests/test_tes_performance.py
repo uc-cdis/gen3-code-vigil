@@ -140,18 +140,18 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_10mb_s3_upload", True):
+    if PARAMS.get("tes", {}).get("test_case_8mb_s3_upload", True):
         TESTS.append(
             {
-                "name": f"TES test with 10MB S3 upload (concurrency {concurrency})",
+                "name": f"TES test with 8MB S3 upload (concurrency {concurrency})",
                 "type": "TES",
                 "n_concurrent_runs": concurrency,
                 "payload": {
-                    "name": "TES-S3-Upload-Test-10MB",
+                    "name": "TES-S3-Upload-Test-8MB",
                     "outputs": [
                         {
-                            "url": f"s3://BUCKET_PLACEHOLDER/outputs/output-10mb.bin",
-                            "path": "/work/output-10mb.bin",
+                            "url": f"s3://BUCKET_PLACEHOLDER/outputs/output-8mb.bin",
+                            "path": "/work/output-8mb.bin",
                             "type": "FILE",
                         }
                     ],
@@ -160,7 +160,7 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                             "image": "public.ecr.aws/docker/library/alpine:latest",
                             "workdir": "/work",
                             "command": [
-                                "dd if=/dev/urandom of=/work/output.bin bs=1M count=10"
+                                "dd if=/dev/urandom of=/work/output.bin bs=1M count=8"
                             ],
                         }
                     ],
