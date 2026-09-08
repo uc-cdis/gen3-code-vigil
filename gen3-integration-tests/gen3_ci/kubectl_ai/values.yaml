@@ -17,6 +17,10 @@ service:
   type: ClusterIP
   port: 80
 
+openaiInfo:
+  openaiEndpoint: "http://conduit-server.conduit.svc.cluster.local:8080/a/k8s-agent/v1"
+  key: "dummy"
+
 # Service account for accessing S3 bedrock access
 serviceAccount:
   name: s3-bedrock-access

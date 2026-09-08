@@ -22,7 +22,7 @@ spec:
           ports:
             - containerPort: 80
           env:
-            - name: OLLAMA_KEEP_ALIVE
-              value: "-1"
-            - name: KUBECTL_AI_TIMEOUT
-              value: "300"
+            - name: OPENAI_ENDPOINT
+              value: {{ .Values.openaiInfo.openaiEndpoint | quote }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.openaiInfo.key | quote }}
