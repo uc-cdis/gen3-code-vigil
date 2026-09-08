@@ -8,6 +8,7 @@ RUN dnf install -y --allowerasing \
     findutils \
     zstd \
     tar \
+    unzip \
     gzip
 
 # Create kubectl directory
