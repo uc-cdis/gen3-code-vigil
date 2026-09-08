@@ -50,7 +50,7 @@ def _get_access_token(user: str = "main_account", endpoint_from_token_mock=None)
     try:
         return auth.get_access_token()
     except Exception:
-        logger.info("Failed to get access token with Gen3Auth")
+        logger.info(f"Failed to get access token with Gen3Auth for '{user}'")
         raise
 
 

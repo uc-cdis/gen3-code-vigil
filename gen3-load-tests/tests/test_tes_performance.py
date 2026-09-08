@@ -40,7 +40,7 @@ from utils.test_execution import attach_output_file
 
 VERBOSE = False  # if false, details are not on stdout but are still in the log file
 INCLUDE_TIMESTAMPS_IN_LOGS = False
-RUN_TIMEOUT = 1200  # 10 min
+RUN_TIMEOUT = 1200  # 10 min # TODO why do TES runs take 20 min, 30 min, 1h? works for Nextflow runs
 LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
 
 LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
