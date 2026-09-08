@@ -23,15 +23,5 @@ openaiInfo:
 
 # Service account for accessing S3 bedrock access
 serviceAccount:
-  name: aws-cli-access
-  iamRoleArn: arn:aws:iam::707767160287:role/devplanetv2-qabot
-
-secretStoreServiceAccount:
-  # -- (bool) Set true if deploying to AWS and want to use service account and IAM role.
-  enabled: true
-  # -- (string) Name of the service account to create
-  name: secret-store-sa
-  # -- (string) AWS Role ARN for Secret Store to use
-  roleArn: arn:aws:iam::707767160287:role/devplanetv2-external-secrets-sa
-externalSecrets:
-  secretName: devplanetv2-kubectl-ai-g3auto #pragma: allowlist secret
+  name: s3-bedrock-access
+  iamRoleArn: arn:aws:iam::707767160287:role/github-action-role
