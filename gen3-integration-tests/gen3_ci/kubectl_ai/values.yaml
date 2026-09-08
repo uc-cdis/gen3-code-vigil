@@ -24,4 +24,4 @@ openaiInfo:
 # Service account for accessing S3 bedrock access
 serviceAccount:
   name: aws-cli-access
-  iamRoleArn: arn:aws:iam::707767160287:role/github-action-role
+  iamRoleArn: arn:aws:iam::707767160287:role/devplanetv2-qabot
