@@ -2,11 +2,20 @@
 GUPPY SERVICE
 """
 
+import json
 import os
 
 import pytest
+from gen3.auth import Gen3Auth
+from gen3.query import Gen3Query
+import utils.gen3_admin_tasks as gat
 from services.guppy import Guppy
-from utils import logger
+from utils import TEST_DATA_PATH_OBJECT, logger
+
+skip_on_old_guppy = pytest.mark.skipif(
+    gat.service_version_greater_than("guppy", "2026.06", "0.22.0"),
+    reason="Current guppy version doesn't have support for extended ES filter for this test",
+)
 
 
 @pytest.mark.skipif(
@@ -168,4 +177,114 @@ class TestGuppyService:
             "main_account",
             200,
             endpoint="/download",
+        )
+
+    def test_gen3_query_raw_data_download(self):
+        """
+        Scenario: Download raw data using Gen3Query from gen3sdk
+
+        Steps:
+            1. Call raw_data_download() to download the data
+            2. Verify the number of records returned is 100 (Subject index has 100 records)
+        """
+        auth = Gen3Auth(
+            refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
+        )
+        gen3query = Gen3Query(auth_provider=auth)
+        response = gen3query.raw_data_download(
+            data_type="subject",
+            fields=[
+                "file_id",
+                "project_id",
+                "submitter_id",
+            ],
+        )
+        assert len(response) == 100, f"Expected 100 records but got {len(response)}"
+
+    def test_gen3_query_graphql_query(self):
+        """
+        Scenario: Perform graphql query using Gen3Query from gen3sdk
+
+        Steps:
+            1. Call graphql_query() to perform graphql query
+            2.
+        """
+        guppy = Guppy()
+        auth = Gen3Auth(
+            refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
+        )
+        gen3query = Gen3Query(auth_provider=auth)
+
+        query_file = json.loads(
+            (TEST_DATA_PATH_OBJECT / "guppy" / "test_query1.json").read_text(
+                encoding="UTF-8"
+            )
+        )
+        response_file = (
+            TEST_DATA_PATH_OBJECT / "guppy" / "test_response1.json"
+        ).read_text(encoding="UTF-8")
+        response = gen3query.graphql_query(
+            query_string=query_file["query"],
+            variables=query_file["variables"],
+        )
+        actualResponse = response["data"]["subject"]
+        expectedResponse = eval(response_file)["data"]["subject"]
+        assert guppy.match_data_query(actualResponse, expectedResponse)
+
+    @skip_on_old_guppy
+    def test_guppy_test_query_9(self):
+        """
+        Scenario:
+        Verify CONTAINS_ANY behaves like IN operator.
+
+        Steps:
+            1. Call API guppy/graphql using Query in test_query9.json
+            2. Validate API response against data in test_response9.json
+        """
+        guppy = Guppy()
+        queryFile = "test_query9.json"
+        responseFile = "test_response9.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+    @skip_on_old_guppy
+    def test_guppy_test_query_10(self):
+        """
+        Scenario:
+        Verify EXCLUDES_ANY removes records with matching values.
+        """
+        guppy = Guppy()
+        queryFile = "test_query10.json"
+        responseFile = "test_response10.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
+        )
+
+    @skip_on_old_guppy
+    def test_guppy_test_query_11(self):
+        """
+        Scenario:
+        Verify filter operators are case insensitive.
+        """
+        guppy = Guppy()
+        queryFile = "test_query11.json"
+        responseFile = "test_response11.json"
+        queryType = "data"
+        assert guppy.validate_guppy_query(
+            queryFile,
+            responseFile,
+            queryType,
+            "main_account",
+            200,
         )

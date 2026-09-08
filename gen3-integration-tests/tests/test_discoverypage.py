@@ -67,10 +67,8 @@ class TestDiscoveryPage(object):
         logger.info(
             "Tearing down - delete indexd record and study metadata, and terminate workspace"
         )
-        indexd = Indexd()
         mds = MetadataService()
-        indexd.delete_records([cls.variables["did"]])
-        mds.delete_metadata(cls.variables["study_id"])
+        mds.delete_metadata_object(cls.variables["did"])
 
     def test_study_publish_search_export(self, page_setup):
         """
@@ -133,6 +131,7 @@ class TestDiscoveryPage(object):
                 "commons_url": pytest.hostname,
             }
         )
+        logger.info(f"Study json: {study_json}")
         mds.create_metadata(self.variables["study_id"], study_json)
 
         # Re-sync aggregate mds

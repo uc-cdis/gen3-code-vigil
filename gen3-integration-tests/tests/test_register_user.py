@@ -5,15 +5,13 @@ Register User
 import os
 
 import pytest
-from cdislogging import get_logger
 from pages.exploration import ExplorationPage
 from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import gen3_admin_tasks as gat
+from utils import logger
 from utils.test_execution import screenshot
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 @pytest.mark.skipif(

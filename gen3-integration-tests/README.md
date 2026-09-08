@@ -23,6 +23,12 @@ The integration tests look for API keys in this location. Make sure you created 
 
 #### Create `.env` file
 Switch to `gen3-integration-tests` directory and create a `.env` file. The code is designed to fetch environment variables set in this file.
+The following are some environment variables to set:
+```
+HOSTNAME=<your namespace>.planx-pla.net
+NAMESPACE=<namespace>
+HOSTNAME_PROTOCOL=https/http
+```
 
 #### Create output and install dependencies
 *The output directory is used to store the markdown report that is also generated along with the allure report.*

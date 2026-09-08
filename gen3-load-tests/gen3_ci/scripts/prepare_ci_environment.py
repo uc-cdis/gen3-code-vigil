@@ -17,11 +17,11 @@ def setup_env_for_helm(arguments):
         [file_path] + arguments, capture_output=True, text=True, timeout=1200
     )
     if result.returncode == 0:
-        logger.info("Script executed successfully. Output:")
+        logger.info("Script executed successfully. Logs:")
         logger.info(result.stdout)
         return "SUCCESS"
     else:
-        logger.info("Script execution failed. Error:")
+        logger.info("Script execution failed. Logs:")
         logger.info(result.stderr)
         logger.info(result.stdout)
         return "failure"
@@ -34,11 +34,11 @@ def modify_env_for_test_repo_pr(namespace):
     Run usersync
     """
     perf_default_manifest = (
-        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/perf/values"
     )
     arguments = [
         os.getenv("NAMESPACE"),
-        "master",
+        os.getenv("HELM_BRANCH"),
         perf_default_manifest,
     ]
     return setup_env_for_helm(arguments)
@@ -59,7 +59,9 @@ def generate_api_keys_for_test_users(namespace):
         return "SUCCESS"
     else:
         logger.info(result.stdout)
-        raise Exception(f"Got error: {result.stderr}")
+        raise Exception(
+            f"[generate_api_keys_for_test_users] Got error: {result.stderr}"
+        )
 
 
 def prepare_ci_environment(namespace):

@@ -159,6 +159,7 @@ class TestAuditService:
         )
 
     @pytest.mark.indexd
+    @pytest.mark.gen3sdk
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,
         reason="indexd is not running on this environment",
@@ -294,6 +295,7 @@ class TestAuditService:
         "nightly-build" not in pytest.hostname,
         reason="Test is being run on Helm and would run only on nightly-build",
     )
+    @pytest.mark.skip(reason="RAS login is broken")
     def test_audit_ras_login_events(self, page: Page):
         """
         Scenario: Perform login using RAS and validate audit entry
@@ -340,6 +342,7 @@ class TestAuditService:
         "nightly-build" not in pytest.hostname,
         reason="Test is being run on Helm and would run only on nightly-build",
     )
+    @pytest.mark.skip(reason="RAS login is broken")
     def test_audit_oidc_fence_client_login_events(self, page: Page):
         """
         Scenario: Perform login in via the OIDC flow (IDP RAS)

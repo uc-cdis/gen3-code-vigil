@@ -39,7 +39,7 @@ class Dicom(object):
         response = auth.curl(path=url)
         assert (
             response.status_code == 200
-        ), f"Expected status 200 but got {response.status_code}"
+        ), f"Expected status 200 but got {response.status_code}: {response.text}"
         return response.json()
 
     def get_dicom_file(self, dicom_file_id, user="main_account", expected_status=200):
@@ -48,4 +48,4 @@ class Dicom(object):
         response = auth.curl(path=url)
         assert (
             response.status_code == expected_status
-        ), f"Expected status {expected_status} but got {response.status_code}"
+        ), f"Expected status {expected_status} but got {response.status_code}: {response.text}"

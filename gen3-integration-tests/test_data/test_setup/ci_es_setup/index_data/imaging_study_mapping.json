@@ -384,6 +384,30 @@
                     }
                 }
             },
+            "race_ethnicity":{
+                "type":"keyword",
+                "fields":{
+                    "analyzed":{
+                        "type":"text"
+                    }
+                }
+            },
+            "race_ethnicity_detail":{
+                "type":"keyword",
+                "fields":{
+                    "analyzed":{
+                        "type":"text"
+                    }
+                }
+            },
+            "race_ethnicity_write_in":{
+                "type":"keyword",
+                "fields":{
+                    "analyzed":{
+                        "type":"text"
+                    }
+                }
+            },
             "sex":{
                 "type":"keyword",
                 "fields":{

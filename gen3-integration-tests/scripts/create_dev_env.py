@@ -12,11 +12,11 @@ def setup_env_for_helm(arguments):
         [file_path] + arguments, capture_output=True, text=True, timeout=1200
     )
     if result.returncode == 0:
-        logger.info("Script executed successfully. Output:")
+        logger.info("Script executed successfully. Logs:")
         logger.info(result.stdout)
         return "SUCCESS"
     else:
-        logger.info("Script execution failed. Error:")
+        logger.info("Script execution failed. Logs:")
         logger.info(result.stderr)
         logger.info(result.stdout)
         return "FAILURE"

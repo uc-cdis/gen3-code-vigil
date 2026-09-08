@@ -87,14 +87,14 @@ def retry(times, delay, exceptions):
         def newfn(*args, **kwargs):
             attempt = 1
             while attempt <= times:
-                time.sleep(delay)
                 try:
                     return func(*args, **kwargs)
                 except exceptions:
                     print(
-                        f"Errored when trying to run {func}, attempt {attempt} of {times}"
+                        f"Errored when trying to run '{func.__name__}', attempt {attempt} of {times}"
                     )
                     attempt += 1
+                time.sleep(delay)
             return func(*args, **kwargs)
 
         return newfn
