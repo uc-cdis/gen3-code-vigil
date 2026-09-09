@@ -13,7 +13,8 @@ from utils import logger
 )
 @pytest.mark.skipif(
     gat.validate_button_in_portal_config(
-        gat.get_portal_config(json_file_name="explorer"), search_button="export-to-pfb"
+        gat.get_portal_config(json_file_name="explorer"),
+        search_button_or_title="export-to-pfb",
     ),
     reason="ETL Validation is performed in the PFB Export test",
 )

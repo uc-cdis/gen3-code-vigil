@@ -34,11 +34,11 @@ def modify_env_for_test_repo_pr(namespace):
     Run usersync
     """
     perf_default_manifest = (
-        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/perf/values"
     )
     arguments = [
         os.getenv("NAMESPACE"),
-        "master",
+        os.getenv("HELM_BRANCH"),
         perf_default_manifest,
     ]
     return setup_env_for_helm(arguments)

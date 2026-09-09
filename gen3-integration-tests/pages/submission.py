@@ -3,12 +3,10 @@ import os
 import time
 
 import pytest
-from cdislogging import get_logger
 from playwright.sync_api import Page, expect
+from utils import logger
 from utils.misc import retry
 from utils.test_execution import screenshot
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
 
 
 # Not in Use

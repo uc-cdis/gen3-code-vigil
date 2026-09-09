@@ -1,9 +1,9 @@
 #!/bin/bash
 # Make sure to run the below command on a seperate window for the curl commands to work
-# kubectl port-forward service/gen3-elasticsearch-master 9200:9200
+# kubectl port-forward service/elasticsearch 9200:9200
 namespace=$1
 
-kubectl port-forward service/gen3-elasticsearch-master 9200:9200 -n ${namespace} &
+kubectl port-forward service/elasticsearch 9200:9200 -n ${namespace} &
 port_forward_pid=$!
 sleep 10  # Give port-forward some time to start
 

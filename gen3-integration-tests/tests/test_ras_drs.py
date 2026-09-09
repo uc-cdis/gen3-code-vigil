@@ -7,13 +7,11 @@ import time
 
 import pytest
 import requests
-from cdislogging import get_logger
 from playwright.sync_api import Page
 from services.fence import Fence
 from services.indexd import Indexd
 from services.ras import RAS
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 indexd_files = {
     "Permission_test_user_should_have": {
@@ -75,11 +73,6 @@ class TestRasDrs:
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
-
-    @classmethod
-    def teardown_class(cls):
-        # Deleting indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     # TODO: Need to finish test case, once passports can be retrieved for RAS
     @pytest.mark.wip("RAS Passport creation is broken")

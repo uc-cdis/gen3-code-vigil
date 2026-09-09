@@ -115,7 +115,7 @@ def modify_env_for_service_pr(namespace, service, tag):
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
-        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/{os.getenv("CI_ENV")}/values"
+        f"{os.getenv('GH_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
     )
     helm_service_names = {
         "audit-service": "audit",
@@ -178,7 +178,7 @@ def modify_env_for_test_repo_pr(namespace):
     return setup_env_for_helm(arguments)
 
 
-@retry(times=6, delay=30, exceptions=(Exception))
+@retry(times=10, delay=30, exceptions=(Exception))
 def generate_api_keys_for_test_users():
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),

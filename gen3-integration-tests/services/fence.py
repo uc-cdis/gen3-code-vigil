@@ -1,9 +1,13 @@
 import base64
+import io
 import json
+import re
+from contextlib import redirect_stdout
 
 import pytest
 import requests
 from gen3.auth import Gen3Auth, Gen3AuthError
+from gen3.file import Gen3File
 from pages.login import LoginPage
 from pages.user_register import UserRegister
 from playwright.sync_api import Page
@@ -44,16 +48,26 @@ class Fence(object):
         ),
     )
     def create_signed_url(
-        self, id, user, expected_status, params=[], access_token=None
+        self, id, user, expected_status, protocol=None, access_token=None
     ):
         """Creates a signed url for the requested id"""
         API_GET_FILE = self.DATA_DOWNLOAD_ENDPOINT
         url = API_GET_FILE + "/" + str(id)
-        if len(params) > 0:
-            url = url + "?" + "&".join(params)
+        if protocol:
+            url = f"{url}?protocol={protocol}"
         if user:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-            response = auth.curl(path=url)
+            auth = Gen3Auth(
+                refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
+            )
+            gen3file = Gen3File(auth_provider=auth)
+            stdout_buffer = io.StringIO()
+            try:
+                with redirect_stdout(stdout_buffer):
+                    response = gen3file.get_presigned_url(id, protocol)
+                return response
+            except Exception as e:
+                response = stdout_buffer.getvalue()
+                status_code = int(re.search(r"\b\d{3}\b", str(e)).group())
         elif access_token:
             response = requests.get(
                 self.BASE_URL + url,
@@ -62,13 +76,58 @@ class Fence(object):
                     "Authorization": f"bearer {access_token}",
                 },
             )
+            status_code = response.status_code
+            response = response.content.decode()
         else:
             # Perform GET requests without authorization code
             response = requests.get(self.BASE_URL + url, auth={})
+            status_code = response.status_code
+            response = response.content.decode()
+        logger.info(f"Status code: {status_code} - {response}")
+        assert (
+            expected_status == status_code
+        ), f"Expected response {expected_status}, but got {status_code}"
+        if status_code == 200:
+            return json.loads(response)
+        return response
+
+    @retry(times=3, delay=20, exceptions=(AssertionError, Gen3AuthError))
+    def create_bulk_signed_urls(
+        self, guids, user=None, expected_status=200, access_token=None
+    ):
+        """Creates presigned urls for multiple GUIDs"""
+        url = f"{self.DATA_DOWNLOAD_ENDPOINT}/bulk"
+
+        payload = {"guids": guids}
+
+        if user:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+                auth=auth,
+            )
+        elif access_token:
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"bearer {access_token}",
+                },
+            )
+        else:
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+            )
+
         logger.info("Status code : " + str(response.status_code))
+
         assert (
             expected_status == response.status_code
         ), f"Expected response {expected_status}, but got {response.status_code}"
+
         if response.status_code == 200:
             return response.json()
         return response
@@ -111,9 +170,9 @@ class Fence(object):
 
     def delete_file(self, guid: str, user: str) -> int:
         """Deletes the file based on guid"""
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        url = f"{self.BASE_URL}{self.DATA_ENDPOINT}/{guid}"
-        response = requests.delete(url=url, auth=auth)
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        gen3file = Gen3File(auth_provider=auth)
+        response = gen3file.delete_file_locations(guid)
         return response.status_code
 
     def get_user_info(
@@ -337,6 +396,7 @@ class Fence(object):
 
     @retry(times=10, delay=30, exceptions=(AssertionError))
     def wait_upload_file_updated_from_indexd_listener(self, indexd, file_node):
+        logger.info(f"Waiting for uploaded file '{file_node.did}' to be updated")
         response = indexd.get_record(file_node.did)
         indexd.file_equals(res=response, file_record=file_node)
         return response

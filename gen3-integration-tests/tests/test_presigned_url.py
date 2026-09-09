@@ -5,12 +5,10 @@ PRESIGNED URL
 import os
 
 import pytest
-from cdislogging import get_logger
+import utils.gen3_admin_tasks as gat
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
-
+from utils import logger
 
 indexd_files = {
     "allowed": {
@@ -18,6 +16,21 @@ indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
+        "size": 9,
+    },
+    "allowed2": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "size": 9,
+    },
+    "allowed_authz": {
+        "file_name": "test_valid",
+        "urls": ["s3://cdis-presigned-url-test/testdata"],
+        "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
+        "acl": ["jenkins"],
+        "authz": ["/programs/jnkns/projects/jenkins"],
         "size": 9,
     },
     "not_allowed": {
@@ -74,11 +87,6 @@ class TestPresignedURL:
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
-    @classmethod
-    def teardown_class(cls):
-        logger.info("Deleting Indexd Records")
-        cls.indexd.delete_records(guids=cls.variables["created_indexd_dids"])
-
     def get_indexd_record(cls, filename):
         for record in cls.indexd_records:
             if (
@@ -120,9 +128,9 @@ class TestPresignedURL:
             id=indexd_record["did"], user="main_account", expected_status=401
         )
         msg = "You don&#39;t have access permission on this file"
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_with_invalid_protocol(self):
@@ -138,12 +146,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=400,
-            params=["protocol=s2"],
+            protocol="s2",
         )
         msg = "The specified protocol s2 is not supported"
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_with_protocol_not_available(self):
@@ -159,12 +167,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s2"],
+            protocol="s2",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s2."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_with_protocol_not_exist_for_file(self):
@@ -180,12 +188,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s3"],
+            protocol="s3",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_no_data(self):
@@ -201,12 +209,12 @@ class TestPresignedURL:
             id=indexd_record["did"],
             user="main_account",
             expected_status=404,
-            params=["protocol=s3"],
+            protocol="s3",
         )
         msg = f"File {indexd_record['did']} does not have a location with specified protocol s3."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
 
     def test_get_presigned_url_no_requested_protocol_no_data(self):
@@ -222,7 +230,68 @@ class TestPresignedURL:
             id=indexd_record["did"], user="main_account", expected_status=404
         )
         msg = "Can&#39;t find any file locations."
-        if msg not in signed_url_res.content.decode():
+        if msg not in signed_url_res:
             logger.error(f"{msg} not found")
-            logger.error(signed_url_res.content.decode())
+            logger.error(signed_url_res)
             raise
+
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
+    def test_get_bulk_presigned_urls(self):
+        """
+        Scenario: Get bulk presigned-urls
+        Steps:
+            1. Use multiple indexd records created in setup
+            2. Request bulk signed urls
+            3. Validate urls are returned for each GUID
+            4. Validate file contents match expected values
+        """
+        allowed_record = indexd_files["allowed"]
+        allowed_record2 = indexd_files["allowed2"]
+        not_allowed_record = indexd_files["not_allowed"]
+        allowed_authz_record = indexd_files["allowed_authz"]
+
+        guids = [
+            allowed_record["did"],
+            allowed_record2["did"],
+            allowed_authz_record["did"],
+            not_allowed_record["did"],
+        ]
+
+        res = self.fence.create_bulk_signed_urls(
+            guids=guids,
+            user="main_account",
+            expected_status=200,
+        )
+
+        assert "urls" in res, f"'urls' missing in response: {res}"
+        assert "failed_guids" in res, f"'failed_guids' missing in response: {res}"
+
+        dids = []
+        signed_url_res = None
+        for drs_obj in res.get("urls"):
+            dids.append(drs_obj["drs_object_id"])
+            if drs_obj["drs_object_id"] == allowed_record["did"]:
+                signed_url_res = {"url": drs_obj["url"]}
+        # Validate success case
+        assert allowed_record["did"] in dids, "Allowed GUID missing from urls"
+        assert allowed_record2["did"] in dids, "Allowed GUID missing from urls"
+        assert (
+            allowed_authz_record["did"] in dids
+        ), "Allowed with authz GUID missing from urls"
+
+        self.fence.check_file_equals(
+            signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
+        )
+
+        failed_ids = []
+        for failure in res.get("failed_guids"):
+            for id in failure.get("object_ids", []):
+                failed_ids.append(id)
+
+        # Validate failure case
+        assert (
+            not_allowed_record["did"] in failed_ids
+        ), "Unauthorized GUID should be in failed_guids"

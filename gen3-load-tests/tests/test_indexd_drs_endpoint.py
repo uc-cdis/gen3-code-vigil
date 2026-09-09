@@ -34,7 +34,7 @@ class TestIndexdDrsEndpoint:
         if len(index_records) == 0:
             record_data = {
                 "acl": ["phs000178"],
-                "authz": ["/programs/phs000178"],
+                "authz": ["/programs/phs000178.c1"],
                 "file_name": "load_test_file",
                 "hashes": {"md5": "e5c9a0d417f65226f564f438120381c5"},
                 "size": 129,
