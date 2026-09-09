@@ -12,7 +12,7 @@ spec:
       labels:
         app: kubectl-ai
     spec:
-      serviceAccountName: kubectl-access-kubectl-ai
+      serviceAccountName: kubectl-access-kubectl-ai-{{ .Release.Namespace }}
       containers:
         - name: kubectl-ai
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
