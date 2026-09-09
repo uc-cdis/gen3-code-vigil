@@ -287,7 +287,9 @@ def analyze_failed_tests() -> str:
 
 
 def run_test_failure_analysis():
+    logger.info(os.getenv("PR_ERROR_MSG"))
     if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment.":
+        logger.inf("Running Kubectl-ai")
         try:
             setup_helm_chart(service="kubectl-ai")
             response = analyze_env_setup_failure_using_kubectl_ai()
