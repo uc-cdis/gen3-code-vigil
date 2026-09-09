@@ -7,7 +7,8 @@ RUN dnf install -y --allowerasing \
     curl \
     findutils \
     zstd \
-    tar
+    tar \
+    gzip
 
 # Create model directory
 WORKDIR /models
@@ -21,6 +22,7 @@ RUN bash -c "\
     sleep 5 && \
     ollama pull gemma4:e4b \
 "
+
 
 # List ollama model
 RUN bash -c "\

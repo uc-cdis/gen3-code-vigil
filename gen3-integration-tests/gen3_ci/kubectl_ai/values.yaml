@@ -1,0 +1,27 @@
+image:
+  repository: quay.io/cdis/kubectl_ai
+  tag: chore_add_kubectl_ai
+  pullPolicy: Always
+
+pdb: true
+
+resources:
+  requests:
+    cpu: 2
+    memory: "2Gi"
+  limits:
+    cpu: 4
+    memory: "4Gi"
+
+service:
+  type: ClusterIP
+  port: 80
+
+openaiInfo:
+  openaiEndpoint: "http://conduit-server.conduit.svc.cluster.local:8080/a/k8s-agent/v1"
+  key: "dummy"
+
+# Service account for accessing S3 bedrock access
+serviceAccount:
+  name: s3-bedrock-access
+  iamRoleArn: arn:aws:iam::707767160287:role/github-action-role

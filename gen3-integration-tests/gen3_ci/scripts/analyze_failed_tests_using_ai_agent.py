@@ -8,17 +8,18 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from utils import logger
+
+# from utils import logger
 
 load_dotenv()
 
 
-def setup_ollama_helm_chart():
+def setup_helm_chart(service):
     cmd = [
         "helm",
         "install",
-        "ollama",
-        "gen3_ci/ollama",
+        service,
+        f"gen3_ci/{service.replace("-", "_")}",
         "-n",
         os.getenv("NAMESPACE"),
     ]
@@ -31,7 +32,7 @@ def setup_ollama_helm_chart():
     )
     if not helm_install_result.returncode == 0:
         raise Exception(
-            f"Unable to install ollama. Error: {helm_install_result.stderr.strip()}"
+            f"Unable to install {service}. Error: {helm_install_result.stderr.strip()}"
         )
 
     cmd = [
@@ -40,21 +41,21 @@ def setup_ollama_helm_chart():
         "--for=condition=ready",
         "pod",
         "-l",
-        "app=ollama",
+        f"app={service}",
         "--timeout=10m",
         "-n",
         os.getenv("NAMESPACE"),
     ]
 
-    ollama_pod_ready_result = subprocess.run(
+    service_pod_ready_result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
     )
-    if not ollama_pod_ready_result.returncode == 0:
+    if not service_pod_ready_result.returncode == 0:
         raise Exception(
-            f"Ollama pod hasn't started yet. Error: {ollama_pod_ready_result.stderr.strip()}"
+            f"{service} pod hasn't started yet. Error: {service_pod_ready_result.stderr.strip()}"
         )
 
 
@@ -69,11 +70,11 @@ def wait_for_port(host="localhost", port=11434, timeout=60):
     raise TimeoutError("Port-forward did not become ready")
 
 
-def setup_port_forwarding():
+def setup_port_forwarding(service):
     cmd = [
         "kubectl",
         "port-forward",
-        "svc/ollama",
+        f"svc/{service}",
         "11434:11434",
         "-n",
         os.getenv("NAMESPACE"),
@@ -88,11 +89,11 @@ def setup_port_forwarding():
     return process
 
 
-def uninstall_ollama_helm_chart():
+def uninstall_helm_chart(service):
     cmd = [
         "helm",
         "uninstall",
-        "ollama",
+        service,
         "-n",
         os.getenv("NAMESPACE"),
     ]
@@ -105,22 +106,92 @@ def uninstall_ollama_helm_chart():
     )
     if not helm_install_result.returncode == 0:
         raise Exception(
-            f"Unable to uninstall ollama. Error: {helm_install_result.stderr.strip()}"
+            f"Unable to uninstall {service}. Error: {helm_install_result.stderr.strip()}"
         )
 
 
 def validate_ollama_model():
     response = requests.get("http://localhost:11434/api/tags")
-    logger.info(response.json())
+    print(response.json())
     return response.json()
+
+
+def analyze_env_setup_failure_using_kubectl_ai() -> str:
+    cmd = [
+        "kubectl",
+        "-n",
+        os.getenv("NAMESPACE"),
+        "get",
+        "pods",
+        "-l",
+        "app=kubectl-ai",
+    ]
+    kubeclt_ai_pod_result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not kubeclt_ai_pod_result.returncode == 0:
+        raise Exception(
+            f"Failed to get kubectl-ai pod. Error: {kubeclt_ai_pod_result.stderr.strip()}"
+        )
+    kubectl_ai_pod_name = kubeclt_ai_pod_result.stdout.splitlines()[-1].split()[0]
+    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary.txt."'
+    kubectl_ai_cmd = [
+        "kubectl",
+        "-n",
+        os.getenv("NAMESPACE"),
+        "exec",
+        kubectl_ai_pod_name,
+        "--",
+        "kubectl-ai",
+        "--llm-provider=openai",
+        "--model=Qwen/Qwen3.8-27B-FP8",
+        "--skip-permissions",
+        "--quiet",
+        kubectl_prompt,
+    ]
+    kubectl_ai_result = subprocess.run(
+        kubectl_ai_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not kubectl_ai_result.returncode == 0:
+        raise Exception(
+            f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
+        )
+    report_cmd = [
+        "kubectl",
+        "-n",
+        os.getenv("NAMESPACE"),
+        "exec",
+        kubectl_ai_pod_name,
+        "--",
+        "cat",
+        "/tmp/summary.txt",
+    ]
+    report_result = subprocess.run(
+        report_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not report_result.returncode == 0:
+        raise Exception(f"report command failed. Error: {report_result.stderr.strip()}")
+    return report_result.stdout.strip()
 
 
 def analyze_env_setup_failure() -> str:
     """Check env setup failure and analyze the error"""
-    logger.info("Checking logs/gh_action_logs.txt")
+    print("Checking logs/gh_action_logs.txt")
     log_file_path = "logs/gh_action_logs.txt"
     if not os.path.exists(log_file_path):
-        logger.info(f"{log_file_path} path doesn't exists")
+        print(f"{log_file_path} path doesn't exists")
         return None
     with open(log_file_path, "r") as f:
         logfile_content = f.read().split("Upload reports to S3", 1)[0]
@@ -149,13 +220,16 @@ def analyze_env_setup_failure() -> str:
         {"role": "system", "content": debug_prompt},
         {"role": "user", "content": "analyse the errors from this logfile"},
     ]
-    payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
+    payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 200:
-        logger.info(f"API call failed. Response: {response.text}")
-    return response.content
+        print(f"API call failed. Response: {response.text}")
+    response = response.content
+    data = json.loads(response.decode("utf-8"))
+    reasoning = data["choices"][0]["message"].get("content")
+    return reasoning
 
 
 def analyze_failed_tests() -> str:
@@ -168,7 +242,7 @@ def analyze_failed_tests() -> str:
         report_dir = None
 
     if report_dir:
-        logger.info(f"Looking into {report_dir} folder")
+        print(f"Looking into {report_dir} folder")
         failed_tests = {"failed_tests": []}
 
         for case_file in report_dir.glob("*.json"):
@@ -205,27 +279,39 @@ def analyze_failed_tests() -> str:
             {"role": "system", "content": debug_prompt},
             {"role": "user", "content": "analyse the failed tests"},
         ]
-        payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
+        payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
         headers = {"Content-Type": "application/json"}
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code != 200:
-            logger.info(f"API call failed. Response: {response.text}")
+            print(f"API call failed. Response: {response.text}")
         return response.content
-    logger.info("No allure report folder found")
+    print("No allure report folder found")
     return analyze_env_setup_failure()
 
 
 def run_test_failure_analysis():
-    if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
-        response = analyze_env_setup_failure()
-    else:
-        response = analyze_failed_tests()
+    if "Failed to Prepare CI environment" in os.getenv("PR_ERROR_MSG"):
+        try:
+            setup_helm_chart(service="kubectl-ai")
+            response = analyze_env_setup_failure_using_kubectl_ai()
+        except Exception as e:
+            print(f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}")
+        # finally:
+        #     uninstall_helm_chart(service="kubectl-ai")
+    # else:
+    #     try:
+    #         setup_helm_chart(service="ollama")
+    #         process = setup_port_forwarding(service="ollama")
+    #         assert "gemma4:e4b" in str(validate_ollama_model())
+    #         response = analyze_failed_tests()
+    #     except Exception as e:
+    #         print(f"Failed to run analyze_failed_tests: {e}")
+    #     finally:
+    #         uninstall_helm_chart(service="ollama")
     if response is None:
         return "No logs found to analyze"
-    data = json.loads(response.decode("utf-8"))
-    reasoning = data["choices"][0]["message"].get("content")
-    return reasoning
+    return response, process
 
 
 def generate_slack_report():
@@ -248,7 +334,7 @@ def generate_slack_report():
         }
         slack_report_json["blocks"].append(failure_analysis_block)
     else:
-        logger.info("No failure_analysis.txt file found")
+        print("No failure_analysis.txt file found")
         return
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
@@ -261,17 +347,13 @@ def generate_slack_report():
 if __name__ == "__main__":
     process = None
     try:
-        setup_ollama_helm_chart()
-        process = setup_port_forwarding()
-        assert "gemma4:e4b" in str(validate_ollama_model())
-        response = run_test_failure_analysis()
+        response, process = run_test_failure_analysis()
         with open("logs/failure_analysis.txt", "w") as f:
             f.write(response)
         generate_slack_report()
     except Exception as e:
-        logger.info(f"Failed to run inference: {e}")
+        print(f"Failed to run inference: {e}")
     finally:
         if process and process.poll() is None:
             process.terminate()
             process.wait()
-    uninstall_ollama_helm_chart()

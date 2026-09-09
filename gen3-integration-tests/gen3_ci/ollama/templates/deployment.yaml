@@ -12,6 +12,7 @@ spec:
       labels:
         app: ollama
     spec:
+      serviceAccountName: kubectl-access-ollama
       containers:
         - name: ollama
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -25,3 +26,7 @@ spec:
               value: "debug"
             - name: OLLAMA_HOST
               value: "0.0.0.0:11434"
+            - name: OLLAMA_KEEP_ALIVE
+              value: "-1"
+            - name: KUBECTL_AI_TIMEOUT
+              value: "300"

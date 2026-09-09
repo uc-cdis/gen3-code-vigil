@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubectl-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kubectl-ai
+  template:
+    metadata:
+      labels:
+        app: kubectl-ai
+    spec:
+      serviceAccountName: kubectl-access-kubectl-ai-{{ .Release.Namespace }}
+      containers:
+        - name: kubectl-ai
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          ports:
+            - containerPort: 80
+          env:
+            - name: OPENAI_ENDPOINT
+              value: {{ .Values.openaiInfo.openaiEndpoint | quote }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.openaiInfo.key | quote }}
