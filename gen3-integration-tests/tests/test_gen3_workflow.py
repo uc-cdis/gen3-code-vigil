@@ -19,7 +19,6 @@ As of this writing, the last issue was #87. Any newer issues may require additio
 
 import json
 import os
-import re
 import shutil
 import subprocess
 import tempfile
@@ -28,84 +27,9 @@ import time
 import jwt
 import pytest
 from boto3.s3.transfer import TransferConfig
-from dateutil import parser
-from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
+from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig, nextflow_parse_completed_line, nextflow_parse_completed_tasks
 from services.requestor import Requestor
 from utils import logger
-
-
-def _nextflow_parse_completed_line(log_line):
-    """
-    Parses a line from the nextflow log that indicates a completed task.
-    Extracts: task name, work directory (and protocol), exit code, and status.
-
-    :param str log_line: A line from the Nextflow log file.
-    :return: Dictionary with extracted task information.
-    :rtype: dict
-
-    Example log line:
-    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
-    Example return value:
-    {
-        "process_name": "extract_metadata (1)",
-        "workDir": "bucket-name/work-dir",
-        "workDirProtocol": "s3",
-        "exit_code": "0",
-        "status": "COMPLETED"
-    }
-    """
-
-    task_info = {
-        "process_name": "-",
-        "workDir": "-",
-        "workDirProtocol": "-",
-        "exit_code": "-",
-        "status": "-",
-        "timestamp": "-",
-    }
-    log_regex = (
-        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
-        r"Task completed > TaskHandler\[.*?"
-        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
-        r"exit: (?P<exit_code>-?\d+); "
-        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
-    )
-
-    match = re.match(log_regex, log_line)
-
-    if match:
-        task_info["process_name"] = match.group("name")
-        task_info["workDir"] = match.group("workDir")
-        task_info["workDirProtocol"] = match.group("workDirProtocol")
-        task_info["exit_code"] = match.group("exit_code")
-        task_info["status"] = match.group("status") or "-"
-        task_info["timestamp"] = match.group("timestamp")
-
-        if task_info["workDirProtocol"]:
-            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
-
-    return task_info
-
-
-def _nextflow_parse_completed_tasks(completed_tasks):
-    """
-    Input: list of completed tasks, as produced by `_nextflow_parse_completed_line`.
-    Output: dictionary of completed task name to the task's latest run, since tasks may be
-    retried in case of failure.
-    """
-    res = {}
-    for task in completed_tasks:
-        if task["process_name"] not in res:
-            res[task["process_name"]] = task
-            continue
-        new_timestamp = parser.parse(task["timestamp"])
-        stored_timestamp = parser.parse(res[task["process_name"]]["timestamp"])
-        logger.info(
-            f"'{task['process_name']}' ran more than once. Keeping the latest run. Timestamps: {stored_timestamp} and {new_timestamp}"
-        )
-        if new_timestamp > stored_timestamp:
-            res[task["process_name"]] = task
-    return res
 
 
 @pytest.mark.skipif(
@@ -1219,11 +1143,10 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 "command": "python3 /utils/dicom_to_png.py img-ID_PLACEHOLDER.dcm\nmkdir outputs\ncp *.png outputs/",
             },
         }
-        workflow_dir = "test_data/gen3_workflow/"
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
-            workflow_dir=workflow_dir,
+            workflow_dir="test_data/gen3_workflow/",
             workflow_script="main.nf",
-            nextflow_config_file="nextflow.config",
+            nextflow_config_file=["nextflow.config"],
             s3_working_directory=self.s3_storage_config.working_directory,
         )
         logger.info(f"Workflow log:")
@@ -1231,9 +1154,9 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         for line in workflow_log.splitlines():
             logger.info(line)
             if "Task completed > TaskHandler" in line:
-                completed_tasks.append(_nextflow_parse_completed_line(line))
+                completed_tasks.append(nextflow_parse_completed_line(line))
 
-        for task_name, task in _nextflow_parse_completed_tasks(completed_tasks).items():
+        for task_name, task in nextflow_parse_completed_tasks(completed_tasks).items():
             task_category = task_name.split(" ")[0]
             assert (
                 task_category in expected_task_outputs
@@ -1449,7 +1372,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
             workflow_dir=directory,
             workflow_script="main.nf",
-            nextflow_config_file="nextflow.config",
+            nextflow_config_file=["nextflow.config"],
             s3_working_directory=self.s3_storage_config.working_directory,
             params=params,
         )
@@ -1461,7 +1384,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         for line in workflow_log.splitlines():
             logger.info(line)
             if "Task completed > TaskHandler" in line:
-                completed_tasks.append(_nextflow_parse_completed_line(line))
+                completed_tasks.append(nextflow_parse_completed_line(line))
             if "Error is ignored" in line:
                 try:
                     # Example line: Jan-29 18:12:33.445 [TaskFinalizer-6] INFO  nextflow.processor.
@@ -1478,7 +1401,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         logger.info("Completed tasks:")
         logger.info(json.dumps(completed_tasks, indent=2))
 
-        for task_name, task in _nextflow_parse_completed_tasks(completed_tasks).items():
+        for task_name, task in nextflow_parse_completed_tasks(completed_tasks).items():
             assert (
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"

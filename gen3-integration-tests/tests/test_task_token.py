@@ -5,24 +5,32 @@ requires:
 - MAX_TASK_TOKEN_TTL: {"WORKFLOW": 4000}
 - ALLOWED_TASK_TOKEN_TYPES: ["WORKFLOW", "FOO"]
 - main_account access to create task tokens up to 4000 (or less?)
+- enabling and configuring dpop in fence and gen3-workflow
 
 JA4 enforcement
 - use SDK proxy
   - with `gen3 run`
   - with `curl`
 - change the JA4 (how?)
-- check that the TES server rejects the token
+  - then check that the TES server rejects the token
 """
 
 import time
 
+# import gen3
+from gen3.auth import Gen3Auth
+from gen3.dpop import dpop_proxy_context, resolve_service_endpoints
 import jwt
 import pytest
 import requests
+import tempfile
+
 from services.fence import Fence
-from services.gen3workflow import Gen3Workflow, mock_auth_endpoint
+from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig, nextflow_parse_completed_line, nextflow_parse_completed_tasks
+from utils import logger
 
 
+# TODO rename or comment: non-dpop
 def get_task_token(
     type="WORKFLOW", user="main_account", expires_in=3600, expected_status_code=200
 ):
@@ -33,15 +41,17 @@ def get_task_token(
         return res.json()["access_token"]
 
 
-import gen3
-from gen3.dpop import dpop_proxy_context
-
-
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.fence
 class TestTaskToken(object):
     @classmethod
     def setup_class(cls):
         cls.fence = Fence()
         cls.gen3_workflow = Gen3Workflow()
+        cls.s3_storage_config = WorkflowStorageConfig.from_dict(cls.gen3_workflow.setup_storage())
 
     def test_obtain_task_token(self):
         """
@@ -93,8 +103,7 @@ class TestTaskToken(object):
         assert "token audience validation failed" in res.text
 
         # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint outside of Fence
-        # TODO uncomment once go-authutils is updated in arborist
-        # TODO maybe nvm? https://cdis.slack.com/archives/C02SH3UB2T0/p1785954635381709?thread_ts=1785953406.385109&cid=C02SH3UB2T0
+        # TODO something else than arborist
         # url = f"{pytest.root_url}/authz/mapping"
         # res = requests.get(url, headers={"Authorization": f"bearer {workflow_task_token}"})
         # assert res.status_code == 401, res.text
@@ -121,6 +130,10 @@ class TestTaskToken(object):
         )
         assert res.status_code == 200, res.text
 
+        # TODO succeed using a WORKFLOW task token on an Arborist endpoint, since Arborist should
+        # accept all tokens for authz verification purposes
+        # See https://cdis.slack.com/archives/C02SH3UB2T0/p1785954635381709?thread_ts=1785953406.385109&cid=C02SH3UB2T0
+
     def test_denylist_task_token(self):
         """
         TODO
@@ -140,22 +153,101 @@ class TestTaskToken(object):
         res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
         assert res.status_code == 403, res.text
 
-    def test_dpop_proxy(self, mock_auth_endpoint):
+    # TODO rename tests to say "tes" and/or "nextflow"
+    @pytest.mark.skipif(
+        "funnel" not in pytest.deployed_services,
+        reason="funnel service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "gen3-workflow" not in pytest.deployed_services,
+        reason="gen3-workflow service is not running on this environment",
+    )
+    @pytest.mark.gen3_workflow
+    def test_dpop_proxy(self): #, mock_auth_endpoint):
         """
         TODO
         """
         # from gen3.auth import Gen3Auth
-        # auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url)
-        auth = self.gen3_workflow._get_auth_module()
+        auth = Gen3Auth(refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url)
+        # auth = self.gen3_workflow._get_auth_module()
         # print('auth.endpoint', auth.endpoint)
-        print(
-            "endpoint_from_token",
-            gen3.auth.endpoint_from_token(pytest.api_keys["main_account"]["api_key"]),
-        )  # should be localhost.....
+        # print(
+        #     "endpoint_from_token",
+        #     gen3.auth.endpoint_from_token(pytest.api_keys["main_account"]["api_key"]),
+        # )  # should be localhost.....
 
-        with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
-            task_token,
-            proxy_port,
-        ):
-            # Anything sent to 127.0.0.1:{proxy_port} is signed and forwarded.
-            print("task_token", task_token)
+        # resolved_tes_endpoint, resolved_s3_endpoint = resolve_service_endpoints(auth)
+        with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (task_token, proxy_port):
+            config_overrides = f"""process.container = 'public.ecr.aws/docker/library/alpine:latest'
+tes.endpoint = 'http://127.0.0.1:{proxy_port}/ga4gh/tes'
+tes.oauthToken = '{task_token}'
+aws.accessKey = '{task_token}'
+aws.client.endpoint = 'http://127.0.0.1:{proxy_port}/s3'"""
+            with tempfile.NamedTemporaryFile(delete=True) as config_file:
+                config_file.write(config_overrides.encode())
+                config_file.flush()
+                workflow_log = self.gen3_workflow.run_nextflow_workflow(
+                    workflow_dir="test_data/gen3_workflow/",
+                    workflow_script="hello",
+                    nextflow_config_files=["nextflow.config", config_file.name],
+                    s3_working_directory=self.s3_storage_config.working_directory,
+                    params={"gpu": "true", "run": "TEST_GPU"},
+                )
+            logger.info(f"Workflow log:")
+            completed_tasks = []
+            for line in workflow_log.splitlines():
+                logger.info(line)
+                if "Task completed > TaskHandler" in line:
+                    completed_tasks.append(nextflow_parse_completed_line(line))
+
+            for task_name, task in nextflow_parse_completed_tasks(completed_tasks).items():
+                print(task_name)
+
+
+
+            # env = os.environ.copy()
+            # env["GEN3_DPOP_BOUND_TASK_TOKEN"] = task_token
+            # env["GEN3_DPOP_PROXY_PORT"] = str(proxy_port)
+
+            # with contextlib.ExitStack() as stack:
+            #     args = list(nf_args)
+            #     if generate_config:
+            #         # The config outlives nothing: the directory goes away with the run.
+            #         directory = stack.enter_context(tempfile.TemporaryDirectory())
+            #         config_path = _write_proxy_config(
+            #             directory=directory,
+            #             proxy_port=proxy_port,
+            #             tes_endpoint=resolved_tes_endpoint,
+            #             s3_endpoint=resolved_s3_endpoint,
+            #         )
+            #         args += ["-c", config_path]
+            #         logger.info(f"Generated Nextflow config: {config_path}")
+
+            #     logger.info("*** Starting Nextflow run... ***")
+            #     try:
+            #         result = subprocess.run(
+            #             ["nextflow", "run"] + args, env=env, check=False
+            #         )
+            #     except FileNotFoundError:
+            #         logger.error(
+            #             "Could not find `nextflow` on your PATH. Install it and try again."
+            #         )
+            #         raise
+            #     logger.info("*** Completed Nextflow run! ***")
+            #     return result.returncode
+
+
+
+
+        # with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
+        #     task_token,
+        #     proxy_port,
+        # ):
+        #     # Anything sent to 127.0.0.1:{proxy_port} is signed and forwarded.
+        #     print("task_token from proxy:", task_token)
+        #     url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
+        #     res = requests.get(
+        #         url, headers={"Authorization": f"bearer {task_token}"}
+        #     )
+        #     assert res.status_code == 200, res.text
+        #     # print(res.text)

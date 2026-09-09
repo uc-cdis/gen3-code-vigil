@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import time
 from dataclasses import dataclass
@@ -9,6 +10,7 @@ from unittest.mock import patch
 
 import boto3
 import botocore.exceptions
+from dateutil import parser
 import nextflow
 import pytest
 import requests
@@ -140,35 +142,109 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             )
 
 
-# TODO move it
-@pytest.fixture
-def mock_auth_endpoint():
-    """Fixture to conditionally patch auth.endpoint_from_token based on URL."""
-    # Import the real function to use in the side_effect fallback
-    from gen3.auth import endpoint_from_token
+def nextflow_parse_completed_line(log_line):
+    """
+    Parses a line from the nextflow log that indicates a completed task.
+    Extracts: task name, work directory (and protocol), exit code, and status.
 
-    def _configure_mock(base_url, mock_instance=None):
-        # If a mock is already provided (e.g., via a class property), use it.
-        # Otherwise, start a new patch context.
-        if mock_instance is not None:
-            _apply_logic(mock_instance, base_url)
-            yield mock_instance
-        else:
-            with patch("auth.endpoint_from_token") as new_mock:
-                _apply_logic(new_mock, base_url)
-                yield new_mock
+    :param str log_line: A line from the Nextflow log file.
+    :return: Dictionary with extracted task information.
+    :rtype: dict
 
-    def _apply_logic(mock_obj, base_url):
-        if "localhost" in base_url:
-            # Assumes this helper function is imported and available
-            clean_url = remove_trailing_whitespace_and_slashes_in_url(base_url)
-            mock_obj.return_value = clean_url
-            mock_obj.side_effect = None  # Clear any previous side effects
-        else:
-            mock_obj.return_value = None  # Clear any previous return values
-            mock_obj.side_effect = lambda arg: endpoint_from_token(arg)
+    Example log line:
+    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
+    Example return value:
+    {
+        "process_name": "extract_metadata (1)",
+        "workDir": "bucket-name/work-dir",
+        "workDirProtocol": "s3",
+        "exit_code": "0",
+        "status": "COMPLETED"
+    }
+    """
 
-    return _configure_mock
+    task_info = {
+        "process_name": "-",
+        "workDir": "-",
+        "workDirProtocol": "-",
+        "exit_code": "-",
+        "status": "-",
+        "timestamp": "-",
+    }
+    log_regex = (
+        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
+        r"Task completed > TaskHandler\[.*?"
+        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
+        r"exit: (?P<exit_code>-?\d+); "
+        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
+    )
+
+    match = re.match(log_regex, log_line)
+
+    if match:
+        task_info["process_name"] = match.group("name")
+        task_info["workDir"] = match.group("workDir")
+        task_info["workDirProtocol"] = match.group("workDirProtocol")
+        task_info["exit_code"] = match.group("exit_code")
+        task_info["status"] = match.group("status") or "-"
+        task_info["timestamp"] = match.group("timestamp")
+
+        if task_info["workDirProtocol"]:
+            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
+
+    return task_info
+
+
+def nextflow_parse_completed_tasks(completed_tasks):
+    """
+    Input: list of completed tasks, as produced by `nextflow_parse_completed_line`.
+    Output: dictionary of completed task name to the task's latest run, since tasks may be
+    retried in case of failure.
+    """
+    res = {}
+    for task in completed_tasks:
+        if task["process_name"] not in res:
+            res[task["process_name"]] = task
+            continue
+        new_timestamp = parser.parse(task["timestamp"])
+        stored_timestamp = parser.parse(res[task["process_name"]]["timestamp"])
+        logger.info(
+            f"'{task['process_name']}' ran more than once. Keeping the latest run. Timestamps: {stored_timestamp} and {new_timestamp}"
+        )
+        if new_timestamp > stored_timestamp:
+            res[task["process_name"]] = task
+    return res
+
+
+# # TODO move it
+# @pytest.fixture
+# def mock_auth_endpoint():
+#     """Fixture to conditionally patch auth.endpoint_from_token based on URL."""
+#     # Import the real function to use in the side_effect fallback
+#     from gen3.auth import endpoint_from_token
+
+#     def _configure_mock(base_url, mock_instance=None):
+#         # If a mock is already provided (e.g., via a class property), use it.
+#         # Otherwise, start a new patch context.
+#         if mock_instance is not None:
+#             _apply_logic(mock_instance, base_url)
+#             yield mock_instance
+#         else:
+#             with patch("auth.endpoint_from_token") as new_mock:
+#                 _apply_logic(new_mock, base_url)
+#                 yield new_mock
+
+#     def _apply_logic(mock_obj, base_url):
+#         if "localhost" in base_url:
+#             # Assumes this helper function is imported and available
+#             clean_url = remove_trailing_whitespace_and_slashes_in_url(base_url)
+#             mock_obj.return_value = clean_url
+#             mock_obj.side_effect = None  # Clear any previous side effects
+#         else:
+#             mock_obj.return_value = None  # Clear any previous return values
+#             mock_obj.side_effect = lambda arg: endpoint_from_token(arg)
+
+#     return _configure_mock
 
 
 class Gen3Workflow:
@@ -193,7 +269,7 @@ class Gen3Workflow:
 
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
 
-        # When running the tests in a Kind cluster:
+        # When running the tests against a local cluster:
         # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
         #   API keys and access tokens have that as their issuer. This allows other pods in the
         #   cluster to reach Fence to validate tokens.
@@ -219,56 +295,56 @@ class Gen3Workflow:
             logger.info("Failed to get access token with Gen3Auth")
             raise
 
-    @patch("gen3.auth.endpoint_from_token")
-    def _get_auth_module(
-        self, endpoint_from_token_mock=None, user: str = "main_account"
-    ) -> str:
-        """Helper function that patches Gen3Auth when needed."""
+    # @patch("gen3.auth.endpoint_from_token")
+    # def _get_auth_module(
+    #     self, endpoint_from_token_mock=None, user: str = "main_account"
+    # ) -> str:
+    #     """Helper function that patches Gen3Auth when needed."""
 
-        if not user:
-            return None
+    #     if not user:
+    #         return None
 
-        # print('user', user)
-        try:
-            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-        except:
-            import traceback
+    #     # print('user', user)
+    #     try:
+    #         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+    #     except:
+    #         import traceback
 
-            traceback.print_exc()
-            raise
+    #         traceback.print_exc()
+    #         raise
 
-        # When running the tests in a Kind cluster (or other local cluster):
-        # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
-        #   API keys and access tokens have that as their issuer. This allows other pods in the
-        #   cluster to reach Fence to validate tokens.
-        # - However, the tests cannot reach this URL from outside the cluster. The cluster is
-        #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
-        #   access tokens.
-        # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
-        #   this method to return `http://localhost:8000` instead of `http://fence-service.
-        #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
-        # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
-        #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
-        #   (because within a container, localhost refers to the container itself).
-        if "localhost" in self.BASE_URL:
-            endpoint_from_token_mock.return_value = (
-                remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
-            )
-        else:  # otherwise, no mocking
-            endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
+    #     # When running the tests in a Kind cluster (or other local cluster):
+    #     # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
+    #     #   API keys and access tokens have that as their issuer. This allows other pods in the
+    #     #   cluster to reach Fence to validate tokens.
+    #     # - However, the tests cannot reach this URL from outside the cluster. The cluster is
+    #     #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
+    #     #   access tokens.
+    #     # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
+    #     #   this method to return `http://localhost:8000` instead of `http://fence-service.
+    #     #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
+    #     # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
+    #     #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
+    #     #   (because within a container, localhost refers to the container itself).
+    #     if "localhost" in self.BASE_URL:
+    #         endpoint_from_token_mock.return_value = (
+    #             remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
+    #         )
+    #     else:  # otherwise, no mocking
+    #         endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
 
-        import gen3
+    #     import gen3
 
-        print(
-            "endpoint_from_token",
-            gen3.auth.endpoint_from_token(pytest.api_keys[user]["api_key"]),
-        )
+    #     print(
+    #         "endpoint_from_token",
+    #         gen3.auth.endpoint_from_token(pytest.api_keys[user]["api_key"]),
+    #     )
 
-        try:
-            return auth
-        except Exception:
-            logger.info("Failed to get access token with Gen3Auth")
-            raise
+    #     try:
+    #         return auth
+    #     except Exception:
+    #         logger.info("Failed to get access token with Gen3Auth")
+    #         raise
 
     # def get_access_token(self, user: str = "main_account") -> str:
     #     """Helper function to retrieve an access token."""
@@ -655,7 +731,7 @@ class Gen3Workflow:
         self,
         workflow_dir: str,
         workflow_script: str,
-        nextflow_config_file: str,
+        nextflow_config_files: list,
         s3_working_directory: str,
         user: str = "main_account",
         params: dict = {},
@@ -666,7 +742,7 @@ class Gen3Workflow:
         Parameters:
             workflow_dir (str): Path to the directory containing the workflow.
             workflow_script (str): Filename of the main Nextflow script (e.g., main.nf).
-            nextflow_config_file (str): Path to the nextflow.config file.
+            nextflow_config_files (list<str>): Paths to the nextflow.config files.
             s3_working_directory (str): S3 URI for the working directory (e.g., s3://bucket/workdir).
             user (str): User context to run the workflow under.
 
@@ -687,7 +763,7 @@ class Gen3Workflow:
             # Run the Nextflow workflow
             # TODO: Replace nextflow.run with nextflow.run_and_poll to add a timeout of 10 minutes
             execution = nextflow.run(
-                workflow_script, configs=[nextflow_config_file], params=params
+                workflow_script, configs=nextflow_config_files, params=params
             )
 
             log_file_content = ""
