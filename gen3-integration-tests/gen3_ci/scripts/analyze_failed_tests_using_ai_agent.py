@@ -116,52 +116,6 @@ def validate_ollama_model():
     return response.json()
 
 
-def analyze_env_setup_failure() -> str:
-    """Check env setup failure and analyze the error"""
-    print("Checking logs/gh_action_logs.txt")
-    log_file_path = "logs/gh_action_logs.txt"
-    if not os.path.exists(log_file_path):
-        print(f"{log_file_path} path doesn't exists")
-        return None
-    with open(log_file_path, "r") as f:
-        logfile_content = f.read().split("Upload reports to S3", 1)[0]
-
-    debug_prompt = f"""
-    All output MUST be in English. Do not use any other language.
-
-    You are a senior DevOps engineer.
-
-    Find all errors and exceptions in the logfile content and analyze them.
-
-    Return output sctrictly in this format for each error:
-
-    Possible Root cause:
-    <one clear sentence>
-    Potential Fix:
-    <actionable remediation steps>
-
-    Start with an "Executive Summary" (2–3 sentences).
-    After that, keep all explanations very brief—summary style only, no long paragraphs.
-
-    Log:
-    {logfile_content}
-    """
-    messages = [
-        {"role": "system", "content": debug_prompt},
-        {"role": "user", "content": "analyse the errors from this logfile"},
-    ]
-    payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
-    headers = {"Content-Type": "application/json"}
-    url = "http://localhost:11434/v1/chat/completions"
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code != 200:
-        print(f"API call failed. Response: {response.text}")
-    response = response.content
-    data = json.loads(response.decode("utf-8"))
-    reasoning = data["choices"][0]["message"].get("content")
-    return reasoning
-
-
 def analyze_env_setup_failure_using_kubectl_ai() -> str:
     cmd = [
         "kubectl",
@@ -232,6 +186,52 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
     return report_result.stdout.strip()
 
 
+def analyze_env_setup_failure() -> str:
+    """Check env setup failure and analyze the error"""
+    print("Checking logs/gh_action_logs.txt")
+    log_file_path = "logs/gh_action_logs.txt"
+    if not os.path.exists(log_file_path):
+        print(f"{log_file_path} path doesn't exists")
+        return None
+    with open(log_file_path, "r") as f:
+        logfile_content = f.read().split("Upload reports to S3", 1)[0]
+
+    debug_prompt = f"""
+    All output MUST be in English. Do not use any other language.
+
+    You are a senior DevOps engineer.
+
+    Find all errors and exceptions in the logfile content and analyze them.
+
+    Return output sctrictly in this format for each error:
+
+    Possible Root cause:
+    <one clear sentence>
+    Potential Fix:
+    <actionable remediation steps>
+
+    Start with an "Executive Summary" (2–3 sentences).
+    After that, keep all explanations very brief—summary style only, no long paragraphs.
+
+    Log:
+    {logfile_content}
+    """
+    messages = [
+        {"role": "system", "content": debug_prompt},
+        {"role": "user", "content": "analyse the errors from this logfile"},
+    ]
+    payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
+    headers = {"Content-Type": "application/json"}
+    url = "http://localhost:11434/v1/chat/completions"
+    response = requests.post(url, json=payload, headers=headers)
+    if response.status_code != 200:
+        print(f"API call failed. Response: {response.text}")
+    response = response.content
+    data = json.loads(response.decode("utf-8"))
+    reasoning = data["choices"][0]["message"].get("content")
+    return reasoning
+
+
 def analyze_failed_tests() -> str:
     """Analyze the failed tests and provide fixes"""
     if Path("rerun-allure-report").exists():
@@ -297,8 +297,8 @@ def run_test_failure_analysis():
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
             print(f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}")
-        finally:
-            uninstall_helm_chart(service="kubectl-ai")
+        # finally:
+        #     uninstall_helm_chart(service="kubectl-ai")
     # else:
     #     try:
     #         setup_helm_chart(service="ollama")
