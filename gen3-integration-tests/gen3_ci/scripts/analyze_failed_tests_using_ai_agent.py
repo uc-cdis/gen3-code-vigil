@@ -18,7 +18,7 @@ def setup_helm_chart(service):
         "helm",
         "install",
         service,
-        f"gen3_ci/{service}",
+        f"gen3_ci/{service.replace("-", "_")}",
         "-n",
         os.getenv("NAMESPACE"),
     ]
@@ -167,8 +167,6 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "pods",
         "-l",
         "app=kubectl-ai",
-        "-o",
-        "jsonpath='{.items[0].metadata.name}'",
     ]
     kubeclt_ai_pod_result = subprocess.run(
         cmd,
@@ -182,6 +180,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
             f"Failed to get kubectl-ai pod. Error: {kubeclt_ai_pod_result.stderr.strip()}"
         )
     kubeclt_ai_pod_name = kubeclt_ai_pod_result.stdout.strip().replace("'", "")
+    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary.txt."'
     kubectl_ai_cmd = [
         "kubectl",
         "-n",
@@ -190,14 +189,12 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         kubeclt_ai_pod_name,
         "--",
         "kubectl-ai",
-        "--llm-provider",
-        "ollama",
-        "--model",
-        "qwen3.5:2b",
+        "--llm-provider=openai",
+        "--model=Qwen/Qwen3.8-27B-FP8",
         "--skip-permissions",
-        f'Check if any pods are not healthy on {os.getenv("NAMESPACE")} namespace and anaylyze the logs',
+        "--quiet",
+        kubectl_prompt,
     ]
-    logger.info(kubectl_ai_cmd)
     kubectl_ai_result = subprocess.run(
         kubectl_ai_cmd,
         stdout=subprocess.PIPE,
@@ -207,10 +204,28 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
     )
     if not kubectl_ai_result.returncode == 0:
         raise Exception(
-            f"kubectl-ai command output. Error: {kubectl_ai_result.stdout.strip()}"
             f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
         )
-    return kubectl_ai_result.stdout.strip()
+    report_cmd = [
+        "kubectl",
+        "-n",
+        os.getenv("NAMESPACE"),
+        "exec",
+        kubeclt_ai_pod_name,
+        "--",
+        "cat",
+        "/tmp/summary.txt",
+    ]
+    report_result = subprocess.run(
+        report_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not report_result.returncode == 0:
+        raise Exception(f"report command failed. Error: {report_result.stderr.strip()}")
+    return report_result.stdout.strip()
 
 
 def analyze_failed_tests() -> str:
@@ -275,9 +290,6 @@ def run_test_failure_analysis():
     if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
         try:
             setup_helm_chart(service="kubectl-ai")
-            process = setup_port_forwarding(service="kubectl-ai")
-            assert "qwen3.5:2b" in str(validate_ollama_model())
-            # response = analyze_env_setup_failure()
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
             logger.info(
@@ -285,16 +297,16 @@ def run_test_failure_analysis():
             )
         finally:
             uninstall_helm_chart(service="kubectl-ai")
-    else:
-        try:
-            setup_helm_chart(service="ollama")
-            process = setup_port_forwarding(service="ollama")
-            assert "gemma4:e4b" in str(validate_ollama_model())
-            response = analyze_failed_tests()
-        except Exception as e:
-            logger.info(f"Failed to run analyze_failed_tests: {e}")
-        finally:
-            uninstall_helm_chart(service="ollama")
+    # else:
+    #     try:
+    #         setup_helm_chart(service="ollama")
+    #         process = setup_port_forwarding(service="ollama")
+    #         assert "gemma4:e4b" in str(validate_ollama_model())
+    #         response = analyze_failed_tests()
+    #     except Exception as e:
+    #         logger.info(f"Failed to run analyze_failed_tests: {e}")
+    #     finally:
+    #         uninstall_helm_chart(service="ollama")
     if response is None:
         return "No logs found to analyze"
     data = json.loads(response.decode("utf-8"))
