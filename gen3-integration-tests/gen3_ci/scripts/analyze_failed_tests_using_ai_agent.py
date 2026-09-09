@@ -8,7 +8,8 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-from utils import logger
+
+# from utils import logger
 
 load_dotenv()
 
@@ -111,16 +112,16 @@ def uninstall_helm_chart(service):
 
 def validate_ollama_model():
     response = requests.get("http://localhost:11434/api/tags")
-    logger.info(response.json())
+    print(response.json())
     return response.json()
 
 
 def analyze_env_setup_failure() -> str:
     """Check env setup failure and analyze the error"""
-    logger.info("Checking logs/gh_action_logs.txt")
+    print("Checking logs/gh_action_logs.txt")
     log_file_path = "logs/gh_action_logs.txt"
     if not os.path.exists(log_file_path):
-        logger.info(f"{log_file_path} path doesn't exists")
+        print(f"{log_file_path} path doesn't exists")
         return None
     with open(log_file_path, "r") as f:
         logfile_content = f.read().split("Upload reports to S3", 1)[0]
@@ -154,7 +155,7 @@ def analyze_env_setup_failure() -> str:
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 200:
-        logger.info(f"API call failed. Response: {response.text}")
+        print(f"API call failed. Response: {response.text}")
     return response.content
 
 
@@ -179,14 +180,14 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         raise Exception(
             f"Failed to get kubectl-ai pod. Error: {kubeclt_ai_pod_result.stderr.strip()}"
         )
-    kubeclt_ai_pod_name = kubeclt_ai_pod_result.stdout.strip().replace("'", "")
+    kubectl_ai_pod_name = kubeclt_ai_pod_result.stdout.splitlines()[-1].split()[0]
     kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary.txt."'
     kubectl_ai_cmd = [
         "kubectl",
         "-n",
         os.getenv("NAMESPACE"),
         "exec",
-        kubeclt_ai_pod_name,
+        kubectl_ai_pod_name,
         "--",
         "kubectl-ai",
         "--llm-provider=openai",
@@ -211,7 +212,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "-n",
         os.getenv("NAMESPACE"),
         "exec",
-        kubeclt_ai_pod_name,
+        kubectl_ai_pod_name,
         "--",
         "cat",
         "/tmp/summary.txt",
@@ -238,7 +239,7 @@ def analyze_failed_tests() -> str:
         report_dir = None
 
     if report_dir:
-        logger.info(f"Looking into {report_dir} folder")
+        print(f"Looking into {report_dir} folder")
         failed_tests = {"failed_tests": []}
 
         for case_file in report_dir.glob("*.json"):
@@ -280,9 +281,9 @@ def analyze_failed_tests() -> str:
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code != 200:
-            logger.info(f"API call failed. Response: {response.text}")
+            print(f"API call failed. Response: {response.text}")
         return response.content
-    logger.info("No allure report folder found")
+    print("No allure report folder found")
     return analyze_env_setup_failure()
 
 
@@ -292,9 +293,7 @@ def run_test_failure_analysis():
             setup_helm_chart(service="kubectl-ai")
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
-            logger.info(
-                f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}"
-            )
+            print(f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}")
         finally:
             uninstall_helm_chart(service="kubectl-ai")
     # else:
@@ -304,7 +303,7 @@ def run_test_failure_analysis():
     #         assert "gemma4:e4b" in str(validate_ollama_model())
     #         response = analyze_failed_tests()
     #     except Exception as e:
-    #         logger.info(f"Failed to run analyze_failed_tests: {e}")
+    #         print(f"Failed to run analyze_failed_tests: {e}")
     #     finally:
     #         uninstall_helm_chart(service="ollama")
     if response is None:
@@ -334,7 +333,7 @@ def generate_slack_report():
         }
         slack_report_json["blocks"].append(failure_analysis_block)
     else:
-        logger.info("No failure_analysis.txt file found")
+        print("No failure_analysis.txt file found")
         return
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
@@ -352,7 +351,7 @@ if __name__ == "__main__":
             f.write(response)
         generate_slack_report()
     except Exception as e:
-        logger.info(f"Failed to run inference: {e}")
+        print(f"Failed to run inference: {e}")
     finally:
         if process and process.poll() is None:
             process.terminate()
