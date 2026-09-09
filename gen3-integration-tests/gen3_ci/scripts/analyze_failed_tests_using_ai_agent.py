@@ -156,7 +156,10 @@ def analyze_env_setup_failure() -> str:
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 200:
         print(f"API call failed. Response: {response.text}")
-    return response.content
+    response = response.content
+    data = json.loads(response.decode("utf-8"))
+    reasoning = data["choices"][0]["message"].get("content")
+    return reasoning
 
 
 def analyze_env_setup_failure_using_kubectl_ai() -> str:
@@ -308,9 +311,7 @@ def run_test_failure_analysis():
     #         uninstall_helm_chart(service="ollama")
     if response is None:
         return "No logs found to analyze"
-    data = json.loads(response.decode("utf-8"))
-    reasoning = data["choices"][0]["message"].get("content")
-    return reasoning, process
+    return response, process
 
 
 def generate_slack_report():
