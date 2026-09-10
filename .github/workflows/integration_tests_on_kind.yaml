@@ -17,7 +17,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@chore/debug_github_long_test_duration_issue
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
     with:
       WORKING_DIR: gen3-integration-tests
       EXTERNAL_TO_CTDS: "true"
