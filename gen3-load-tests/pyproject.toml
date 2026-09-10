@@ -49,6 +49,7 @@ markers = [
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
   # load testing
   "fence_presigned_url: run load test for fence presigned_url",
+  "fence_bulk_presigned_url: run load test for fence bulk_presigned_url",
   "indexd_create_indexd_records: run load test for indexd create_indexd_records",
   "indexd_drs_endpoint: run load test for indexd drs_endpoint",
   "ga4gh_drs_performance: run load test for ga4gh drs_performance",

@@ -1,20 +1,24 @@
 process dicom_to_png {
+    publishDir 'results'
+
     input:
     path dicom_files
 
     output:
     stdout emit: dicom_to_png_log
-    path 'outputs', emit: png_files
+    path('outputs/*.png')
 
     script:
     """
     python3 /utils/dicom_to_png.py $dicom_files
-    mkdir outputs
+    mkdir -p outputs
     cp *.png outputs/
     """
 }
 
 process extract_metadata {
+    publishDir 'results'
+
     input:
     path dicom_files
 

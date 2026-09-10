@@ -83,12 +83,53 @@ class Fence(object):
             response = requests.get(self.BASE_URL + url, auth={})
             status_code = response.status_code
             response = response.content.decode()
-        logger.info("Status code : " + str(status_code))
+        logger.info(f"Status code: {status_code} - {response}")
         assert (
             expected_status == status_code
         ), f"Expected response {expected_status}, but got {status_code}"
         if status_code == 200:
             return json.loads(response)
+        return response
+
+    @retry(times=3, delay=20, exceptions=(AssertionError, Gen3AuthError))
+    def create_bulk_signed_urls(
+        self, guids, user=None, expected_status=200, access_token=None
+    ):
+        """Creates presigned urls for multiple GUIDs"""
+        url = f"{self.DATA_DOWNLOAD_ENDPOINT}/bulk"
+
+        payload = {"guids": guids}
+
+        if user:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+                auth=auth,
+            )
+        elif access_token:
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"bearer {access_token}",
+                },
+            )
+        else:
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+            )
+
+        logger.info("Status code : " + str(response.status_code))
+
+        assert (
+            expected_status == response.status_code
+        ), f"Expected response {expected_status}, but got {response.status_code}"
+
+        if response.status_code == 200:
+            return response.json()
         return response
 
     def get_url_for_data_upload(self, file_name: str, user: str) -> dict:
