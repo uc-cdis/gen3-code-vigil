@@ -598,7 +598,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     {
                         "image": "quay.io/curl/curl:latest",
                         "command": [
-                            "curl http://arborist-service.{pytest.namespace}/user --connect-timeout 3s"
+                            f"curl http://arborist-service.{pytest.namespace}/user --connect-timeout 3s"
                         ],
                     }
                 ],
@@ -619,7 +619,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         stdout = task_logs[0]["logs"][0]["stdout"].strip() if len(task_logs) > 0 else ""
         assert (
             "Connection timed out after 3001 milliseconds" in stdout
-        ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
+        ), f"Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
     @pytest.mark.parametrize(
         "test_case",
