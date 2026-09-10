@@ -38,9 +38,11 @@ from services.gen3workflow import (
 )
 from utils import logger
 
+DPOP_PROXY_URL = "http://127.0.0.1"
+
 
 @contextmanager
-def get_task_token(
+def get_dpop_task_token(
     type="WORKFLOW", user="main_account", expires_in=3600, expected_status_code=200
 ):
     auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
@@ -74,33 +76,38 @@ class TestTaskToken(object):
         TODO
         """
         # MAX_ACCESS_TOKEN_TTL is 3600 and MAX_TASK_TOKEN_TTL.WORKFLOW is 4000. Check that we can
-        # request a WORKFLOW task token > 3600 and <= 4000
+        # request a WORKFLOW task token with a lifetime > 3600 and <= 4000
         default_max_exp = 3600
         requested_exp = 3777
-        workflow_task_token, _ = get_task_token(expires_in=requested_exp)
+        with get_dpop_task_token(expires_in=requested_exp) as (workflow_task_token, _):
+            exp = jwt.decode(
+                workflow_task_token,
+                algorithms=["RS256"],
+                options={"verify_signature": False},
+            )["exp"]
         now = int(time.time())
-        exp = jwt.decode(
-            workflow_task_token,
-            algorithms=["RS256"],
-            options={"verify_signature": False},
-        )["exp"]
-        assert exp - now >= requested_exp - 1 and exp - now <= requested_exp + 1
+        assert exp - now >= requested_exp - 1 and exp - now <= requested_exp
 
         # the longer lifetime should not work for task token type != WORKFLOW since it's not
         # configured. We should get exp == MAX_ACCESS_TOKEN_TTL
-        other_task_token, _ = get_task_token("FOO", expires_in=requested_exp)
+        with get_dpop_task_token("FOO", expires_in=requested_exp) as (
+            other_task_token,
+            _,
+        ):
+            exp = jwt.decode(
+                other_task_token,
+                algorithms=["RS256"],
+                options={"verify_signature": False},
+            )["exp"]
         now = int(time.time())
-        exp = jwt.decode(
-            other_task_token, algorithms=["RS256"], options={"verify_signature": False}
-        )["exp"]
-        assert exp - now >= default_max_exp - 1 and exp - now <= default_max_exp + 1
+        assert exp - now >= default_max_exp - 1 and exp - now <= default_max_exp
 
         # requesting a task token with a non-allowed type should not work
-        get_task_token("BAR", expected_status_code=400)
+        get_dpop_task_token("BAR", expected_status_code=400)
 
         # a user without access to task tokens should not be able to obtain one
         # TODO enable - my arborist allows everything
-        # get_task_token(user="dummy_one", expected_status_code=401)
+        # get_dpop_task_token(user="dummy_one", expected_status_code=401)
 
     def test_task_token_audience(self):
         """
@@ -108,15 +115,14 @@ class TestTaskToken(object):
         """
         user = "main_account"
 
-        # fail to use a non-task token on a WORKFLOW endpoint
+        # fail to use a non-DPoP, non-task token on a WORKFLOW endpoint
         regular_token = self.gen3_workflow.get_access_token(user)
-        # TODO uncomment once gen3-workflow is updated to reject non-task tokens
-        # url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        # res = requests.get(url, headers={"Authorization": f"bearer {regular_token}"})
-        # assert res.status_code == 401, res.text
-        # assert "token audience validation failed" in res.text
+        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
+        res = requests.get(url, headers={"Authorization": f"bearer {regular_token}"})
+        assert res.status_code == 401, "Should not be allowed to list TES tasks"
+        assert res.json().get("error") == "dpop_required"
 
-        with get_task_token() as (workflow_task_token, proxy_port):
+        with get_dpop_task_token() as (workflow_task_token, proxy_port):
             # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint in Fence
             url = f"{pytest.root_url}/user/user"
             res = requests.get(
@@ -126,7 +132,7 @@ class TestTaskToken(object):
             assert "token audience validation failed" in res.text
 
             # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint outside of Fence
-            # TODO something else than arborist
+            # TODO service other than arborist, where authutils is updated
             # url = f"{pytest.root_url}/authz/mapping"
             # res = requests.get(url, headers={"Authorization": f"bearer {workflow_task_token}"})
             # assert res.status_code == 401, res.text
@@ -134,42 +140,45 @@ class TestTaskToken(object):
 
             # succeed using a WORKFLOW task token on a WORKFLOW endpoint
             res = requests.get(
-                f"http://127.0.0.1:{proxy_port}/ga4gh/tes/v1/tasks",
+                f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks",
                 headers={"Authorization": f"bearer {workflow_task_token}"},
             )
             assert res.status_code == 200, res.text
 
-        with get_task_token("FOO") as (other_task_token, proxy_port):
+        with get_dpop_task_token("FOO") as (foo_task_token, proxy_port):
             # fail to use a non-WORKFLOW task token on a WORKFLOW endpoint
-            pass
-            # TODO uncomment once gen3-workflow is updated to reject non-WORKFLOW task tokens
-            # url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-            # res = requests.get(url, headers={"Authorization": f"bearer {other_task_token}"})
-            # assert res.status_code == 401, res.text
-            # assert "token audience validation failed" in res.text
+            url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            res = requests.get(
+                url, headers={"Authorization": f"bearer {foo_task_token}"}
+            )
+            assert res.status_code == 401, "Should not be allowed to list TES tasks"
+            assert "token audience validation failed" in res.text
 
-        # TODO succeed using a WORKFLOW task token on an Arborist endpoint, since Arborist should
-        # accept all tokens for authz verification purposes
-        # See https://cdis.slack.com/archives/C02SH3UB2T0/p1785954635381709?thread_ts=1785953406.385109&cid=C02SH3UB2T0
+            # succeed using a task token on an Arborist endpoint, regardless of type, since
+            # Arborist should accept all tokens for authorization verification purposes
+            url = f"{pytest.root_url}/authz/mapping"
+            res = requests.get(
+                url, headers={"Authorization": f"bearer {foo_task_token}"}
+            )
+            assert res.status_code == 200, res.text
 
     def test_denylist_task_token(self):
         """
         TODO
         """
-        task_token = get_task_token()
+        with get_dpop_task_token() as (task_token, proxy_port):
+            # check that the token can be used
+            url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
+            assert res.status_code == 200, res.text
 
-        # check that the token can be used
-        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
-        assert res.status_code == 200, res.text
+            # denylist the token
+            self.fence.revoke_token(task_token)
 
-        # denylist the token
-        self.fence.revoke_token(task_token)
-
-        # the server should now reject the token
-        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
-        assert res.status_code == 403, res.text
+            # the server should now reject the token
+            url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
+            assert res.status_code == 403, "Should not be allowed to list TES tasks"
 
     # TODO rename tests to say "tes" and/or "nextflow"
     @pytest.mark.skipif(
@@ -200,15 +209,15 @@ class TestTaskToken(object):
             return
             url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
             res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
-            assert res.status_code == 401, res.text
+            assert res.status_code == 401, "Should not be allowed to list TES tasks"
             assert res.json().get("error") == "dpop_required"
 
             config_overrides = [
                 "process.container = 'quay.io/nextflow/bash'",  # TODO whitelist it
-                f"tes.endpoint = 'http://127.0.0.1:{proxy_port}/ga4gh/tes'",
+                f"tes.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes'",
                 f"tes.oauthToken = '{task_token}'",
                 f"aws.accessKey = '{task_token}'",
-                f"aws.client.endpoint = 'http://127.0.0.1:{proxy_port}/s3'",
+                f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/s3'",
             ]
             with tempfile.NamedTemporaryFile(delete=True) as config_file:
                 config_file.write("\n".join(config_overrides).encode())
