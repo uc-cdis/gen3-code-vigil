@@ -1218,8 +1218,8 @@ fhir = ["fhirclient"]
 [package.source]
 type = "git"
 url = "https://github.com/uc-cdis/gen3sdk-python"
-reference = "feat/dpop"
-resolved_reference = "104eaff5fede6567f22a5e789a3c32fbc50bcb47"
+reference = "feat/dpop_pauline"
+resolved_reference = "44b0523353eb90834954b0fd9c33abb4e12207fe"
 
 [[package]]
 name = "gen3datamodel"
@@ -4999,4 +4999,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "bd99438e3b1d368e25e3010dbaf6ad59ed685f8b2150979a1e32b68e3ce705ba"
+content-hash = "5d925e26fdc51119d028c90135b6a4b1a64b80f3b2183d8c0d3c8cba1e91767e"

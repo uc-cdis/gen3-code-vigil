@@ -48,14 +48,19 @@ def base_tes_payload(request):
 
 
 @pytest.mark.skipif(
+    "gen3-workflow" not in pytest.deployed_services,
+    reason="gen3-workflow service is not running on this environment",
+)
+@pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "gen3-workflow" not in pytest.deployed_services,
-    reason="gen3-workflow service is not running on this environment",
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
 )
 @pytest.mark.gen3_workflow
+@pytest.mark.fence
 class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
@@ -1469,11 +1474,13 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 "command": "python3 /utils/dicom_to_png.py img-ID_PLACEHOLDER.dcm\nmkdir -p outputs\ncp *.png outputs/",
             },
         }
+        workflow_dir = "test_data/gen3_workflow/"
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
-            workflow_dir="test_data/gen3_workflow/",
+            workflow_dir=workflow_dir,
             workflow_script="test_nextflow_workflow.nf",
             nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
+            s3_region=self.s3_storage_config.bucket_region,
         )
         logger.info(f"Workflow log:")
         completed_tasks = []
@@ -1523,7 +1530,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             # Unpacking the single overlapped filename from the set
             (expected_file,) = overlapped_filenames
             if "dicom_to_png" in task_name:
-                expected_file = f"/outputs/{expected_file}"
+                expected_file = f"outputs/{expected_file}"
             is_binary_file = expected_file.lower().endswith(".png")
 
             # - Check that the output file in S3 is non-empty
@@ -1697,36 +1704,37 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             params = {"skip": ",".join(known_unsupported)}
             config_lines = []
 
-        # update the nextflow config
-        config_lines += [
-            "process.executor = 'tes'",
-            "process.time = '20 min'",
-            # for some reason using `plugins.id` here throws `UnsupportedOperationException`
-            "plugins {id 'nf-ga4gh'}",
-            "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
-            "tes.oauthToken = env('GEN3_TOKEN')",
-            "tes.timeout = 120",
-            "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
-            "aws.accessKey = env('GEN3_TOKEN')",
-            "aws.secretKey = 'N/A'",
-            f"aws.region = '{self.s3_storage_config.bucket_region}'",
-            "aws.client.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/workflows/s3\"",
-            "aws.client.s3PathStyleAccess = true",
-            "aws.client.maxErrorRetry = 1",
-            "workDir = env('WORK_DIR')",
-            # this test tends to fail intermittently; improve stability with retries for now:
-            "process.errorStrategy = 'retry'",
-            "process.maxRetries = 2",
-        ]
-        with open(os.path.join(directory, "nextflow.config"), "a") as file:
-            file.write("\n".join(config_lines) + "\n")
+        # # update the nextflow config
+        # config_lines += [
+        #     "process.executor = 'tes'",
+        #     "process.time = '20 min'",
+        #     # for some reason using `plugins.id` here throws `UnsupportedOperationException`
+        #     "plugins {id 'nf-ga4gh'}",
+        #     # "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
+        #     # "tes.oauthToken = env('GEN3_TOKEN')",
+        #     "tes.timeout = 120",
+        #     # "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
+        #     # "aws.accessKey = env('GEN3_TOKEN')",
+        #     "aws.secretKey = 'N/A'",
+        #     f"aws.region = '{self.s3_storage_config.bucket_region}'",
+        #     "aws.client.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/workflows/s3\"",
+        #     "aws.client.s3PathStyleAccess = true",
+        #     "aws.client.maxErrorRetry = 1",
+        #     "workDir = env('WORK_DIR')",
+        #     # this test tends to fail intermittently; improve stability with retries for now:
+        #     "process.errorStrategy = 'retry'",
+        #     "process.maxRetries = 2",
+        # ]
+        # with open(os.path.join(directory, "nextflow.config"), "a") as file:
+        #     file.write("\n".join(config_lines) + "\n")
 
         # run the test nextflow workflow
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
             workflow_dir=directory,
             workflow_script="main.nf",
-            nextflow_config_file=["nextflow.config"],
+            nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
+            s3_region=self.s3_storage_config.bucket_region,
             params=params,
         )
 

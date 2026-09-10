@@ -2,11 +2,12 @@ import base64
 import io
 import json
 import re
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 
 import pytest
 import requests
 from gen3.auth import Gen3Auth, Gen3AuthError
+from gen3.dpop import dpop_proxy_context
 from gen3.file import Gen3File
 from pages.login import LoginPage
 from pages.user_register import UserRegister
@@ -14,6 +15,8 @@ from playwright.sync_api import Page
 from utils import logger
 from utils.misc import retry
 from utils.test_execution import screenshot
+
+DPOP_PROXY_URL = "http://127.0.0.1"
 
 
 class Fence(object):
@@ -524,9 +527,28 @@ class Fence(object):
         response = requests.post(url=url, auth=auth)
         return response
 
+    @contextmanager
+    def get_task_token(
+        self, type, user="main_account", expires_in=3600, expected_status_code=200
+    ):
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        try:
+            with dpop_proxy_context(
+                auth=auth, task_token_type=type, task_token_expiration=expires_in
+            ) as (task_token, proxy_port):
+                yield task_token, proxy_port
+        except Exception as e:
+            if expected_status_code == 200:
+                raise
+            assert f"[{expected_status_code}]" in str(e)
+
     def revoke_token(self, token):
         """
         TODO
         """
-        res = requests.post(f"{self.BASE_URL}/oauth2/revoke", data={"token": token})
+        res = requests.post(
+            f"{self.BASE_URL}/oauth2/revoke",
+            headers={"Authorization": f"bearer {token}"},
+            data={"token": token},
+        )
         assert res.status_code == 200, res.text

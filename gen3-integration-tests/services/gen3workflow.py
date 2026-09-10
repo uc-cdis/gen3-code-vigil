@@ -2,6 +2,7 @@ import json
 import os
 import re
 import subprocess
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +21,8 @@ from gen3.auth import (
     endpoint_from_token,
     remove_trailing_whitespace_and_slashes_in_url,
 )
+from gen3.dpop import dpop_proxy_context
+from services.fence import DPOP_PROXY_URL, Fence
 from utils import logger
 
 
@@ -249,7 +252,8 @@ def nextflow_parse_completed_tasks(completed_tasks):
 
 class Gen3Workflow:
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url}"
+        self.fence = Fence()
+        self.BASE_URL = f"{pytest.root_url}"  # TODO remove
         self.SERVICE_URL = "/workflows"
         self.TES_URL = f"{self.BASE_URL}/ga4gh/tes/v1"
         self.S3_ENDPOINT_URL = f"{self.BASE_URL}{self.SERVICE_URL}/s3"
@@ -295,71 +299,18 @@ class Gen3Workflow:
             logger.info("Failed to get access token with Gen3Auth")
             raise
 
-    # @patch("gen3.auth.endpoint_from_token")
-    # def _get_auth_module(
-    #     self, endpoint_from_token_mock=None, user: str = "main_account"
-    # ) -> str:
-    #     """Helper function that patches Gen3Auth when needed."""
-
-    #     if not user:
-    #         return None
-
-    #     # print('user', user)
-    #     try:
-    #         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-    #     except:
-    #         import traceback
-
-    #         traceback.print_exc()
-    #         raise
-
-    #     # When running the tests in a Kind cluster (or other local cluster):
-    #     # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
-    #     #   API keys and access tokens have that as their issuer. This allows other pods in the
-    #     #   cluster to reach Fence to validate tokens.
-    #     # - However, the tests cannot reach this URL from outside the cluster. The cluster is
-    #     #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
-    #     #   access tokens.
-    #     # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
-    #     #   this method to return `http://localhost:8000` instead of `http://fence-service.
-    #     #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
-    #     # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
-    #     #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
-    #     #   (because within a container, localhost refers to the container itself).
-    #     if "localhost" in self.BASE_URL:
-    #         endpoint_from_token_mock.return_value = (
-    #             remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
-    #         )
-    #     else:  # otherwise, no mocking
-    #         endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
-
-    #     import gen3
-
-    #     print(
-    #         "endpoint_from_token",
-    #         gen3.auth.endpoint_from_token(pytest.api_keys[user]["api_key"]),
-    #     )
-
-    #     try:
-    #         return auth
-    #     except Exception:
-    #         logger.info("Failed to get access token with Gen3Auth")
-    #         raise
-
-    # def get_access_token(self, user: str = "main_account") -> str:
-    #     """Helper function to retrieve an access token."""
-    #     print('self._get_auth_module(user).get_access_token()', self._get_auth_module(user))
-    #     return self._get_auth_module(user).get_access_token()
-
     def _get_s3_client(
-        self, access_token: str, s3_storage_config: WorkflowStorageConfig
+        self,
+        access_token: str,
+        proxy_port: int,
+        s3_storage_config: WorkflowStorageConfig,
     ):
         """Creates and returns an S3 client."""
         return boto3.client(
             service_name="s3",
             aws_access_key_id=access_token,
             aws_secret_access_key="N/A",
-            endpoint_url=self.S3_ENDPOINT_URL,
+            endpoint_url=f"{DPOP_PROXY_URL}:{proxy_port}/workflows/s3",
             config=Config(region_name=s3_storage_config.bucket_region),
         )
 
@@ -383,62 +334,65 @@ class Gen3Workflow:
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
-        access_token = self.get_access_token(user)
-        client = self._get_s3_client(access_token, s3_storage_config)
-        bucket, key = self._get_bucket_and_key(object_path)
-        logger.info(
-            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
-        )
-        response = None
-        try:
-            if action == "list":
-                response = client.list_objects_v2(Bucket=bucket, Prefix=key)
-            elif action == "get":
-                response = client.get_object(
-                    Bucket=bucket, Key=key, Range=f"bytes=0-{range-1}" if range else ""
-                )
-            elif action == "put":
-                response = client.put_object(Bucket=bucket, Key=key, Body=content or "")
-            elif action == "upload_file":
-                response = client.upload_file(
-                    Filename=filename, Bucket=bucket, Key=key, Config=config
-                )
-            elif action == "copy":
-                dest_bucket, dest_key = self._get_bucket_and_key(dest_object_path)
-                response = client.copy(
-                    CopySource={"Bucket": bucket, "Key": key},
-                    Bucket=dest_bucket,
-                    Key=dest_key,
-                    Config=config,
-                )
-            elif action == "delete":
-                response = client.delete_object(Bucket=bucket, Key=key)
-            else:
-                raise ValueError(f"Unsupported S3 action: {action}")
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code", "")
-            _print_tes_apps_logs(with_arborist=error_code == "403")
-            if error_code == "NoSuchKey":
-                response_status = 404
-            elif error_code == "403":
-                response_status = 403
-            else:
-                logger.error(
-                    f"Received an error from s3_client, expected status was {expected_status}. Error: {e.response}"
-                )
-                raise  # Reraise for other errors
-        except Exception as e:
-            _print_tes_apps_logs()
-            logger.error(f"Received an error from s3_client. Error: {e}")
-            raise
-        else:
-            response_status = (
-                response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-                if response
-                else None
+        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+            client = self._get_s3_client(access_token, proxy_port, s3_storage_config)
+            bucket, key = self._get_bucket_and_key(object_path)
+            logger.info(
+                f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
             )
+            response = None
+            try:
+                if action == "list":
+                    response = client.list_objects_v2(Bucket=bucket, Prefix=key)
+                elif action == "get":
+                    response = client.get_object(
+                        Bucket=bucket,
+                        Key=key,
+                        Range=f"bytes=0-{range-1}" if range else "",
+                    )
+                elif action == "put":
+                    response = client.put_object(
+                        Bucket=bucket, Key=key, Body=content or ""
+                    )
+                elif action == "upload_file":
+                    response = client.upload_file(
+                        Filename=filename, Bucket=bucket, Key=key, Config=config
+                    )
+                elif action == "copy":
+                    dest_bucket, dest_key = self._get_bucket_and_key(dest_object_path)
+                    response = client.copy(
+                        CopySource={"Bucket": bucket, "Key": key},
+                        Bucket=dest_bucket,
+                        Key=dest_key,
+                        Config=config,
+                    )
+                elif action == "delete":
+                    response = client.delete_object(Bucket=bucket, Key=key)
+                else:
+                    raise ValueError(f"Unsupported S3 action: {action}")
+            except botocore.exceptions.ClientError as e:
+                error_code = e.response.get("Error", {}).get("Code", "")
+                _print_tes_apps_logs(with_arborist=error_code == "403")
+                if error_code == "NoSuchKey":
+                    response_status = 404
+                elif error_code == "403":
+                    response_status = 403
+                else:
+                    logger.error(
+                        f"Received an error from s3_client, expected status was {expected_status}. Error: {e.response}"
+                    )
+                    raise  # Reraise for other errors
+            except Exception as e:
+                _print_tes_apps_logs()
+                logger.error(f"Received an error from s3_client. Error: {e}")
+                raise
+            else:
+                response_status = (
+                    response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+                    if response
+                    else None
+                )
         logger.debug(f"S3 {action.upper()} response:  {response}")
-
         assert (
             response_status == expected_status
         ), f"Expected {expected_status}, got {response_status} when making an s3 request to perform {action} action on {bucket=} and {key=}. Response: {response}"
@@ -579,10 +533,10 @@ class Gen3Workflow:
         self, object_path: str, user: str = "main_account", expected_status=401
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
-        access_token = self.get_access_token(user)
-        s3_url = f"{self.S3_ENDPOINT_URL}/{object_path}"
-        headers = {"Authorization": f"bearer {access_token}"}
-        response = requests.get(url=s3_url, headers=headers)
+        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+            s3_url = f"{DPOP_PROXY_URL}:{proxy_port}/workflows/s3/{object_path}"
+            headers = {"Authorization": f"bearer {access_token}"}
+            response = requests.get(url=s3_url, headers=headers)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make an unsigned GET request to {s3_url}: {response.text}"
@@ -670,14 +624,14 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a string containing the task_id
         """
-        access_token = self.get_access_token(user)
-        tes_task_url = f"{self.TES_URL}/tasks"
-        headers = {"Authorization": f"bearer {access_token}"} if user else {}
-        response = requests.post(
-            url=tes_task_url,
-            headers=headers,
-            json=request_body,
-        )
+        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+            tes_task_url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            headers = {"Authorization": f"bearer {access_token}"} if user else {}
+            response = requests.post(
+                url=tes_task_url,
+                headers=headers,
+                json=request_body,
+            )
         if response.status_code != expected_status:
             _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
@@ -689,12 +643,12 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a list of task objects
         """
-        access_token = self.get_access_token(user)
-        tes_task_url = f"{self.TES_URL}/tasks"
-        response = requests.get(
-            url=tes_task_url,
-            headers={"Authorization": f"bearer {access_token}"} if user else {},
-        )
+        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+            tes_task_url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            response = requests.get(
+                url=tes_task_url,
+                headers={"Authorization": f"bearer {access_token}"} if user else {},
+            )
         if response.status_code != expected_status:
             _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
@@ -708,13 +662,14 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object
         """
-        access_token = self.get_access_token(user)
-        tes_task_url = f"{self.TES_URL}/tasks/{task_id}?view=FULL"
-
-        response = requests.get(
-            url=tes_task_url,
-            headers={"Authorization": f"bearer {access_token}"} if user else {},
-        )
+        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+            tes_task_url = (
+                f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
+            )
+            response = requests.get(
+                url=tes_task_url,
+                headers={"Authorization": f"bearer {access_token}"} if user else {},
+            )
         if response.status_code != expected_status:
             _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
@@ -728,13 +683,14 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
         """
-        access_token = self.get_access_token(user)
-        tes_task_url = f"{self.TES_URL}/tasks/{task_id}:cancel"
-
-        response = requests.post(
-            url=tes_task_url,
-            headers={"Authorization": f"bearer {access_token}"} if user else {},
-        )
+        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+            tes_task_url = (
+                f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks/{task_id}:cancel"
+            )
+            response = requests.post(
+                url=tes_task_url,
+                headers={"Authorization": f"bearer {access_token}"} if user else {},
+            )
         if response.status_code != expected_status:
             _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
@@ -746,8 +702,9 @@ class Gen3Workflow:
         self,
         workflow_dir: str,
         workflow_script: str,
-        nextflow_config_files: list,
+        nextflow_config_file: list,
         s3_working_directory: str,
+        s3_region: str,
         user: str = "main_account",
         params: dict = {},
     ):
@@ -757,29 +714,62 @@ class Gen3Workflow:
         Parameters:
             workflow_dir (str): Path to the directory containing the workflow.
             workflow_script (str): Filename of the main Nextflow script (e.g., main.nf).
-            nextflow_config_files (list<str>): Paths to the nextflow.config files.
+            nextflow_config_file (str): Path to the nextflow.config file.
             s3_working_directory (str): S3 URI for the working directory (e.g., s3://bucket/workdir).
             user (str): User context to run the workflow under.
 
         Returns:
             str: Contents of the Nextflow log file (.nextflow.log).
         """
-        access_token = self.get_access_token(user)
-        os.environ["GEN3_TOKEN"] = access_token
-        os.environ["HOSTNAME"] = pytest.hostname
-        os.environ["HOSTNAME_PROTOCOL"] = os.getenv("HOSTNAME_PROTOCOL")
-        os.environ["WORK_DIR"] = s3_working_directory
-
         original_cwd = Path.cwd()
         workflow_dir_path = Path(workflow_dir).resolve()
 
         try:
             os.chdir(workflow_dir_path)
+
             # Run the Nextflow workflow
-            # TODO: Replace nextflow.run with nextflow.run_and_poll to add a timeout of 10 minutes
-            execution = nextflow.run(
-                workflow_script, configs=nextflow_config_files, params=params
+            auth = Gen3Auth(
+                refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
             )
+            with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
+                task_token,
+                proxy_port,
+            ):
+                # os.environ["GEN3_TOKEN"] = access_token
+                # os.environ["HOSTNAME"] = pytest.hostname
+                # os.environ["HOSTNAME_PROTOCOL"] = os.getenv("HOSTNAME_PROTOCOL")
+                # os.environ["WORK_DIR"] = s3_working_directory
+                config_overrides = [
+                    "process.executor = 'tes'",
+                    "process.time = '20 min'",
+                    # for some reason using `plugins.id` here throws `UnsupportedOperationException`
+                    "plugins {id 'nf-ga4gh'}",
+                    # "plugins.id = 'nf-ga4gh'",
+                    f"tes.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes'",
+                    f"tes.oauthToken = '{task_token}'",
+                    "tes.timeout = 120",
+                    "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
+                    f"aws.accessKey = '{task_token}'",
+                    "aws.secretKey = 'N/A'",
+                    f"aws.region = '{s3_region}'",
+                    f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/workflows/s3'",
+                    "aws.client.s3PathStyleAccess = true",
+                    "aws.client.maxErrorRetry = 1",
+                    f"workDir = '{s3_working_directory}'",
+                    # this test tends to fail intermittently; improve stability with retries for now:
+                    "process.errorStrategy = 'retry'",
+                    "process.maxRetries = 2",
+                ]
+                with tempfile.NamedTemporaryFile(delete=True) as config_file:
+                    config_file.write("\n".join(config_overrides).encode())
+                    config_file.flush()
+
+                    # TODO: Replace nextflow.run with nextflow.run_and_poll to add a timeout of 10 minutes
+                    execution = nextflow.run(
+                        workflow_script,
+                        configs=[nextflow_config_file, config_file.name],
+                        params=params,
+                    )
 
             log_file_content = ""
             with open(".nextflow.log", "r") as log_file:
