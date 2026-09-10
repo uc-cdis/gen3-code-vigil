@@ -1,19 +1,20 @@
 #!/bin/bash
-# ./generate_api_keys.sh path/to/user.csv hostname
+# ./generate_api_keys.sh path/to/user.csv hostname-protocol hostname namespace
 # Script to generate API keys for all test users.
 # Generates an access token from the fence pod and uses that to generate an API key.
 
 set -euo pipefail  # Exit on errors, undefined variables, and failed pipes.
 
 # Validate arguments
-if [[ $# -ne 3 ]]; then
-    echo "Usage: $0 <path-to-user.csv> <hostname> <namespace>"
+if [[ $# -ne 4 ]]; then
+    echo "Usage: $0 <path-to-user.csv> <hostname protocol> <hostname> <namespace>"
     exit 1
 fi
 
 USERS_FILE=$1
-HOSTNAME=$2
-NAMESPACE=$3
+HOSTNAME_PROTOCOL=$2
+HOSTNAME=$3
+NAMESPACE=$4
 
 # Check if the users file exists
 if [[ ! -f "$USERS_FILE" ]]; then
@@ -48,14 +49,15 @@ tail -n +2 "$USERS_FILE" | while IFS="," read -r username email; do
     fi
 
     # Request API key
-    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "https://$HOSTNAME/user/credentials/api" \
+    RESPONSE=$(curl -o "$OUTPUT_DIR/${NAMESPACE}_${username}.json" -w "%{http_code}" -X POST "$HOSTNAME_PROTOCOL://$HOSTNAME/user/credentials/api" \
         -H "Authorization: bearer $ACCESS_TOKEN" \
         -H "Content-Type: application/json" \
         -H "Accept: application/json")
 
     # Validate API response
     if [[ "$RESPONSE" -ne 200 ]]; then
-        echo "Error: Failed to generate API key for $email (HTTP status: $RESPONSE)"
+        echo "Error: Failed to generate API key for $email (HTTP status: $RESPONSE). Fence logs (all replicas):"
+        kubectl logs -l app=fence -n "${NAMESPACE}" --tail 30
         exit 1
     fi
 
