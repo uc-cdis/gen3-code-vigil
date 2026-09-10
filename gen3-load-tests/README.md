@@ -16,15 +16,15 @@ This is the repository for managing Gen3 load tests. The code is written in Pyth
 
 ### Set up prerequisites
 
-#### Checkout and switch directory
-Checkout this repo and switch to `gen3-load-tests` directory. This is the root directory for load tests.
-
 #### Create `~/.gen3` directory
 The load tests look for API keys in this location. Make sure you created this directory.
 
+#### Clone and switch directory
+Clone this repo and switch to `gen3-load-tests` directory. This is the root directory for load tests.
+
 #### Create `.env` file
-Switch to `gen3-load-tests` directory and create a `.env` file. The code is designed to fetch environment variables set in this file.
-The following are some environment variables to set:
+Create a `.env` file. The code is designed to fetch environment variables set in this file.
+The following are environment variables to set:
 ```
 HOSTNAME=<your namespace>.planx-pla.net
 NAMESPACE=<namespace>
