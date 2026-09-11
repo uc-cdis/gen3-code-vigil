@@ -134,8 +134,10 @@ class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
+        # `main_account` `user0_account` have access to task tokens and gen3-workflow
         cls.valid_user = "main_account"
         cls.other_valid_user = "user0_account"
+        # `dummy_one` has access to create task tokens, but not to use gen3-workflow
         cls.invalid_user = "dummy_one"
         cls.s3_folder_name = "integration-tests"
         cls.s3_file_name = "test-input.txt"

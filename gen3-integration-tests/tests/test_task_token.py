@@ -88,7 +88,7 @@ class TestTaskToken(object):
 
         # a user without access to task tokens should not be able to obtain one
         self.fence.get_dpop_bound_task_token(
-            "WORKFLOW", user="dummy_one", expected_status_code=401
+            "WORKFLOW", user="user1", expected_status_code=401
         )
 
     def test_task_token_audience(self):

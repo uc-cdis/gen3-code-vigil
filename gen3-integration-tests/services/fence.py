@@ -559,6 +559,7 @@ class Fence(object):
                 yield task_token, f"{dpop_proxy_url}:{proxy_port}"
         except Exception as e:
             if expected_status_code == 200:
+                logger.error(f"Unable to get a '{type}' task token for '{user}': {e}")
                 raise
             assert f"[{expected_status_code}]" in str(e)
 
