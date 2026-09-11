@@ -528,7 +528,7 @@ class Fence(object):
         return response
 
     @contextmanager
-    def get_task_token(
+    def get_dpop_bound_task_token(
         self, type, user="main_account", expires_in=3600, expected_status_code=200
     ):
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
@@ -543,9 +543,7 @@ class Fence(object):
             assert f"[{expected_status_code}]" in str(e)
 
     def revoke_token(self, token):
-        """
-        TODO
-        """
+        """Adds a token to Fence's denylist"""
         res = requests.post(
             f"{self.BASE_URL}/oauth2/revoke",
             headers={"Authorization": f"bearer {token}"},

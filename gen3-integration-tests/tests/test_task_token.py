@@ -10,13 +10,6 @@ TODO for CI requires:
 - main_account access to create task tokens up to 4000 (or less?)
 - enabling and configuring dpop in fence and gen3-workflow
 
-JA4 enforcement
-- use SDK proxy
-  - with `gen3 run`
-  - with `curl`
-- change the JA4 (how?)
-  - then check that the TES server rejects the token
-
 TODO disable when fence or gen3-workflow version is too low
 """
 
@@ -45,7 +38,7 @@ class TestTaskToken(object):
 
     def test_obtain_task_token(self):
         """
-        TODO
+        Test that task tokens are only given to users with access, and only for valid DPoP requests.
         """
         # should NOT be able to obtain a task token without going through the DPoP proxy
         url = f"{pytest.root_url}/user/credentials/api/access_token?task_token=WORKFLOW"
@@ -60,7 +53,9 @@ class TestTaskToken(object):
         # request a WORKFLOW task token with a lifetime > 3600 and <= 4000
         default_max_exp = 3600
         requested_exp = 3777
-        with self.fence.get_task_token("WORKFLOW", expires_in=requested_exp) as (
+        with self.fence.get_dpop_bound_task_token(
+            "WORKFLOW", expires_in=requested_exp
+        ) as (
             workflow_task_token,
             _,
         ):
@@ -74,7 +69,7 @@ class TestTaskToken(object):
 
         # a lifetime > MAX_ACCESS_TOKEN_TTL should not work for task token type != WORKFLOW since
         # it's not configured in MAX_TASK_TOKEN_TTL. We should get exp == MAX_ACCESS_TOKEN_TTL
-        with self.fence.get_task_token("FOO", expires_in=requested_exp) as (
+        with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp) as (
             other_task_token,
             _,
         ):
@@ -88,26 +83,28 @@ class TestTaskToken(object):
 
         # requesting a task token with a non-allowed type (not configured in
         # ALLOWED_TASK_TOKEN_TYPES) should not work
-        self.fence.get_task_token("BAR", expected_status_code=400)
+        self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400)
 
         # a user without access to task tokens should not be able to obtain one
         # TODO enable - my arborist allows everything
-        # self.fence.get_task_token("WORKFLOW", user="dummy_one", expected_status_code=401)
+        # self.fence.get_dpop_bound_task_token("WORKFLOW", user="dummy_one", expected_status_code=401)
 
     def test_task_token_audience(self):
         """
-        TODO
+        Test that task tokens can only be used on the endpoints they are meant for, and that those
+        endpoints reject non-task tokens.
         """
-        user = "main_account"
-
-        # fail to use a non-DPoP, non-task token on a WORKFLOW endpoint
-        regular_token = self.gen3_workflow.get_access_token(user)
+        # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint
+        regular_token = self.gen3_workflow.get_access_token("main_account")
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
         res = requests.get(url, headers={"Authorization": f"bearer {regular_token}"})
         assert res.status_code == 401, "Should not be allowed to list TES tasks"
         assert res.json().get("error") == "dpop_required"
 
-        with self.fence.get_task_token("WORKFLOW") as (workflow_task_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            workflow_task_token,
+            proxy_port,
+        ):
             # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint in Fence
             url = f"{pytest.root_url}/user/user"
             res = requests.get(
@@ -118,10 +115,6 @@ class TestTaskToken(object):
 
             # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint outside of Fence
             # TODO service other than arborist, where authutils is updated
-            # url = f"{pytest.root_url}/authz/mapping"
-            # res = requests.get(url, headers={"Authorization": f"bearer {workflow_task_token}"})
-            # assert res.status_code == 401, res.text
-            # assert "token audience validation failed" in res.text
 
             # succeed using a WORKFLOW task token on a WORKFLOW endpoint
             res = requests.get(
@@ -130,7 +123,10 @@ class TestTaskToken(object):
             )
             assert res.status_code == 200, res.text
 
-        with self.fence.get_task_token("FOO") as (foo_task_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("FOO") as (
+            foo_task_token,
+            proxy_port,
+        ):
             # fail to use a non-WORKFLOW task token on a WORKFLOW endpoint
             url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
             res = requests.get(
@@ -139,8 +135,8 @@ class TestTaskToken(object):
             assert res.status_code == 401, "Should not be allowed to list TES tasks"
             assert "token audience validation failed" in res.text
 
-            # succeed using a task token on an Arborist endpoint, regardless of type, since
-            # Arborist should accept all tokens for authorization verification purposes
+            # succeed using a task token on an Arborist endpoint, regardless of task token type,
+            # since Arborist should accept all tokens for authorization verification purposes
             url = f"{pytest.root_url}/authz/mapping"
             res = requests.get(
                 url, headers={"Authorization": f"bearer {foo_task_token}"}
@@ -149,9 +145,13 @@ class TestTaskToken(object):
 
     def test_denylist_task_token(self):
         """
-        TODO
+        Test that task tokens can be revoked/denylisted, after which they should not be accepted by
+        the server anymore.
         """
-        with self.fence.get_task_token("WORKFLOW") as (task_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            task_token,
+            proxy_port,
+        ):
             # check that the token can be used
             url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
             res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})

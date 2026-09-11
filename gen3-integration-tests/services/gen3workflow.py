@@ -227,7 +227,10 @@ class Gen3Workflow:
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
-        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+            access_token,
+            proxy_port,
+        ):
             client = self._get_s3_client(access_token, proxy_port, s3_storage_config)
             bucket, key = self._get_bucket_and_key(object_path)
             logger.info(
@@ -426,7 +429,10 @@ class Gen3Workflow:
         self, object_path: str, user: str = "main_account", expected_status=401
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
-        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+            access_token,
+            proxy_port,
+        ):
             s3_url = f"{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3/{object_path}"
             headers = {"Authorization": f"bearer {access_token}"}
             response = requests.get(url=s3_url, headers=headers)
@@ -517,7 +523,10 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a string containing the task_id
         """
-        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+            access_token,
+            proxy_port,
+        ):
             tes_task_url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
             headers = {"Authorization": f"bearer {access_token}"} if user else {}
             response = requests.post(
@@ -536,7 +545,10 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a list of task objects
         """
-        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+            access_token,
+            proxy_port,
+        ):
             tes_task_url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
             response = requests.get(
                 url=tes_task_url,
@@ -555,7 +567,10 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object
         """
-        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+            access_token,
+            proxy_port,
+        ):
             tes_task_url = (
                 f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
             )
@@ -576,7 +591,10 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
         """
-        with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+            access_token,
+            proxy_port,
+        ):
             tes_task_url = (
                 f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks/{task_id}:cancel"
             )
