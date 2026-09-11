@@ -3,12 +3,6 @@ See Fence task token docs:
 https://github.com/uc-cdis/fence/blob/master/docs/additional_documentation/task_tokens.md
 
 The task token integration with Gen3Workflow/TES is included in `tests/test_gen3_workflow.py`.
-
-TODO for CI requires:
-- MAX_TASK_TOKEN_TTL: {"WORKFLOW": 4000}
-- ALLOWED_TASK_TOKEN_TYPES: ["WORKFLOW", "FOO"]
-- main_account access to create task tokens up to 4000 (or less?)
-- enabling and configuring dpop in fence and gen3-workflow
 """
 
 import time
@@ -42,6 +36,10 @@ class TestTaskToken(object):
     def test_obtain_task_token(self):
         """
         Test that task tokens are only given to users with access, and only for valid DPoP requests.
+
+        TODO: add test case for a user that has access to a specific task token lifetime,
+        e.g. "/services/fence/task-token/WORKFLOW/4000" once this is done:
+        https://ctds-planx.atlassian.net/browse/MIDRC-1319
         """
         # should NOT be able to obtain a task token without going through the DPoP proxy
         url = f"{pytest.root_url}/user/credentials/api/access_token?task_token=WORKFLOW"
@@ -89,8 +87,9 @@ class TestTaskToken(object):
         self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400)
 
         # a user without access to task tokens should not be able to obtain one
-        # TODO enable - my arborist allows everything
-        # self.fence.get_dpop_bound_task_token("WORKFLOW", user="dummy_one", expected_status_code=401)
+        self.fence.get_dpop_bound_task_token(
+            "WORKFLOW", user="dummy_one", expected_status_code=401
+        )
 
     def test_task_token_audience(self):
         """
