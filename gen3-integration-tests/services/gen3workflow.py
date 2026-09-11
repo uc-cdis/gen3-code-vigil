@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import subprocess
 import tempfile
 import time
@@ -15,14 +14,13 @@ import nextflow
 import pytest
 import requests
 from botocore.config import Config
-from dateutil import parser
 from gen3.auth import (
     Gen3Auth,
     endpoint_from_token,
     remove_trailing_whitespace_and_slashes_in_url,
 )
 from gen3.dpop import dpop_proxy_context
-from services.fence import DPOP_PROXY_URL, Fence
+from services.fence import Fence
 from utils import logger
 
 
@@ -195,7 +193,7 @@ class Gen3Workflow:
     def _get_s3_client(
         self,
         access_token: str,
-        proxy_port: int,
+        proxy_url: str,
         s3_storage_config: WorkflowStorageConfig,
     ):
         """Creates and returns an S3 client."""
@@ -203,7 +201,7 @@ class Gen3Workflow:
             service_name="s3",
             aws_access_key_id=access_token,
             aws_secret_access_key="N/A",
-            endpoint_url=f"{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3",
+            endpoint_url=f"{proxy_url}{self.SERVICE_URL}/s3",
             config=Config(region_name=s3_storage_config.bucket_region),
         )
 
@@ -229,9 +227,9 @@ class Gen3Workflow:
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
         with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
             access_token,
-            proxy_port,
+            proxy_url,
         ):
-            client = self._get_s3_client(access_token, proxy_port, s3_storage_config)
+            client = self._get_s3_client(access_token, proxy_url, s3_storage_config)
             bucket, key = self._get_bucket_and_key(object_path)
             logger.info(
                 f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
@@ -431,9 +429,9 @@ class Gen3Workflow:
         """Attempts to get an object without signing the request, expecting a failure."""
         with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
             access_token,
-            proxy_port,
+            proxy_url,
         ):
-            s3_url = f"{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3/{object_path}"
+            s3_url = f"{proxy_url}{self.SERVICE_URL}/s3/{object_path}"
             headers = {"Authorization": f"bearer {access_token}"}
             response = requests.get(url=s3_url, headers=headers)
         assert (
@@ -525,9 +523,9 @@ class Gen3Workflow:
         """
         with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
             access_token,
-            proxy_port,
+            proxy_url,
         ):
-            tes_task_url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks"
             headers = {"Authorization": f"bearer {access_token}"} if user else {}
             response = requests.post(
                 url=tes_task_url,
@@ -547,9 +545,9 @@ class Gen3Workflow:
         """
         with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
             access_token,
-            proxy_port,
+            proxy_url,
         ):
-            tes_task_url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks"
             response = requests.get(
                 url=tes_task_url,
                 headers={"Authorization": f"bearer {access_token}"} if user else {},
@@ -569,11 +567,9 @@ class Gen3Workflow:
         """
         with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
             access_token,
-            proxy_port,
+            proxy_url,
         ):
-            tes_task_url = (
-                f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
-            )
+            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
             response = requests.get(
                 url=tes_task_url,
                 headers={"Authorization": f"bearer {access_token}"} if user else {},
@@ -593,11 +589,9 @@ class Gen3Workflow:
         """
         with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
             access_token,
-            proxy_port,
+            proxy_url,
         ):
-            tes_task_url = (
-                f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks/{task_id}:cancel"
-            )
+            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks/{task_id}:cancel"
             response = requests.post(
                 url=tes_task_url,
                 headers={"Authorization": f"bearer {access_token}"} if user else {},
@@ -644,7 +638,7 @@ class Gen3Workflow:
             )
             with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
                 task_token,
-                proxy_port,
+                proxy_url,
             ):
                 config_overrides = [
                     "process.executor = 'tes'",
@@ -652,14 +646,14 @@ class Gen3Workflow:
                     # for some reason using `plugins.id` here throws `UnsupportedOperationException`
                     "plugins {id 'nf-ga4gh'}",
                     # "plugins.id = 'nf-ga4gh'",
-                    f"tes.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes'",
+                    f"tes.endpoint = '{proxy_url}/ga4gh/tes'",
                     f"tes.oauthToken = '{task_token}'",
                     "tes.timeout = 120",
                     "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
                     f"aws.accessKey = '{task_token}'",
                     "aws.secretKey = 'N/A'",
                     f"aws.region = '{s3_region}'",
-                    f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3'",
+                    f"aws.client.endpoint = '{Dproxy_url}{self.SERVICE_URL}/s3'",
                     "aws.client.s3PathStyleAccess = true",
                     "aws.client.maxErrorRetry = 1",
                     f"workDir = '{s3_working_directory}'",

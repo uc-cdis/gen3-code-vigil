@@ -9,8 +9,6 @@ TODO for CI requires:
 - ALLOWED_TASK_TOKEN_TYPES: ["WORKFLOW", "FOO"]
 - main_account access to create task tokens up to 4000 (or less?)
 - enabling and configuring dpop in fence and gen3-workflow
-
-TODO disable when fence or gen3-workflow version is too low
 """
 
 import time
@@ -19,7 +17,7 @@ import jwt
 import pytest
 import requests
 import utils.gen3_admin_tasks as gat
-from services.fence import DPOP_PROXY_URL, Fence
+from services.fence import Fence
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 
 
@@ -108,7 +106,7 @@ class TestTaskToken(object):
 
         with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
             workflow_task_token,
-            proxy_port,
+            proxy_url,
         ):
             # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint in Fence
             url = f"{pytest.root_url}/user/user"
@@ -123,17 +121,17 @@ class TestTaskToken(object):
 
             # succeed using a WORKFLOW task token on a WORKFLOW endpoint
             res = requests.get(
-                f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks",
+                f"{proxy_url}/ga4gh/tes/v1/tasks",
                 headers={"Authorization": f"bearer {workflow_task_token}"},
             )
             assert res.status_code == 200, res.text
 
         with self.fence.get_dpop_bound_task_token("FOO") as (
             foo_task_token,
-            proxy_port,
+            proxy_url,
         ):
             # fail to use a non-WORKFLOW task token on a WORKFLOW endpoint
-            url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            url = f"{proxy_url}/ga4gh/tes/v1/tasks"
             res = requests.get(
                 url, headers={"Authorization": f"bearer {foo_task_token}"}
             )
@@ -155,10 +153,10 @@ class TestTaskToken(object):
         """
         with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
             task_token,
-            proxy_port,
+            proxy_url,
         ):
             # check that the token can be used
-            url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            url = f"{proxy_url}/ga4gh/tes/v1/tasks"
             res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
             assert res.status_code == 200, res.text
 
@@ -166,6 +164,6 @@ class TestTaskToken(object):
             self.fence.revoke_token(task_token)
 
             # the server should now reject the token
-            url = f"{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes/v1/tasks"
+            url = f"{proxy_url}/ga4gh/tes/v1/tasks"
             res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
             assert res.status_code == 403, "Should not be allowed to list TES tasks"

@@ -20,6 +20,9 @@ from utils.misc import retry
 load_dotenv()
 
 
+_SERVICE_VERSION_CACHE = {}
+
+
 @retry(times=5, delay=60, exceptions=(AssertionError))
 def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
@@ -1199,18 +1202,25 @@ def service_version_lower_than(service_name, min_release_version, min_sem_versio
       which means a test should be skipped.
     - False if the current service version is greater, which means a test can be run.
     """
-    cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
-    )
-    if result.returncode == 0:
-        current_version = result.stdout.strip().replace('"', "")
+    if service_name in _SERVICE_VERSION_CACHE:
+        current_version = _SERVICE_VERSION_CACHE[service_name]
     else:
-        logger.info(f"Unable to run command. Error: {result.stderr}")
-        logger.info(f"Unable to run command. Output: {result.stdout}")
-        return False
-    logger.info(f"Current Version: {current_version}")
-    logger.info(f"MinVersion: {min_release_version}")
+        cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
+        )
+        if result.returncode == 0:
+            current_version = result.stdout.strip().replace('"', "")
+        else:
+            logger.info(f"Unable to run command `{cmd}`. Error: {result.stderr}")
+            logger.info(f"Unable to run command `{cmd}`. Output: {result.stdout}")
+            return False
+        _SERVICE_VERSION_CACHE[service_name] = current_version
+
+    logger.info(
+        f"{service_name} Current Version: {current_version}; Min Version: {min_release_version}; Min SemVer Version: {min_sem_version}"
+    )
+
     try:
         parsed_current = Version(current_version)
         CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
