@@ -145,44 +145,11 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             )
 
 
-# # TODO move it
-# @pytest.fixture
-# def mock_auth_endpoint():
-#     """Fixture to conditionally patch auth.endpoint_from_token based on URL."""
-#     # Import the real function to use in the side_effect fallback
-#     from gen3.auth import endpoint_from_token
-
-#     def _configure_mock(base_url, mock_instance=None):
-#         # If a mock is already provided (e.g., via a class property), use it.
-#         # Otherwise, start a new patch context.
-#         if mock_instance is not None:
-#             _apply_logic(mock_instance, base_url)
-#             yield mock_instance
-#         else:
-#             with patch("auth.endpoint_from_token") as new_mock:
-#                 _apply_logic(new_mock, base_url)
-#                 yield new_mock
-
-#     def _apply_logic(mock_obj, base_url):
-#         if "localhost" in base_url:
-#             # Assumes this helper function is imported and available
-#             clean_url = remove_trailing_whitespace_and_slashes_in_url(base_url)
-#             mock_obj.return_value = clean_url
-#             mock_obj.side_effect = None  # Clear any previous side effects
-#         else:
-#             mock_obj.return_value = None  # Clear any previous return values
-#             mock_obj.side_effect = lambda arg: endpoint_from_token(arg)
-
-#     return _configure_mock
-
-
 class Gen3Workflow:
     def __init__(self):
         self.fence = Fence()
-        self.BASE_URL = f"{pytest.root_url}"  # TODO remove
+        self.BASE_URL = f"{pytest.root_url}"
         self.SERVICE_URL = "/workflows"
-        self.TES_URL = f"{self.BASE_URL}/ga4gh/tes/v1"
-        self.S3_ENDPOINT_URL = f"{self.BASE_URL}{self.SERVICE_URL}/s3"
 
     ############################
     ##### Helper Functions #####
@@ -236,7 +203,7 @@ class Gen3Workflow:
             service_name="s3",
             aws_access_key_id=access_token,
             aws_secret_access_key="N/A",
-            endpoint_url=f"{DPOP_PROXY_URL}:{proxy_port}/workflows/s3",
+            endpoint_url=f"{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3",
             config=Config(region_name=s3_storage_config.bucket_region),
         )
 
@@ -460,7 +427,7 @@ class Gen3Workflow:
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
         with self.fence.get_task_token("WORKFLOW", user) as (access_token, proxy_port):
-            s3_url = f"{DPOP_PROXY_URL}:{proxy_port}/workflows/s3/{object_path}"
+            s3_url = f"{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3/{object_path}"
             headers = {"Authorization": f"bearer {access_token}"}
             response = requests.get(url=s3_url, headers=headers)
         assert (
@@ -661,10 +628,6 @@ class Gen3Workflow:
                 task_token,
                 proxy_port,
             ):
-                # os.environ["GEN3_TOKEN"] = access_token
-                # os.environ["HOSTNAME"] = pytest.hostname
-                # os.environ["HOSTNAME_PROTOCOL"] = os.getenv("HOSTNAME_PROTOCOL")
-                # os.environ["WORK_DIR"] = s3_working_directory
                 config_overrides = [
                     "process.executor = 'tes'",
                     "process.time = '20 min'",
@@ -678,7 +641,7 @@ class Gen3Workflow:
                     f"aws.accessKey = '{task_token}'",
                     "aws.secretKey = 'N/A'",
                     f"aws.region = '{s3_region}'",
-                    f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/workflows/s3'",
+                    f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}{self.SERVICE_URL}/s3'",
                     "aws.client.s3PathStyleAccess = true",
                     "aws.client.maxErrorRetry = 1",
                     f"workDir = '{s3_working_directory}'",
