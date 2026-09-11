@@ -18,6 +18,7 @@ import time
 import jwt
 import pytest
 import requests
+import utils.gen3_admin_tasks as gat
 from services.fence import DPOP_PROXY_URL, Fence
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 
@@ -25,6 +26,10 @@ from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
+)
+@pytest.mark.skipif(
+    gat.service_version_lower_than("fence", "2026.10", "13.4.0"),
+    reason="Current fence version doesn't have the changes for this test",
 )
 @pytest.mark.fence
 class TestTaskToken(object):

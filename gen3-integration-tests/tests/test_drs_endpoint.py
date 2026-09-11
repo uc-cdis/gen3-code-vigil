@@ -2,19 +2,16 @@
 DRS Endpoint
 """
 
-import os
 from uuid import uuid4
 
 import pytest
-import requests
 import utils.gen3_admin_tasks as gat
-from cdislogging import get_logger
 from gen3.auth import Gen3Auth
 from packaging.version import Version
 from services.drs import Drs
 from services.fence import Fence
 from services.indexd import Indexd
-from utils import TEST_DATA_PATH_OBJECT, logger
+from utils import logger
 
 indexd_files = {
     "allowed": {
@@ -752,7 +749,7 @@ class TestDrsBulkEndpoints:
         )
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        gat.service_version_lower_than("fence", "2026.09", "13.3.0"),
         reason="Current fence version doesn't have the changes for this test",
     )
     def test_bulk_signed_urls_success(self):
@@ -816,7 +813,7 @@ class TestDrsBulkEndpoints:
             ], f"Bulk access URL for '{entry.get('drs_object_id')}' is empty"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        gat.service_version_lower_than("fence", "2026.09", "13.3.0"),
         reason="Current fence version doesn't have the changes for this test",
     )
     def test_bulk_signed_urls_too_large(self):
@@ -866,7 +863,7 @@ class TestDrsBulkEndpoints:
         ), f"Expected 413 from bulk signed URLs, got {resp.status_code}"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("fence", "2026.09", "13.3.0"),
+        gat.service_version_lower_than("fence", "2026.09", "13.3.0"),
         reason="Current fence version doesn't have the changes for this test",
     )
     def test_bulk_signed_urls_partial_auth(self):

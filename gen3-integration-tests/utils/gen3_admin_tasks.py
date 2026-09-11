@@ -1188,11 +1188,16 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
     )
 
 
-def service_version_greater_than(service_name, min_release_version, min_sem_version):
+def service_version_lower_than(service_name, min_release_version, min_sem_version):
     """
     This function determines if a test can run based on the minimum supported version.
     min_release_version -> CALVER e.g. 2026.04
     min_sem_version -> SEMVER e.g. 13.1.0
+
+    Return:
+    - True if the current service version is lower than min_release_version/min_sem_version,
+      which means a test should be skipped.
+    - False if the current service version is greater, which means a test can be run.
     """
     cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
     result = subprocess.run(
@@ -1203,6 +1208,7 @@ def service_version_greater_than(service_name, min_release_version, min_sem_vers
     else:
         logger.info(f"Unable to run command. Error: {result.stderr}")
         logger.info(f"Unable to run command. Output: {result.stdout}")
+        return False
     logger.info(f"Current Version: {current_version}")
     logger.info(f"MinVersion: {min_release_version}")
     try:
