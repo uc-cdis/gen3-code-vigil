@@ -29,12 +29,7 @@ import zipfile
 import jwt
 import pytest
 from boto3.s3.transfer import TransferConfig
-from services.gen3workflow import (
-    Gen3Workflow,
-    WorkflowStorageConfig,
-    nextflow_parse_completed_line,
-    nextflow_parse_completed_tasks,
-)
+from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
 from services.requestor import Requestor
 from utils import logger
 
@@ -45,6 +40,80 @@ def base_tes_payload(request):
         "description": request.node.name,
         "tags": {"_IMAGE_PULL_POLICY": "IfNotPresent"},
     }
+
+
+def _nextflow_parse_completed_line(log_line):
+    """
+    Parses a line from the nextflow log that indicates a completed task.
+    Extracts: task name, work directory (and protocol), exit code, and status.
+
+    :param str log_line: A line from the Nextflow log file.
+    :return: Dictionary with extracted task information.
+    :rtype: dict
+
+    Example log line:
+    "Jun-03 12:10:57.578 [Task monitor] .. Task completed > TaskHandler[id: 2; name: extract_metadata (1); status: COMPLETED; exit: 0; error: -; workDir: s3://bucket-name/work-dir]"
+    Example return value:
+    {
+        "process_name": "extract_metadata (1)",
+        "workDir": "bucket-name/work-dir",
+        "workDirProtocol": "s3",
+        "exit_code": "0",
+        "status": "COMPLETED"
+    }
+    """
+
+    task_info = {
+        "process_name": "-",
+        "workDir": "-",
+        "workDirProtocol": "-",
+        "exit_code": "-",
+        "status": "-",
+        "timestamp": "-",
+    }
+    log_regex = (
+        r"(?P<timestamp>\w{3}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) .*?"
+        r"Task completed > TaskHandler\[.*?"
+        r"name: (?P<name>.+); status: (?P<status>-?\w+); "
+        r"exit: (?P<exit_code>-?\d+); "
+        r".*?workDir: (?P<workDirProtocol>.+:\/\/)?(?P<workDir>.+)]"
+    )
+
+    match = re.match(log_regex, log_line)
+
+    if match:
+        task_info["process_name"] = match.group("name")
+        task_info["workDir"] = match.group("workDir")
+        task_info["workDirProtocol"] = match.group("workDirProtocol")
+        task_info["exit_code"] = match.group("exit_code")
+        task_info["status"] = match.group("status") or "-"
+        task_info["timestamp"] = match.group("timestamp")
+
+        if task_info["workDirProtocol"]:
+            task_info["workDirProtocol"] = task_info["workDirProtocol"].split("://")[0]
+
+    return task_info
+
+
+def _nextflow_parse_completed_tasks(completed_tasks):
+    """
+    Input: list of completed tasks, as produced by `_nextflow_parse_completed_line`.
+    Output: dictionary of completed task name to the task's latest run, since tasks may be
+    retried in case of failure.
+    """
+    res = {}
+    for task in completed_tasks:
+        if task["process_name"] not in res:
+            res[task["process_name"]] = task
+            continue
+        new_timestamp = parser.parse(task["timestamp"])
+        stored_timestamp = parser.parse(res[task["process_name"]]["timestamp"])
+        logger.info(
+            f"'{task['process_name']}' ran more than once. Keeping the latest run. Timestamps: {stored_timestamp} and {new_timestamp}"
+        )
+        if new_timestamp > stored_timestamp:
+            res[task["process_name"]] = task
+    return res
 
 
 @pytest.mark.skipif(
@@ -1487,9 +1556,9 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         for line in workflow_log.splitlines():
             logger.info(line)
             if "Task completed > TaskHandler" in line:
-                completed_tasks.append(nextflow_parse_completed_line(line))
+                completed_tasks.append(_nextflow_parse_completed_line(line))
 
-        for task_name, task in nextflow_parse_completed_tasks(completed_tasks).items():
+        for task_name, task in _nextflow_parse_completed_tasks(completed_tasks).items():
             task_category = task_name.split(" ")[0]
             assert (
                 task_category in expected_task_outputs
@@ -1692,7 +1761,8 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             params = {"gpu": "true", "run": "TEST_GPU"}
 
             # ask the server to schedule on a GPU node
-            config_lines = ["tes.tags._GPU = 'yes'"]
+            with open(os.path.join(directory, "nextflow.config"), "a") as file:
+                file.write("\ntes.tags._GPU = 'yes'")
 
             # the test requests 10G memory, but our configured limit is 4G: override to 1G
             with open(f"{directory}/main.nf", "r") as file:
@@ -1702,31 +1772,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         else:
             # do not run unsupported tests or the GPU test (no `gpu` param)
             params = {"skip": ",".join(known_unsupported)}
-            config_lines = []
-
-        # # update the nextflow config
-        # config_lines += [
-        #     "process.executor = 'tes'",
-        #     "process.time = '20 min'",
-        #     # for some reason using `plugins.id` here throws `UnsupportedOperationException`
-        #     "plugins {id 'nf-ga4gh'}",
-        #     # "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
-        #     # "tes.oauthToken = env('GEN3_TOKEN')",
-        #     "tes.timeout = 120",
-        #     # "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
-        #     # "aws.accessKey = env('GEN3_TOKEN')",
-        #     "aws.secretKey = 'N/A'",
-        #     f"aws.region = '{self.s3_storage_config.bucket_region}'",
-        #     "aws.client.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/workflows/s3\"",
-        #     "aws.client.s3PathStyleAccess = true",
-        #     "aws.client.maxErrorRetry = 1",
-        #     "workDir = env('WORK_DIR')",
-        #     # this test tends to fail intermittently; improve stability with retries for now:
-        #     "process.errorStrategy = 'retry'",
-        #     "process.maxRetries = 2",
-        # ]
-        # with open(os.path.join(directory, "nextflow.config"), "a") as file:
-        #     file.write("\n".join(config_lines) + "\n")
 
         # run the test nextflow workflow
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
@@ -1745,7 +1790,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         for line in workflow_log.splitlines():
             logger.info(line)
             if "Task completed > TaskHandler" in line:
-                completed_tasks.append(nextflow_parse_completed_line(line))
+                completed_tasks.append(_nextflow_parse_completed_line(line))
             if "Error is ignored" in line:
                 try:
                     # Example line: Jan-29 18:12:33.445 [TaskFinalizer-6] INFO  nextflow.processor.
@@ -1762,7 +1807,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         logger.info("Completed tasks:")
         logger.info(json.dumps(completed_tasks, indent=2))
 
-        for task_name, task in nextflow_parse_completed_tasks(completed_tasks).items():
+        for task_name, task in _nextflow_parse_completed_tasks(completed_tasks).items():
             assert (
                 task["status"] == "COMPLETED"
             ), f"Task '{task_name}' failed with status: {task['status']}"
