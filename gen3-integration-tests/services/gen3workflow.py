@@ -62,7 +62,7 @@ class WorkflowStorageConfig:
 
 
 def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
-    apps = ["gen3-workflow", "funnel"]
+    apps = ["gen3-workflow", "funnel", "arborist"]
     if with_arborist:
         apps.append("arborist")
     for app in apps:
@@ -129,6 +129,28 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             f"workflow-pods-{pytest.namespace}",
             "describe",
             "pod",
+        ]
+        logger.info(f"********** {" ".join(cmd)} **********")
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+        # kubectl get secret -n sai-kind gen3workflow-g3auto -o jsonpath="{.data['gen3-workflow-config\.yaml']}" | base64 --decode
+        cmd = [
+            "kubectl",
+            "-n",
+            f"{pytest.namespace}",
+            "get",
+            "secret",
+            "gen3workflow-g3auto",
+            "-o",
+            "jsonpath={.data['gen3-workflow-config\\.yaml']}",
+            "|",
+            "base64",
+            "--decode",
         ]
         logger.info(f"********** {" ".join(cmd)} **********")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
