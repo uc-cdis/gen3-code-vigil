@@ -740,6 +740,7 @@ wait_for_pods_ready() {
 }
 
 echo "Installing helm chart for ${namespace}... with values.yaml: $ci_default_manifest_values_yaml \n and portal.yaml: $ci_default_manifest_portal_yaml"
+cat $ci_default_manifest_values_yaml
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
   if kubectl get deployment guppy-deployment -n "${namespace}" >/dev/null 2>&1; then
