@@ -30,6 +30,9 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
+echo "Setting up CI env for namespace: $namespace, setup_type: $setup_type, helm_branch: $helm_branch"
+cat "$ci_default_manifest_values_yaml"
+
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."
