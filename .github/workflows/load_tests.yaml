@@ -208,6 +208,7 @@ jobs:
               HOSTNAME=perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
                 echo "Namespace $NAMESPACE exists, performing teardown..."
