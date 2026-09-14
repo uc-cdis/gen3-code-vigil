@@ -161,11 +161,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         timeout=600,
     )
     if not kubectl_ai_result.returncode == 0:
-        raise Exception(
-            f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
-        )
-    if "Empty response from LLM" in kubectl_ai_result.stdout:
-        return "The LLM model returned empty response."
+        return f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
     report_cmd = [
         "kubectl",
         "-n",
