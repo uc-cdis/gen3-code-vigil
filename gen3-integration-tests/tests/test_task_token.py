@@ -88,7 +88,7 @@ class TestTaskToken(object):
 
         # a user without access to task tokens should not be able to obtain one
         self.fence.get_dpop_bound_task_token(
-            "WORKFLOW", user="user1", expected_status_code=401
+            "WORKFLOW", user="user2", expected_status_code=401
         )
 
     def test_task_token_audience(self):
@@ -106,6 +106,11 @@ class TestTaskToken(object):
         # fail to use a regular (non-DPoP, non-task) token even when using the `dpop` keyword
         # instead of the `bearer` keyword in the auth header
         res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
+        assert res.status_code == 401, "Should not be allowed to list TES tasks"
+        assert res.json().get("error") == "dpop_required"
+
+        # anonymous calls fail on WORKFLOW endpoints
+        res = requests.get(url)
         assert res.status_code == 401, "Should not be allowed to list TES tasks"
         assert res.json().get("error") == "dpop_required"
 
