@@ -103,6 +103,12 @@ class TestTaskToken(object):
         assert res.status_code == 401, "Should not be allowed to list TES tasks"
         assert res.json().get("error") == "dpop_required"
 
+        # fail to use a regular (non-DPoP, non-task) token even when using the `dpop` keyword
+        # instead of the `bearer` keyword in the auth header
+        res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
+        assert res.status_code == 401, "Should not be allowed to list TES tasks"
+        assert res.json().get("error") == "dpop_required"
+
         with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
             workflow_task_token,
             proxy_url,

@@ -653,7 +653,7 @@ class Gen3Workflow:
                     f"aws.accessKey = '{task_token}'",
                     "aws.secretKey = 'N/A'",
                     f"aws.region = '{s3_region}'",
-                    f"aws.client.endpoint = '{Dproxy_url}{self.SERVICE_URL}/s3'",
+                    f"aws.client.endpoint = '{proxy_url}{self.SERVICE_URL}/s3'",
                     "aws.client.s3PathStyleAccess = true",
                     "aws.client.maxErrorRetry = 1",
                     f"workDir = '{s3_working_directory}'",
