@@ -120,7 +120,7 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
     cmd = [
         "kubectl",
         "-n",
-        os.getenv("NAMESPACE"),
+        "qabot",
         "get",
         "pods",
         "-l",
@@ -138,11 +138,11 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
             f"Failed to get kubectl-ai pod. Error: {kubeclt_ai_pod_result.stderr.strip()}"
         )
     kubectl_ai_pod_name = kubeclt_ai_pod_result.stdout.splitlines()[-1].split()[0]
-    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary.txt."'
+    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary_{os.getenv("NAMESPACE")}.txt."'
     kubectl_ai_cmd = [
         "kubectl",
         "-n",
-        os.getenv("NAMESPACE"),
+        "qabot",
         "exec",
         kubectl_ai_pod_name,
         "--",
@@ -167,12 +167,12 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
     report_cmd = [
         "kubectl",
         "-n",
-        os.getenv("NAMESPACE"),
+        "qabot",
         "exec",
         kubectl_ai_pod_name,
         "--",
         "cat",
-        "/tmp/summary.txt",
+        f"/tmp/summary_{os.getenv("NAMESPACE")}.txt",
     ]
     report_result = subprocess.run(
         report_cmd,
@@ -293,7 +293,7 @@ def analyze_failed_tests() -> str:
 def run_test_failure_analysis():
     if "Failed to Prepare CI environment" in os.getenv("PR_ERROR_MSG"):
         try:
-            setup_helm_chart(service="kubectl-ai")
+            # setup_helm_chart(service="kubectl-ai")
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
             print(f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}")
