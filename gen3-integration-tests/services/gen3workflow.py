@@ -20,7 +20,7 @@ from gen3.auth import (
     remove_trailing_whitespace_and_slashes_in_url,
 )
 from gen3.dpop import dpop_proxy_context
-from services.fence import Fence
+from services.fence import DPOP_PROXY_URL, Fence
 from utils import logger
 
 
@@ -638,7 +638,7 @@ class Gen3Workflow:
             )
             with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
                 task_token,
-                proxy_url,
+                proxy_port,
             ):
                 config_overrides = [
                     "process.executor = 'tes'",
@@ -646,14 +646,14 @@ class Gen3Workflow:
                     # for some reason using `plugins.id` here throws `UnsupportedOperationException`
                     "plugins {id 'nf-ga4gh'}",
                     # "plugins.id = 'nf-ga4gh'",
-                    f"tes.endpoint = '{proxy_url}/ga4gh/tes'",
+                    f"tes.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes'",
                     f"tes.oauthToken = '{task_token}'",
                     "tes.timeout = 120",
                     "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
                     f"aws.accessKey = '{task_token}'",
                     "aws.secretKey = 'N/A'",
                     f"aws.region = '{s3_region}'",
-                    f"aws.client.endpoint = '{proxy_url}{self.SERVICE_URL}/s3'",
+                    f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/s3'",
                     "aws.client.s3PathStyleAccess = true",
                     "aws.client.maxErrorRetry = 1",
                     f"workDir = '{s3_working_directory}'",
