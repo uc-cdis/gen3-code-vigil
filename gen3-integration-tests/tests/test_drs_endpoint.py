@@ -631,7 +631,7 @@ class TestDrsBulkEndpoints:
         ), f"Expected '{fake_id}' in unresolved object IDs, got {unresolved_ids}"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("indexd", "2026.10", "6.3.0"),
+        gat.service_version_lower_than("indexd", "2026.10", "6.3.0"),
         reason="Current indexd version doesn't have the changes for this test",
     )
     def test_bulk_drs_objects_request_too_large(self):
@@ -738,7 +738,7 @@ class TestDrsBulkEndpoints:
         ), f"Expected 'None' for open-access record, got {open_types}"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("indexd", "2026.10", "6.3.0"),
+        gat.service_version_lower_than("indexd", "2026.10", "6.3.0"),
         reason="Current indexd version doesn't have the changes for this test",
     )
     def test_bulk_authorizations_request_too_large(self):

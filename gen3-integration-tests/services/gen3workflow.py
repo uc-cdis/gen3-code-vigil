@@ -147,6 +147,8 @@ class Gen3Workflow:
     def __init__(self):
         self.fence = Fence()
         self.BASE_URL = f"{pytest.root_url}"
+        # `SERVICE_URL` is only used for endpoints that do NOT require DPoP; the rest go through
+        # the Gen3 SDK's DPoP proxy
         self.SERVICE_URL = "/workflows"
 
     ############################
@@ -201,7 +203,7 @@ class Gen3Workflow:
             service_name="s3",
             aws_access_key_id=access_token,
             aws_secret_access_key="N/A",
-            endpoint_url=f"{proxy_url}{self.SERVICE_URL}/s3",
+            endpoint_url=f"{proxy_url}/s3",
             config=Config(region_name=s3_storage_config.bucket_region),
         )
 
@@ -431,7 +433,7 @@ class Gen3Workflow:
             access_token,
             proxy_url,
         ):
-            s3_url = f"{proxy_url}{self.SERVICE_URL}/s3/{object_path}"
+            s3_url = f"{proxy_url}/s3/{object_path}"
             headers = {"Authorization": f"bearer {access_token}"}
             response = requests.get(url=s3_url, headers=headers)
         assert (

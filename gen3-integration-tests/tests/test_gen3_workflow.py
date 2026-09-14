@@ -20,6 +20,7 @@ As of this writing, the last issue was #87. Any newer issues may require additio
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile

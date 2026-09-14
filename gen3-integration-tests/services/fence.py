@@ -17,6 +17,8 @@ from utils import logger
 from utils.misc import retry
 from utils.test_execution import screenshot
 
+DPOP_PROXY_URL = "http://127.0.0.1"
+
 
 class Fence(object):
     def __init__(self):
@@ -551,12 +553,11 @@ class Fence(object):
             return
 
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        dpop_proxy_url = "http://127.0.0.1"
         try:
             with dpop_proxy_context(
                 auth=auth, task_token_type=type, task_token_expiration=expires_in
             ) as (task_token, proxy_port):
-                yield task_token, f"{dpop_proxy_url}:{proxy_port}"
+                yield task_token, f"{DPOP_PROXY_URL}:{proxy_port}"
         except Exception as e:
             if expected_status_code == 200:
                 logger.error(f"Unable to get a '{type}' task token for '{user}': {e}")
