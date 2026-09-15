@@ -153,7 +153,7 @@ def run_analysis(execute_command) -> str:
     ]
     failure_analysis_cmd.append(execute_command)
     failure_analysis_result = subprocess.run(
-        " ".joins(failure_analysis_cmd),
+        " ".join(failure_analysis_cmd),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
