@@ -1,0 +1,11 @@
+{{- if .Values.pdb }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: kubectl-ai-pdb
+spec:
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+       app.kubernetes.io/name: "kubectl-ai"
+{{- end }}
