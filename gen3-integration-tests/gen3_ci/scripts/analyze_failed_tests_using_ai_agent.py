@@ -143,17 +143,11 @@ def run_analysis(execute_command) -> str:
     failure_analysis_pod_name = failure_analysis_pod_result.stdout.splitlines()[
         -1
     ].split()[0]
-    failure_analysis_cmd = [
-        "kubectl",
-        "-n",
-        "qabot",
-        "exec",
-        failure_analysis_pod_name,
-        "--",
-    ]
-    failure_analysis_cmd.append(execute_command)
+    failure_analysis_cmd = (
+        f"kubectl -n qabot exec {failure_analysis_pod_name} -- {execute_command}"
+    )
     failure_analysis_result = subprocess.run(
-        " ".join(failure_analysis_cmd),
+        failure_analysis_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -165,6 +159,7 @@ def run_analysis(execute_command) -> str:
             f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
         )
         return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+    logger.info("I am here")
     report_cmd = [
         "kubectl",
         "-n",
@@ -190,14 +185,7 @@ def run_analysis(execute_command) -> str:
 
 def analyze_env_setup_failure_using_kubectl_ai() -> str:
     kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary-{os.getenv("NAMESPACE")}.txt."'
-    execute_command = [
-        "kubectl-ai",
-        "--llm-provider=openai",
-        "--model=Qwen/Qwen3.8-27B-FP8",
-        "--skip-permissions",
-        "--quiet",
-        kubectl_prompt,
-    ]
+    execute_command = f"kubectl-ai --llm-provider=openai --model=Qwen/Qwen3.8-27B-FP8 --skip-permissions --quiet {kubectl_prompt}"
     return run_analysis(execute_command)
 
 
@@ -237,18 +225,7 @@ def analyze_env_setup_failure() -> str:
     ]
     payload = {"model": "Qwen/Qwen3.8-27B-FP8", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
-    execute_command = [
-        "curl",
-        "-X",
-        "POST",
-        "-H",
-        headers,
-        "-d",
-        payload,
-        "$OPENAI_ENDPOINT/chat/completions",
-        ">",
-        f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
-    ]
+    execute_command = f"curl -X POST -H {headers} -d {payload} $OPENAI_ENDPOINT/chat/completions > /tmp/summary-{os.getenv("NAMESPACE")}.txt"
     response = run_analysis(execute_command)
     data = json.load(response)
     reasoning = data["choices"][0]["message"].get("content")
@@ -308,18 +285,7 @@ def analyze_failed_tests() -> str:
             "temperature": 0,
         }
         headers = {"Content-Type": "application/json"}
-        execute_command = [
-            "curl",
-            "-X",
-            "POST",
-            "-H",
-            headers,
-            "-d",
-            payload,
-            "$OPENAI_ENDPOINT/chat/completions",
-            ">",
-            f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
-        ]
+        execute_command = f"curl -X POST -H {headers} -d {payload} $OPENAI_ENDPOINT/chat/completions > /tmp/summary-{os.getenv("NAMESPACE")}.txt"
         response = run_analysis(execute_command)
         logger.info(f"Response: {response}")
         data = json.load(response)
