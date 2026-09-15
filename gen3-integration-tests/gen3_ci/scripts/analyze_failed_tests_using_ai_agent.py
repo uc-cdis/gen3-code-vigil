@@ -119,13 +119,14 @@ def analyze_env_setup_failure() -> str:
     """
     messages = [{"role": "system", "content": debug_prompt}]
     payload = {"model": "Qwen/Qwen3.8-27B-FP8", "messages": messages, "temperature": 0}
-    headers = "Content-Type: application/json"
     execute_command = (
+        f"sh -c '"
         f"curl -X POST "
-        f"-H '{headers}' "
+        f'-H "Content-Type: application/json" '
         f"-d '{json.dumps(payload)}' "
-        f"$OPENAI_ENDPOINT/chat/completions "
+        f'"$OPENAI_ENDPOINT/chat/completions" '
         f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
+        f"'"
     )
     response = run_analysis(execute_command)
     data = json.load(response)
@@ -182,13 +183,14 @@ def analyze_failed_tests() -> str:
             "messages": messages,
             "temperature": 0,
         }
-        headers = "Content-Type: application/json"
         execute_command = (
+            f"sh -c '"
             f"curl -X POST "
-            f"-H '{headers}' "
+            f'-H "Content-Type: application/json" '
             f"-d '{json.dumps(payload)}' "
-            f"$OPENAI_ENDPOINT/chat/completions "
+            f'"$OPENAI_ENDPOINT/chat/completions" '
             f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
+            f"'"
         )
         response = run_analysis(execute_command)
         logger.info(f"Response: {response}")
