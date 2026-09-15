@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kubectl-ai
+  name: failure-analysis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: kubectl-ai
+      app: failure-analysis
   template:
     metadata:
       labels:
-        app: kubectl-ai
+        app: failure-analysis
     spec:
-      serviceAccountName: kubectl-access-kubectl-ai
+      serviceAccountName: failure-analysis-service-account
       containers:
-        - name: kubectl-ai
+        - name: failure-analysis
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:

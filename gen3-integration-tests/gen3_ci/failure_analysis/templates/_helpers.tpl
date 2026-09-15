@@ -1,6 +1,6 @@
 {{/*
 Return the fully qualified app name
 */}}
-{{- define "kubectl-ai.fullname" -}}
+{{- define "failure-analysis.fullname" -}}
 {{- printf "%s" .Release.Name -}}
 {{- end }}

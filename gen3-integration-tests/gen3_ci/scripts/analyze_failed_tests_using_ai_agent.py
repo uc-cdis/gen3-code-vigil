@@ -123,7 +123,7 @@ def run_analysis(execute_command) -> str:
         "get",
         "pods",
         "-l",
-        "app=kubectl-ai",
+        "app=failure-analysis",
     ]
     failure_analysis_pod_result = subprocess.run(
         cmd,
@@ -134,7 +134,7 @@ def run_analysis(execute_command) -> str:
     )
     if not failure_analysis_pod_result.returncode == 0:
         raise Exception(
-            f"Failed to get kubectl-ai pod. Error: {failure_analysis_pod_result.stderr.strip()}"
+            f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
         )
     failure_analysis_pod_name = failure_analysis_pod_result.stdout.splitlines()[
         -1
@@ -157,7 +157,7 @@ def run_analysis(execute_command) -> str:
         shell=True,
     )
     if not failure_analysis_result.returncode == 0:
-        return f"kubectl-ai command failed. Error: {failure_analysis_result.stderr.strip()}"
+        return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
     report_cmd = [
         "kubectl",
         "-n",
@@ -321,19 +321,20 @@ def analyze_failed_tests() -> str:
 
 
 def run_test_failure_analysis():
-    if "Failed to Prepare CI environment" in os.getenv("PR_ERROR_MSG"):
+    if os.getenv("PR_ERROR_MSG") and "Failed to Prepare CI environment" in os.getenv(
+        "PR_ERROR_MSG"
+    ):
         try:
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
             logger.info(
                 f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}"
             )
+    else:
         try:
             response = analyze_failed_tests()
         except Exception as e:
             logger.info(f"Failed to run analyze_failed_tests: {e}")
-        finally:
-            uninstall_helm_chart(service="ollama")
     if response is None:
         return "No logs found to analyze"
     return response, process

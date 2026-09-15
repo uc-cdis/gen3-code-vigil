@@ -2,10 +2,10 @@
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
-  name: kubectl-ai-pdb
+  name: failure-analysis-pdb
 spec:
   maxUnavailable: 0
   selector:
     matchLabels:
-       app.kubernetes.io/name: "kubectl-ai"
+       app.kubernetes.io/name: "failure-analysis"
 {{- end }}
