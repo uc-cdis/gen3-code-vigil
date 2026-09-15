@@ -62,18 +62,20 @@ class WorkflowStorageConfig:
 
 
 def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
-    apps = ["gen3-workflow", "funnel", "arborist"]
+    apps = ["gen3-workflow", "funnel", "arborist", "kube-dns"]
     if with_arborist:
         apps.append("arborist")
     for app in apps:
+        namespace = pytest.namespace if app != "kube-dns" else "kube-system"
+        label = f"app={app}" if app != "kube-dns" else "k8s-app=kube-dns"
         logger.info(f"********** {app} logs begin **********")
         cmd = [
             "kubectl",
             "-n",
-            pytest.namespace,
+            namespace,
             "logs",
             "-l",
-            f"app={app}",
+            label,
             "--all-containers",
             "--tail",
             "10" if app == "arborist" else "150",
