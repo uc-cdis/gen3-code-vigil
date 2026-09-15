@@ -30,6 +30,9 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
+echo "Setting up CI env for namespace: $namespace, setup_type: $setup_type, helm_branch: $helm_branch"
+cat "$ci_default_manifest_values_yaml"
+
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."
@@ -736,6 +739,8 @@ wait_for_pods_ready() {
   return 1
 }
 
+echo "Installing helm chart for ${namespace}... with values.yaml: $ci_default_manifest_values_yaml \n and portal.yaml: $ci_default_manifest_portal_yaml"
+cat $ci_default_manifest_values_yaml
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
   if kubectl get deployment guppy-deployment -n "${namespace}" >/dev/null 2>&1; then
