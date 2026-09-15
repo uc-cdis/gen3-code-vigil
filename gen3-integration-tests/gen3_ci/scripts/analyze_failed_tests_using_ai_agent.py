@@ -8,8 +8,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
-
-# from utils import logger
+from utils import logger
 
 load_dotenv()
 
@@ -112,7 +111,7 @@ def uninstall_helm_chart(service):
 
 def validate_ollama_model():
     response = requests.get("http://localhost:11434/api/tags")
-    print(response.json())
+    logger.info(response.json())
     return response.json()
 
 
@@ -186,10 +185,10 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
 
 def analyze_env_setup_failure() -> str:
     """Check env setup failure and analyze the error"""
-    print("Checking logs/gh_action_logs.txt")
+    logger.info("Checking logs/gh_action_logs.txt")
     log_file_path = "logs/gh_action_logs.txt"
     if not os.path.exists(log_file_path):
-        print(f"{log_file_path} path doesn't exists")
+        logger.info(f"{log_file_path} path doesn't exists")
         return None
     with open(log_file_path, "r") as f:
         logfile_content = f.read().split("Upload reports to S3", 1)[0]
@@ -223,7 +222,7 @@ def analyze_env_setup_failure() -> str:
     url = "http://localhost:11434/v1/chat/completions"
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code != 200:
-        print(f"API call failed. Response: {response.text}")
+        logger.info(f"API call failed. Response: {response.text}")
     response = response.content
     data = json.loads(response.decode("utf-8"))
     reasoning = data["choices"][0]["message"].get("content")
@@ -240,7 +239,7 @@ def analyze_failed_tests() -> str:
         report_dir = None
 
     if report_dir:
-        print(f"Looking into {report_dir} folder")
+        logger.info(f"Looking into {report_dir} folder")
         failed_tests = {"failed_tests": []}
 
         for case_file in report_dir.glob("*.json"):
@@ -282,9 +281,9 @@ def analyze_failed_tests() -> str:
         url = "http://localhost:11434/v1/chat/completions"
         response = requests.post(url, json=payload, headers=headers)
         if response.status_code != 200:
-            print(f"API call failed. Response: {response.text}")
+            logger.info(f"API call failed. Response: {response.text}")
         return response.content
-    print("No allure report folder found")
+    logger.info("No allure report folder found")
     return analyze_env_setup_failure()
 
 
@@ -294,7 +293,9 @@ def run_test_failure_analysis():
             # setup_helm_chart(service="kubectl-ai")
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
-            print(f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}")
+            logger.info(
+                f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}"
+            )
         # finally:
         #     uninstall_helm_chart(service="kubectl-ai")
     # else:
@@ -304,7 +305,7 @@ def run_test_failure_analysis():
     #         assert "gemma4:e4b" in str(validate_ollama_model())
     #         response = analyze_failed_tests()
     #     except Exception as e:
-    #         print(f"Failed to run analyze_failed_tests: {e}")
+    #         logger.info(f"Failed to run analyze_failed_tests: {e}")
     #     finally:
     #         uninstall_helm_chart(service="ollama")
     if response is None:
@@ -332,7 +333,7 @@ def generate_slack_report():
         }
         slack_report_json["blocks"].append(failure_analysis_block)
     else:
-        print("No failure_analysis.txt file found")
+        logger.info("No failure_analysis.txt file found")
         return
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
@@ -350,7 +351,7 @@ if __name__ == "__main__":
             f.write(response)
         generate_slack_report()
     except Exception as e:
-        print(f"Failed to run inference: {e}")
+        logger.info(f"Failed to run inference: {e}")
     finally:
         if process and process.poll() is None:
             process.terminate()
