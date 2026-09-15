@@ -115,7 +115,8 @@ def validate_ollama_model():
     return response.json()
 
 
-def analyze_env_setup_failure_using_kubectl_ai() -> str:
+def run_analysis(execute_command) -> str:
+    logger.info("Running Analysis on Failure-analysis pod")
     cmd = [
         "kubectl",
         "-n",
@@ -123,53 +124,51 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         "get",
         "pods",
         "-l",
-        "app=kubectl-ai",
+        "app=failure-analysis",
     ]
-    kubeclt_ai_pod_result = subprocess.run(
+    failure_analysis_pod_result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         timeout=600,
     )
-    if not kubeclt_ai_pod_result.returncode == 0:
-        raise Exception(
-            f"Failed to get kubectl-ai pod. Error: {kubeclt_ai_pod_result.stderr.strip()}"
+    if not failure_analysis_pod_result.returncode == 0:
+        logger.info(
+            f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
         )
-    kubectl_ai_pod_name = kubeclt_ai_pod_result.stdout.splitlines()[-1].split()[0]
-    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary_{os.getenv("NAMESPACE")}.txt."'
-    kubectl_ai_cmd = [
-        "kubectl",
-        "-n",
-        "qabot",
-        "exec",
-        kubectl_ai_pod_name,
-        "--",
-        "kubectl-ai",
-        "--llm-provider=openai",
-        "--model=Qwen/Qwen3.8-27B-FP8",
-        "--skip-permissions",
-        "--quiet",
-        kubectl_prompt,
-    ]
-    kubectl_ai_result = subprocess.run(
-        kubectl_ai_cmd,
+        raise Exception(
+            f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
+        )
+    failure_analysis_pod_name = failure_analysis_pod_result.stdout.splitlines()[
+        -1
+    ].split()[0]
+    failure_analysis_cmd = (
+        f"kubectl -n qabot exec {failure_analysis_pod_name} -- {execute_command}"
+    )
+    failure_analysis_result = subprocess.run(
+        failure_analysis_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
         timeout=600,
+        shell=True,
     )
-    if not kubectl_ai_result.returncode == 0:
-        return f"kubectl-ai command failed. Error: {kubectl_ai_result.stderr.strip()}"
+    if not failure_analysis_result.returncode == 0:
+        logger.info(
+            f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+        )
+        return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+    logger.info("I am here")
     report_cmd = [
         "kubectl",
         "-n",
         "qabot",
         "exec",
-        kubectl_ai_pod_name,
+        failure_analysis_pod_name,
         "--",
         "cat",
-        f"/tmp/summary_{os.getenv("NAMESPACE")}.txt",
+        f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
     ]
     report_result = subprocess.run(
         report_cmd,
@@ -179,8 +178,15 @@ def analyze_env_setup_failure_using_kubectl_ai() -> str:
         timeout=600,
     )
     if not report_result.returncode == 0:
+        logger.info(f"report command failed. Error: {report_result.stderr.strip()}")
         raise Exception(f"report command failed. Error: {report_result.stderr.strip()}")
     return report_result.stdout.strip()
+
+
+def analyze_env_setup_failure_using_kubectl_ai() -> str:
+    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary-{os.getenv("NAMESPACE")}.txt."'
+    execute_command = f"kubectl-ai --llm-provider=openai --model=Qwen/Qwen3.8-27B-FP8 --skip-permissions --quiet {kubectl_prompt}"
+    return run_analysis(execute_command)
 
 
 def analyze_env_setup_failure() -> str:
@@ -217,14 +223,11 @@ def analyze_env_setup_failure() -> str:
         {"role": "system", "content": debug_prompt},
         {"role": "user", "content": "analyse the errors from this logfile"},
     ]
-    payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
+    payload = {"model": "Qwen/Qwen3.8-27B-FP8", "messages": messages, "temperature": 0}
     headers = {"Content-Type": "application/json"}
-    url = "http://localhost:11434/v1/chat/completions"
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code != 200:
-        logger.info(f"API call failed. Response: {response.text}")
-    response = response.content
-    data = json.loads(response.decode("utf-8"))
+    execute_command = f"curl -X POST -H {headers} -d {payload} $OPENAI_ENDPOINT/chat/completions > /tmp/summary-{os.getenv("NAMESPACE")}.txt"
+    response = run_analysis(execute_command)
+    data = json.load(response)
     reasoning = data["choices"][0]["message"].get("content")
     return reasoning
 
@@ -276,38 +279,39 @@ def analyze_failed_tests() -> str:
             {"role": "system", "content": debug_prompt},
             {"role": "user", "content": "analyse the failed tests"},
         ]
-        payload = {"model": "qwen3.5:2b", "messages": messages, "temperature": 0}
+        payload = {
+            "model": "Qwen/Qwen3.8-27B-FP8",
+            "messages": messages,
+            "temperature": 0,
+        }
         headers = {"Content-Type": "application/json"}
-        url = "http://localhost:11434/v1/chat/completions"
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code != 200:
-            logger.info(f"API call failed. Response: {response.text}")
-        return response.content
+        execute_command = f"curl -X POST -H {headers} -d {payload} $OPENAI_ENDPOINT/chat/completions > /tmp/summary-{os.getenv("NAMESPACE")}.txt"
+        response = run_analysis(execute_command)
+        logger.info(f"Response: {response}")
+        data = json.load(response)
+        logger.info(f"Data: {data}")
+        reasoning = data["choices"][0]["message"].get("content")
+        logger.info(f"Reasoning: {reasoning}")
+        return reasoning
     logger.info("No allure report folder found")
     return analyze_env_setup_failure()
 
 
 def run_test_failure_analysis():
-    if "Failed to Prepare CI environment" in os.getenv("PR_ERROR_MSG"):
+    if os.getenv("PR_ERROR_MSG") and "Failed to Prepare CI environment" in os.getenv(
+        "PR_ERROR_MSG"
+    ):
         try:
-            # setup_helm_chart(service="kubectl-ai")
             response = analyze_env_setup_failure_using_kubectl_ai()
         except Exception as e:
             logger.info(
                 f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}"
             )
-        # finally:
-        #     uninstall_helm_chart(service="kubectl-ai")
-    # else:
-    #     try:
-    #         setup_helm_chart(service="ollama")
-    #         process = setup_port_forwarding(service="ollama")
-    #         assert "gemma4:e4b" in str(validate_ollama_model())
-    #         response = analyze_failed_tests()
-    #     except Exception as e:
-    #         logger.info(f"Failed to run analyze_failed_tests: {e}")
-    #     finally:
-    #         uninstall_helm_chart(service="ollama")
+    else:
+        try:
+            response = analyze_failed_tests()
+        except Exception as e:
+            logger.info(f"Failed to run analyze_failed_tests: {e}")
     if response is None:
         return "No logs found to analyze"
     return response, process
