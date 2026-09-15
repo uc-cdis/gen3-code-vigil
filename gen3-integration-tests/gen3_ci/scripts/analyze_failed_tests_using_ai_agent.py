@@ -238,7 +238,7 @@ def analyze_env_setup_failure() -> str:
         "-d",
         payload,
         "$OPENAI_ENDPOINT/chat/completions",
-        ">>",
+        ">",
         f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
     ]
     response = run_analysis(execute_command)
@@ -309,7 +309,7 @@ def analyze_failed_tests() -> str:
             "-d",
             payload,
             "$OPENAI_ENDPOINT/chat/completions",
-            ">>",
+            ">",
             f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
         ]
         response = run_analysis(execute_command)
