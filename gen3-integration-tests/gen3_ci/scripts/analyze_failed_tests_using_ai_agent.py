@@ -116,6 +116,7 @@ def validate_ollama_model():
 
 
 def run_analysis(execute_command) -> str:
+    logger.info("Running Analysis on Failure-analysis pod")
     cmd = [
         "kubectl",
         "-n",
@@ -133,6 +134,9 @@ def run_analysis(execute_command) -> str:
         timeout=600,
     )
     if not failure_analysis_pod_result.returncode == 0:
+        logger.info(
+            f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
+        )
         raise Exception(
             f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
         )
@@ -157,6 +161,9 @@ def run_analysis(execute_command) -> str:
         shell=True,
     )
     if not failure_analysis_result.returncode == 0:
+        logger.info(
+            f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+        )
         return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
     report_cmd = [
         "kubectl",
@@ -176,6 +183,7 @@ def run_analysis(execute_command) -> str:
         timeout=600,
     )
     if not report_result.returncode == 0:
+        logger.info(f"report command failed. Error: {report_result.stderr.strip()}")
         raise Exception(f"report command failed. Error: {report_result.stderr.strip()}")
     return report_result.stdout.strip()
 
@@ -313,8 +321,11 @@ def analyze_failed_tests() -> str:
             f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
         ]
         response = run_analysis(execute_command)
+        logger.info(f"Response: {response}")
         data = json.load(response)
+        logger.info(f"Data: {data}")
         reasoning = data["choices"][0]["message"].get("content")
+        logger.info(f"Reasoning: {reasoning}")
         return reasoning
     logger.info("No allure report folder found")
     return analyze_env_setup_failure()
