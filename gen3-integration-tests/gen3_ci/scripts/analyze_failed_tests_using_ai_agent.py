@@ -13,108 +13,6 @@ from utils import logger
 load_dotenv()
 
 
-def setup_helm_chart(service):
-    cmd = [
-        "helm",
-        "install",
-        service,
-        f"gen3_ci/{service.replace("-", "_")}",
-        "-n",
-        os.getenv("NAMESPACE"),
-    ]
-
-    helm_install_result = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if not helm_install_result.returncode == 0:
-        raise Exception(
-            f"Unable to install {service}. Error: {helm_install_result.stderr.strip()}"
-        )
-
-    cmd = [
-        "kubectl",
-        "wait",
-        "--for=condition=ready",
-        "pod",
-        "-l",
-        f"app={service}",
-        "--timeout=10m",
-        "-n",
-        os.getenv("NAMESPACE"),
-    ]
-
-    service_pod_ready_result = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if not service_pod_ready_result.returncode == 0:
-        raise Exception(
-            f"{service} pod hasn't started yet. Error: {service_pod_ready_result.stderr.strip()}"
-        )
-
-
-def wait_for_port(host="localhost", port=11434, timeout=60):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            with socket.create_connection((host, port), timeout=2):
-                return True
-        except OSError:
-            time.sleep(1)
-    raise TimeoutError("Port-forward did not become ready")
-
-
-def setup_port_forwarding(service):
-    cmd = [
-        "kubectl",
-        "port-forward",
-        f"svc/{service}",
-        "11434:11434",
-        "-n",
-        os.getenv("NAMESPACE"),
-    ]
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
-    )
-    wait_for_port("localhost", 11434, timeout=60)
-    return process
-
-
-def uninstall_helm_chart(service):
-    cmd = [
-        "helm",
-        "uninstall",
-        service,
-        "-n",
-        os.getenv("NAMESPACE"),
-    ]
-
-    helm_install_result = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if not helm_install_result.returncode == 0:
-        raise Exception(
-            f"Unable to uninstall {service}. Error: {helm_install_result.stderr.strip()}"
-        )
-
-
-def validate_ollama_model():
-    response = requests.get("http://localhost:11434/api/tags")
-    logger.info(response.json())
-    return response.json()
-
-
 def run_analysis(execute_command) -> str:
     logger.info("Running Analysis on Failure-analysis pod")
     cmd = [
@@ -219,13 +117,16 @@ def analyze_env_setup_failure() -> str:
     Log:
     {logfile_content}
     """
-    messages = [
-        {"role": "system", "content": debug_prompt},
-        {"role": "user", "content": "analyse the errors from this logfile"},
-    ]
+    messages = [{"role": "system", "content": debug_prompt}]
     payload = {"model": "Qwen/Qwen3.8-27B-FP8", "messages": messages, "temperature": 0}
-    headers = {"Content-Type": "application/json"}
-    execute_command = f"curl -X POST -H {headers} -d {payload} $OPENAI_ENDPOINT/chat/completions > /tmp/summary-{os.getenv("NAMESPACE")}.txt"
+    headers = "Content-Type: application/json"
+    execute_command = (
+        f"curl -X POST "
+        f"-H '{headers}' "
+        f"-d '{json.dumps(payload)}' "
+        f"$OPENAI_ENDPOINT/chat/completions "
+        f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
+    )
     response = run_analysis(execute_command)
     data = json.load(response)
     reasoning = data["choices"][0]["message"].get("content")
@@ -275,17 +176,20 @@ def analyze_failed_tests() -> str:
         Status Trace:
         {failed_tests}
         """
-        messages = [
-            {"role": "system", "content": debug_prompt},
-            {"role": "user", "content": "analyse the failed tests"},
-        ]
+        messages = [{"role": "system", "content": debug_prompt}]
         payload = {
             "model": "Qwen/Qwen3.8-27B-FP8",
             "messages": messages,
             "temperature": 0,
         }
-        headers = {"Content-Type": "application/json"}
-        execute_command = f"curl -X POST -H {headers} -d {payload} $OPENAI_ENDPOINT/chat/completions > /tmp/summary-{os.getenv("NAMESPACE")}.txt"
+        headers = "Content-Type: application/json"
+        execute_command = (
+            f"curl -X POST "
+            f"-H '{headers}' "
+            f"-d '{json.dumps(payload)}' "
+            f"$OPENAI_ENDPOINT/chat/completions "
+            f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
+        )
         response = run_analysis(execute_command)
         logger.info(f"Response: {response}")
         data = json.load(response)
