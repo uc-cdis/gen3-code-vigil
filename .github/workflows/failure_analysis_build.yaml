@@ -1,4 +1,4 @@
-name: Kubeclt-ai Image Build on Push
+name: Faliure-analysis Image Build on Push
 
 on:
   workflow_dispatch:
@@ -17,7 +17,7 @@ jobs:
     uses: uc-cdis/.github/.github/workflows/image_build_push.yaml@master
     with:
       DOCKERFILE_LOCATION: "./gen3-integration-tests/gen3_ci/failure_analysis/Dockerfile"
-      OVERRIDE_REPO_NAME: "kubectl_ai"
+      OVERRIDE_REPO_NAME: "failure_analysis"
       OVERRIDE_TAG_NAME: "$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
       USE_QUAY_ONLY: true
     secrets: inherit
