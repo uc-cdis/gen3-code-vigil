@@ -15,6 +15,7 @@ load_dotenv()
 
 
 def run_analysis(execute_command) -> str:
+    # Get Pod Name
     logger.info("Running Analysis on Failure-analysis pod")
     cmd = [
         "kubectl",
@@ -45,6 +46,30 @@ def run_analysis(execute_command) -> str:
     failure_analysis_cmd = (
         f"kubectl -n qabot exec {failure_analysis_pod_name} -- {execute_command}"
     )
+    # Delete existing report (although its overwritten, making sure a new file is generated)
+    delete_cmd = [
+        "kubectl",
+        "-n",
+        "qabot",
+        "exec",
+        failure_analysis_pod_name,
+        "--",
+        "rm",
+        "-rf",
+        f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
+    ]
+    delete_report_result = subprocess.run(
+        delete_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not delete_report_result.returncode == 0:
+        logger.info(
+            f"deleting report command failed. Error: {delete_report_result.stderr.strip()}"
+        )
+    # Run analysis
     failure_analysis_result = subprocess.run(
         failure_analysis_cmd,
         stdout=subprocess.PIPE,
@@ -58,6 +83,7 @@ def run_analysis(execute_command) -> str:
             f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
         )
         return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+    # Pull the report out
     report_cmd = [
         "kubectl",
         "-n",
