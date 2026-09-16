@@ -6,7 +6,7 @@ from utils import logger
 
 
 @pytest.mark.skipif(
-    "heal" not in pytest.tested_env, reason="Gen3 FF is deployed only in HEAL"
+    "heal" not in os.getenv("SOURCE_CONFIG"), reason="Gen3 FF is deployed only in HEAL"
 )
 @pytest.mark.skipif(
     "frontend-framework" not in pytest.deployed_services,
