@@ -58,7 +58,6 @@ def run_analysis(execute_command) -> str:
             f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
         )
         return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
-    logger.info("I am here")
     report_cmd = [
         "kubectl",
         "-n",
@@ -193,7 +192,7 @@ def analyze_failed_tests() -> str:
         )
         response = run_analysis(execute_command)
         logger.info(f"Response: {response}")
-        data = json.load(response)
+        data = json.loads(response)
         logger.info(f"Data: {data}")
         reasoning = data["choices"][0]["message"].get("content")
         logger.info(f"Reasoning: {reasoning}")
