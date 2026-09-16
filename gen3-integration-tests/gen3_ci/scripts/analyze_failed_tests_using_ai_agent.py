@@ -246,6 +246,7 @@ def generate_slack_report():
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
     slack_report_json["thread_ts"] = os.getenv("THREAD_TS")
+    logger.info(slack_report_json)
     json.dump(slack_report_json, open("test_analysis_slack_report.json", "w"))
 
 
