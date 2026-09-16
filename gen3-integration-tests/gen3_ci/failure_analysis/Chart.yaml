@@ -1,5 +1,5 @@
 apiVersion: v2
-name: kubectl-ai
+name: failure-analysis
 description: A Helm chart for kubeclt-ai
 
 # A chart can be either an 'application' or a 'library' chart.
