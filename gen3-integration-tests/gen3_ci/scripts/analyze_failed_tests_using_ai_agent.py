@@ -193,9 +193,7 @@ def analyze_failed_tests() -> str:
         response = run_analysis(execute_command)
         logger.info(f"Response: {response}")
         data = json.loads(response)
-        logger.info(f"Data: {data}")
         reasoning = data["choices"][0]["message"].get("content")
-        logger.info(f"Reasoning: {reasoning}")
         return reasoning
     logger.info("No allure report folder found")
     return analyze_env_setup_failure()
