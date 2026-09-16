@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shlex
 import socket
 import subprocess
 import time
@@ -119,14 +120,13 @@ def analyze_env_setup_failure() -> str:
     """
     messages = [{"role": "system", "content": debug_prompt}]
     payload = {"model": "Qwen/Qwen3.8-27B-FP8", "messages": messages, "temperature": 0}
-    execute_command = (
-        f"sh -c '"
+    payload_json = json.dumps(payload)
+    execute_command = "sh -c " + shlex.quote(
         f"curl -X POST "
         f'-H "Content-Type: application/json" '
-        f"-d '{json.dumps(payload)}' "
+        f"-d {shlex.quote(payload_json)} "
         f'"$OPENAI_ENDPOINT/chat/completions" '
         f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
-        f"'"
     )
     response = run_analysis(execute_command)
     data = json.load(response)
@@ -183,14 +183,13 @@ def analyze_failed_tests() -> str:
             "messages": messages,
             "temperature": 0,
         }
-        execute_command = (
-            f"sh -c '"
+        payload_json = json.dumps(payload)
+        execute_command = "sh -c " + shlex.quote(
             f"curl -X POST "
             f'-H "Content-Type: application/json" '
-            f"-d '{json.dumps(payload)}' "
+            f"-d {shlex.quote(payload_json)} "
             f'"$OPENAI_ENDPOINT/chat/completions" '
             f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
-            f"'"
         )
         response = run_analysis(execute_command)
         logger.info(f"Response: {response}")
