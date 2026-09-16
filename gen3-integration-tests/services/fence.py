@@ -240,7 +240,10 @@ class Fence(object):
         logged_in_user="test@example.com",  # Fence helm chart has mock_default_user set to test@example.com
     ):
         """Gets the consent code"""
-        url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
+        if "heal" in os.getenv("SOURCE_CONFIG"):
+            url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}/portal'}&scope={scopes}"
+        else:
+            url = f"{self.BASE_URL}{self.AUTHORIZE_OAUTH2_CLIENT_ENDPOINT}?response_type={response_type}&client_id={client_id}&redirect_uri={f'{pytest.root_url}'}&scope={scopes}"
         page.goto(url)
         page.wait_for_load_state("load")
         current_url = page.url
