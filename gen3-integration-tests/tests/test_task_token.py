@@ -97,9 +97,11 @@ class TestTaskToken(object):
         endpoints reject non-task tokens.
         """
         # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint
-        regular_token = self.gen3_workflow.get_access_token("main_account")
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        res = requests.get(url, headers={"Authorization": f"bearer {regular_token}"})
+        with self.get_token_and_gen3_url("main_account") as (regular_token, _):
+            res = requests.get(
+                url, headers={"Authorization": f"bearer {regular_token}"}
+            )
         assert res.status_code == 401, "Should not be allowed to list TES tasks"
         assert res.json().get("error") == "dpop_required"
 

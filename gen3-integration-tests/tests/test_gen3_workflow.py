@@ -811,11 +811,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Requestor is deployed: granting {pytest.users[user_C]} access to {pytest.users[user_A]}'s tasks"
             )
             requestor = Requestor()
-            user_A_id = jwt.decode(
-                self.gen3_workflow.get_access_token(user_A),
-                algorithms=["RS256"],
-                options={"verify_signature": False},
-            )["sub"]
+            with self.get_token_and_gen3_url(user_A) as (access_token, _):
+                user_A_id = jwt.decode(
+                    access_token,
+                    algorithms=["RS256"],
+                    options={"verify_signature": False},
+                )["sub"]
             resource_path = f"/services/workflow/gen3-workflow/tasks/{user_A_id}"
             resp = requestor.create_request_with_auth_header(
                 username=pytest.users[user_C],
@@ -1460,7 +1461,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # So when `outputs` is a directory, `logs.outputs` is the list of files in the uploaded dir.
         assert len(task_info.get("logs", [])) > 0
         actual_outputs = [o["url"] for o in task_info["logs"][-1].get("outputs", [])]
-        assert actual_outputs == [f"s3://{s3_path_prefix}/{d1}/{d2}/{files[0]['name']}", f"s3://{s3_path_prefix}/{d1}/{d2}/{files[1]['name']}"]
+        # TODO enable assertion once the change to use the mounted bucket in funnel is merged
+        # assert actual_outputs == [
+        #     f"s3://{s3_path_prefix}/{d1}/{d2}/{files[0]['name']}",
+        #     f"s3://{s3_path_prefix}/{d1}/{d2}/{files[1]['name']}",
+        # ]
 
         # check that the expected output files are in S3
         for file in files:

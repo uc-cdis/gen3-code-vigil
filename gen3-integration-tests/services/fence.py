@@ -6,7 +6,6 @@ from contextlib import contextmanager, redirect_stdout
 
 import pytest
 import requests
-import utils.gen3_admin_tasks as gat
 from gen3.auth import Gen3Auth, Gen3AuthError
 from gen3.dpop import dpop_proxy_context
 from gen3.file import Gen3File
@@ -543,15 +542,6 @@ class Fence(object):
                 url = f"{proxy_url}/..."
                 res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
         """
-        if gat.service_version_lower_than("fence", "2026.10", "13.4.0"):
-            logger.info("pre-DPoP fence: using a generic task token")
-            url = f"{pytest.root_url}/user/credentials/api/access_token?task_token={type}&expires_in={expires_in}"
-            res = requests.post(url, json={"api_key": pytest.api_keys[user]["api_key"]})
-            assert res.status_code == expected_status_code, res.text
-            if res.status_code == 200:
-                yield res.json()["access_token"], pytest.root_url
-            return
-
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
         try:
             with dpop_proxy_context(

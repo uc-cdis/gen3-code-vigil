@@ -3,6 +3,7 @@ import os
 import subprocess
 import tempfile
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Tuple
@@ -13,6 +14,7 @@ import botocore.exceptions
 import nextflow
 import pytest
 import requests
+import utils.gen3_admin_tasks as gat
 from botocore.config import Config
 from gen3.auth import (
     Gen3Auth,
@@ -155,42 +157,73 @@ class Gen3Workflow:
     ##### Helper Functions #####
     ############################
 
-    @patch("gen3.auth.endpoint_from_token")
-    def get_access_token(
-        self, user: str = "main_account", endpoint_from_token_mock=None
-    ) -> str:
-        """Helper function that patches Gen3Auth when needed."""
+    @contextmanager
+    def get_token_and_gen3_url(self, user: str = "main_account", needs_dpop=False):
+        """
+        Helper function that patches `Gen3Auth.get_access_token` when needed and uses the SDK's
+        DPoP proxy when needed.
+
+        When running the tests against a local cluster:
+        - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
+          API keys and access tokens have that as their issuer. This allows other pods in the
+          cluster to reach Fence to validate tokens.
+        - However, the tests cannot reach this URL from outside the cluster. The cluster is
+          exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
+          access tokens.
+        - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
+          this method to return `http://localhost:8000` instead of `http://fence-service.
+          <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
+        - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
+          side, but other pods in the cluster would not be able to reach Fence to validate tokens
+          (because within a container, localhost refers to the container itself).
+        - Note: This mocking would not work for DPoP-bound tokens, since the URL (`htu`) is
+          validated. The most straightforward way around this is to set `DPOP_ENABLED: false` in
+          the local cluster's fence and gen3-workflow configs.
+        """
 
         if not user:
-            return None
+            yield None, None
+            return
 
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+        if needs_dpop:
+            if "localhost" in self.BASE_URL or gat.service_version_lower_than(
+                "fence", "2026.10", "13.4.0"
+            ):
+                if "localhost" in self.BASE_URL:
+                    logger.info(
+                        "Running in a local cluster: using a generic task token. Warning: this flow requires DPoP to be disabled in fence and gen3-workflow"
+                    )
+                else:
+                    logger.info("Pre-DPoP Fence: using a generic task token")
+                url = f"{self.fence.BASE_URL}/credentials/api/access_token?task_token=WORKFLOW"
+                res = requests.post(
+                    url, json={"api_key": pytest.api_keys[user]["api_key"]}
+                )
+                assert res.status_code == 200, res.text
+                yield res.json()["access_token"], f"{self.BASE_URL}{self.SERVICE_URL}"
+                return
 
-        # When running the tests against a local cluster:
-        # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
-        #   API keys and access tokens have that as their issuer. This allows other pods in the
-        #   cluster to reach Fence to validate tokens.
-        # - However, the tests cannot reach this URL from outside the cluster. The cluster is
-        #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
-        #   access tokens.
-        # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
-        #   this method to return `http://localhost:8000` instead of `http://fence-service.
-        #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
-        # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
-        #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
-        #   (because within a container, localhost refers to the container itself).
-        if "localhost" in self.BASE_URL:
-            endpoint_from_token_mock.return_value = (
-                remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
-            )
-        else:  # otherwise, no mocking
-            endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
+            with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+                access_token,
+                proxy_url,
+            ):
+                yield access_token, proxy_url
+                return
 
-        try:
-            return auth.get_access_token()
-        except Exception:
-            logger.info("Failed to get access token with Gen3Auth")
-            raise
+        with patch("gen3.auth.endpoint_from_token") as endpoint_from_token_mock:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            if "localhost" in self.BASE_URL:
+                endpoint_from_token_mock.return_value = (
+                    remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
+                )
+            else:  # otherwise, no mocking
+                endpoint_from_token_mock.side_effect = lambda x: endpoint_from_token(x)
+
+            try:
+                yield auth.get_access_token(), f"{self.BASE_URL}{self.SERVICE_URL}"
+            except Exception:
+                logger.info("Failed to get access token with Gen3Auth")
+                raise
 
     def _get_s3_client(
         self,
@@ -227,11 +260,8 @@ class Gen3Workflow:
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
-        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-            access_token,
-            proxy_url,
-        ):
-            client = self._get_s3_client(access_token, proxy_url, s3_storage_config)
+        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+            client = self._get_s3_client(access_token, url, s3_storage_config)
             bucket, key = self._get_bucket_and_key(object_path)
             logger.info(
                 f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
@@ -358,16 +388,17 @@ class Gen3Workflow:
 
     def setup_storage(self, user: str = "main_account", expected_status=200) -> Dict:
         """Makes a GET request to the `/storage/setup` endpoint."""
-        storage_url = f"{self.BASE_URL}{self.SERVICE_URL}/storage/setup"
-        headers = (
-            {
-                "Authorization": f"bearer {self.get_access_token(user)}",
-            }
-            if user
-            else {}
-        )
+        with self.get_token_and_gen3_url(user) as (access_token, url):
+            storage_url = f"{url}/storage/setup"
+            headers = (
+                {
+                    "Authorization": f"bearer {access_token}",
+                }
+                if user
+                else {}
+            )
+            response = requests.get(url=storage_url, headers=headers)
 
-        response = requests.get(url=storage_url, headers=headers)
         if response.status_code != expected_status:
             _print_tes_apps_logs(with_arborist=response.status_code == 403)
         assert (
@@ -396,20 +427,20 @@ class Gen3Workflow:
             AssertionError: If the response status code does not match the expected status.
 
         """
-
-        cleanup_url = (
-            f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket"
-            if delete_bucket
-            else f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket/objects"
-        )
-        headers = (
-            {
-                "Authorization": f"bearer {self.get_access_token(user)}",
-            }
-            if user
-            else {}
-        )
-        response = requests.delete(url=cleanup_url, headers=headers)
+        with self.get_token_and_gen3_url(user) as (access_token, url):
+            cleanup_url = (
+                f"{url}/storage/user-bucket"
+                if delete_bucket
+                else f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket/objects"
+            )
+            headers = (
+                {
+                    "Authorization": f"bearer {access_token}",
+                }
+                if user
+                else {}
+            )
+            response = requests.delete(url=cleanup_url, headers=headers)
 
         # If ignore_missing is True, we allow 404 as a valid response status
         allowed_statuses = (
@@ -429,11 +460,8 @@ class Gen3Workflow:
         self, object_path: str, user: str = "main_account", expected_status=401
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
-        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-            access_token,
-            proxy_url,
-        ):
-            s3_url = f"{proxy_url}/s3/{object_path}"
+        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+            s3_url = f"{url}/s3/{object_path}"
             headers = {"Authorization": f"bearer {access_token}"}
             response = requests.get(url=s3_url, headers=headers)
         assert (
@@ -523,11 +551,8 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a string containing the task_id
         """
-        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-            access_token,
-            proxy_url,
-        ):
-            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks"
+        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+            tes_task_url = f"{url}/ga4gh/tes/v1/tasks"
             headers = {"Authorization": f"bearer {access_token}"} if user else {}
             response = requests.post(
                 url=tes_task_url,
@@ -545,11 +570,8 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a list of task objects
         """
-        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-            access_token,
-            proxy_url,
-        ):
-            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks"
+        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+            tes_task_url = f"{url}/ga4gh/tes/v1/tasks"
             response = requests.get(
                 url=tes_task_url,
                 headers={"Authorization": f"bearer {access_token}"} if user else {},
@@ -567,11 +589,8 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object
         """
-        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-            access_token,
-            proxy_url,
-        ):
-            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
+        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+            tes_task_url = f"{url}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
             response = requests.get(
                 url=tes_task_url,
                 headers={"Authorization": f"bearer {access_token}"} if user else {},
@@ -589,11 +608,8 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
         """
-        with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-            access_token,
-            proxy_url,
-        ):
-            tes_task_url = f"{proxy_url}/ga4gh/tes/v1/tasks/{task_id}:cancel"
+        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+            tes_task_url = f"{url}/ga4gh/tes/v1/tasks/{task_id}:cancel"
             response = requests.post(
                 url=tes_task_url,
                 headers={"Authorization": f"bearer {access_token}"} if user else {},
