@@ -21,8 +21,7 @@ from gen3.auth import (
     endpoint_from_token,
     remove_trailing_whitespace_and_slashes_in_url,
 )
-from gen3.dpop import dpop_proxy_context
-from services.fence import DPOP_PROXY_URL, Fence
+from services.fence import Fence
 from utils import logger
 
 
@@ -180,9 +179,9 @@ class Gen3Workflow:
           validated. The most straightforward way around this is to set `DPOP_ENABLED: false` in
           the local cluster's fence and gen3-workflow configs.
         """
-
+        gen3_workflow_url = f"{self.BASE_URL}{self.SERVICE_URL}"
         if not user:
-            yield None, None
+            yield None, gen3_workflow_url
             return
 
         if needs_dpop:
@@ -202,7 +201,7 @@ class Gen3Workflow:
 
         with patch("gen3.auth.endpoint_from_token") as endpoint_from_token_mock:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-            if "localhost" in self.BASE_URL:
+            if "localhost" in self.BASE_URL:  # local cluster
                 endpoint_from_token_mock.return_value = (
                     remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
                 )
@@ -210,7 +209,7 @@ class Gen3Workflow:
                 endpoint_from_token_mock.side_effect = lambda x: endpoint_from_token(x)
 
             try:
-                yield auth.get_access_token(), f"{self.BASE_URL}{self.SERVICE_URL}"
+                yield auth.get_access_token(), gen3_workflow_url
             except Exception:
                 logger.info("Failed to get access token with Gen3Auth")
                 raise
@@ -641,12 +640,9 @@ class Gen3Workflow:
             os.chdir(workflow_dir_path)
 
             # Run the Nextflow workflow
-            auth = Gen3Auth(
-                refresh_token=pytest.api_keys[user], endpoint=pytest.root_url
-            )
-            with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
-                task_token,
-                proxy_port,
+            with self.get_token_and_gen3_url(user, needs_dpop=True) as (
+                access_token,
+                url,
             ):
                 config_overrides = [
                     "process.executor = 'tes'",
@@ -654,14 +650,14 @@ class Gen3Workflow:
                     # for some reason using `plugins.id` here throws `UnsupportedOperationException`
                     "plugins {id 'nf-ga4gh'}",
                     # "plugins.id = 'nf-ga4gh'",
-                    f"tes.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/ga4gh/tes'",
-                    f"tes.oauthToken = '{task_token}'",
+                    f"tes.endpoint = '{url}/ga4gh/tes'",
+                    f"tes.oauthToken = '{access_token}'",
                     "tes.timeout = 120",
                     "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
-                    f"aws.accessKey = '{task_token}'",
+                    f"aws.accessKey = '{access_token}'",
                     "aws.secretKey = 'N/A'",
                     f"aws.region = '{s3_region}'",
-                    f"aws.client.endpoint = '{DPOP_PROXY_URL}:{proxy_port}/s3'",
+                    f"aws.client.endpoint = '{url}/s3'",
                     "aws.client.s3PathStyleAccess = true",
                     "aws.client.maxErrorRetry = 1",
                     f"workDir = '{s3_working_directory}'",

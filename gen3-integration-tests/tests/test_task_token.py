@@ -98,7 +98,10 @@ class TestTaskToken(object):
         """
         # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        with self.get_token_and_gen3_url("main_account") as (regular_token, _):
+        with self.gen3_workflow.get_token_and_gen3_url("main_account") as (
+            regular_token,
+            _,
+        ):
             res = requests.get(
                 url, headers={"Authorization": f"bearer {regular_token}"}
             )

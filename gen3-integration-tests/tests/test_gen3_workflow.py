@@ -811,7 +811,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Requestor is deployed: granting {pytest.users[user_C]} access to {pytest.users[user_A]}'s tasks"
             )
             requestor = Requestor()
-            with self.get_token_and_gen3_url(user_A) as (access_token, _):
+            with self.gen3_workflow.get_token_and_gen3_url(user_A) as (access_token, _):
                 user_A_id = jwt.decode(
                     access_token,
                     algorithms=["RS256"],
