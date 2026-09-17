@@ -9,18 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       TEST_SUITE:
-        description: 'Load test to execute, use all to run all tests'
+        description: 'Load tests to execute (or-separated, or "ALL")'
         required: false
-        type: choice
-        options:
-          - TestFencePresignedURL
-          - TestGa4ghDrsPerformance
-          - TestIndexdCreateRecords
-          - TestIndexdDrsEndpoint
-          - TestMetadataCreateAndQuery
-          - TestSheepdogImportClinicalMetadata
-          - TestFenceBulkPresignedURL
-          - ALL
+        type: string
         default: ALL
       RELEASE_VERSION:
         description: 'Release version'
