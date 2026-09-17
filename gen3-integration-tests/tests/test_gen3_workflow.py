@@ -1448,11 +1448,19 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
-        self.gen3_workflow.poll_until_task_reaches_expected_state(
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
             user=self.valid_user,
             expected_final_state="COMPLETE",
         )
+
+        # In the GA4GH TES spec, the root-level `outputs` field defines the intended, desired
+        # output files declared when submitting a task, whereas `logs.outputs` records the actual
+        # result and metadata of output files produced and uploaded after execution finishes.
+        # So when `outputs` is a directory, `logs.outputs` is the list of files in the uploaded dir.
+        assert len(task_info.get("logs", [])) > 0
+        actual_outputs = [o["url"] for o in task_info["logs"][-1].get("outputs", [])]
+        assert actual_outputs == [f"s3://{s3_path_prefix}/{d1}/{d2}/{files[0]['name']}", f"s3://{s3_path_prefix}/{d1}/{d2}/{files[1]['name']}"]
 
         # check that the expected output files are in S3
         for file in files:

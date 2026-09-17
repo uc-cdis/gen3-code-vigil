@@ -536,7 +536,7 @@ class Fence(object):
         Use the Gen3 SDK's DPoP proxy to obtain a DPoP-bound task token from Fence.
 
         Returns:
-            tuple (task token, URL)
+            tuple (task token, proxy URL)
 
         Usage:
             with self.fence.get_dpop_bound_task_token("WORKFLOW") as (task_token, proxy_url):
