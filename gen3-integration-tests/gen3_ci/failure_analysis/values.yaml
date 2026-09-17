@@ -1,5 +1,5 @@
 image:
-  repository: quay.io/cdis/kubectl_ai
+  repository: quay.io/cdis/failure_analysis
   tag: master
   pullPolicy: Always
 
