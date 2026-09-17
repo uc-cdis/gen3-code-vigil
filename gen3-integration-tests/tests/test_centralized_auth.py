@@ -348,7 +348,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_client_with_user_token_can_crud_indexd_records_in_namespace(
         self, page: Page
@@ -455,7 +456,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_client_with_user_token_create_signed_url_records_in_namespace(
         self, page: Page
@@ -500,7 +502,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_client_with_access_with_user_token_in_namespace(self, page: Page):
         """
@@ -527,7 +530,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_client_without_access_with_user_token_in_namespace(self, page: Page):
         """
@@ -585,7 +589,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_userinfo_endpoint_contains_authorization_information(self, page: Page):
         """
@@ -612,7 +617,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_client_token_without_permission_cannot_create_signed_url(self, page: Page):
         """
@@ -640,7 +646,8 @@ class TestCentralizedAuth:
 
     @pytest.mark.frontend
     @pytest.mark.skipif(
-        "heal" in os.getenv("SOURCE_CONFIG"), reason="This tests doesnt work in HEAL"
+        "heal" in os.getenv("SOURCE_CONFIG", None),
+        reason="This tests doesnt work in HEAL",
     )
     def test_client_token_with_permission_cannot_create_signed_url(self, page: Page):
         """
