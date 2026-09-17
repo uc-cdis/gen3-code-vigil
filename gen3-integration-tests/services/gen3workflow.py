@@ -186,29 +186,19 @@ class Gen3Workflow:
             return
 
         if needs_dpop:
-            if "localhost" in self.BASE_URL or gat.service_version_lower_than(
-                "fence", "2026.10", "13.4.0"
-            ):
-                if "localhost" in self.BASE_URL:
-                    logger.info(
-                        "Running in a local cluster: using a generic task token. Warning: this flow requires DPoP to be disabled in fence and gen3-workflow"
-                    )
-                else:
-                    logger.info("Pre-DPoP Fence: using a generic task token")
-                url = f"{self.fence.BASE_URL}/credentials/api/access_token?task_token=WORKFLOW"
-                res = requests.post(
-                    url, json={"api_key": pytest.api_keys[user]["api_key"]}
+            if "localhost" in self.BASE_URL:
+                logger.info(
+                    "Running in a local cluster: falling back to a generic non-DPoP token. Warning: this flow requires DPoP to be disabled in fence and gen3-workflow"
                 )
-                assert res.status_code == 200, res.text
-                yield res.json()["access_token"], f"{self.BASE_URL}{self.SERVICE_URL}"
-                return
-
-            with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
-                access_token,
-                proxy_url,
-            ):
-                yield access_token, proxy_url
-                return
+            elif gat.service_version_lower_than("fence", "2026.10", "13.4.0"):
+                logger.info("Pre-DPoP Fence: falling back to a generic non-DPoP token")
+            else:
+                with self.fence.get_dpop_bound_task_token("WORKFLOW", user) as (
+                    access_token,
+                    proxy_url,
+                ):
+                    yield access_token, proxy_url
+                    return
 
         with patch("gen3.auth.endpoint_from_token") as endpoint_from_token_mock:
             auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)

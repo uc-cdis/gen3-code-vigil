@@ -533,6 +533,7 @@ class Fence(object):
     ):
         """
         Use the Gen3 SDK's DPoP proxy to obtain a DPoP-bound task token from Fence.
+        This requires `DPOP_ENABLED: true` in the Fence configuration.
 
         Returns:
             tuple (task token, proxy URL)
