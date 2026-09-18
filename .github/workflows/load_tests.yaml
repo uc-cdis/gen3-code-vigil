@@ -134,14 +134,14 @@ jobs:
           # Setup kubectl
           - name: Set Up kubectl
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-kubectl@v3
+            uses: azure/setup-kubectl@v5
             with:
               version: latest
 
           # Setup helm
           - name: Set Up Helm
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-helm@v4.3.0
+            uses: azure/setup-helm@v5.0.0
             with:
               version: latest
 
