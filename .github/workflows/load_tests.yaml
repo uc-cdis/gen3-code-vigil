@@ -114,34 +114,35 @@ jobs:
           # gen3-load-tests run with python 3.13
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-python@v5
+            uses: actions/setup-python@v6
             with:
               python-version: '3.13'
 
           - name: Set up Go
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-go@v5
+            uses: actions/setup-go@v6
             with:
               go-version: '1.17'
+              cache: false
 
           # allure report generation needs node
           - name: Set up node
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-node@v4
+            uses: actions/setup-node@v6
             with:
-              node-version: 20
+              node-version: 24
 
           # Setup kubectl
           - name: Set Up kubectl
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-kubectl@v3
+            uses: azure/setup-kubectl@v5
             with:
               version: latest
 
           # Setup helm
           - name: Set Up Helm
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-helm@v4.3.0
+            uses: azure/setup-helm@v5.0.0
             with:
               version: latest
 
@@ -175,7 +176,7 @@ jobs:
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: aws-actions/configure-aws-credentials@v3
+            uses: aws-actions/configure-aws-credentials@v6
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
@@ -295,7 +296,7 @@ jobs:
             id: slack_notify
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v2.0.0
+            uses: slackapi/slack-github-action@v4.0.0
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
