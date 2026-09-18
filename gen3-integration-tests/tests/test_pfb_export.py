@@ -14,6 +14,7 @@ from services.graph import GraphDataTools
 from utils import logger
 
 
+@pytest.mark.timeout(1200)
 @pytest.mark.skipif(
     not gat.validate_button_in_portal_config(
         data=gat.get_portal_config(json_file_name="explorer"),
