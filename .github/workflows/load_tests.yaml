@@ -9,18 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       TEST_SUITE:
-        description: 'Load test to execute, use all to run all tests'
+        description: 'Load tests to execute (comma-separated and no spaces, or "ALL")'
         required: false
-        type: choice
-        options:
-          - TestFencePresignedURL
-          - TestGa4ghDrsPerformance
-          - TestIndexdCreateRecords
-          - TestIndexdDrsEndpoint
-          - TestMetadataCreateAndQuery
-          - TestSheepdogImportClinicalMetadata
-          - TestFenceBulkPresignedURL
-          - ALL
+        type: string
         default: ALL
       RELEASE_VERSION:
         description: 'Release version'
@@ -202,12 +193,14 @@ jobs:
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' }}
+            id: create_ns
             # Change the HOSTNAME with full domain name
             run: |
               NAMESPACE=ci-perf
               HOSTNAME=perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
                 echo "Namespace $NAMESPACE exists, performing teardown..."
@@ -215,6 +208,22 @@ jobs:
                 kubectl delete ns $NAMESPACE
               fi
               kubectl create namespace $NAMESPACE
+
+          - name: Get test labels
+            id: get_test_labels
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+                test_label="${TEST_SUITE//,/ or }"
+              elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+                test_label=$(gh api "repos/$REPO_FN/pulls/$PR_NUM" --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then join(" or ") else "" end')
+                if [[ -z "$test_label" ]]; then
+                  test_label="ALL"
+                fi
+              fi
+              echo "$test_label"
+              echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -225,7 +234,7 @@ jobs:
 
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3

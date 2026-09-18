@@ -633,6 +633,10 @@ class TestDrsBulkEndpoints:
             fake_id in unresolved_ids
         ), f"Expected '{fake_id}' in unresolved object IDs, got {unresolved_ids}"
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("indexd", "2026.10", "6.3.0"),
+        reason="Current indexd version doesn't have the changes for this test",
+    )
     def test_bulk_drs_objects_request_too_large(self):
         """
         Scenario: Verify 413 when bulk request exceeds maxBulkRequestLength
@@ -736,6 +740,10 @@ class TestDrsBulkEndpoints:
             "None" in open_types
         ), f"Expected 'None' for open-access record, got {open_types}"
 
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("indexd", "2026.10", "6.3.0"),
+        reason="Current indexd version doesn't have the changes for this test",
+    )
     def test_bulk_authorizations_request_too_large(self):
         """
         Scenario: Verify 413 when bulk OPTIONS exceeds maxBulkRequestLength
