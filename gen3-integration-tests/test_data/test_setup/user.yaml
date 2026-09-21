@@ -83,6 +83,10 @@ authz:
     - id: 'requestor_deleter'
       role_ids: ['requestor_deleter']
       resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar', '/services/workflow/gen3-workflow/tasks']
+    - id: 'requestor_on_behalf_any_user'
+      description: 'be able to create requestor requests naming any other user'
+      role_ids: ['requestor_creator']
+      resource_paths: ['/requestor/on_behalf']
     - id: 'ttyadmin'
       description: 'be able to use admin tty'
       resource_paths: ['/ttyadmin']
@@ -420,6 +424,10 @@ authz:
       description: 'commons /mds-admin'
     - name: 'requestor_integration_test'
       description: 'policy used for requestor integration tests'
+    - name: 'requestor'
+      subresources:
+        - name: 'on_behalf'
+          description: 'authorizes filing access requests for other users'
     - name: 'kayako'
       description: 'commons /kayako'
 
@@ -925,6 +933,7 @@ clients:
     - 'requestor_creator'
     - 'requestor_updater'
     - 'requestor_reader'
+    - 'requestor_on_behalf_any_user'
     - 'indexd_creator'
   jenkinsClientTester:
     policies:
@@ -951,6 +960,7 @@ users:
     - 'programs.jnkns-admin'
     - 'abc-admin'
     - 'requestor_integration_test'
+    - 'requestor_on_behalf_any_user'
     - 'ttyadmin'
     - 'workflow_admin'
     - 'gen3_workflow_user'
@@ -1038,6 +1048,7 @@ users:
     admin: false
     policies:
     - 'workspace'
+    - 'requestor_on_behalf_any_user'
     - 'audit_presigned_url_reader'
     - 'programs.QA-admin'
     - 'programs.test-admin'
