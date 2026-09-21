@@ -847,12 +847,21 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Check that the output file is in the right user's bucket
-        bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
-            folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
-            s3_storage_config=self.s3_storage_config,
-            user=user_A,
-            expected_status=200,
-        )
+        # TODO `funnel-temp-files` is temporarily removed - remove the except block once it's back
+        try:
+            bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
+                folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
+                s3_storage_config=self.s3_storage_config,
+                user=user_A,
+                expected_status=200,
+            )
+        except Exception:
+            bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
+                folder_path=f"{self.s3_storage_config.bucket_name}/{task_id}/",
+                s3_storage_config=self.s3_storage_config,
+                user=user_A,
+                expected_status=200,
+            )
         assert bucket_contents and len(bucket_contents) >= 1
         assert bucket_contents[0]["Key"].endswith("/output.txt")
 
