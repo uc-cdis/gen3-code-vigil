@@ -166,8 +166,8 @@ class TestRequestor:
         ), "Authz contains policy '/requestor_integration_test'"
 
         # Sending revoke request
-        # the revoke is rejected when the request is approved, so the request is created in
-        # SIGNED status to get that verdict from the create call
+        # The validity of a "revoke" request is checked when the request is approved, not when it is created, so set the status to
+        # SIGNED (an "approved" status) to get the "rejected" verdict from the create call
         req_data = {
             "policy_id": "requestor_integration_test",
             "username": pytest.users["user0_account"],
