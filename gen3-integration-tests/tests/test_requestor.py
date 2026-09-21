@@ -45,12 +45,10 @@ class TestRequestor:
         random_policy = requestor.create_request_with_auth_header(
             username=req_data["username"], policy_id=req_data["policy_id"]
         )
-        if random_policy is not None:
-            status_code = random_policy.status_code
-            logger.info(f"Status code of random policy : {status_code}")
-            assert status_code == 400
-        else:
-            logger.info("Failed to create request with policy 'random-policy'")
+        assert random_policy is not None, "Failed to create request with policy 'random-policy'."
+        status_code = random_policy.status_code
+        logger.info(f"Status code of random policy : {status_code}")
+        assert status_code == 400, f"Expected status code 400 but got {status_code}"
 
     def test_request_policy_and_revoke(self, page):
         """
