@@ -150,7 +150,7 @@ class TestRequestor:
         Scenario: Request to revoke for policy that exists in Arborist but user does not have access to - (Negative)
         Steps:
             1. Login with main_account and check the user policy '/requestor_integration_test' in user_info
-            2. Send a revoke request to policy '/requestor_integration_test' to which user0 has no access
+            2. Send a SIGNED revoke request to policy '/requestor_integration_test' to which user0 has no access
             3. Request status code = 400
         """
         login_page = LoginPage()
@@ -166,15 +166,19 @@ class TestRequestor:
         ), "Authz contains policy '/requestor_integration_test'"
 
         # Sending revoke request
+        # the revoke is rejected when the request is approved, so the request is created in
+        # SIGNED status to get that verdict from the create call
         req_data = {
             "policy_id": "requestor_integration_test",
             "username": pytest.users["user0_account"],
             "revoke": True,
+            "status": "SIGNED",
         }
         revoke_req = requestor.create_request_with_auth_header(
             username=req_data["username"],
             policy_id=req_data["policy_id"],
             revoke=req_data["revoke"],
+            request_status=req_data["status"],
         )
         if revoke_req is not None:
             status_code = revoke_req.status_code
@@ -327,6 +331,71 @@ class TestRequestor:
         if "request_id" in res.json():
             self.variables["request_ids"].append(res.json()["request_id"])
         assert res.status_code == 201, f"Failed to create access request: {res.text}"
+
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("requestor", "2026.10", "2.0.0"),
+        reason="Requestor version does not support on-behalf-of authorization",
+    )
+    def test_request_on_behalf_of_other_user(self):
+        """
+        Scenario: Request access for another user with permission to do so
+        Steps:
+            1. Send a create request as main_account naming user1. main_account has
+               access to create requests on behalf of other users. Expect 201
+        """
+        requestor = Requestor()
+
+        res = requestor.create_request_with_auth_header(
+            user="main_account",
+            username=pytest.users["user1_account"],
+            policy_id="requestor_client_credentials_test",
+        )
+        if "request_id" in res.json():
+            self.variables["request_ids"].append(res.json()["request_id"])
+        assert res.status_code == 201, f"Failed to create access request: {res.text}"
+        assert (
+            res.json()["username"] == pytest.users["user1_account"]
+        ), f"Request was not created for user1: {res.text}"
+
+    @pytest.mark.skipif(
+        gat.service_version_greater_than("requestor", "2026.10", "2.0.0"),
+        reason="Requestor version does not support on-behalf-of authorization",
+    )
+    def test_request_on_behalf_of_other_user_no_access(self):
+        """
+        Scenario: Request access for another user without permission to do so - (Negative)
+        Steps:
+            1. Send a create request as user2 naming user2, who has access to create
+               requests for the policy. Expect 201
+            2. Send the same request naming user1 instead. user2 has no access to create
+               requests on behalf of other users. Expect 403
+        """
+        requestor = Requestor()
+        policy_id = "requestor_client_credentials_test"
+
+        # user2 has access to create access requests for this policy, so filing one for
+        # themselves succeeds
+        res = requestor.create_request_with_auth_header(
+            user="user2_account",
+            username=pytest.users["user2_account"],
+            policy_id=policy_id,
+        )
+        if "request_id" in res.json():
+            self.variables["request_ids"].append(res.json()["request_id"])
+        assert res.status_code == 201, f"Failed to create access request: {res.text}"
+
+        # the same request naming somebody else requires access to
+        # '/requestor/on_behalf/<username>', which user2 does not have
+        res = requestor.create_request_with_auth_header(
+            user="user2_account",
+            username=pytest.users["user1_account"],
+            policy_id=policy_id,
+        )
+        if "request_id" in res.json():
+            self.variables["request_ids"].append(res.json()["request_id"])
+        assert (
+            res.status_code == 403
+        ), f"Should have failed to create access request: {res.text}"
 
     def test_request_resource_path_and_role_ids(self, page):
         """
