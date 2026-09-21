@@ -583,10 +583,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=404,
         )
 
-    # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
-    #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
-    #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
-    @pytest.mark.skip(reason="test needs to be updated")
     def test_access_internal_endpoints(self, request):
         """
         Test Case: Access internal endpoints must be restricted
@@ -602,9 +598,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     {
                         "image": "quay.io/curl/curl:latest",
                         "command": [
-                            # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
-                            # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
-                            "sleep 10 && curl http://arborist-service/user"
+                            f"curl http://arborist-service.{pytest.namespace}/user --connect-timeout 3s"
                         ],
                     }
                 ],
@@ -621,15 +615,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             task_id=task_id, user=self.valid_user, expected_final_state="EXECUTOR_ERROR"
         )
 
-        # FIXME: Ideally even if the test fails with an EXEC_ERROR we must be able to see the
-        # task_logs, but we currently see None. Need to investigate further, once fixed
-        # Uncomment the following code.
-
-        # task_logs = task_info.get("logs", [])
-        # stdout = task_logs[0]["logs"][0]["stdout"].strip() if len(task_logs) > 0 else ""
-        # assert (
-        #     "Could not resolve host: arborist-service" in stdout
-        # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
+        task_logs = task_info.get("logs", [])
+        stdout = task_logs[0]["logs"][0]["stdout"].strip() if len(task_logs) > 0 else ""
+        assert (
+            "Connection timed out after 3001 milliseconds" in stdout
+        ), f"Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
 
     @pytest.mark.parametrize(
         "test_case",
