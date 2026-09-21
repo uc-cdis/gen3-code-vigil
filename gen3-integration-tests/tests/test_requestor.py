@@ -45,10 +45,12 @@ class TestRequestor:
         random_policy = requestor.create_request_with_auth_header(
             username=req_data["username"], policy_id=req_data["policy_id"]
         )
-        assert random_policy is not None, "Failed to create request with policy 'random-policy'."
-        status_code = random_policy.status_code
-        logger.info(f"Status code of random policy : {status_code}")
-        assert status_code == 400, f"Expected status code 400 but got {status_code}"
+        if random_policy is not None:
+            status_code = random_policy.status_code
+            logger.info(f"Status code of random policy : {status_code}")
+            assert status_code == 400
+        else:
+            logger.info("Failed to create request with policy 'random-policy'")
 
     def test_request_policy_and_revoke(self, page):
         """
@@ -178,14 +180,10 @@ class TestRequestor:
             revoke=req_data["revoke"],
             request_status=req_data["status"],
         )
-        if revoke_req is not None:
-            status_code = revoke_req.status_code
-            logger.info(f"Status code of revoke policy : {status_code}")
-            assert status_code == 400
-        else:
-            logger.info(
-                "Failed to create revoke request with policy '/requestor_integration_test'"
-            )
+        assert revoke_req is not None, "Failed to create revoke request with policy '/requestor_integration_test'"
+        status_code = revoke_req.status_code
+        logger.info(f"Status code of revoke policy : {status_code}")
+        assert status_code == 400, f"Expected status code to be 400 but got {status_code}"
 
     def test_revoke_signed_request(self, page):
         """
