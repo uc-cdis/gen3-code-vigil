@@ -306,8 +306,21 @@ jobs:
             id: run_tests_job
             if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY == 'true' && steps.prep_ci_env.outcome == 'success' }}
             run: |
-              # TODO replace placeholder values
-              kubectl apply -n env.NAMESPACE -f gen3_ci/run-tes-tests-job.yaml
+              pwd
+              ls
+              JOB=gen3_ci/run-tes-tests-job.yaml
+
+              # TODO just overwrite the whole array
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "TEST_SUITE").value = strenv(TEST_SUITE))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "PARAMS").value = strenv(PARAMS))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "HOSTNAME").value = strenv(HOSTNAME))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "HOSTNAME_PROTOCOL").value = strenv(HOSTNAME_PROTOCOL))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "NAMESPACE").value = strenv(NAMESPACE))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "RUN_NUM").value = strenv(RUN_NUM))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "ATTEMPT_NUM").value = strenv(ATTEMPT_NUM))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "RELEASE_VERSION").value = strenv(RELEASE_VERSION))' $JOB
+              
+              kubectl apply -n env.NAMESPACE -f $JOB
 
           - name: Generate allure report
             id: generate_allure_report
