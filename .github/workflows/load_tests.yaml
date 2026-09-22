@@ -24,8 +24,8 @@ on:
         description: 'Custom parameters as a JSON string, as defined by each test'
         required: false
         default: '{}'
-      TES_NAMESPACE_SETUP_ONLY:
-        description: 'Use this to set up the TES load testing namespace (does not run any tests)'
+      RUN_TES_TESTS:
+        description: 'Use this to run the TES load tests (overwrites some of the parameters above)'
         required: false
         type: choice
         options:
@@ -51,7 +51,7 @@ jobs:
         RELEASE_VERSION: ${{ steps.setvars.outputs.RELEASE_VERSION }}
         GITOPS_BRANCH: ${{ steps.setvars.outputs.GITOPS_BRANCH }}
         PARAMS: ${{ steps.setvars.outputs.PARAMS }}
-        TES_NAMESPACE_SETUP_ONLY: ${{ steps.setvars.outputs.TES_NAMESPACE_SETUP_ONLY }}
+        RUN_TES_TESTS: ${{ steps.setvars.outputs.RUN_TES_TESTS }}
       steps:
         - name: Determine TEST_SUITE and RELEASE_VERSION
           id: setvars
@@ -66,20 +66,26 @@ jobs:
                 GITOPS_BRANCH=master
               fi
               PARAMS="${{ github.event.inputs.PARAMS }}"
-              TES_NAMESPACE_SETUP_ONLY="${{ github.event.inputs.TES_NAMESPACE_SETUP_ONLY }}"
+              RUN_TES_TESTS="${{ github.event.inputs.RUN_TES_TESTS }}"
             else
               TEST_SUITE="ALL"
               RELEASE_VERSION=""
               GITOPS_BRANCH="master"
               PARAMS='{}'
-              TES_NAMESPACE_SETUP_ONLY='false'
+              RUN_TES_TESTS='false'
+            fi
+
+            if [[ "$RUN_TES_TESTS" == "true" ]]; then
+              TEST_SUITE="TestTesPerformance"
+              # TODO revert PARAMS to '{}'
+              PARAMS='{"tes": {"concurrency": [500, 1000], "test_case_simple": false, "test_case_inputs_outputs": true, "test_case_gpu": false}, "nextflow": {"concurrency": [], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": false}}'
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
             echo "GITOPS_BRANCH=$GITOPS_BRANCH" >> $GITHUB_OUTPUT
             echo "PARAMS=$PARAMS" >> $GITHUB_OUTPUT
-            echo "TES_NAMESPACE_SETUP_ONLY=$TES_NAMESPACE_SETUP_ONLY" >> $GITHUB_OUTPUT
+            echo "RUN_TES_TESTS=$RUN_TES_TESTS" >> $GITHUB_OUTPUT
     load_tests:
         runs-on: ubuntu-latest
         needs: setup
@@ -233,7 +239,7 @@ jobs:
             run: |
               NAMESPACE=ci-perf
               HOSTNAME=perf.ci.planx-pla.net
-              if [[ "${{ needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY }}" == "true" ]]; then
+              if [[ "${{ needs.setup.outputs.RUN_TES_TESTS }}" == "true" ]]; then
                 NAMESPACE=ci-perf-tes
                 HOSTNAME=tes-perf.ci.planx-pla.net
               fi
@@ -284,7 +290,7 @@ jobs:
 
           - name: Run tests
             id: run_tests
-            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.RUN_TES_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
@@ -302,7 +308,7 @@ jobs:
 
           - name: Run tests through k8s job
             id: run_tests_job
-            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY == 'true' && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.RUN_TES_TESTS == 'true' && steps.prep_ci_env.outcome == 'success' }}
             run: |
               JOB=gen3_ci/run-tes-tests-job.yaml
 
