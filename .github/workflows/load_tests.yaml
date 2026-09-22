@@ -9,19 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       TEST_SUITE:
-        description: 'Load test to execute, use all to run all tests'
+        description: 'Load tests to execute (comma-separated and no spaces, or "ALL")'
         required: false
-        type: choice
-        options:
-          - TestFencePresignedURL
-          - TestGa4ghDrsPerformance
-          - TestIndexdCreateRecords
-          - TestIndexdDrsEndpoint
-          - TestMetadataCreateAndQuery
-          - TestSheepdogImportClinicalMetadata
-          - TestFenceBulkPresignedURL
-          - TestTesPerformance
-          - ALL
+        type: string
         default: ALL
       RELEASE_VERSION:
         description: 'Release version'
@@ -34,6 +24,14 @@ on:
         description: 'Custom parameters as a JSON string, as defined by each test'
         required: false
         default: '{}'
+      TES_NAMESPACE_SETUP_ONLY:
+        description: 'Use this to set up the TES load testing namespace (does not run any tests)'
+        required: false
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        default: 'false'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -53,6 +51,7 @@ jobs:
         RELEASE_VERSION: ${{ steps.setvars.outputs.RELEASE_VERSION }}
         GITOPS_BRANCH: ${{ steps.setvars.outputs.GITOPS_BRANCH }}
         PARAMS: ${{ steps.setvars.outputs.PARAMS }}
+        TES_NAMESPACE_SETUP_ONLY: ${{ steps.setvars.outputs.TES_NAMESPACE_SETUP_ONLY }}
       steps:
         - name: Determine TEST_SUITE and RELEASE_VERSION
           id: setvars
@@ -67,17 +66,20 @@ jobs:
                 GITOPS_BRANCH=master
               fi
               PARAMS="${{ github.event.inputs.PARAMS }}"
+              TES_NAMESPACE_SETUP_ONLY="${{ github.event.inputs.TES_NAMESPACE_SETUP_ONLY }}"
             else
               TEST_SUITE="ALL"
               RELEASE_VERSION=""
               GITOPS_BRANCH="master"
               PARAMS='{}'
+              TES_NAMESPACE_SETUP_ONLY='false'
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
             echo "GITOPS_BRANCH=$GITOPS_BRANCH" >> $GITHUB_OUTPUT
             echo "PARAMS=$PARAMS" >> $GITHUB_OUTPUT
+            echo "TES_NAMESPACE_SETUP_ONLY=$TES_NAMESPACE_SETUP_ONLY" >> $GITHUB_OUTPUT
     load_tests:
         runs-on: ubuntu-latest
         needs: setup
@@ -104,7 +106,7 @@ jobs:
           PARAMS: ${{ needs.setup.outputs.PARAMS }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           HELM_BRANCH: 'master'
-
+          SKIP_TESTS: 'false'
 
         steps:
           - name: Set Start Time
@@ -118,7 +120,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
-              ref: ${{ inputs.TEST_REPO_BRANCH }}
+              ref: ${{ github.event.pull_request.head.ref }}
 
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
@@ -146,34 +148,35 @@ jobs:
           # gen3-load-tests run with python 3.13
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-python@v5
+            uses: actions/setup-python@v6
             with:
               python-version: '3.13'
 
           - name: Set up Go
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-go@v5
+            uses: actions/setup-go@v6
             with:
               go-version: '1.17'
+              cache: false
 
           # allure report generation needs node
           - name: Set up node
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-node@v4
+            uses: actions/setup-node@v6
             with:
-              node-version: 20
+              node-version: 24
 
           # Setup kubectl
           - name: Set Up kubectl
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-kubectl@v3
+            uses: azure/setup-kubectl@v5
             with:
               version: latest
 
           # Setup helm
           - name: Set Up Helm
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-helm@v4.3.0
+            uses: azure/setup-helm@v5.0.0
             with:
               version: latest
 
@@ -207,7 +210,7 @@ jobs:
           # Configure AWS credentials
           - name: Configure AWS Credentials
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: aws-actions/configure-aws-credentials@v3
+            uses: aws-actions/configure-aws-credentials@v6
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
@@ -225,19 +228,41 @@ jobs:
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' }}
+            id: create_ns
             # Change the HOSTNAME with full domain name
             run: |
               NAMESPACE=ci-perf
               HOSTNAME=perf.ci.planx-pla.net
+              if [[ "${{ needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY }}" == "true" ]]; then
+                NAMESPACE=ci-perf-tes
+                HOSTNAME=tes-perf.ci.planx-pla.net
+              fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
                 echo "Namespace $NAMESPACE exists, performing teardown..."
-                helm delete $NAMESPACE -n $NAMESPACE || true
-                kubectl delete ns $NAMESPACE
+                # helm delete $NAMESPACE -n $NAMESPACE || true
+                # kubectl delete ns $NAMESPACE
               fi
-              kubectl create namespace $NAMESPACE
+              # kubectl create namespace $NAMESPACE
+
+          - name: Get test labels
+            id: get_test_labels
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+                test_label="${TEST_SUITE//,/ or }"
+              elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+                test_label=$(gh api "repos/$REPO_FN/pulls/$PR_NUM" --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then join(" or ") else "" end')
+                if [[ -z "$test_label" ]]; then
+                  test_label="ALL"
+                fi
+              fi
+              echo "$test_label"
+              echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -248,18 +273,18 @@ jobs:
 
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              fi
+              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              # if [ $? -ne 0 ]; then
+              #   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              # fi
 
           - name: Run tests
             id: run_tests
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY != 'true' && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
@@ -274,6 +299,24 @@ jobs:
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
+
+          - name: Run tests through k8s job
+            id: run_tests_job
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY == 'true' && steps.prep_ci_env.outcome == 'success' }}
+            run: |
+              JOB=gen3_ci/run-tes-tests-job.yaml
+
+              # TODO just overwrite the whole array
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "TEST_SUITE").value = strenv(TEST_SUITE))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "PARAMS").value = strenv(PARAMS))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "HOSTNAME").value = strenv(HOSTNAME))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "HOSTNAME_PROTOCOL").value = strenv(HOSTNAME_PROTOCOL))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "NAMESPACE").value = strenv(NAMESPACE))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "RUN_NUM").value = strenv(RUN_NUM))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "ATTEMPT_NUM").value = strenv(ATTEMPT_NUM))' $JOB
+              yq eval -i '.spec.spec.containers[0].env |= map(select(.name == "RELEASE_VERSION").value = strenv(RELEASE_VERSION))' $JOB
+
+              kubectl apply -n env.NAMESPACE -f $JOB
 
           - name: Generate allure report
             id: generate_allure_report
@@ -317,7 +360,7 @@ jobs:
             id: slack_notify
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v2.0.0
+            uses: slackapi/slack-github-action@v4.0.0
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
@@ -325,5 +368,5 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' || steps.run_tests_job.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
