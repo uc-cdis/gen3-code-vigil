@@ -40,8 +40,9 @@ spec:
       #     name: fence
       containers:
         - name: load-tests-tes
-          # image: quay.io/cdis/containers:load-tests-tes
-          image: quay.io/cdis/gen3-workflow:integration_tests_dicom_image
+          image: quay.io/cdis/gen3-integration-tests:load_tests_tes-load-test-k8s
+          # image: quay.io/cdis/gen3-integration-tests:load_tests_master
+          # TODO revert to this ^
           imagePullPolicy: Always
           # ports:
           # - containerPort: 80

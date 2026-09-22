@@ -4,7 +4,7 @@
 
 ARG AZLINUX_BASE_VERSION=3.13-pythonpoetry
 
-FROM quay.io/cdis/amazonlinux-base:${AZLINUX_BASE_VERSION}
+FROM quay.io/cdis/amazonlinux-base:${AZLINUX_BASE_VERSION} as base
 
 ENV appname=gen3-load-tests \
     NODEJS_VERSION=20
