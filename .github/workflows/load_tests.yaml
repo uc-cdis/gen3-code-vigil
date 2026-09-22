@@ -308,6 +308,8 @@ jobs:
             run: |
               pwd
               ls
+              echo "----"
+              ls gen3_ci/
               JOB=gen3_ci/run-tes-tests-job.yaml
 
               # TODO just overwrite the whole array
