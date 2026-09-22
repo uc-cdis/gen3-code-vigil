@@ -284,7 +284,7 @@ jobs:
 
           - name: Run tests
             id: run_tests
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY == 'false' }}
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY != 'true' && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             env:
               TEST_SUITE: ${{ env.TEST_SUITE }}
@@ -352,5 +352,5 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
