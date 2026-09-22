@@ -302,6 +302,13 @@ jobs:
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
 
+          - name: Run tests through k8s job
+            id: run_tests_job
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY == 'true' && steps.prep_ci_env.outcome == 'success' }}
+            run: |
+              # TODO replace placeholder values
+              kubectl apply -n env.NAMESPACE -f gen3_ci/run-tes-tests-job.yaml
+
           - name: Generate allure report
             id: generate_allure_report
             if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
@@ -352,5 +359,5 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.TES_NAMESPACE_SETUP_ONLY != 'true' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' || steps.run_tests_job.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1
