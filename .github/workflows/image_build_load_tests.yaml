@@ -1,4 +1,5 @@
 name: Build image
+
 on:
   workflow_dispatch:
     inputs:
