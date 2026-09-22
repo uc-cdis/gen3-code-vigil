@@ -39,60 +39,43 @@ spec:
       #   configMap:
       #     name: fence
       containers:
-      - name: load-tests-tes
-        image: quay.io/cdis/containers:load-tests-tes
-        imagePullPolicy: Always
-        # ports:
-        # - containerPort: 80
-        env:
-        - name: TEST_SUITE
-          value: PLACEHOLDER
-        - name: PARAMS
-          value: PLACEHOLDER
-        - name: HOSTNAME
-          value: PLACEHOLDER
-        - name: HOSTNAME_PROTOCOL
-          value: PLACEHOLDER
-        - name: NAMESPACE
-          value: PLACEHOLDER
-        - name: RUN_NUM
-          value: PLACEHOLDER
-        - name: ATTEMPT_NUM
-          value: PLACEHOLDER
-        - name: RELEASE_VERSION
-          value: PLACEHOLDER
-        # volumeMounts:
-        #   - name: "creds-volume"
-        #     readOnly: true
-        #     mountPath: "/gen3/tube/creds.json"
-        #     subPath: creds.json
-        #   - name: "etl-mapping"
-        #     readOnly: true
-        #     mountPath: "/gen3/tube/etlMapping.yaml"
-        #     subPath: "etlMapping.yaml"
-        #   - name: "fence-yaml"
-        #     readOnly: true
-        #     mountPath: "/gen3/tube/user.yaml"
-        #     subPath: user.yaml
-        resources:
-          limits:
-            cpu: 2
-            memory: 10Gi
-          requests:
-            cpu: 2
-        command: ["/bin/bash" ]
-        args:
-          - "-c"
-          - |
-            mkdir output
-            if [[ "${TEST_SUITE}" == "ALL" ]]; then
-              echo "Running full test suite..."
-              poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
-            else
-              echo "Running only: $TEST_SUITE"
-              poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
-            fi
-            exitcode=$?
-            echo "Exit code: $exitcode"
-            exit "$exitcode"
+        - name: load-tests-tes
+          image: quay.io/cdis/containers:load-tests-tes
+          imagePullPolicy: Always
+          # ports:
+          # - containerPort: 80
+          # volumeMounts:
+          #   - name: "creds-volume"
+          #     readOnly: true
+          #     mountPath: "/gen3/tube/creds.json"
+          #     subPath: creds.json
+          #   - name: "etl-mapping"
+          #     readOnly: true
+          #     mountPath: "/gen3/tube/etlMapping.yaml"
+          #     subPath: "etlMapping.yaml"
+          #   - name: "fence-yaml"
+          #     readOnly: true
+          #     mountPath: "/gen3/tube/user.yaml"
+          #     subPath: user.yaml
+          resources:
+            limits:
+              cpu: 2
+              memory: 10Gi
+            requests:
+              cpu: 2
+          command: ["/bin/bash"]
+          args:
+            - "-c"
+            - |
+              mkdir output
+              if [[ "${TEST_SUITE}" == "ALL" ]]; then
+                echo "Running full test suite..."
+                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+              else
+                echo "Running only: $TEST_SUITE"
+                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+              fi
+              exitcode=$?
+              echo "Exit code: $exitcode"
+              exit "$exitcode"
       restartPolicy: Never
