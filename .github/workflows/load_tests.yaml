@@ -325,7 +325,7 @@ jobs:
               ' $JOB
               echo $JOB:
               cat $JOB
-              kubectl apply -n env.NAMESPACE -f $JOB
+              kubectl apply -n $NAMESPACE -f $JOB
 
           - name: Generate allure report
             id: generate_allure_report
