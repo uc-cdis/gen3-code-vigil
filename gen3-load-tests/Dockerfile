@@ -2,9 +2,7 @@
 # than Github's 6h hard limit).
 # Only used for TES tests at the time of writing.
 
-ARG AZLINUX_BASE_VERSION=3.13-pythonpoetry
-
-FROM quay.io/cdis/amazonlinux-base:${AZLINUX_BASE_VERSION} as base
+FROM quay.io/cdis/amazonlinux-base:3.13-pythonnginx AS base
 
 ENV appname=gen3-load-tests \
     NODEJS_VERSION=20
