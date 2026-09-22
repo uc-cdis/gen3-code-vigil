@@ -209,10 +209,11 @@ class Gen3Workflow:
                 endpoint_from_token_mock.side_effect = lambda x: endpoint_from_token(x)
 
             try:
-                yield auth.get_access_token(), gen3_workflow_url
+                access_token = auth.get_access_token()
             except Exception:
                 logger.info("Failed to get access token with Gen3Auth")
                 raise
+            yield access_token, gen3_workflow_url
 
     def _get_s3_client(
         self,

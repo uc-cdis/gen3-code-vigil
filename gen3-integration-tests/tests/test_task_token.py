@@ -28,10 +28,6 @@ class TestTaskToken(object):
     @classmethod
     def setup_class(cls):
         cls.fence = Fence()
-        cls.gen3_workflow = Gen3Workflow()
-        cls.s3_storage_config = WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.setup_storage()
-        )
 
     def test_obtain_task_token(self):
         """
@@ -84,21 +80,35 @@ class TestTaskToken(object):
 
         # requesting a task token with a non-allowed type (not configured in
         # ALLOWED_TASK_TOKEN_TYPES) should not work
-        self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400)
+        with self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400):
+            pass
 
         # a user without access to task tokens should not be able to obtain one
-        self.fence.get_dpop_bound_task_token(
-            "WORKFLOW", user="user2", expected_status_code=401
-        )
+        with self.fence.get_dpop_bound_task_token(
+            "WORKFLOW", user="user2_account", expected_status_code=403
+        ):
+            pass
 
+    @pytest.mark.skipif(
+        "gen3-workflow" not in pytest.deployed_services,
+        reason="gen3-workflow service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "funnel" not in pytest.deployed_services,
+        reason="funnel service is not running on this environment",
+    )
+    @pytest.mark.gen3_workflow
     def test_task_token_audience(self):
         """
         Test that task tokens can only be used on the endpoints they are meant for, and that those
         endpoints reject non-task tokens.
         """
+        gen3_workflow = Gen3Workflow()
+        gen3_workflow.setup_storage()
+
         # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-        with self.gen3_workflow.get_token_and_gen3_url("main_account") as (
+        with gen3_workflow.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):

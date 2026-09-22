@@ -1217,7 +1217,7 @@ def service_version_lower_than(service_name, min_release_version, min_sem_versio
             return False
         _SERVICE_VERSION_CACHE[service_name] = current_version
 
-    logger.info(
+    logger.debug(
         f"{service_name} Current Version: {current_version}; Min Version: {min_release_version}; Min SemVer Version: {min_sem_version}"
     )
 
