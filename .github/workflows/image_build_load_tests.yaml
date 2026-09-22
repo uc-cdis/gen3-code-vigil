@@ -1,0 +1,24 @@
+name: Build image (load tests)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The tag to apply to this build. Defaults to 'latest'."
+        default: "latest"
+        required: false
+  push:
+    paths:
+      - .github/workflows/image_build_load_tests.yaml
+      - gen3-load-tests/poetry.lock
+
+jobs:
+  build-image:
+    name: Build image
+    uses: uc-cdis/.github/.github/workflows/image_build_push_native.yaml@master
+    with:
+      DOCKERFILE_LOCATION: "./gen3-load-tests/Dockerfile"
+      OVERRIDE_REPO_NAME: "gen3-integration-tests"
+      OVERRIDE_TAG_NAME: "load_tests_$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+      DOCKERFILE_BUILD_CONTEXT: "./gen3-load-tests"
+    secrets: inherit #pragma: allowlist secret
