@@ -243,10 +243,10 @@ jobs:
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
                 echo "Namespace $NAMESPACE exists, performing teardown..."
-                helm delete $NAMESPACE -n $NAMESPACE || true
-                kubectl delete ns $NAMESPACE
+                # helm delete $NAMESPACE -n $NAMESPACE || true
+                # kubectl delete ns $NAMESPACE
               fi
-              kubectl create namespace $NAMESPACE
+              # kubectl create namespace $NAMESPACE
 
           - name: Get test labels
             id: get_test_labels
