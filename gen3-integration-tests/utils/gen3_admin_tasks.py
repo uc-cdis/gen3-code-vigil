@@ -1198,9 +1198,9 @@ def service_version_lower_than(service_name, min_release_version, min_sem_versio
     min_sem_version -> SEMVER e.g. 13.1.0
 
     Return:
-    - True if the current service version is lower than min_release_version/min_sem_version,
-      which means a test should be skipped.
-    - False if the current service version is greater, which means a test can be run.
+    - False if the current service version is greater than or equal to min_release_version/
+      min_sem_version, which means a test can be run.
+    - True if the current service version is lower, which means a test should be skipped.
     """
     if service_name in _SERVICE_VERSION_CACHE:
         current_version = _SERVICE_VERSION_CACHE[service_name]
@@ -1226,10 +1226,10 @@ def service_version_lower_than(service_name, min_release_version, min_sem_versio
         CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
         if CALVER_RE.match(current_version):
             # CALVER version
-            return Version(min_release_version) >= parsed_current
+            return Version(min_release_version) > parsed_current
         else:
             # SEMVER version
-            return Version(min_sem_version) >= parsed_current
+            return Version(min_sem_version) > parsed_current
     except InvalidVersion:
         # If the branch is master/main/branch with alphabets,
         # it will return False to execute the test
