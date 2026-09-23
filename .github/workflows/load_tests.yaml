@@ -323,6 +323,7 @@ jobs:
                   {"name": "RELEASE_VERSION", "value": strenv(RELEASE_VERSION)}
                 ]
               ' $JOB
+              yq eval -i 'with(.spec.template.spec.volumes[0].hostPath; .path = strenv(HOME) + "/.gen3")' $JOB
               echo $JOB:
               cat $JOB
               kubectl delete -n $NAMESPACE -f $JOB --ignore-not-found

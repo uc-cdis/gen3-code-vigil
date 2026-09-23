@@ -28,10 +28,11 @@ spec:
       #           operator: In
       #           values:
       #           - ONDEMAND
-      # volumes:
-      # - name: creds-volume
-      #   secret:
-      #     secretName: "peregrine-creds"
+      volumes:
+        - name: gen3-volume
+          hostPath:
+            type: Directory
+            path: PLACEHOLDER # where the test users' API keys are saved
       # - name: etl-mapping
       #   configMap:
       #     name: etl-mapping
@@ -46,10 +47,10 @@ spec:
           imagePullPolicy: Always
           # ports:
           # - containerPort: 80
-          # volumeMounts:
-          #   - name: "creds-volume"
-          #     readOnly: true
-          #     mountPath: "/gen3/tube/creds.json"
+          volumeMounts:
+            - name: gen3-volume
+              #     readOnly: true
+              mountPath: /home/gen3/.gen3
           #     subPath: creds.json
           #   - name: "etl-mapping"
           #     readOnly: true
