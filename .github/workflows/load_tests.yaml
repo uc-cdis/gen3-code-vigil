@@ -330,7 +330,7 @@ jobs:
 
           - name: Generate allure report
             id: generate_allure_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' || steps.run_tests_job.outcome == 'success' || steps.run_tests_job.outcome == 'failure' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               npm install -g allure-commandline --save-dev
@@ -362,7 +362,7 @@ jobs:
 
           - name: Generate Slack report
             id: generate_slack_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome == 'success' || steps.run_tests.outcome == 'failure' || steps.run_tests_job.outcome == 'success' || steps.run_tests_job.outcome == 'failure' }}
             continue-on-error: true # if this fails, we still need to run clean-up steps
             run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
@@ -378,5 +378,5 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' || steps.run_tests_job.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && !(steps.run_tests.outcome == 'success' || steps.run_tests_job.outcome == 'success') }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1

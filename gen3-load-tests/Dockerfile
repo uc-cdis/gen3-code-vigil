@@ -78,7 +78,7 @@ COPY --from=builder /${appname} /${appname}
 # RUN poetry run playwright install-deps && poetry run playwright install #--with-deps chromium
 # USER gen3
 
-RUN mkdir output
+# RUN mkdir output
 
 WORKDIR /${appname}
 
