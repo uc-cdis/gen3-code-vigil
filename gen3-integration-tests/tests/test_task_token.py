@@ -45,11 +45,16 @@ class TestTaskToken(object):
         assert res.status_code == 400, res.text
         assert "Invalid DPoP request" in res.text
 
+        default_max_exp = 3600
+        requested_exp = 3777
+
+        # allow extra time for the proxy startup, the nonce challenge/retry round trip, the
+        # arborist call, etc
+        grace_period_sec = 30
+
         # should be able to obtain a task token by going through the DPoP proxy.
         # MAX_ACCESS_TOKEN_TTL is 3600 and MAX_TASK_TOKEN_TTL.WORKFLOW is 4000. Check that we can
         # request a WORKFLOW task token with a lifetime > 3600 and <= 4000
-        default_max_exp = 3600
-        requested_exp = 3777
         with self.fence.get_dpop_bound_task_token(
             "WORKFLOW", expires_in=requested_exp
         ) as (
@@ -62,7 +67,9 @@ class TestTaskToken(object):
                 options={"verify_signature": False},
             )["exp"]
         now = int(time.time())
-        assert exp - now >= requested_exp - 1 and exp - now <= requested_exp
+        assert (
+            exp - now >= requested_exp - grace_period_sec and exp - now <= requested_exp
+        )
 
         # a lifetime > MAX_ACCESS_TOKEN_TTL should not work for task token type != WORKFLOW since
         # it's not configured in MAX_TASK_TOKEN_TTL. We should get exp == MAX_ACCESS_TOKEN_TTL
@@ -76,7 +83,10 @@ class TestTaskToken(object):
                 options={"verify_signature": False},
             )["exp"]
         now = int(time.time())
-        assert exp - now >= default_max_exp - 1 and exp - now <= default_max_exp
+        assert (
+            exp - now >= default_max_exp - grace_period_sec
+            and exp - now <= default_max_exp
+        )
 
         # requesting a task token with a non-allowed type (not configured in
         # ALLOWED_TASK_TOKEN_TYPES) should not work
@@ -96,6 +106,10 @@ class TestTaskToken(object):
     @pytest.mark.skipif(
         "funnel" not in pytest.deployed_services,
         reason="funnel service is not running on this environment",
+    )
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname,
+        reason="DPoP is not supported by the Kind CI",
     )
     @pytest.mark.gen3_workflow
     def test_task_token_audience(self):

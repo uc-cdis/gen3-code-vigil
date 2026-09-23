@@ -552,6 +552,7 @@ class Fence(object):
                 logger.error(f"Unable to get a '{type}' task token for '{user}': {e}")
                 raise
             assert f"[{expected_status_code}]" in str(e)
+            yield
 
     def revoke_token(self, token):
         """Adds a token to Fence's denylist"""
