@@ -325,7 +325,7 @@ jobs:
               ' $JOB
               echo $JOB:
               cat $JOB
-              kubectl delete -f $JOB --ignore-not-found
+              kubectl delete -n $NAMESPACE -f $JOB --ignore-not-found
               kubectl apply -n $NAMESPACE -f $JOB
 
           - name: Generate allure report
