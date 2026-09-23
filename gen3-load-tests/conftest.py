@@ -8,6 +8,7 @@ import pytest
 
 # Using dotenv to simplify setting up env vars locally
 from dotenv import load_dotenv
+from gen3_ci.scripts.prepare_ci_environment import generate_api_keys_for_test_users
 from utils import LOAD_TESTING_OUTPUT_PATH, TEST_DATA_PATH_OBJECT, logger
 from utils import test_setup as setup
 
@@ -16,6 +17,11 @@ collect_ignore = ["test_setup.py"]
 
 
 def pytest_configure(config):
+    # generate api keys for test users for the ci env
+    if not os.getenv("RUNNING_LOCAL"):
+        result = generate_api_keys_for_test_users()
+        assert result.lower() == "success"
+
     # Compute hostname and namespace
     pytest.hostname = os.getenv("HOSTNAME")
     pytest.namespace = os.getenv("NAMESPACE")
