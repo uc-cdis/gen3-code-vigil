@@ -327,6 +327,12 @@ jobs:
               yq eval -i 'with(.spec.template.spec.volumes[0].hostPath; .path = strenv(HOME) + "/.gen3")' $JOB
               echo $JOB:
               cat $JOB
+
+              # mkdir $HOME/.gen3
+              ls -al $HOME
+              echo "--------"
+              ls -al $HOME/.gen3
+
               kubectl delete -n $NAMESPACE -f $JOB --ignore-not-found
               kubectl apply -n $NAMESPACE -f $JOB
 
@@ -343,7 +349,7 @@ jobs:
 
           # Configure AWS credentials again: the previous creds may have expired
           - name: Configure AWS Credentials
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             uses: aws-actions/configure-aws-credentials@v3
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
