@@ -136,7 +136,7 @@ class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
-        # `main_account` `user0_account` have access to task tokens and gen3-workflow
+        # `main_account` and `user0_account` have access to create task tokens and use gen3-workflow
         cls.valid_user = "main_account"
         cls.other_valid_user = "user0_account"
         # `dummy_one` has access to create task tokens, but not to use gen3-workflow
@@ -1464,10 +1464,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_final_state="COMPLETE",
         )
 
-        # In the GA4GH TES spec, the root-level `outputs` field defines the intended, desired
-        # output files declared when submitting a task, whereas `logs.outputs` records the actual
-        # result and metadata of output files produced and uploaded after execution finishes.
-        # So when `outputs` is a directory, `logs.outputs` is the list of files in the uploaded dir.
+        # In the GA4GH TES spec, the root-level `outputs` field defines the intended output files
+        # declared when submitting a task, whereas `logs.outputs` records the actual result and
+        # metadata of output files produced and uploaded after execution finishes. So when
+        # `outputs` is a directory, `logs.outputs` is the list of files in the uploaded dir.
         assert len(task_info.get("logs", [])) > 0
         actual_outputs = [o["url"] for o in task_info["logs"][-1].get("outputs", [])]
         # TODO enable assertion once the change to use the mounted bucket in funnel is merged
@@ -1573,7 +1573,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
             workflow_dir=workflow_dir,
             workflow_script="test_nextflow_workflow.nf",
-            nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
             s3_region=self.s3_storage_config.bucket_region,
         )

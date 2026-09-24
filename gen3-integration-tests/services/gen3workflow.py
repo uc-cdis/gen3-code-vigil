@@ -615,10 +615,10 @@ class Gen3Workflow:
         self,
         workflow_dir: str,
         workflow_script: str,
-        nextflow_config_file: list,
         s3_working_directory: str,
         s3_region: str,
         user: str = "main_account",
+        nextflow_config_file: str = None,
         params: dict = {},
     ):
         """
@@ -627,9 +627,11 @@ class Gen3Workflow:
         Parameters:
             workflow_dir (str): Path to the directory containing the workflow.
             workflow_script (str): Filename of the main Nextflow script (e.g., main.nf).
-            nextflow_config_file (str): Path to the nextflow.config file.
             s3_working_directory (str): S3 URI for the working directory (e.g., s3://bucket/workdir).
+            s3_region (str): S3 bucket region
             user (str): User context to run the workflow under.
+            nextflow_config_file (optional; str): Path to the nextflow.config file.
+            params: additional nextflow parameters
 
         Returns:
             str: Contents of the Nextflow log file (.nextflow.log).
@@ -666,14 +668,18 @@ class Gen3Workflow:
                     "process.errorStrategy = 'retry'",
                     "process.maxRetries = 2",
                 ]
-                with tempfile.NamedTemporaryFile(delete=True) as config_file:
-                    config_file.write("\n".join(config_overrides).encode())
-                    config_file.flush()
+                with tempfile.NamedTemporaryFile(delete=True) as config_overrides_file:
+                    config_overrides_file.write("\n".join(config_overrides).encode())
+                    config_overrides_file.flush()
 
                     # TODO: Replace nextflow.run with nextflow.run_and_poll to add a timeout of 10 minutes
+                    configs = [config_overrides_file.name]
+                    if nextflow_config_file:
+                        # load the config file 1st, and the overrides 2nd
+                        configs.insert(0, nextflow_config_file)
                     execution = nextflow.run(
                         workflow_script,
-                        configs=[nextflow_config_file, config_file.name],
+                        configs=configs,
                         params=params,
                     )
 

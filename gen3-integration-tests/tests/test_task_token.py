@@ -67,9 +67,7 @@ class TestTaskToken(object):
                 options={"verify_signature": False},
             )["exp"]
         now = int(time.time())
-        assert (
-            exp - now >= requested_exp - grace_period_sec and exp - now <= requested_exp
-        )
+        assert requested_exp - grace_period_sec <= exp - now <= requested_exp
 
         # a lifetime > MAX_ACCESS_TOKEN_TTL should not work for task token type != WORKFLOW since
         # it's not configured in MAX_TASK_TOKEN_TTL. We should get exp == MAX_ACCESS_TOKEN_TTL
@@ -83,10 +81,7 @@ class TestTaskToken(object):
                 options={"verify_signature": False},
             )["exp"]
         now = int(time.time())
-        assert (
-            exp - now >= default_max_exp - grace_period_sec
-            and exp - now <= default_max_exp
-        )
+        assert default_max_exp - grace_period_sec <= exp - now <= default_max_exp
 
         # requesting a task token with a non-allowed type (not configured in
         # ALLOWED_TASK_TOKEN_TYPES) should not work
