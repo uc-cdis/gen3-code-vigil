@@ -1,4 +1,7 @@
 process dicom_to_png {
+	// Dockerfile location: https://github.com/uc-cdis/bio-nextflow/tree/c8f9fd595135078b1ac1b365aa3393641b5cacdb/nextflow_notebooks/containerized_cpu_workflows/midrc_batch_demo
+	container 'quay.io/cdis/gen3-workflow:integration_tests_dicom_image'
+
     publishDir 'results'
 
     input:
@@ -17,6 +20,8 @@ process dicom_to_png {
 }
 
 process extract_metadata {
+	container 'quay.io/cdis/gen3-workflow:integration_tests_dicom_image'
+
     publishDir 'results'
 
     input:
