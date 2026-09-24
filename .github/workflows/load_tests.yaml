@@ -19,7 +19,7 @@ on:
       GITOPS_BRANCH:
         description: 'A "uc-cdis/gen3-gitops" branch. Make changes to "uc-cdis/gen3-gitops/ci/perf" to run load tests on different images or configuration. Ignored if RELEASE_VERSION is specified.'
         required: false
-        default: 'chore/push_dbcreds_ci_perf' # TODO revert to master
+        default: master
       PARAMS:
         description: 'Custom parameters as a JSON string, as defined by each test'
         required: false
@@ -112,7 +112,7 @@ jobs:
           GITOPS_BRANCH: ${{ needs.setup.outputs.GITOPS_BRANCH }}
           PARAMS: ${{ needs.setup.outputs.PARAMS }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
-          HELM_BRANCH: 'chore/add_funnel_push_secret' # TODO revert to master
+          HELM_BRANCH: 'master'
           SKIP_TESTS: 'false'
 
         steps:
