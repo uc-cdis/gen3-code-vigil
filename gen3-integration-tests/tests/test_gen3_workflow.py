@@ -849,7 +849,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 user=user_A,
                 expected_status=200,
             )
-        except Exception:
+        except Exception as e:
+            logger.info(f"Failed to list objects, now attempting to list without `funnel-temp-files`. Error: {e}")
             bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
                 folder_path=f"{self.s3_storage_config.bucket_name}/{task_id}/",
                 s3_storage_config=self.s3_storage_config,
