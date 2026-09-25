@@ -778,6 +778,15 @@ if install_helm_chart; then
     echo "❌ wait_for_pods_ready failed"
     exit 1
   fi
+
+  # Configure frontend-framework Jupyter assets for JEG/Workspaces
+  jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+  if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG enabled. Configuring frontend-framework Jupyter assets path."
+    kubectl set env deployment/frontend-framework-deployment \
+      -n "${namespace}" \
+      JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
+  fi
 else
   echo "❌ Helm chart installation failed"
   exit 1
