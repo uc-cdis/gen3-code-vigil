@@ -22,7 +22,7 @@ RUN chown -R gen3:gen3 /${appname}
 # ENV PATH="/root/.local/bin:${PATH}"
 
 USER root
-RUN dnf install -y gcc python3-devel curl jq && dnf clean all
+RUN dnf install -y gcc python3-devel jq && dnf clean all
 USER gen3
 
 # # Install Nodejs and allure
