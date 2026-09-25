@@ -29,16 +29,9 @@ spec:
       #           values:
       #           - ONDEMAND
       volumes:
-        - name: gen3-volume
-          hostPath:
-            type: Directory
-            path: PLACEHOLDER # where the test users' API keys are saved
-      # - name: etl-mapping
-      #   configMap:
-      #     name: etl-mapping
-      # - name: fence-yaml
-      #   configMap:
-      #     name: fence
+        - name: api-keys-volume
+          secret:
+            secretName: api-keys
       containers:
         - name: load-tests-tes
           image: quay.io/cdis/gen3-integration-tests:load_tests_tes-load-test-k8s
@@ -48,18 +41,8 @@ spec:
           # ports:
           # - containerPort: 80
           volumeMounts:
-            - name: gen3-volume
-              #     readOnly: true
+            - name: api-keys-volume
               mountPath: /home/gen3/.gen3
-          #     subPath: creds.json
-          #   - name: "etl-mapping"
-          #     readOnly: true
-          #     mountPath: "/gen3/tube/etlMapping.yaml"
-          #     subPath: "etlMapping.yaml"
-          #   - name: "fence-yaml"
-          #     readOnly: true
-          #     mountPath: "/gen3/tube/user.yaml"
-          #     subPath: user.yaml
           resources:
             limits:
               cpu: 2
