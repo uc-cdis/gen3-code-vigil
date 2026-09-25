@@ -24,12 +24,12 @@ RUN chown -R gen3:gen3 /${appname}
 USER root
 RUN dnf install -y gcc python3-devel && dnf clean all
 USER gen3
-# RUN dnf install -y \
-#     # curl \
+RUN dnf install -y \
+    curl \
 #     vim \
 #     # wamerican \
 #     # git \
-#     jq \
+    jq
 #     awscli
 #     # openjdk-11-jre
 
