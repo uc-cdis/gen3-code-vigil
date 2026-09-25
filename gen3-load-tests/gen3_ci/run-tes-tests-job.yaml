@@ -28,10 +28,10 @@ spec:
       #           operator: In
       #           values:
       #           - ONDEMAND
-      volumes:
-        - name: api-keys-volume
-          secret:
-            secretName: api-keys
+      # volumes:
+      #   - name: api-keys-volume
+      #     secret:
+      #       secretName: api-keys
       containers:
         - name: load-tests-tes
           image: quay.io/cdis/gen3-integration-tests:load_tests_tes-load-test-k8s
@@ -40,9 +40,9 @@ spec:
           imagePullPolicy: Always
           # ports:
           # - containerPort: 80
-          volumeMounts:
-            - name: api-keys-volume
-              mountPath: /home/gen3/.gen3
+          # volumeMounts:
+          #   - name: api-keys-volume
+          #     mountPath: /home/gen3/.gen3
           resources:
             limits:
               cpu: 2
