@@ -103,7 +103,7 @@ jobs:
         needs:
           - setup
           - build-image
-        if: ${{ always() && (needs.build-image.result == 'success' || needs.build-image.result == 'skipped') }}
+        if: ${{ !failure() && !cancelled() }}  # run even if the `build-image` job is skipped
 
         defaults:
           run:
