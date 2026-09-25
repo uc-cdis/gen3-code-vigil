@@ -9,7 +9,10 @@ from utils.test_execution import screenshot
 class DicomPage(object):
     def __init__(self):
         # Endpoints
-        exploration_path = pytest.navigation_urls.get("Exploration", "/explorer")
+        if pytest.frontend_url:
+            exploration_path = pytest.navigation_urls.get("Exploration", "/Explorer")
+        else:
+            exploration_path = pytest.navigation_urls.get("Exploration", "/explorer")
         self.BASE_URL = f"{pytest.root_url_portal}{exploration_path}"
         # Locators
         self.IMAGING_STUDIES_TAB = "//h3[normalize-space()='Imaging Studies']"

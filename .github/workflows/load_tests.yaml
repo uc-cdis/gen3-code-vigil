@@ -9,24 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       TEST_SUITE:
-        description: 'Load test to execute, use all to run all tests'
+        description: 'Load tests to execute (comma-separated and no spaces, or "ALL")'
         required: false
-        type: choice
-        options:
-          - TestFencePresignedURL
-          - TestGa4ghDrsPerformance
-          - TestIndexdCreateRecords
-          - TestIndexdDrsEndpoint
-          - TestMetadataCreateAndQuery
-          - TestSheepdogImportClinicalMetadata
-          - TestGen3EmbeddingBulkRetrievalSmall
-          - TestGen3EmbeddingBulkRetrievalMedium
-          - TestGen3EmbeddingPublishEmbeddings
-          - TestGen3EmbeddingSearchKnownCollection
-          - TestGen3EmbeddingSearchUnKnownCollection
-          - TestGen3EmbeddingLoadData
-          - TestFenceBulkPresignedURL
-          - ALL
+        type: string
         default: ALL
       RELEASE_VERSION:
         description: 'Release version'
@@ -130,34 +115,35 @@ jobs:
           # gen3-load-tests run with python 3.13
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-python@v5
+            uses: actions/setup-python@v6
             with:
               python-version: '3.13'
 
           - name: Set up Go
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-go@v5
+            uses: actions/setup-go@v6
             with:
               go-version: '1.17'
+              cache: false
 
           # allure report generation needs node
           - name: Set up node
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-node@v4
+            uses: actions/setup-node@v6
             with:
-              node-version: 20
+              node-version: 24
 
           # Setup kubectl
           - name: Set Up kubectl
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-kubectl@v3
+            uses: azure/setup-kubectl@v5
             with:
               version: latest
 
           # Setup helm
           - name: Set Up Helm
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-helm@v4.3.0
+            uses: azure/setup-helm@v5.0.0
             with:
               version: latest
 
@@ -191,7 +177,7 @@ jobs:
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: aws-actions/configure-aws-credentials@v3
+            uses: aws-actions/configure-aws-credentials@v6
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
@@ -209,19 +195,37 @@ jobs:
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' }}
+            id: create_ns
             # Change the HOSTNAME with full domain name
             run: |
               NAMESPACE=ci-perf
               HOSTNAME=perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
-              # namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-              # if [ -n "$namespace_exists" ]; then
-              #   echo "Namespace $NAMESPACE exists, performing teardown..."
-              #   helm delete $NAMESPACE -n $NAMESPACE || true
-              #   kubectl delete ns $NAMESPACE
-              # fi
-              # kubectl create namespace $NAMESPACE
+              echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
+              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+              if [ -n "$namespace_exists" ]; then
+                echo "Namespace $NAMESPACE exists, performing teardown..."
+                helm delete $NAMESPACE -n $NAMESPACE || true
+                kubectl delete ns $NAMESPACE
+              fi
+              kubectl create namespace $NAMESPACE
+
+          - name: Get test labels
+            id: get_test_labels
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+                test_label="${TEST_SUITE//,/ or }"
+              elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+                test_label=$(gh api "repos/$REPO_FN/pulls/$PR_NUM" --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then join(" or ") else "" end')
+                if [[ -z "$test_label" ]]; then
+                  test_label="ALL"
+                fi
+              fi
+              echo "$test_label"
+              echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -238,7 +242,7 @@ jobs:
 
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
@@ -299,7 +303,7 @@ jobs:
             id: slack_notify
             if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            uses: slackapi/slack-github-action@v2.0.0
+            uses: slackapi/slack-github-action@v4.0.0
             with:
               method: chat.postMessage
               token: ${{ secrets.CI_SLACK_BOT_TOKEN }}

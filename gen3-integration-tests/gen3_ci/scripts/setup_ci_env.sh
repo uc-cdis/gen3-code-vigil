@@ -360,6 +360,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Remove workspace-proxy. This is temporary until we add workspace-proxy to CI
     yq eval 'del(."workspace-proxy")' -i $ci_default_manifest_values_yaml
+
+    # Remove auroraRdsCopyJob. Testing to see if this is blocking midrc prs
+    yq eval 'del(."auroraRdsCopyJob")' -i $ci_default_manifest_values_yaml
 fi
 
 # Check whether specific services are enabled in the final manifest

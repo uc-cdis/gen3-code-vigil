@@ -1,27 +1,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama
+  name: failure-analysis
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ollama
+      app: failure-analysis
   template:
     metadata:
       labels:
-        app: ollama
+        app: failure-analysis
     spec:
+      serviceAccountName: failure-analysis-service-account
       containers:
-        - name: ollama
+        - name: failure-analysis
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           ports:
-            - containerPort: 11434
+            - containerPort: 80
           env:
-            - name: OLLAMA_LOG_LEVEL
-              value: "debug"
-            - name: OLLAMA_HOST
-              value: "0.0.0.0:11434"
+            - name: OPENAI_ENDPOINT
+              value: {{ .Values.openaiInfo.openaiEndpoint | quote }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.openaiInfo.key | quote }}
