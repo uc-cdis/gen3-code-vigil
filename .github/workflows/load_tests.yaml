@@ -286,7 +286,8 @@ jobs:
                 fi
               fi
               echo "$test_label"
-              echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
+              # TODO reenable, this is broken for `push` events
+              # echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
