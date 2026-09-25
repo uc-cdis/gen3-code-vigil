@@ -94,6 +94,7 @@ markers = [
   "graph_query: tests for querying graph data",
   "pfb: tests for pfb file handling",
   "workspace: tests for workspace page",
+  "workspaces: tests for workspaces page",
   "sanity: tests for performing sanity check",
   "study_registration: tests for study registration service"
 ]

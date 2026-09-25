@@ -3,12 +3,14 @@ __pycache__
 .env
 .pytest_cache
 .vscode/
+.idea/
 *.pyc
 **/output/
 **/node_modules/
 allure-report/
 allure-results/
 worktrees/
+gen3-integration-tests/poetry.toml
 
 gen3-integration-tests/test_data/lock
 gen3-integration-tests/test_data/configuration/
