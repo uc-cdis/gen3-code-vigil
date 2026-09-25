@@ -31,8 +31,9 @@ on:
         options:
           - 'true'
           - 'false'
-        # default: 'false'
-        default: 'true'  # TODO revert to false
+        default: 'false'
+  # TODO remove below
+  push:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -75,6 +76,8 @@ jobs:
               PARAMS='{}'
               RUN_TES_TESTS='false'
             fi
+
+            RUN_TES_TESTS='true' # TODO remove this line
 
             if [[ "$RUN_TES_TESTS" == "true" ]]; then
               TEST_SUITE="TestTesPerformance"
