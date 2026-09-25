@@ -344,11 +344,14 @@ jobs:
               echo $JOB:
               cat $JOB
 
-              # # create or update API keys secret
-              # kubectl create secret generic api-keys \
-              #   --from-file="$HOME/.gen3" \
-              #   --namespace=$NAMESPACE \
-              #   --dry-run=client -o yaml | kubectl apply -f -
+              echo $HOME/.gen3
+              ls -lah $HOME/.gen3
+
+              # create or update API keys secret
+              kubectl create secret generic api-keys \
+                --from-file="$HOME/.gen3" \
+                --namespace=$NAMESPACE \
+                --dry-run=client -o yaml | kubectl apply -f -
 
               kubectl delete -n $NAMESPACE -f $JOB --ignore-not-found
               kubectl apply -n $NAMESPACE -f $JOB

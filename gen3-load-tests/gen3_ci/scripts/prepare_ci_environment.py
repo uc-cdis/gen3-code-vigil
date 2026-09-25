@@ -74,7 +74,10 @@ def prepare_ci_environment(namespace):
     else:
         raise Exception("Load tests are run from test repository only.")
 
-    return "success"
+    # generate api keys for test users for the ci env
+    result = generate_api_keys_for_test_users()
+    assert result.lower() == "success"
+    return result
 
 
 if __name__ == "__main__":
