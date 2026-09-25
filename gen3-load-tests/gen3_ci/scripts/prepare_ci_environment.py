@@ -44,7 +44,7 @@ def modify_env_for_test_repo_pr(namespace):
     return setup_env_for_helm(arguments)
 
 
-def generate_api_keys_for_test_users(namespace):
+def generate_api_keys_for_test_users():
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
