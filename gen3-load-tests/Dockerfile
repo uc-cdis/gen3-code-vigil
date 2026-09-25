@@ -34,11 +34,11 @@ RUN dnf install -y gcc python3-devel jq && dnf clean all
 # #     dnf install -y nodejs && \
 # #     npm install -g allure-commandline --save-dev
 
-# Install kubectl
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256" && \
-    echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check && \
-    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+# # Install kubectl
+# RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+#     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256" && \
+#     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check && \
+#     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 USER gen3
 

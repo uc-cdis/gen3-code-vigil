@@ -267,10 +267,10 @@ jobs:
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
                 echo "Namespace $NAMESPACE exists, performing teardown..."
-                # helm delete $NAMESPACE -n $NAMESPACE || true
-                # kubectl delete ns $NAMESPACE
+                helm delete $NAMESPACE -n $NAMESPACE || true
+                kubectl delete ns $NAMESPACE
               fi
-              # kubectl create namespace $NAMESPACE
+              kubectl create namespace $NAMESPACE
 
           - name: Get test labels
             id: get_test_labels
@@ -301,10 +301,10 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              # if [ $? -ne 0 ]; then
-              #   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              # fi
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              fi
 
           - name: Run tests
             id: run_tests
