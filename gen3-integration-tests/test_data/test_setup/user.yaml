@@ -50,6 +50,41 @@ authz:
     jnkns: '/programs/jnkns'
 
   policies:
+    - id: services.gen3-embeddings-admin
+      description: CRUD access to embeddings
+      role_ids:
+      - gen3-embeddings-admin
+      resource_paths:
+      - /vectorstore/collections/noaccess
+      - /vectorstore/collections/public
+      - /vectorstore/collections/internal
+      - /vectorstore/collections/d3vector
+      - /vectorstore/collections/d200vector
+      - /vectorstore/collections/d3000halfvec
+      - /vectorstore/collections/d3halfvec
+      - /vectorstore/collections/expr
+      - /vectorstore/collections/expr_search
+      - /vectorstore/collections/hist
+      - /vectorstore/collections/hist_search
+      - /vectorstore/collections/hist_tcga_search
+      - /vectorstore/collections/summ
+    - id: services.gen3-embeddings-user
+      description: CRUD access to embeddings
+      role_ids:
+      - gen3-embeddings-user
+      resource_paths:
+      - /vectorstore/collections/public
+      - /vectorstore/collections/internal
+      - /vectorstore/collections/d3vector
+      - /vectorstore/collections/d200vector
+      - /vectorstore/collections/d3000halfvec
+      - /vectorstore/collections/d3halfvec
+      - /vectorstore/collections/expr
+      - /vectorstore/collections/expr_search
+      - /vectorstore/collections/hist
+      - /vectorstore/collections/hist_search
+      - /vectorstore/collections/hist_tcga_search
+      - /vectorstore/collections/summ
     - id: 'kayako_creator'
       description: 'be able to create ticket via kayako wrapper service'
       resource_paths: ['/kayako']
@@ -83,6 +118,10 @@ authz:
     - id: 'requestor_deleter'
       role_ids: ['requestor_deleter']
       resource_paths: ['/programs', '/requestor_client_credentials_test', '/study', '/mds_gateway', '/cedar', '/services/workflow/gen3-workflow/tasks']
+    - id: 'requestor_on_behalf_any_user'
+      description: 'be able to create requestor requests naming any other user'
+      role_ids: ['requestor_creator']
+      resource_paths: ['/requestor/on_behalf']
     - id: 'ttyadmin'
       description: 'be able to use admin tty'
       resource_paths: ['/ttyadmin']
@@ -156,6 +195,12 @@ authz:
         - 'sheepdog_reader'
       resource_paths:
         - '/programs'
+    - id: 'fence_task_token_creator_WORKFLOW'
+      resource_paths: ['/services/fence/task-token/WORKFLOW']
+      role_ids: ['fence_task_token_creator']
+    - id: 'fence_task_token_creator_FOO'
+      resource_paths: ['/services/fence/task-token/FOO']
+      role_ids: ['fence_task_token_creator']
 
     - id: 'programs.jnkns-admin'
       description: ''
@@ -422,6 +467,10 @@ authz:
       description: 'policy used for requestor integration tests'
     - name: 'kayako'
       description: 'commons /kayako'
+    - name: 'requestor'
+      subresources:
+        - name: 'on_behalf'
+          description: 'authorizes filing access requests for other users'
 
     # OLD Data
     - name: 'programs'
@@ -520,6 +569,10 @@ authz:
         - name: fence
           subresources:
             - name: admin
+            - name: 'task-token'
+              subresources:
+                - name: 'WORKFLOW'
+                - name: 'FOO'
         - name: 'audit'
           subresources:
             - name: 'presigned_url'
@@ -558,7 +611,51 @@ authz:
         - name: see-datalibrary
           description: grants access to DataLibrary page
 
+    - name: vectorstore
+      subresources:
+      - name: collections
+        subresources:
+        - name: noaccess
+        - name: public
+        - name: internal
+        - name: d3vector
+        - name: d200vector
+        - name: d3000halfvec
+        - name: d3halfvec
+        - name: expr
+        - name: expr_search
+        - name: hist
+        - name: hist_search
+        - name: hist_tcga_search
+        - name: summ
+
   roles:
+    - id: 'gen3-embeddings-user'
+      description: ''
+      permissions:
+      - id: 'embeddings_reader'
+        action:
+          method: read
+          service: 'gen3-embeddings'
+    - id: 'gen3-embeddings-admin'
+      description: ''
+      permissions:
+      - id: 'embeddings_reader'
+        action:
+          method: read
+          service: 'gen3-embeddings'
+      - id: 'embeddings_creator'
+        action:
+          method: create
+          service: 'gen3-embeddings'
+      - id: 'embeddings_updater'
+        action:
+          method: update
+          service: 'gen3-embeddings'
+      - id: 'embeddings_deleter'
+        action:
+          method: delete
+          service: 'gen3-embeddings'
     # role with no permissions - to enable FEF page controls
     - id: "page-user"
       permissions:
@@ -707,6 +804,13 @@ authz:
         action:
           method: delete
           service: 'gen3-user-data-library'
+    - id: fence_task_token_creator
+      description: 'Access to create task tokens for Fence'
+      permissions:
+      - id: fence_task_token_create
+        action:
+          method: create
+          service: 'fence'
     # All services
     - id: 'admin'
       description: ''
@@ -925,6 +1029,7 @@ clients:
     - 'requestor_creator'
     - 'requestor_updater'
     - 'requestor_reader'
+    - 'requestor_on_behalf_any_user'
     - 'indexd_creator'
   jenkinsClientTester:
     policies:
@@ -951,9 +1056,12 @@ users:
     - 'programs.jnkns-admin'
     - 'abc-admin'
     - 'requestor_integration_test'
+    - 'requestor_on_behalf_any_user'
     - 'ttyadmin'
     - 'workflow_admin'
     - 'gen3_workflow_user'
+    - 'fence_task_token_creator_WORKFLOW'
+    - 'fence_task_token_creator_FOO'
     - 'argo'
     - 'all_orthanc_studies_viewer'
     - 'all_orthanc_studies_admin'
@@ -961,6 +1069,7 @@ users:
     - 'all_dicom_studies_viewer'
     - 'see-datalibrary-page'
     - 'see-workspace-page'
+    - 'services.gen3-embeddings-admin'
     projects:
     - auth_id: 'QA'
       privilege: ['create', 'read', 'update', 'delete', 'upload', 'read-storage']
@@ -988,6 +1097,7 @@ users:
     - 'abc-admin'
     - 'indexd_admin'
     - 'mds_admin'
+    - 'services.gen3-embeddings-user'
     projects:
     - auth_id: 'QA'
       privilege: ['create', 'read', 'update', 'delete', 'upload', 'read-storage', 'write-storage']
@@ -1006,6 +1116,7 @@ users:
     policies:
     - 'workspace'
     - 'gen3_workflow_user'
+    - 'fence_task_token_creator_WORKFLOW'
     - 'sower'
     - 'requestor_creator'
     - 'programs.QA-admin'
@@ -1022,6 +1133,7 @@ users:
     - 'programs.QA-admin'
     - 'programs.test-admin'
     - 'gen3-hmb-researcher'
+    - 'fence_task_token_creator_WORKFLOW'
     projects:
     - auth_id: 'QA'
       privilege: ['create', 'read', 'update', 'delete', 'upload', 'read-storage']
@@ -1043,6 +1155,8 @@ users:
     - 'programs.test-admin'
     - 'programs.jnkns-admin'
     - 'abc.programs.test_program.projects.test_project1-viewer'
+    - 'fence_task_token_creator_WORKFLOW'
+    - 'requestor_on_behalf_any_user'
     projects:
     - auth_id: 'QA'
       privilege: ['create', 'read', 'update', 'delete', 'upload', 'read-storage']
