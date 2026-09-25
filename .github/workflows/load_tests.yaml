@@ -45,6 +45,15 @@ permissions:
   issues: write
 
 jobs:
+    build-image:
+      name: Build image (load tests)
+      uses: uc-cdis/.github/.github/workflows/image_build_push_native.yaml@master
+      with:
+        DOCKERFILE_LOCATION: "./gen3-load-tests/Dockerfile"
+        OVERRIDE_REPO_NAME: "gen3-integration-tests"
+        OVERRIDE_TAG_NAME: "load_tests_$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+        DOCKERFILE_BUILD_CONTEXT: "./gen3-load-tests"
+      secrets: inherit
     setup:
       runs-on: ubuntu-latest
       outputs:
@@ -89,7 +98,9 @@ jobs:
             echo "RUN_TES_TESTS=$RUN_TES_TESTS" >> $GITHUB_OUTPUT
     load_tests:
         runs-on: ubuntu-latest
-        needs: setup
+        needs:
+          - build-image
+          - setup
 
         defaults:
           run:
