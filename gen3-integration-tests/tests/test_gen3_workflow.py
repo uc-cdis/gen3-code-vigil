@@ -841,16 +841,15 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Check that the output file is in the right user's bucket
-        # TODO `funnel-temp-files` is temporarily removed - remove the except block once it's back
-        try:
-            bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
-                folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
-                s3_storage_config=self.s3_storage_config,
-                user=user_A,
-                expected_status=200,
-            )
-        except Exception as e:
-            logger.info(f"Failed to list objects, now attempting to list without `funnel-temp-files`. Error: {e}")
+        # TODO `funnel-temp-files` is temporarily removed - remove the `if` block once it's back
+        bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
+            folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
+            s3_storage_config=self.s3_storage_config,
+            user=user_A,
+            expected_status=200,
+        )
+        if not bucket_contents:
+            logger.info(f"Failed to list objects, now attempting to list without `funnel-temp-files` prefix...")
             bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
                 folder_path=f"{self.s3_storage_config.bucket_name}/{task_id}/",
                 s3_storage_config=self.s3_storage_config,
