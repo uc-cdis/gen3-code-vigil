@@ -56,10 +56,10 @@ spec:
               mkdir output
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+                poetry run pytest -s -n 1 -m "not wip" --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -s -n 1 -m "not wip" --dist loadscope -k "$TEST_SUITE"
               fi
               exitcode=$?
               echo "Exit code: $exitcode"
