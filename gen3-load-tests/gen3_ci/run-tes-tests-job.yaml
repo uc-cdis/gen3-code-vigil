@@ -35,15 +35,23 @@ spec:
             - "-c"
             - |
               mkdir output
+
+              # Note: not using `pytest-xdist` (`-n` param) since we want to see live logs, and load
+              # tests should be run one by one anyway
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                poetry run pytest -s -n 1 -m "not wip" --dist loadscope
+                poetry run pytest -s -m "not wip" --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                poetry run pytest -s -n 1 -m "not wip" --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -s -m "not wip" --dist loadscope -k "$TEST_SUITE"
               fi
+
               exitcode=$?
               echo "Exit code: $exitcode"
+
+              echo "Uploading outputs to S3 bucket"
+              aws s3 cp output s3://tes-load-tests-outputs/$(date "+%Y-%m-%d_%H:%M:%S") --recursive
+
               exit "$exitcode"
           volumeMounts:
             - name: api-keys-volume
