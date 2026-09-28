@@ -1,3 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: run-tes-tests-sa
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/github-action-role
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -11,23 +18,8 @@ spec:
       labels:
         app: gen3job
     spec:
-      # affinity:
-      #   nodeAffinity:
-      #     preferredDuringSchedulingIgnoredDuringExecution:
-      #     - weight: 100
-      #       preference:
-      #         matchExpressions:
-      #         - key: karpenter.sh/capacity-type
-      #           operator: In
-      #           values:
-      #           - on-demand
-      #     - weight: 99
-      #       preference:
-      #         matchExpressions:
-      #         - key: eks.amazonaws.com/capacityType
-      #           operator: In
-      #           values:
-      #           - ONDEMAND
+      serviceAccountName: run-tes-tests-sa
+      restartPolicy: Never
       volumes:
         - name: api-keys-volume
           secret:
@@ -38,17 +30,6 @@ spec:
           # image: quay.io/cdis/gen3-integration-tests:load_tests_master
           # TODO revert to this ^
           imagePullPolicy: Always
-          # ports:
-          # - containerPort: 80
-          volumeMounts:
-            - name: api-keys-volume
-              mountPath: /home/gen3/.gen3
-          resources:
-            limits:
-              cpu: 2
-              memory: 10Gi
-            requests:
-              cpu: 2
           command: ["/bin/bash"]
           args:
             - "-c"
@@ -64,4 +45,12 @@ spec:
               exitcode=$?
               echo "Exit code: $exitcode"
               exit "$exitcode"
-      restartPolicy: Never
+          volumeMounts:
+            - name: api-keys-volume
+              mountPath: /home/gen3/.gen3
+          resources:
+            limits:
+              cpu: 2
+              memory: 10Gi
+            requests:
+              cpu: 2
