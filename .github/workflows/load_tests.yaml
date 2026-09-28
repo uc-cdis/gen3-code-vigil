@@ -331,7 +331,7 @@ jobs:
             run: |
               JOB=gen3_ci/run-tes-tests-job.yaml
               yq eval -i '
-                .spec.template.spec.containers[0].env = [
+                select(documentIndex == 1).spec.template.spec.containers[0].env = [
                   {"name": "TEST_SUITE", "value": strenv(TEST_SUITE)},
                   {"name": "PARAMS", "value": strenv(PARAMS)},
                   {"name": "HOSTNAME", "value": strenv(HOSTNAME)},
