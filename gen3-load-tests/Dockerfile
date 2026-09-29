@@ -24,7 +24,18 @@ RUN chown -R gen3:gen3 /${appname}
 # switch to root user to install packages
 USER root
 
-RUN dnf install -y gcc python3-devel jq && dnf clean all
+RUN dnf install -y gcc python3-devel jq \
+    # unzip curl groff less
+    unzip \
+    && dnf clean all
+
+# RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+# unzip awscliv2.zip
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip ./aws
 
 # # Install Nodejs and allure
 # RUN curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash - && \
