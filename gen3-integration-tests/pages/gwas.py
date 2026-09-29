@@ -11,7 +11,10 @@ from utils.test_execution import screenshot
 class GWASPage(object):
     def __init__(self):
         # Endpoints
-        apps_path = pytest.navigation_urls.get("Apps", "/analysis")
+        if pytest.frontend_url:
+            apps_path = pytest.navigation_urls.get("Apps", "/Analysis")
+        else:
+            apps_path = pytest.navigation_urls.get("Apps", "/analysis")
         self.BASE_URL = f"{pytest.root_url_portal}{apps_path}"
         self.GWAS_UI_APP_ENDPOINT = f"{self.BASE_URL}/GWASUIApp"
         self.GWAS_RESULTS_ENDPOINT = f"{self.BASE_URL}/GWASResults"

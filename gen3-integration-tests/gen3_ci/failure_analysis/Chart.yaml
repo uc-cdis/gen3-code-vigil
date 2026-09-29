@@ -1,6 +1,6 @@
 apiVersion: v2
-name: ollama
-description: A Helm chart for ollama
+name: failure-analysis
+description: A Helm chart for kubeclt-ai
 
 # A chart can be either an 'application' or a 'library' chart.
 #

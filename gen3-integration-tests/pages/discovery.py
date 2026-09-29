@@ -10,7 +10,10 @@ from utils.test_execution import screenshot
 class DiscoveryPage(object):
     def __init__(self):
         # Endpoints
-        discovery_path = pytest.navigation_urls.get("Discovery", "/discovery")
+        if pytest.frontend_url:
+            discovery_path = pytest.navigation_urls.get("Discovery", "/Discovery")
+        else:
+            discovery_path = pytest.navigation_urls.get("Discovery", "/discovery")
         self.BASE_URL = f"{pytest.root_url_portal}{discovery_path}"
 
         # LOCATORS
