@@ -9,6 +9,7 @@ __pycache__
 allure-report/
 allure-results/
 worktrees/
+.idea/
 
 gen3-integration-tests/test_data/lock
 gen3-integration-tests/test_data/configuration/
@@ -23,6 +24,7 @@ gen3-integration-tests/test_data/gen3_workflow/stdout.txt
 gen3-integration-tests/test_data/gen3_workflow/stderr.txt
 gen3-integration-tests/test_data/gen3_workflow/work/
 gen3-integration-tests/test_data/gen3_workflow/nf-canary/
+gen3-integration-tests/poetry.toml
 
 gen3-load-tests/load_testing_output/
 gen3-load-tests/test_data/generated_metadata_service_template/
