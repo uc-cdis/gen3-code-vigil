@@ -783,7 +783,7 @@ if install_helm_chart; then
   #  kubectl set env deployment/frontend-framework-deployment \
   #    -n "${namespace}" \
   #    JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
-  fi
+  #fi
 else
   echo "❌ Helm chart installation failed"
   exit 1
