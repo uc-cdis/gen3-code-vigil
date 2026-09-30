@@ -55,8 +55,10 @@ COPY --from=builder /${appname} /${appname}
 
 WORKDIR /${appname}
 
-# this step ensures Nextflow downloads everything it needs now, instead of at runtime when internet
-# access may be restricted
+# This step ensures Nextflow downloads everything it needs now, instead of at runtime when internet
+# access may be restricted. Alternatively, we could add a network policy so the `run-tes-tests` job
+# can reach the internet.
 RUN nextflow info
+RUN nextflow plugin install nf-ga4gh
 
 CMD ["bash"]
