@@ -13,43 +13,17 @@ WORKDIR /${appname}
 
 RUN chown -R gen3:gen3 /${appname}
 
-# # Install pipx
-# RUN python3 -m pip install --break-system-packages pipx && \
-#     python3 -m pipx ensurepath
-
-# RUN pipx install 'poetry<2.0'
-
-# ENV PATH="/root/.local/bin:${PATH}"
-
 # switch to root user to install packages
 USER root
 
-RUN dnf install -y gcc python3-devel jq \
-    # unzip curl groff less
-    unzip \
+RUN dnf install -y gcc python3-devel jq unzip \
+    java-21-amazon-corretto-headless \
     && dnf clean all
-
-# RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-# unzip awscliv2.zip
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
     rm -rf awscliv2.zip ./aws
-
-# # Install Nodejs and allure
-# RUN curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash - && \
-#     dnf install -y nodejs && \
-#     npm install -g allure-commandline --save-dev
-# # RUN curl -fsSL https://deb.nodesource.com/setup_${NODEJS_VERSION}.x  | bash && \
-# #     dnf install -y nodejs && \
-# #     npm install -g allure-commandline --save-dev
-
-# # Install kubectl
-# RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-#     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256" && \
-#     echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check && \
-#     install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
 USER gen3
 
@@ -74,17 +48,10 @@ RUN poetry install --without dev --no-interaction
 # Final stage
 FROM base
 
-# USER root
 # poetry installs the app as an editable package, so /venv holds a .pth pointing back at this
 # source tree: both are needed at runtime.
 COPY --from=builder /venv /venv
 COPY --from=builder /${appname} /${appname}
-
-# Install chromium
-# RUN poetry run playwright install-deps && poetry run playwright install #--with-deps chromium
-# USER gen3
-
-# RUN mkdir output
 
 WORKDIR /${appname}
 
