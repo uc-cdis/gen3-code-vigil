@@ -355,8 +355,8 @@ jobs:
                 --namespace=$NAMESPACE \
                 --dry-run=client -o yaml | kubectl apply -f -
 
-              kubectl delete -n $NAMESPACE -f $JOB --ignore-not-found
-              kubectl apply -n $NAMESPACE -f $JOB
+              kubectl delete -f $JOB --ignore-not-found
+              kubectl apply -f $JOB
 
           - name: Generate allure report
             id: generate_allure_report

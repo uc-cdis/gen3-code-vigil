@@ -55,4 +55,8 @@ COPY --from=builder /${appname} /${appname}
 
 WORKDIR /${appname}
 
+# this step ensures Nextflow downloads everything it needs now, instead of at runtime when internet
+# access may be restricted
+RUN nextflow info
+
 CMD ["bash"]

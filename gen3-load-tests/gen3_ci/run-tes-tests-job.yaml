@@ -2,15 +2,17 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: run-tes-tests-sa
+  namespace: ci-perf-tes
   annotations:
     eks.amazonaws.com/role-arn: arn:aws:iam::707767160287:role/github-action-role
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
+  name: run-tes-tests
+  namespace: ci-perf-tes
   annotations:
     karpenter.sh/do-not-evict: "true"
-  name: run-tes-tests
 spec:
   backoffLimit: 0
   template:
