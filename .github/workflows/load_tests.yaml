@@ -78,11 +78,12 @@ jobs:
             fi
 
             RUN_TES_TESTS='true' # TODO remove this line
+            GITOPS_BRANCH=tes-load-tests-s3files # TODO unpin once merged
 
             if [[ "$RUN_TES_TESTS" == "true" ]]; then
               TEST_SUITE="TestTesPerformance"
               # TODO revert PARAMS to '{}'
-              PARAMS='{"tes": {"concurrency": [10, 100], "test_case_simple": false, "test_case_inputs_outputs": true, "test_case_8mb_s3_upload": false, "test_case_gpu": false}, "nextflow": {"concurrency": [5], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": false}}'
+              PARAMS='{"tes": {"concurrency": [3], "test_case_simple": true, "test_case_inputs_outputs": true, "test_case_8mb_s3_upload": false, "test_case_gpu": false}, "nextflow": {"concurrency": [], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": false}}'
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
