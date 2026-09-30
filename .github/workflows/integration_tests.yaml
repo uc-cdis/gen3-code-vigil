@@ -15,7 +15,7 @@ permissions:
 jobs:
   integration_tests:
     name: Integration tests
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@GQE-715-add-workspaces-to-ci-default
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
     with:
       WORKING_DIR: gen3-integration-tests
     secrets:
