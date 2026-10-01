@@ -83,7 +83,7 @@ jobs:
             if [[ "$RUN_TES_TESTS" == "true" ]]; then
               TEST_SUITE="TestTesPerformance"
               # TODO revert PARAMS to '{}'
-              PARAMS='{"tes": {"concurrency": [], "test_case_simple": true, "test_case_inputs_outputs": true, "test_case_8mb_s3_upload": false, "test_case_gpu": false}, "nextflow": {"concurrency": [1], "n_tasks": [2], "test_case_simple": true, "test_case_gpu": false}}'
+              PARAMS='{"tes": {"concurrency": [100], "test_case_simple": true, "test_case_inputs_outputs": true, "test_case_8mb_s3_upload": true, "test_case_gpu": true}, "nextflow": {"concurrency": [10], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": true}}'
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
@@ -334,6 +334,7 @@ jobs:
               yq eval -i '
                 select(documentIndex == 1).spec.template.spec.containers[0].env = [
                   {"name": "TEST_SUITE", "value": strenv(TEST_SUITE)},
+                  {"name": "GITOPS_BRANCH", "value": strenv(GITOPS_BRANCH)},
                   {"name": "PARAMS", "value": strenv(PARAMS)},
                   {"name": "HOSTNAME", "value": strenv(HOSTNAME)},
                   {"name": "HOSTNAME_PROTOCOL", "value": strenv(HOSTNAME_PROTOCOL)},
