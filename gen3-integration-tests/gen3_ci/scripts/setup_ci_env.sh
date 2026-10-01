@@ -488,29 +488,29 @@ done
 # Enable JEG to be in its own namespace per pull request Ex: jupyter-pods-<namespace>
 # This applies to test-env, service-env, manifest-env, and nightly environments.
 ############################################################################################################################
-#workspace_namespace="jupyter-pods-${namespace}"
+workspace_namespace="jupyter-pods-${namespace}"
 #echo "###################################################################################"
-#echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
-#
-## Configure JEG when present
-#jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
-#if [ "$jeg_enabled" = "true" ]; then
-#    echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
-#    yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
-#        -i "$ci_default_manifest_values_yaml"
-#    yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
-#        -i "$ci_default_manifest_values_yaml"
-#fi
-#
-## Configure workspace-proxy when present
-#workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
-#if [ "$workspace_proxy_enabled" = "true" ]; then
-#    echo "workspace-proxy is enabled."
-#    yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
-#        -i "$ci_default_manifest_values_yaml"
-#    yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
-#        -i "$ci_default_manifest_values_yaml"
-#fi
+echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
+
+# Configure JEG when present
+jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
+    yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+    yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+fi
+
+# Configure workspace-proxy when present
+workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+if [ "$workspace_proxy_enabled" = "true" ]; then
+    echo "workspace-proxy is enabled."
+    yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+    yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+fi
 
 ####################################################################################
 # Enable RAS passport/visa parsing features only for nightly-build-ff
@@ -777,13 +777,13 @@ if install_helm_chart; then
   fi
 
   # Configure frontend-framework Jupyter assets for JEG/Workspaces
-  #jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
-  #if [ "$jeg_enabled" = "true" ]; then
-  #  echo "JEG enabled. Configuring frontend-framework Jupyter assets path."
-  #  kubectl set env deployment/frontend-framework-deployment \
-  #    -n "${namespace}" \
-  #    JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
-  #fi
+  jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+  if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG enabled. Configuring frontend-framework Jupyter assets path."
+    kubectl set env deployment/frontend-framework-deployment \
+      -n "${namespace}" \
+      JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
+  fi
 else
   echo "❌ Helm chart installation failed"
   exit 1
