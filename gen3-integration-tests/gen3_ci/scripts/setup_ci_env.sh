@@ -306,37 +306,6 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     done
 
-    ############################################################################################################################
-    # Configure PR-specific workspace namespace for JEG and workspace-proxy
-    # Example:
-    #   namespace:           gen3-gitops-pr-2128
-    #   workspace namespace: jupyter-pods-gen3-gitops-pr-2128
-    # JEG, Hatchery and workspace-proxy must all use the same workspace namespace.
-    ############################################################################################################################
-    workspace_namespace="jupyter-pods-${namespace}"
-    echo "###################################################################################"
-    echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
-
-    # Configure JEG when present
-    jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
-    if [ "$jeg_enabled" = "true" ]; then
-        echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
-        yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
-            -i "$ci_default_manifest_values_yaml"
-        yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
-            -i "$ci_default_manifest_values_yaml"
-    fi
-
-    # Configure workspace-proxy when present
-    workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
-    if [ "$workspace_proxy_enabled" = "true" ]; then
-        echo "workspace-proxy is enabled."
-        yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
-            -i "$ci_default_manifest_values_yaml"
-        yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
-            -i "$ci_default_manifest_values_yaml"
-    fi
-
     # Update mds_url and common_url under metadata if present
     json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
@@ -514,6 +483,34 @@ for item in "${common_param_updates[@]}"; do
     echo "Skipping update of $property_path as $serviceblock not found"
   fi
 done
+
+############################################################################################################################
+# Enable JEG to be in its own namespace per pull request Ex: jupyter-pods-<namespace>
+# This applies to test-env, service-env, manifest-env, and nightly environments.
+############################################################################################################################
+workspace_namespace="jupyter-pods-${namespace}"
+#echo "###################################################################################"
+echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
+
+# Configure JEG when present
+jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
+    yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+    yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+fi
+
+# Configure workspace-proxy when present
+workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+if [ "$workspace_proxy_enabled" = "true" ]; then
+    echo "workspace-proxy is enabled."
+    yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+    yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+fi
 
 ####################################################################################
 # Enable RAS passport/visa parsing features only for nightly-build-ff
