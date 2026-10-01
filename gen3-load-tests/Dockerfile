@@ -55,4 +55,9 @@ COPY --from=builder /${appname} /${appname}
 
 WORKDIR /${appname}
 
+# This step pre-downloads some Nextflow files to avoid doing it at runtime when internet access may
+# be restricted. Note that some other files are still downloaded at runtime if the plugin versions
+# are not pinned in the Nextflow config file.
+RUN nextflow info
+
 CMD ["bash"]
