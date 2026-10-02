@@ -203,7 +203,7 @@ class TestUserDataLibrary(object):
             user="indexing_account", list_id=list_id, expected_status=404
         )
         assert (
-            indexing_account_list == "list_id not found!"
+            indexing_account_list.get("detail") == "list_id not found!"
         ), f"Expected no list but got {indexing_account_list}"
 
         # Delete the data library list
