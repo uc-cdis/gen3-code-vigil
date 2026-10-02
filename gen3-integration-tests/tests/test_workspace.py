@@ -2,6 +2,8 @@
 Workspace Test
 """
 
+import os
+
 import pytest
 from pages.login import LoginPage
 from pages.workspace import WorkspacePage
@@ -30,6 +32,10 @@ def page_setup(page):
 @pytest.mark.skipif(
     "hatchery" not in pytest.deployed_services,
     reason="hatchery service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "pdp-commons" in os.getenv("SOURCE_CONFIG", ""),
+    reason="There is no workspace page in pdp-commons, only workspaces are present",
 )
 @pytest.mark.workspace
 @pytest.mark.frontend
