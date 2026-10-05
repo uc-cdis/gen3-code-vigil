@@ -6,7 +6,7 @@ from socketserver import ThreadingMixIn
 from urllib.parse import parse_qs, urlparse
 
 
-def generate_patients(count=1000):
+def generate_patients(count=10000):
     """Generate US Core v6.1.0 compliant mock patients in memory."""
     print(f"Generating {count} US Core v6.1.0 compliant mock patients in memory...")
     patient_list = []
@@ -144,7 +144,7 @@ def generate_patients(count=1000):
     return patients_dict, bundle
 
 
-PATIENTS_DICT, PATIENT_BUNDLE = generate_patients(count=1000)
+PATIENTS_DICT, PATIENT_BUNDLE = generate_patients(count=10000)
 
 CAPABILITY_STATEMENT = {
     "resourceType": "CapabilityStatement",

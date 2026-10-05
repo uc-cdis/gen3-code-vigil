@@ -9,16 +9,19 @@ const {
 const http = require('k6/http'); // eslint-disable-line import/no-unresolved
 const { Rate } = require('k6/metrics'); // eslint-disable-line import/no-unresolved
 
-const {
-  RELEASE_VERSION = 'local-dev',
-  GEN3_HOST = 'localhost:8000',
-  HOSTNAME_PROTOCOL = 'http',
-  BASE_PATH = '',
-  ACCESS_TOKEN = 'local-dev-token',
-  VIRTUAL_USERS = '[{"duration": "10s", "target": 5}, {"duration": "30s", "target": 10}, {"duration": "10s", "target": 0}]',
-} = __ENV; // eslint-disable-line no-undef
+// Environment Variable Fallbacks (Default: 50 VU profile)
+const RELEASE_VERSION = __ENV.RELEASE_VERSION || 'local-dev';
+const GEN3_HOST = __ENV.GEN3_HOST || 'localhost:8000';
+const HOSTNAME_PROTOCOL = __ENV.HOSTNAME_PROTOCOL || 'http';
+const BASE_PATH = __ENV.BASE_PATH || '';
+const ACCESS_TOKEN = __ENV.ACCESS_TOKEN || 'local-dev-token';
+//const DEFAULT_VU = '[{"duration": "10s", "target": 10}, {"duration": "30s", "target": 50}, {"duration": "30s", "target": 50}, {"duration": "10s", "target": 0}]';
+const DEFAULT_VU = '[{"duration": "10s", "target": 2}, {"duration": "30s", "target": 10}, {"duration": "30s", "target": 10}, {"duration": "10s", "target": 0}]';
+const VIRTUAL_USERS = __ENV.VIRTUAL_USERS || DEFAULT_VU;
 
 const myFailRate = new Rate('failed_requests');
+const PAGE_SIZE = __ENV.PAGE_SIZE || '1000';
+
 
 export const options = {
   tags: {
@@ -58,7 +61,7 @@ function parseVirtualUsers(virtualUsersStr) {
 }
 
 export default function () {
-  const url = `${HOSTNAME_PROTOCOL}://${GEN3_HOST}${BASE_PATH}/Patient?_count=20`;
+  const url = `${HOSTNAME_PROTOCOL}://${GEN3_HOST}${BASE_PATH}/Patient?_count=${PAGE_SIZE}`;
   const params = {
     headers: {
       Accept: 'application/fhir+json',

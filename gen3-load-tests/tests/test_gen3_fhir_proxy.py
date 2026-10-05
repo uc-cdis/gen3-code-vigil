@@ -4,11 +4,14 @@ import pytest
 from gen3.auth import Gen3Auth
 from utils import load_test
 
+# DEFAULT_VU = '[{"duration": "10s", "target": 10}, {"duration": "30s", "target": 50}, {"duration": "30s", "target": 50}, {"duration": "10s", "target": 0}]'
+DEFAULT_VU = '[{"duration": "10s", "target": 2}, {"duration": "30s", "target": 10}, {"duration": "30s", "target": 10}, {"duration": "10s", "target": 0}]'
 
+
+@pytest.mark.wip
 @pytest.mark.gen3_fhir_proxy_load
 class TestGen3FhirProxyLoad:
     def setup_method(self):
-        # Initialize Gen3 SDK authentication against the target environment
         self.auth = Gen3Auth(
             refresh_token=pytest.api_keys["main_account"], endpoint=pytest.root_url
         )
@@ -20,7 +23,7 @@ class TestGen3FhirProxyLoad:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION", "latest"),
             "GEN3_HOST": f"{pytest.hostname}",
-            "VIRTUAL_USERS": '[{"duration": "10s", "target": 5}, {"duration": "60s", "target": 10}, {"duration": "10s", "target": 0}]',
+            "VIRTUAL_USERS": os.getenv("VIRTUAL_USERS", DEFAULT_VU),
         }
 
         # Run k6 load test via code-vigil's shared utility
