@@ -70,11 +70,11 @@ class TestGen3EmbeddingSearchKnownCollection:
         "collection_name,top_k,distance_metric",
         [
             ("hist_search", 5, "cosine_similarity"),
-            # ("hist_search", 5, "l1_distance"),
-            # ("hist_search", 5, "inner_product"),
-            # ("hist_search", 10, "cosine_similarity"),
-            # ("hist_search", 10, "l1_distance"),
-            # ("hist_search", 10, "inner_product"),
+            ("hist_search", 5, "l1_distance"),
+            ("hist_search", 5, "inner_product"),
+            ("hist_search", 10, "cosine_similarity"),
+            ("hist_search", 10, "l1_distance"),
+            ("hist_search", 10, "inner_product"),
         ],
     )
     def test_embedding_search_embedding_known_collection(
