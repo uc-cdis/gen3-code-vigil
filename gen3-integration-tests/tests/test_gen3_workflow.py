@@ -849,7 +849,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Check that the output file is in the right user's bucket
-        # TODO `funnel-temp-files` is temporarily removed - remove the `if` block once it's back
+        # TODO (MIDRC-1353) `funnel-temp-files` is temporarily removed - remove the `if` block
+        # once it's back
         bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
             folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
             s3_storage_config=self.s3_storage_config,
@@ -1474,11 +1475,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # `outputs` is a directory, `logs.outputs` is the list of files in the uploaded dir.
         assert len(task_info.get("logs", [])) > 0
         actual_outputs = [o["url"] for o in task_info["logs"][-1].get("outputs", [])]
-        # TODO enable assertion once the change to use the mounted bucket in funnel is merged
-        # assert actual_outputs == [
-        #     f"s3://{s3_path_prefix}/{d1}/{d2}/{files[0]['name']}",
-        #     f"s3://{s3_path_prefix}/{d1}/{d2}/{files[1]['name']}",
-        # ]
+        assert actual_outputs == [
+            f"s3://{s3_path_prefix}/{d1}/{d2}/{files[0]['name']}",
+            f"s3://{s3_path_prefix}/{d1}/{d2}/{files[1]['name']}",
+        ]
 
         # check that the expected output files are in S3
         for file in files:
