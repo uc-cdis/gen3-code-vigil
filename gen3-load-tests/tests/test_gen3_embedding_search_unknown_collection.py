@@ -54,7 +54,7 @@ class TestGen3EmbeddingSearchUnKnownCollection:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "GEN3_HOST": f"{pytest.hostname}",
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION"),
-            "VIRTUAL_USERS": '[{"duration": "120s", "target": 1}]',
+            "VIRTUAL_USERS": '[{"duration": "600s", "target": 1}]',
         }
 
         # # Run k6 load test
@@ -71,12 +71,12 @@ class TestGen3EmbeddingSearchUnKnownCollection:
     @pytest.mark.parametrize(
         "collection_name,top_k,distance_metric",
         [
-            ("expr_search", 5, "cosine_similarity"),
-            ("expr_search", 5, "l1_distance"),
-            ("expr_search", 5, "inner_product"),
-            ("expr_search", 10, "cosine_similarity"),
-            ("expr_search", 10, "l1_distance"),
-            ("expr_search", 10, "inner_product"),
+            ("hist_search", 5, "cosine_similarity"),
+            ("hist_search", 5, "l1_distance"),
+            ("hist_search", 5, "inner_product"),
+            ("hist_search", 10, "cosine_similarity"),
+            ("hist_search", 10, "l1_distance"),
+            ("hist_search", 10, "inner_product"),
         ],
     )
     def test_embedding_search_embedding_unknown_collection(
