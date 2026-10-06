@@ -102,6 +102,8 @@ export default function () {
       duration_ms: res.timings.duration,
     }));
 
+    console.log(`Response: ${res.body}`);
+
     if (res.status !== 200) {
       console.log(`Status: ${res.status}`);
       console.log(`Response: ${res.body}`);
