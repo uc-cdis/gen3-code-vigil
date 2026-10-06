@@ -348,7 +348,7 @@ class Gen3Workflow:
 
                 if state == expected_final_state:
                     logger.info(
-                        f"TES task reached final state '{state}', Response: {json.dumps(task_info, indent=2)}"
+                        f"TES task reached state '{state}', Response: {json.dumps(task_info, indent=2)}"
                     )
                     return task_info
 
