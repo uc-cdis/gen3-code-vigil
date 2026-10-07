@@ -16,6 +16,7 @@ jobs:
     uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@GQE-715-add-workspaces-to-ci-default
     with:
       WORKING_DIR: gen3-integration-tests
+      TEST_REPO_BRANCH: GQE-709-add-workspaces-tests
       IS_NIGHTLY_RUN: "true"
       TEST_LABELS: ${{ inputs.TEST_LABELS }}
       CI_ENV: gen3ff
