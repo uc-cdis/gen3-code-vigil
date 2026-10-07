@@ -3,12 +3,12 @@ This is Workspaces(plural) test
 """
 
 import os
+import textwrap
 
 import pytest
 from pages.login import LoginPage
 from pages.workspaces import WorkspacesPage
 from utils import logger
-from utils.test_execution import screenshot
 
 
 @pytest.fixture()
@@ -31,12 +31,16 @@ def page_setup(page):
 )
 @pytest.mark.skipif(
     not any(x in os.getenv("SOURCE_CONFIG", "") for x in ("pdp-commons", "vadcprod")),
-    reason="This test is configured to run only on PDP and vpodc commons",
+    reason="This test is configured to run only on PDP and vadc/vpodc commons",
+)
+@pytest.mark.skipif(
+    "frontend-framework" not in pytest.deployed_services,
+    reason="WorkSpaces(plural) runs only frontend-framework",
 )
 @pytest.mark.workspaces
 @pytest.mark.frontend
-class TestWorkspacePage:
-    def test_launch_workspace(self, page_setup):
+class TestWorkspacesPage:
+    def test_launch_and_run_command_in_workspaces(self, page_setup):
         """
         Scenario: Launch the new jupyterlite workspace from workspaces page
         Steps:
@@ -54,5 +58,21 @@ class TestWorkspacePage:
         login_page.go_to(page_setup)
         """login with mainAcct user"""
         login_page.login(page_setup)
-        """navigates to workspaces(plural) page and sees workspace_options"""
+        """navigates to workspaces(plural) page"""
         workspaces_page.go_to(page_setup)
+        """launches the workspaces jupyter lite free version"""
+        workspaces_page.launch_workspaces(page_setup)
+        """opens the python(pyodide) notebook"""
+        workspaces_page.open_python_pyodide_notebook(page_setup)
+        # Command to run in the python pyodide notebook.
+        command = textwrap.dedent("""\
+            import micropip
+            await micropip.install("requests")
+            import requests
+            print(requests.__version__)
+            """)
+
+        """running the python pyodide command"""
+        result = workspaces_page.run_pyodide_command_in_notebook(page_setup, command)
+        logger.info("Running command in jupyter lite python pyodide notebook")
+        logger.info(f"Result: {result}")
