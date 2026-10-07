@@ -2,6 +2,10 @@
 The `TestGen3Workflow` class includes common setup and test selecting flags.
 The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
 
+
+`quay.io/cdis/gen3-workflow:integration_tests_dicom_image` Dockerfile location:
+https://github.com/uc-cdis/bio-nextflow/tree/c8f9fd595135078b1ac1b365aa3393641b5cacdb/nextflow_notebooks/containerized_cpu_workflows/midrc_batch_demo
+
 Not fixed yet:
 - #38 (KMS encryption fails when using `executors.stdout`)
 - #57, #69, #71, #80 Maybe add a Funnel reconciler test: check that old resources are being cleared
@@ -1253,7 +1257,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # python script which includes some of the test cases
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        script_file_name = "test_multiple_executors_and_pv_features.py"
+        script_file_name = f"{request.node.name}.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
             filename=f"test_data/gen3_workflow/{script_file_name}",
@@ -1547,6 +1551,81 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
         expected = f".:\n{d1}\n\n./{d1}:\n{d2}\n\n./{d1}/{d2}:\n{files[0]['name']}\n{files[1]['name']}\n{files[0]['txt']}\n{files[1]['txt']}"
         assert stdout == expected
+
+    def test_dpop_task_token_within_tes_task(self, request):
+        """
+        Run a task that obtains a DPoP-bound task token and uses it to hit a DPoP endpoint.
+        """
+        # upload the input file (python script that obtains and uses a task token)
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        script_file_name = f"{request.node.name}.py"
+        self.gen3_workflow._perform_s3_action(
+            "upload_file",
+            filename=f"test_data/gen3_workflow/{script_file_name}",
+            object_path=f"{s3_path_prefix}/{script_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            expected_status=None,
+        )
+
+        # run the task
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body={
+                **base_tes_payload(request),
+                "inputs": [
+                    {
+                        "url": f"s3://{s3_path_prefix}/{script_file_name}",
+                        "path": f"/work/{script_file_name}",
+                    },
+                ],
+                "outputs": [
+                    {
+                        "path": f"/work/output.json",
+                        "url": f"s3://{s3_path_prefix}/output.json",
+                        "type": "FILE",
+                    }
+                ],
+                "executors": [
+                    {
+                        "image": "python:3.13-slim",
+                        "workdir": "/work",
+                        # TODO simplify the SDK installation once the SDK DPoP PR is merged:
+                        # "command": [f"pip install 'gen3[dpop]' && python {script_file_name}"],
+                        "command": [
+                            f"python -c \"import urllib.request; urllib.request.urlretrieve('https://github.com/uc-cdis/gen3sdk-python/archive/feat/dpop.zip', 'sdk.zip')\" && python -m zipfile -e sdk.zip sdk && cd sdk/gen3sdk-python-feat-dpop && pip install '.[dpop]' && pip install requests && cd ../.. && python {script_file_name}"
+                        ],
+                        "env": {
+                            "API_KEY": pytest.api_keys[self.valid_user]["api_key"],
+                        },
+                    },
+                ],
+            },
+            user=self.valid_user,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
+
+        # check the output: the job should have been able to use a task token to hit the
+        # gen3-workflow task listing endpoint
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/output.json",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+        )
+
+        output_content = json.loads(response_s3_object["Body"].read().decode("utf-8"))
+        output_content.pop("next_page_token")
+
+        # TODO remove the line below once the `view` param is fixed (https://github.com/uc-cdis/gen3-workflow/pull/198)
+        output_content["tasks"][0] = {
+            k: v for k, v in output_content["tasks"][0].items() if k in ["id", "state"]
+        }
+
+        assert output_content == {"tasks": [{"id": task_id, "state": "RUNNING"}]}
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
