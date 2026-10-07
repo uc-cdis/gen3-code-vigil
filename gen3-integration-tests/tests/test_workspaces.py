@@ -29,13 +29,13 @@ def page_setup(page):
     "hatchery" not in pytest.deployed_services,
     reason="hatchery service is not running on this environment",
 )
-@pytest.mark.skipif(
-    not (
-        any(x in os.getenv("SOURCE_CONFIG", "") for x in ("pdp-commons", "vadcprod"))
-        or os.getenv("NAMESPACE", "") == "nightly-build-ff"
-    ),
-    reason="Currently the Workspaces is only on PDP/vadc commons or nightly-build-ff",
-)
+# @pytest.mark.skipif(
+#    not (
+#        any(x in os.getenv("SOURCE_CONFIG", "") for x in ("pdp-commons", "vadcprod"))
+#        or os.getenv("NAMESPACE", "") == "nightly-build-ff"
+#    ),
+#    reason="Currently the Workspaces is only on PDP/vadc commons or nightly-build-ff",
+# )
 @pytest.mark.skipif(
     "frontend-framework" not in pytest.deployed_services,
     reason="WorkSpaces(plural) runs only frontend-framework",
