@@ -170,7 +170,10 @@ class TestTaskToken(object):
                 url, headers={"Authorization": f"bearer {foo_task_token}"}
             )
             assert res.status_code == 401, "Should not be allowed to list TES tasks"
-            assert "token audience validation failed" in res.text
+            assert (
+                "The access token is missing, malformed, expired or not accepted here"
+                in res.text
+            )
 
             # succeed using a task token on an Arborist endpoint, regardless of task token type,
             # since Arborist should accept all tokens for authorization verification purposes
