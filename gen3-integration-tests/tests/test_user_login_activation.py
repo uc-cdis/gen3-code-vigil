@@ -56,7 +56,7 @@ class TestUserLoginActivation:
         ], f"Expected user status to be True, but got {response.json()["active"]}"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("fence", "2026.05", "13.1.0"),
+        gat.service_version_lower_than("fence", "2026.05", "13.1.0"),
         reason="Current fence version doesn't have the changes for this test",
     )
     def test_inactive_user_cannot_login(self, page: Page):
