@@ -13,8 +13,9 @@ on:
 jobs:
   nightly_run_gen3ff:
     name: Nightly run Gen3FF
-    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@master
+    uses: uc-cdis/.github/.github/workflows/integration_tests.yaml@GQE-715-add-workspaces-to-ci-default
     with:
+      TEST_REPO_BRANCH: GQE-709-add-workspaces-tests
       WORKING_DIR: gen3-integration-tests
       IS_NIGHTLY_RUN: "true"
       TEST_LABELS: ${{ inputs.TEST_LABELS }}
