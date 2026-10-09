@@ -23,6 +23,8 @@ class TestGen3FhirProxyLoad:
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION", "latest"),
             "GEN3_HOST": f"{pytest.hostname}",
             "BASE_PATH": "/fhir",
+            "TOTAL_PATIENTS": os.getenv("TOTAL_PATIENTS", "5000000"),
+            "PAGE_SIZE": os.getenv("PAGE_SIZE", "1000"),
             "VIRTUAL_USERS": os.getenv("VIRTUAL_USERS", DEFAULT_VU),
         }
 
