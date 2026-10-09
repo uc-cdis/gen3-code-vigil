@@ -8,7 +8,6 @@ from utils import load_test
 DEFAULT_VU = '[{"duration": "10s", "target": 2}, {"duration": "30s", "target": 10}, {"duration": "30s", "target": 10}, {"duration": "10s", "target": 0}]'
 
 
-@pytest.mark.wip
 @pytest.mark.gen3_fhir_proxy_load
 class TestGen3FhirProxyLoad:
     def setup_method(self):
