@@ -22,6 +22,7 @@ class TestGen3FhirProxyLoad:
             "ACCESS_TOKEN": self.auth.get_access_token(),
             "RELEASE_VERSION": os.getenv("RELEASE_VERSION", "latest"),
             "GEN3_HOST": f"{pytest.hostname}",
+            "BASE_PATH": "/fhir",
             "VIRTUAL_USERS": os.getenv("VIRTUAL_USERS", DEFAULT_VU),
         }
 
