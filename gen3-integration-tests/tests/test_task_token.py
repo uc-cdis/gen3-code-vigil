@@ -14,6 +14,10 @@ import utils.gen3_admin_tasks as gat
 from services.fence import Fence
 from services.gen3workflow import Gen3Workflow
 
+# allow extra time for the proxy startup, the nonce challenge/retry round trip, the
+# arborist call, etc
+PROXY_GRACE_PERIOD_SEC = 30
+
 
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
@@ -29,15 +33,10 @@ class TestTaskToken(object):
     def setup_class(cls):
         cls.fence = Fence()
 
-    def test_obtain_task_token(self):
+    def test_obtain_task_token_failure_without_proxy(self):
         """
         Test that task tokens are only given to users with access, and only for valid DPoP requests.
-
-        TODO: add test case for a user that has access to a specific task token lifetime,
-        e.g. "/services/fence/task-token/WORKFLOW/4000" once this is done:
-        https://ctds-planx.atlassian.net/browse/MIDRC-1319
         """
-        # should NOT be able to obtain a task token without going through the DPoP proxy
         url = f"{pytest.root_url}/user/credentials/api/access_token?task_token=WORKFLOW"
         res = requests.post(
             url, json={"api_key": pytest.api_keys["main_account"]["api_key"]}
@@ -45,16 +44,14 @@ class TestTaskToken(object):
         assert res.status_code == 400, res.text
         assert "Invalid DPoP request" in res.text
 
-        default_max_exp = 3600
+    def test_obtain_task_token_success(self):
+        """
+        Should be able to obtain a task token by going through the DPoP proxy.
+
+        MAX_ACCESS_TOKEN_TTL is 3600 and MAX_TASK_TOKEN_TTL.WORKFLOW is 4000. We can
+        request a WORKFLOW task token with a lifetime > 3600 and <= 4000.
+        """
         requested_exp = 3777
-
-        # allow extra time for the proxy startup, the nonce challenge/retry round trip, the
-        # arborist call, etc
-        grace_period_sec = 30
-
-        # should be able to obtain a task token by going through the DPoP proxy.
-        # MAX_ACCESS_TOKEN_TTL is 3600 and MAX_TASK_TOKEN_TTL.WORKFLOW is 4000. Check that we can
-        # request a WORKFLOW task token with a lifetime > 3600 and <= 4000
         with self.fence.get_dpop_bound_task_token(
             "WORKFLOW", expires_in=requested_exp
         ) as (
@@ -67,10 +64,21 @@ class TestTaskToken(object):
                 options={"verify_signature": False},
             )["exp"]
         now = int(time.time())
-        assert requested_exp - grace_period_sec <= exp - now <= requested_exp
+        assert requested_exp - PROXY_GRACE_PERIOD_SEC <= exp - now <= requested_exp
 
-        # a lifetime > MAX_ACCESS_TOKEN_TTL should not work for task token type != WORKFLOW since
-        # it's not configured in MAX_TASK_TOKEN_TTL. We should get exp == MAX_ACCESS_TOKEN_TTL
+    def test_obtain_task_token_max_ttl(self):
+        """
+        Should be able to obtain a task token by going through the DPoP proxy.
+
+        A lifetime > MAX_ACCESS_TOKEN_TTL should not work for task token type != WORKFLOW since
+        it's not configured in MAX_TASK_TOKEN_TTL. We should get exp == MAX_ACCESS_TOKEN_TTL.
+
+        TODO: add test case for a user that has access to a specific task token lifetime,
+        e.g. "/services/fence/task-token/WORKFLOW/4000" once this is done:
+        https://ctds-planx.atlassian.net/browse/MIDRC-1319
+        """
+        default_max_exp = 3600
+        requested_exp = 3777
         with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp) as (
             other_task_token,
             _,
@@ -81,80 +89,131 @@ class TestTaskToken(object):
                 options={"verify_signature": False},
             )["exp"]
         now = int(time.time())
-        assert default_max_exp - grace_period_sec <= exp - now <= default_max_exp
+        assert default_max_exp - PROXY_GRACE_PERIOD_SEC <= exp - now <= default_max_exp
 
-        # requesting a task token with a non-allowed type (not configured in
-        # ALLOWED_TASK_TOKEN_TYPES) should not work
+    def test_obtain_task_token_unsupported_type(self):
+        """
+        Requesting a task token with a non-allowed type (not configured in Fence's
+        ALLOWED_TASK_TOKEN_TYPES) should not work.
+        """
         with self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400):
             pass
 
-        # a user without access to task tokens should not be able to obtain one
+    def test_obtain_task_token_unauthorized(self):
+        """
+        A user without access to task tokens should not be able to obtain one
+        """
         with self.fence.get_dpop_bound_task_token(
             "WORKFLOW", user="user2_account", expected_status_code=403
         ):
             pass
 
-    @pytest.mark.skipif(
-        "gen3-workflow" not in pytest.deployed_services,
-        reason="gen3-workflow service is not running on this environment",
-    )
-    @pytest.mark.skipif(
-        "funnel" not in pytest.deployed_services,
-        reason="funnel service is not running on this environment",
-    )
-    @pytest.mark.skipif(
-        "localhost" in pytest.hostname,
-        reason="DPoP is not supported by the Kind CI",
-    )
-    @pytest.mark.gen3_workflow
-    def test_task_token_audience(self, request):
+    def test_task_token_against_arborist(self):
         """
-        Test that task tokens can only be used on the endpoints they are meant for, and that those
-        endpoints reject non-task tokens.
+        Succeed using a task token on an Arborist endpoint, regardless of task token type,
+        since Arborist should accept all tokens for authorization verification purposes
+        """
+        with self.fence.get_dpop_bound_task_token("FOO") as (foo_task_token, _):
+            url = f"{pytest.root_url}/authz/mapping"
+            res = requests.get(
+                url, headers={"Authorization": f"bearer {foo_task_token}"}
+            )
+            assert res.status_code == 200, res.text
+
+
+@pytest.mark.skipif(
+    "gen3-workflow" not in pytest.deployed_services,
+    reason="gen3-workflow service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "funnel" not in pytest.deployed_services,
+    reason="funnel service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "localhost" in pytest.hostname,
+    reason="DPoP is not supported by the Kind CI",
+)
+@pytest.mark.gen3_workflow
+class TestTaskTokenWithGen3Workflow:
+    """
+    Using a separate class so we can apply the pytest marks above to all the tests that require
+    gen3-workflow without repeating them for each test.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        cls.fence = Fence()
+
+    def test_dpop_task_token_endpoints_with_regular_token(self):
+        """
+        Use a regular token to hit an endpoint that requires DPoP-bound task tokens.
         """
         gen3_workflow = Gen3Workflow()
         gen3_workflow.setup_storage()
-
-        # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint that requires DPoP
-        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
         with gen3_workflow.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):
+            # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint that requires
+            # DPoP
+            url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
             res = requests.post(
                 url, headers={"Authorization": f"bearer {regular_token}"}
             )
-        assert res.status_code == 401, "Should not be allowed to create a TES task"
-        assert res.json().get("error") == "dpop_required"
+            assert res.status_code == 401, "Should not be allowed to create a TES task"
+            assert res.json().get("error") == "dpop_required"
 
-        # fail to use a regular (non-DPoP, non-task) token even when using the `dpop` keyword
-        # instead of the `bearer` keyword in the auth header
-        res = requests.post(url, headers={"Authorization": f"dpop {regular_token}"})
-        assert res.status_code == 401, "Should not be allowed to create a TES task"
-        assert res.json().get("error") == "dpop_required"
+            # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint that requires
+            # DPoP, even when using the `dpop` keyword instead of the `bearer` keyword in the auth
+            # header
+            url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
+            res = requests.post(url, headers={"Authorization": f"dpop {regular_token}"})
+            assert res.status_code == 401, "Should not be allowed to create a TES task"
+            assert res.json().get("error") == "dpop_required"
 
-        # succeed using a regular (non-DPoP, non-task) token on a WORKFLOW endpoint that does
-        # NOT require DPoP
-        res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
-        assert res.status_code == 200, "Should be allowed to list TES tasks"
+    def test_non_dpop_task_token_endpoints_with_regular_token(self):
+        """
+        Use a regular token to hit an endpoint that supports, but does not require, DPoP-bound task
+        tokens.
+        """
+        gen3_workflow = Gen3Workflow()
+        gen3_workflow.setup_storage()
+        with gen3_workflow.get_token_and_gen3_url("main_account") as (
+            regular_token,
+            _,
+        ):
+            url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
+            res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
+            assert res.status_code == 200, "Should be allowed to list TES tasks"
 
-        # anonymous calls fail on WORKFLOW endpoints that requires DPoP
+    def test_call_task_token_endpoint_anonymously(self):
+        """
+        Anonymous calls fail on WORKFLOW endpoints that requires DPoP, and
+        succeed on WORKFLOW endpoints that do NOT require DPoP
+        """
+        # DPoP required: anonymous call rejected
+        url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
         res = requests.post(url)
         assert (
             res.status_code == 401
         ), "Anonynous user should not be allowed to create a TES task"
         assert res.json().get("error") == "dpop_required"
 
-        # anonymous calls succeed on WORKFLOW endpoints that do NOT require DPoP
+        # DPoP not required: anonymous call accepted
         # TODO uncomment once fixed: https://github.com/uc-cdis/gen3-workflow/pull/190#discussion_r4252314808
         # res = requests.get(url)
         # assert res.status_code == 200, "Anonynous user should be allowed to list TES tasks"
 
+    def test_task_token_audience_mismatch(self):
+        """
+        Fail to use a WORKFLOW task token on non-WORKFLOW endpoints.
+        Fail to use a non-WORKFLOW task token on a WORKFLOW endpoint.
+        """
         with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
             workflow_task_token,
-            proxy_url,
+            _,
         ):
-            # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint in Fence
+            # should fail to hit a Fence endpoint
             url = f"{pytest.root_url}/user/user"
             res = requests.get(
                 url, headers={"Authorization": f"bearer {workflow_task_token}"}
@@ -162,10 +221,31 @@ class TestTaskToken(object):
             assert res.status_code == 401, res.text
             assert "token audience validation failed" in res.text
 
-            # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint outside of Fence
-            # TODO service other than arborist, where authutils is updated
+            # should fail to hit a non-Fence endpoint
+            # TODO: add test here hitting a service other than arborist, where authutils is updated
 
-            # succeed using a WORKFLOW task token on a WORKFLOW endpoint that requires DPoP
+        with self.fence.get_dpop_bound_task_token("FOO") as (
+            foo_task_token,
+            proxy_url,
+        ):
+            url = f"{proxy_url}/ga4gh/tes/v1/tasks"
+            res = requests.get(
+                url, headers={"Authorization": f"bearer {foo_task_token}"}
+            )
+            assert res.status_code == 401, "Should not be allowed to list TES tasks"
+            assert (
+                "The access token is missing, malformed, expired or not accepted here"
+                in res.text
+            )
+
+    def test_task_token_success_when_required(self, request):
+        """
+        Succeed using a WORKFLOW task token on a WORKFLOW endpoint that requires DPoP
+        """
+        with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            workflow_task_token,
+            proxy_url,
+        ):
             res = requests.post(
                 f"{proxy_url}/ga4gh/tes/v1/tasks",
                 headers={"Authorization": f"bearer {workflow_task_token}"},
@@ -181,44 +261,30 @@ class TestTaskToken(object):
             )
             assert res.status_code == 200, res.text
             task_id = res.json()["id"]
-            res = requests.post(  # cancel the task we just created
+
+            # clean up: cancel the task we just created
+            res = requests.post(
                 url=f"{proxy_url}/ga4gh/tes/v1/tasks/{task_id}:cancel",
                 headers={"Authorization": f"bearer {workflow_task_token}"},
             )
             assert res.status_code == 200, "Failed to cancel task"
 
-            # succeed using a WORKFLOW task token on a WORKFLOW endpoint, even if it does not
-            # require DPoP
+    def test_task_token_success_when_not_required(self):
+        """
+        Succeed using a WORKFLOW task token on a WORKFLOW endpoint, even if it does not
+        require DPoP
+        """
+        with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            workflow_task_token,
+            proxy_url,
+        ):
             res = requests.get(
                 f"{proxy_url}/ga4gh/tes/v1/tasks",
                 headers={"Authorization": f"bearer {workflow_task_token}"},
             )
             assert res.status_code == 200, res.text
 
-        with self.fence.get_dpop_bound_task_token("FOO") as (
-            foo_task_token,
-            proxy_url,
-        ):
-            # fail to use a non-WORKFLOW task token on a WORKFLOW endpoint
-            url = f"{proxy_url}/ga4gh/tes/v1/tasks"
-            res = requests.get(
-                url, headers={"Authorization": f"bearer {foo_task_token}"}
-            )
-            assert res.status_code == 401, "Should not be allowed to list TES tasks"
-            assert (
-                "The access token is missing, malformed, expired or not accepted here"
-                in res.text
-            )
-
-            # succeed using a task token on an Arborist endpoint, regardless of task token type,
-            # since Arborist should accept all tokens for authorization verification purposes
-            url = f"{pytest.root_url}/authz/mapping"
-            res = requests.get(
-                url, headers={"Authorization": f"bearer {foo_task_token}"}
-            )
-            assert res.status_code == 200, res.text
-
-    def test_denylist_task_token(self):
+    def test_task_token_denylist(self):
         """
         Test that task tokens can be revoked/denylisted, after which they should not be accepted by
         the server anymore.
