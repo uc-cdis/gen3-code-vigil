@@ -2,7 +2,7 @@ import base64
 import io
 import json
 import re
-from contextlib import contextmanager, redirect_stdout
+from contextlib import ExitStack, contextmanager, redirect_stdout
 
 import pytest
 import requests
@@ -527,7 +527,7 @@ class Fence(object):
 
     @contextmanager
     def get_dpop_bound_task_token(
-        self, type, user="main_account", expires_in=3600, expected_status_code=200
+        self, token_type, user="main_account", expires_in=3600, expected_status_code=200
     ):
         """
         Use the Gen3 SDK's DPoP proxy to obtain a DPoP-bound task token from Fence.
@@ -542,17 +542,25 @@ class Fence(object):
                 res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
         """
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
-        try:
-            with dpop_proxy_context(
-                auth=auth, task_token_type=type, task_token_expiration=expires_in
-            ) as (task_token, proxy_port):
-                yield task_token, f"http://127.0.0.1:{proxy_port}"
-        except Exception as e:
-            if expected_status_code == 200:
-                logger.error(f"Unable to get a '{type}' task token for '{user}': {e}")
-                raise
-            assert f"[{expected_status_code}]" in str(e)
-            yield
+        token, url = None, None
+        with ExitStack() as stack:
+            try:
+                task_token, proxy_port = stack.enter_context(
+                    dpop_proxy_context(
+                        auth=auth,
+                        task_token_type=token_type,
+                        task_token_expiration=expires_in,
+                    )
+                )
+                token, url = task_token, f"http://127.0.0.1:{proxy_port}"
+            except Exception as e:
+                if expected_status_code == 200:
+                    logger.error(
+                        f"Unable to get a '{token_type}' task token for '{user}': {e}"
+                    )
+                    raise
+                assert f"[{expected_status_code}]" in str(e)
+            yield token, url
 
     def revoke_token(self, token):
         """Adds a token to Fence's denylist"""

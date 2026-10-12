@@ -6,7 +6,7 @@ import time
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 from unittest.mock import patch
 
 import boto3
@@ -159,8 +159,8 @@ class Gen3Workflow:
     @contextmanager
     def get_token_and_gen3_url(self, user: str = "main_account", needs_dpop=False):
         """
-        Helper function that patches `Gen3Auth.get_access_token` when needed and uses the SDK's
-        DPoP proxy when needed.
+        Helper function that patches `Gen3Auth.get_access_token` and uses the SDK's DPoP proxy when
+        needed.
 
         When running the tests against a local cluster:
         - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
@@ -291,7 +291,7 @@ class Gen3Workflow:
                 _print_tes_apps_logs(with_arborist=error_code == "403")
                 if error_code == "NoSuchKey":
                     response_status = 404
-                elif error_code == "403":
+                elif error_code in ["Forbidden", "403"]:
                     response_status = 403
                 else:
                     logger.error(
@@ -421,7 +421,7 @@ class Gen3Workflow:
             cleanup_url = (
                 f"{url}/storage/user-bucket"
                 if delete_bucket
-                else f"{self.BASE_URL}{self.SERVICE_URL}/storage/user-bucket/objects"
+                else f"{url}/storage/user-bucket/objects"
             )
             headers = (
                 {
@@ -619,7 +619,7 @@ class Gen3Workflow:
         s3_region: str,
         user: str = "main_account",
         nextflow_config_file: str = None,
-        params: dict = {},
+        params: Optional[dict] = None,
     ):
         """
         Runs a Nextflow workflow using the given workflow script and config file.
@@ -636,6 +636,7 @@ class Gen3Workflow:
         Returns:
             str: Contents of the Nextflow log file (.nextflow.log).
         """
+        params = params or {}
         original_cwd = Path.cwd()
         workflow_dir_path = Path(workflow_dir).resolve()
 

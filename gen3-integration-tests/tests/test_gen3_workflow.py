@@ -33,6 +33,7 @@ import zipfile
 
 import jwt
 import pytest
+import utils.gen3_admin_tasks as gat
 from boto3.s3.transfer import TransferConfig
 from dateutil import parser
 from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
@@ -863,7 +864,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
         if not bucket_contents:
             logger.info(
-                f"Failed to list objects, now attempting to list without `funnel-temp-files` prefix..."
+                "Failed to list objects, now attempting to list without `funnel-temp-files` prefix..."
             )
             bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
                 folder_path=f"{self.s3_storage_config.bucket_name}/{task_id}/",
@@ -1552,6 +1553,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         expected = f".:\n{d1}\n\n./{d1}:\n{d2}\n\n./{d1}/{d2}:\n{files[0]['name']}\n{files[1]['name']}\n{files[0]['txt']}\n{files[1]['txt']}"
         assert stdout == expected
 
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("fence", "2026.10", "13.4.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_dpop_task_token_within_tes_task(self, request):
         """
         Run a task that obtains a DPoP-bound task token and uses it to hit a DPoP endpoint.
@@ -1568,37 +1573,40 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # run the task
+        body = {
+            **base_tes_payload(request),
+            "inputs": [
+                {
+                    "url": f"s3://{s3_path_prefix}/{script_file_name}",
+                    "path": f"/work/{script_file_name}",
+                },
+            ],
+            "outputs": [
+                {
+                    "path": f"/work/output.json",
+                    "url": f"s3://{s3_path_prefix}/output.json",
+                    "type": "FILE",
+                }
+            ],
+            "executors": [
+                {
+                    "image": "python:3.13-slim",
+                    "workdir": "/work",
+                    # TODO simplify the SDK installation once the SDK DPoP PR is merged:
+                    # "command": [f"pip install 'gen3[dpop]' && python {script_file_name}"],
+                    "command": [
+                        f"python -c \"import urllib.request; urllib.request.urlretrieve('https://github.com/uc-cdis/gen3sdk-python/archive/feat/dpop.zip', 'sdk.zip')\" && python -m zipfile -e sdk.zip sdk && cd sdk/gen3sdk-python-feat-dpop && pip install '.[dpop]' && pip install requests && cd ../.. && python {script_file_name}"
+                    ],
+                    "env": {
+                        "API_KEY": pytest.api_keys[self.valid_user]["api_key"],
+                    },
+                },
+            ],
+        }
+        # this tag allows for quick lookup in the `script_file_name` python script
+        body["tags"]["TEST_NAME"] = request.node.name
         task_response = self.gen3_workflow.create_tes_task(
-            request_body={
-                **base_tes_payload(request),
-                "inputs": [
-                    {
-                        "url": f"s3://{s3_path_prefix}/{script_file_name}",
-                        "path": f"/work/{script_file_name}",
-                    },
-                ],
-                "outputs": [
-                    {
-                        "path": f"/work/output.json",
-                        "url": f"s3://{s3_path_prefix}/output.json",
-                        "type": "FILE",
-                    }
-                ],
-                "executors": [
-                    {
-                        "image": "python:3.13-slim",
-                        "workdir": "/work",
-                        # TODO simplify the SDK installation once the SDK DPoP PR is merged:
-                        # "command": [f"pip install 'gen3[dpop]' && python {script_file_name}"],
-                        "command": [
-                            f"python -c \"import urllib.request; urllib.request.urlretrieve('https://github.com/uc-cdis/gen3sdk-python/archive/feat/dpop.zip', 'sdk.zip')\" && python -m zipfile -e sdk.zip sdk && cd sdk/gen3sdk-python-feat-dpop && pip install '.[dpop]' && pip install requests && cd ../.. && python {script_file_name}"
-                        ],
-                        "env": {
-                            "API_KEY": pytest.api_keys[self.valid_user]["api_key"],
-                        },
-                    },
-                ],
-            },
+            request_body=body,
             user=self.valid_user,
         )
         task_id = task_response.get("id", None)
@@ -1619,12 +1627,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         output_content = json.loads(response_s3_object["Body"].read().decode("utf-8"))
         output_content.pop("next_page_token")
-
-        # TODO remove the line below once the `view` param is fixed (https://github.com/uc-cdis/gen3-workflow/pull/198)
-        output_content["tasks"][0] = {
-            k: v for k, v in output_content["tasks"][0].items() if k in ["id", "state"]
-        }
-
         assert output_content == {"tasks": [{"id": task_id, "state": "RUNNING"}]}
 
 

@@ -1,3 +1,7 @@
+"""
+This script is used by the test of the same name in the `TestGen3Workflow` class
+"""
+
 import json
 import os
 
@@ -14,7 +18,7 @@ with dpop_proxy_context(auth=auth, task_token_type="WORKFLOW") as (
 ):
     # query the most recent task created by this user
     res = requests.get(
-        url=f"http://127.0.0.1:{proxy_port}/ga4gh/tes/v1/tasks?view=MINIMAL&page_size=1",
+        url=f"http://127.0.0.1:{proxy_port}/ga4gh/tes/v1/tasks?view=MINIMAL&page_size=1&tag_key=TEST_NAME&tag_value=test_dpop_task_token_within_tes_task",
         headers={"Authorization": f"bearer {task_token}"},
     )
     assert res.status_code == 200, res.text

@@ -12,7 +12,7 @@ import pytest
 import requests
 import utils.gen3_admin_tasks as gat
 from services.fence import Fence
-from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
+from services.gen3workflow import Gen3Workflow
 
 
 @pytest.mark.skipif(
