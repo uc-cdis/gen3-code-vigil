@@ -107,7 +107,7 @@ class TestTaskToken(object):
         reason="DPoP is not supported by the Kind CI",
     )
     @pytest.mark.gen3_workflow
-    def test_task_token_audience(self):
+    def test_task_token_audience(self, request):
         """
         Test that task tokens can only be used on the endpoints they are meant for, and that those
         endpoints reject non-task tokens.
@@ -115,28 +115,40 @@ class TestTaskToken(object):
         gen3_workflow = Gen3Workflow()
         gen3_workflow.setup_storage()
 
-        # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint
+        # fail to use a regular (non-DPoP, non-task) token on a WORKFLOW endpoint that requires DPoP
         url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
         with gen3_workflow.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):
-            res = requests.get(
+            res = requests.post(
                 url, headers={"Authorization": f"bearer {regular_token}"}
             )
-        assert res.status_code == 401, "Should not be allowed to list TES tasks"
+        assert res.status_code == 401, "Should not be allowed to create a TES task"
         assert res.json().get("error") == "dpop_required"
 
         # fail to use a regular (non-DPoP, non-task) token even when using the `dpop` keyword
         # instead of the `bearer` keyword in the auth header
-        res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
-        assert res.status_code == 401, "Should not be allowed to list TES tasks"
+        res = requests.post(url, headers={"Authorization": f"dpop {regular_token}"})
+        assert res.status_code == 401, "Should not be allowed to create a TES task"
         assert res.json().get("error") == "dpop_required"
 
-        # anonymous calls fail on WORKFLOW endpoints
-        res = requests.get(url)
-        assert res.status_code == 401, "Should not be allowed to list TES tasks"
+        # succeed using a regular (non-DPoP, non-task) token on a WORKFLOW endpoint that does
+        # NOT require DPoP
+        res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
+        assert res.status_code == 200, "Should be allowed to list TES tasks"
+
+        # anonymous calls fail on WORKFLOW endpoints that requires DPoP
+        res = requests.post(url)
+        assert (
+            res.status_code == 401
+        ), "Anonynous user should not be allowed to create a TES task"
         assert res.json().get("error") == "dpop_required"
+
+        # anonymous calls succeed on WORKFLOW endpoints that do NOT require DPoP
+        # TODO uncomment once fixed: https://github.com/uc-cdis/gen3-workflow/pull/190#discussion_r4252314808
+        # res = requests.get(url)
+        # assert res.status_code == 200, "Anonynous user should be allowed to list TES tasks"
 
         with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
             workflow_task_token,
@@ -153,7 +165,30 @@ class TestTaskToken(object):
             # fail to use a WORKFLOW task token on a non-WORKFLOW endpoint outside of Fence
             # TODO service other than arborist, where authutils is updated
 
-            # succeed using a WORKFLOW task token on a WORKFLOW endpoint
+            # succeed using a WORKFLOW task token on a WORKFLOW endpoint that requires DPoP
+            res = requests.post(
+                f"{proxy_url}/ga4gh/tes/v1/tasks",
+                headers={"Authorization": f"bearer {workflow_task_token}"},
+                json={
+                    "name": request.node.name,
+                    "executors": [
+                        {
+                            "image": "public.ecr.aws/docker/library/alpine:latest",
+                            "command": ["echo done"],
+                        }
+                    ],
+                },
+            )
+            assert res.status_code == 200, res.text
+            task_id = res.json()["id"]
+            res = requests.post(  # cancel the task we just created
+                url=f"{proxy_url}/ga4gh/tes/v1/tasks/{task_id}:cancel",
+                headers={"Authorization": f"bearer {workflow_task_token}"},
+            )
+            assert res.status_code == 200, "Failed to cancel task"
+
+            # succeed using a WORKFLOW task token on a WORKFLOW endpoint, even if it does not
+            # require DPoP
             res = requests.get(
                 f"{proxy_url}/ga4gh/tes/v1/tasks",
                 headers={"Authorization": f"bearer {workflow_task_token}"},
