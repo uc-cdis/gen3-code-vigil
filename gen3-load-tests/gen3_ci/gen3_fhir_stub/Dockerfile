@@ -10,4 +10,4 @@ ADD https://github.com/uc-cdis/gen3-code-vigil/blob/feat/gen3-fhir-proxy/gen3-lo
 
 EXPOSE 8080
 
-CMD ["python", "stub.py"]
+CMD ["python", "fhir_backend_stub.py"]
