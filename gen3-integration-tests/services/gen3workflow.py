@@ -157,7 +157,7 @@ class Gen3Workflow:
     ############################
 
     @contextmanager
-    def get_token_and_gen3_url(self, user: str = "main_account", needs_dpop=False):
+    def get_token_and_gen3_url(self, user: str = "main_account", use_dpop=False):
         """
         Helper function that patches `Gen3Auth.get_access_token` and uses the SDK's DPoP proxy when
         needed.
@@ -184,7 +184,7 @@ class Gen3Workflow:
             yield None, gen3_workflow_url
             return
 
-        if needs_dpop:
+        if use_dpop:
             if "localhost" in self.BASE_URL:
                 logger.info(
                     "Running in a local cluster: falling back to a generic non-DPoP token. Warning: this flow requires DPoP to be disabled in fence and gen3-workflow"
@@ -250,7 +250,11 @@ class Gen3Workflow:
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
-        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+        requires_dpop = action != "list"
+        with self.get_token_and_gen3_url(user, use_dpop=requires_dpop) as (
+            access_token,
+            url,
+        ):
             client = self._get_s3_client(access_token, url, s3_storage_config)
             bucket, key = self._get_bucket_and_key(object_path)
             logger.info(
@@ -315,7 +319,13 @@ class Gen3Workflow:
         return response
 
     def poll_until_task_reaches_expected_state(
-        self, task_id, user, expected_final_state, max_retries=30, poll_interval=15
+        self,
+        task_id,
+        user,
+        expected_final_state,
+        max_retries=30,
+        poll_interval=15,
+        use_dpop=False,
     ):
         """
         Polls the TES task status until it reaches a final state or exceeds max retries.
@@ -343,6 +353,7 @@ class Gen3Workflow:
                     task_id=task_id,
                     user=user,
                     expected_status=200,
+                    use_dpop=use_dpop,
                 )
                 state = task_info.get("state")
 
@@ -450,7 +461,7 @@ class Gen3Workflow:
         self, object_path: str, user: str = "main_account", expected_status=401
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
-        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+        with self.get_token_and_gen3_url(user, use_dpop=True) as (access_token, url):
             s3_url = f"{url}/s3/{object_path}"
             headers = {"Authorization": f"bearer {access_token}"}
             response = requests.get(url=s3_url, headers=headers)
@@ -541,7 +552,7 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a string containing the task_id
         """
-        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+        with self.get_token_and_gen3_url(user, use_dpop=True) as (access_token, url):
             tes_task_url = f"{url}/ga4gh/tes/v1/tasks"
             headers = {"Authorization": f"bearer {access_token}"} if user else {}
             response = requests.post(
@@ -556,11 +567,16 @@ class Gen3Workflow:
         ), f"Expected {expected_status}, got {response.status_code} when attempting to make a POST request to {tes_task_url}: {response.text}"
         return response.json()
 
-    def list_tes_tasks(self, user: str = "main_account", expected_status=200):
+    def list_tes_tasks(
+        self, user: str = "main_account", expected_status=200, use_dpop=False
+    ):
         """
         Takes in a request body and returns a list of task objects
         """
-        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+        with self.get_token_and_gen3_url(user, use_dpop=use_dpop) as (
+            access_token,
+            url,
+        ):
             tes_task_url = f"{url}/ga4gh/tes/v1/tasks"
             response = requests.get(
                 url=tes_task_url,
@@ -574,12 +590,19 @@ class Gen3Workflow:
         return response.json()
 
     def get_tes_task(
-        self, task_id: str, user: str = "main_account", expected_status=200
+        self,
+        task_id: str,
+        user: str = "main_account",
+        expected_status=200,
+        use_dpop=False,
     ):
         """
         Takes in a request body and returns a task object
         """
-        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+        with self.get_token_and_gen3_url(user, use_dpop=use_dpop) as (
+            access_token,
+            url,
+        ):
             tes_task_url = f"{url}/ga4gh/tes/v1/tasks/{task_id}?view=FULL"
             response = requests.get(
                 url=tes_task_url,
@@ -598,7 +621,7 @@ class Gen3Workflow:
         """
         Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
         """
-        with self.get_token_and_gen3_url(user, needs_dpop=True) as (access_token, url):
+        with self.get_token_and_gen3_url(user) as (access_token, url):
             tes_task_url = f"{url}/ga4gh/tes/v1/tasks/{task_id}:cancel"
             response = requests.post(
                 url=tes_task_url,
@@ -644,7 +667,7 @@ class Gen3Workflow:
             os.chdir(workflow_dir_path)
 
             # Run the Nextflow workflow
-            with self.get_token_and_gen3_url(user, needs_dpop=True) as (
+            with self.get_token_and_gen3_url(user, use_dpop=True) as (
                 access_token,
                 url,
             ):

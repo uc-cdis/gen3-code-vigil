@@ -376,13 +376,19 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
     @pytest.mark.parametrize("with_input_output", [True, False])
-    def test_happy_path_create_tes_task(self, request, with_input_output):
+    @pytest.mark.parametrize("use_dpop_even_when_not_required", [True, False])
+    def test_happy_path_create_tes_task(
+        self, request, with_input_output, use_dpop_even_when_not_required
+    ):
         """
         Test Case: Happy Path for TES Task Creation
         - Upload input file to S3
         - Submit TES task
         - Verify task creation, listing, retrieval, and completion
         - Validate outputs and logs
+
+        If `use_dpop_even_when_not_required` is True, use a DPoP-bound task token even when hitting
+        endpoints that do not require it.
 
         Regression test for TES issues:
         - #8 (create a task without input)
@@ -461,6 +467,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         list_tes_tasks_response = self.gen3_workflow.list_tes_tasks(
             user=self.valid_user,
             expected_status=200,
+            use_dpop=use_dpop_even_when_not_required,
         )
 
         tasks_list = list_tes_tasks_response.get("tasks", [])
@@ -475,6 +482,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             task_id=task_id,
             user=self.valid_user,
             expected_final_state="COMPLETE",
+            use_dpop=use_dpop_even_when_not_required,
         )
 
         # Step 5: Validate task logs
