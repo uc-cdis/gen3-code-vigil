@@ -6,7 +6,7 @@ ENV appname=gen3-fhir-stub
 
 WORKDIR /${appname}
 
-COPY gen3-code-vigil/gen3-load-tests/scripts/fhir_backend_stub.py .
+ADD https://github.com/uc-cdis/gen3-code-vigil/blob/feat/gen3-fhir-proxy/gen3-load-tests/gen3_ci/gen3_fhir_stub/fhir_backend_stub.py .
 
 EXPOSE 8080
 
