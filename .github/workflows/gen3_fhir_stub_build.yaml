@@ -1,4 +1,4 @@
-name: Faliure-analysis Image Build on Push
+name: gen3_fhir_stub Image Build on Push
 
 on:
   workflow_dispatch:
