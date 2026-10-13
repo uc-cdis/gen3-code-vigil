@@ -180,10 +180,14 @@ class TestRequestor:
             revoke=req_data["revoke"],
             request_status=req_data["status"],
         )
-        assert revoke_req is not None, "Failed to create revoke request with policy '/requestor_integration_test'"
+        assert (
+            revoke_req is not None
+        ), "Failed to create revoke request with policy '/requestor_integration_test'"
         status_code = revoke_req.status_code
         logger.info(f"Status code of revoke policy : {status_code}")
-        assert status_code == 400, f"Expected status code to be 400 but got {status_code}"
+        assert (
+            status_code == 400
+        ), f"Expected status code to be 400 but got {status_code}"
 
     def test_revoke_signed_request(self, page):
         """
@@ -329,7 +333,7 @@ class TestRequestor:
         assert res.status_code == 201, f"Failed to create access request: {res.text}"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("requestor", "2026.10", "2.0.0"),
+        gat.service_version_lower_than("requestor", "2026.10", "2.0.0"),
         reason="Requestor version does not support on-behalf-of authorization",
     )
     def test_request_on_behalf_of_other_user(self):
@@ -354,7 +358,7 @@ class TestRequestor:
         ), f"Request was not created for user1: {res.text}"
 
     @pytest.mark.skipif(
-        gat.service_version_greater_than("requestor", "2026.10", "2.0.0"),
+        gat.service_version_lower_than("requestor", "2026.10", "2.0.0"),
         reason="Requestor version does not support on-behalf-of authorization",
     )
     def test_request_on_behalf_of_other_user_no_access(self):
