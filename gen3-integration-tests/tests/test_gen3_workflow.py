@@ -1260,7 +1260,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # python script which includes some of the test cases
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        script_file_name = f"{request.node.name}.py"
+        script_file_name = "test_multiple_executors_and_pv_features.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
             filename=f"test_data/gen3_workflow/{script_file_name}",
@@ -1565,7 +1565,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         # upload the input file (python script that obtains and uses a task token)
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        script_file_name = f"{request.node.name}.py"
+        script_file_name = "test_dpop_task_token_within_tes_task.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
             filename=f"test_data/gen3_workflow/{script_file_name}",
@@ -1606,7 +1606,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             ],
         }
         # this tag allows for quick lookup in the `script_file_name` python script
-        body["tags"]["TEST_NAME"] = request.node.name
+        body["tags"]["TEST_NAME"] = "test_dpop_task_token_within_tes_task"
         task_response = self.gen3_workflow.create_tes_task(
             request_body=body,
             user=self.valid_user,

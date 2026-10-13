@@ -96,8 +96,12 @@ class TestTaskToken(object):
         Requesting a task token with a non-allowed type (not configured in Fence's
         ALLOWED_TASK_TOKEN_TYPES) should not work.
         """
-        with self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400):
-            pass
+        with self.fence.get_dpop_bound_task_token("BAR", expected_status_code=400) as (
+            token,
+            url,
+        ):
+            assert token == None
+            assert url == None
 
     def test_obtain_task_token_unauthorized(self):
         """
@@ -105,8 +109,9 @@ class TestTaskToken(object):
         """
         with self.fence.get_dpop_bound_task_token(
             "WORKFLOW", user="user2_account", expected_status_code=403
-        ):
-            pass
+        ) as (token, url):
+            assert token == None
+            assert url == None
 
     def test_task_token_against_arborist(self):
         """
@@ -143,14 +148,14 @@ class TestTaskTokenWithGen3Workflow:
     @classmethod
     def setup_class(cls):
         cls.fence = Fence()
+        cls.gen3_workflow = Gen3Workflow()
+        cls.gen3_workflow.setup_storage()
 
     def test_dpop_task_token_endpoints_with_regular_token(self):
         """
         Use a regular token to hit an endpoint that requires DPoP-bound task tokens.
         """
-        gen3_workflow = Gen3Workflow()
-        gen3_workflow.setup_storage()
-        with gen3_workflow.get_token_and_gen3_url("main_account") as (
+        with self.gen3_workflow.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):
@@ -176,14 +181,14 @@ class TestTaskTokenWithGen3Workflow:
         Use a regular token to hit an endpoint that supports, but does not require, DPoP-bound task
         tokens.
         """
-        gen3_workflow = Gen3Workflow()
-        gen3_workflow.setup_storage()
-        with gen3_workflow.get_token_and_gen3_url("main_account") as (
+        with self.gen3_workflow.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):
             url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
-            res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
+            res = requests.get(
+                url, headers={"Authorization": f"bearer {regular_token}"}
+            )
             assert res.status_code == 200, "Should be allowed to list TES tasks"
 
     def test_call_task_token_endpoint_anonymously(self):
