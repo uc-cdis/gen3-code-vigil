@@ -14,10 +14,13 @@ import pytest
 import requests
 from dotenv import load_dotenv
 from packaging.version import InvalidVersion, Version
-from utils import TEST_DATA_PATH_OBJECT, logger
+from utils import HELM_CHARTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger
 from utils.misc import retry
 
 load_dotenv()
+
+MOCK_PASSPORT_BROKER = "mock-passport-broker"
+MOCK_PASSPORT_BROKER_HELM_TIMEOUT_SECONDS = 300
 
 
 @retry(times=5, delay=60, exceptions=(AssertionError))
@@ -314,6 +317,10 @@ def _get_create_cmd(
         "--",
         "fence-create",
     ]
+    # fence-create only registers a client's policies in arborist when given
+    # --arborist. Arborist checks them for tokens issued by token exchange
+    if client_type == "token_exchange":
+        create_cmd = create_cmd + ["--arborist", "http://arborist-service"]
 
     if arborist_policies:
         create_cmd = create_cmd + ["client-create", "--policies", arborist_policies]
@@ -349,6 +356,13 @@ def _get_create_cmd(
             f"https://{hostname}",
             "--grant-types",
             "authorization_code",
+        ]
+    elif client_type == "token_exchange":
+        create_cmd = create_cmd + [
+            "--client",
+            client_name,
+            "--grant-types",
+            "urn:ietf:params:oauth:grant-type:token-exchange",
         ]
     else:
         create_cmd = create_cmd + [
@@ -509,6 +523,165 @@ def delete_fence_client(clients_data: str, test_env_namespace: str = ""):
             stderr=subprocess.PIPE,
             text=True,
         )
+
+
+def delete_fence_test_client(
+    client_name: str, client_id: str = None, test_env_namespace: str = ""
+):
+    """
+    Delete a single client created with `setup_fence_test_client`. fence-create does
+    not remove clients from arborist, so pass `client_id` to remove its arborist
+    policies too.
+    """
+    logger.info(f"Deleting Client: {client_name}")
+    result = subprocess.run(
+        _get_delete_cmd(test_env_namespace, client_name),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode != 0:
+        logger.info(
+            f"Unable to delete client '{client_name}'. Response: {result.stderr.strip()}"
+        )
+    if client_id:
+        cmd = [
+            "kubectl",
+            "-n",
+            test_env_namespace,
+            "exec",
+            "-i",
+            _get_fence_pod_name(test_env_namespace),
+            "--",
+            "curl",
+            "-s",
+            "-X",
+            "DELETE",
+            f"arborist-service/client/{client_id}",
+        ]
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode != 0:
+            logger.info(
+                f"Unable to delete client '{client_name}' from arborist. Response: {result.stderr.strip()}"
+            )
+
+
+def get_mock_passport_broker_issuer(test_env_namespace: str = ""):
+    """
+    The issuer of the passports signed by the mock passport broker: its in-cluster URL.
+    setup_ci_env.sh configures fence to trust exactly this issuer for token exchange.
+    """
+    return f"http://{MOCK_PASSPORT_BROKER}.{test_env_namespace}.svc.cluster.local"
+
+
+def deploy_mock_passport_broker(test_env_namespace: str = ""):
+    """
+    Deploy the mock passport broker (gen3_ci/helm_charts/mock-passport-broker) that
+    signs the GA4GH passports used by the token exchange tests.
+    """
+    cmd = [
+        "helm",
+        "upgrade",
+        "--install",
+        MOCK_PASSPORT_BROKER,
+        HELM_CHARTS_PATH_OBJECT / MOCK_PASSPORT_BROKER,
+        "--namespace",
+        test_env_namespace,
+        "--set",
+        f"issuer={get_mock_passport_broker_issuer(test_env_namespace)}",
+        "--wait",
+        "--timeout",
+        f"{MOCK_PASSPORT_BROKER_HELM_TIMEOUT_SECONDS}s",
+    ]
+    logger.info(f"Deploying the mock passport broker: {cmd}")
+    try:
+        # helm's --timeout only bounds waiting for the release to be ready, not e.g.
+        # helm stalling on an unresponsive API server, so bound the whole command too
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=MOCK_PASSPORT_BROKER_HELM_TIMEOUT_SECONDS + 60,
+        )
+    except subprocess.TimeoutExpired as e:
+        # the captured output is always bytes (or None), even with text=True
+        stderr = (e.stderr or b"").decode(errors="replace")
+        raise Exception(
+            f"Timed out deploying the mock passport broker after {e.timeout}s. Response: {stderr.strip()}"
+        ) from e
+    if result.returncode != 0:
+        raise Exception(
+            f"Unable to deploy the mock passport broker. Response: {result.stderr.strip()}"
+        )
+    logger.info(f"Deployed the mock passport broker: {result.stdout}")
+
+
+def delete_mock_passport_broker(test_env_namespace: str = ""):
+    """
+    Uninstall the mock passport broker deployed by `deploy_mock_passport_broker`.
+    Succeeds if it is not deployed, so it is safe to call after a failed deploy.
+    """
+    cmd = [
+        "helm",
+        "uninstall",
+        MOCK_PASSPORT_BROKER,
+        "--namespace",
+        test_env_namespace,
+        "--ignore-not-found",
+        "--wait",
+        "--timeout",
+        f"{MOCK_PASSPORT_BROKER_HELM_TIMEOUT_SECONDS}s",
+    ]
+    logger.info(f"Deleting the mock passport broker: {cmd}")
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=MOCK_PASSPORT_BROKER_HELM_TIMEOUT_SECONDS + 60,
+        )
+    except subprocess.TimeoutExpired as e:
+        logger.error(f"Timed out deleting the mock passport broker after {e.timeout}s")
+        return
+    if result.returncode != 0:
+        logger.error(
+            f"Unable to delete the mock passport broker. Response: {result.stderr.strip()}"
+        )
+
+
+@retry(times=3, delay=10, exceptions=(AssertionError,))
+def get_passport_from_mock_passport_broker(test_env_namespace: str = ""):
+    """
+    Get a freshly minted passport from the userinfo endpoint of the mock passport
+    broker (gen3_ci/helm_charts/mock-passport-broker). The broker is only reachable
+    inside the cluster, so the request is made from the broker's own pod.
+    """
+    fetch_url = (
+        "import sys, urllib.request; "
+        "sys.stdout.write(urllib.request.urlopen(sys.argv[1]).read().decode())"
+    )
+    cmd = [
+        "kubectl",
+        "-n",
+        test_env_namespace,
+        "exec",
+        "-i",
+        "deployment/mock-passport-broker-deployment",
+        "--",
+        "python3",
+        "-c",
+        fetch_url,
+        "http://localhost:8080/openid/connect/v1.1/userinfo",
+    ]
+    result = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60
+    )
+    assert (
+        result.returncode == 0
+    ), f"Unable to get a passport from the mock passport broker. Response: {result.stderr.strip()}"
+    return json.loads(result.stdout)["passport_jwt_v11"]
 
 
 def revoke_arborist_policy(username: str, policy: str, test_env_namespace: str = ""):
