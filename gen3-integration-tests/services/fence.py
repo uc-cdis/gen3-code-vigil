@@ -34,6 +34,7 @@ class Fence(object):
         self.MULTIPART_UPLOAD_ENDPOINT = "/data/multipart/upload"
         self.MULTIPART_UPLOAD_COMPLETE_ENDPOINT = "/data/multipart/complete"
         self.GOOGLE_SA_KEYS_ENDPOINT = "/credentials/google/"
+        self.OPENID_CONFIGURATION_ENDPOINT = "/.well-known/openid-configuration"
         # Locators
         self.CONSENT_AUTHORIZE_BUTTON = "//button[@id='yes']"
         self.CONSENT_CANCEL_BUTTON = "//button[@id='no']"
@@ -280,6 +281,33 @@ class Fence(object):
         }
         response = requests.post(url=url, data=json.dumps(data), headers=headers)
         return response
+
+    def exchange_token(
+        self, client_id, client_secret, subject_token, subject_token_type, scope=None
+    ):
+        """Exchanges a subject token, like a GA4GH passport, for an access token (RFC 8693)"""
+        data = {
+            "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
+            "subject_token": subject_token,
+            "subject_token_type": subject_token_type,
+        }
+        if scope:
+            data["scope"] = scope
+        response = requests.post(
+            url=f"{self.BASE_URL}{self.OAUTH_TOKEN_ENDPOINT}",
+            data=data,
+            auth=(client_id, client_secret),
+        )
+        logger.info(f"Token exchange status code: {response.status_code}")
+        return response
+
+    def get_openid_configuration(self):
+        """Get fence's OpenID Connect discovery document"""
+        response = requests.get(f"{self.BASE_URL}{self.OPENID_CONFIGURATION_ENDPOINT}")
+        assert (
+            response.status_code == 200
+        ), f"Expected status 200 but got {response.status_code}"
+        return response.json()
 
     def assert_token_response(
         self, response, expected_status_code=200, validate_keys=True
