@@ -572,6 +572,8 @@ else
     echo "Removing revproxy additionalConfigs"
     yq eval 'del(.revproxy.additionalConfigs)' \
       -i "$ci_default_manifest_values_yaml"
+     yq eval '.["workspace-proxy"].enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
 fi
 
 # For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
