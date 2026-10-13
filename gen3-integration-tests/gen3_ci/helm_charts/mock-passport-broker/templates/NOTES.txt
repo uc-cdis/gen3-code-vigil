@@ -1,0 +1,21 @@
+mock-passport-broker is signing passports as:
+
+    {{ include "mock-passport-broker.issuer" . }}
+
+with the key in {{ include "mock-passport-broker.secretName" . }}/{{ include "mock-passport-broker.secretKey" . }}. Fence must list this
+issuer in GA4GH_VISA_ISSUER_ALLOWLIST and TOKEN_EXCHANGE.allowed_subject_token_issuers.
+
+Endpoints:
+
+    {{ include "mock-passport-broker.issuer" . }}/openid/connect/v1.1/userinfo     (a freshly minted passport, RAS format)
+    {{ include "mock-passport-broker.issuer" . }}/.well-known/openid-configuration
+    {{ include "mock-passport-broker.issuer" . }}/.well-known/jwks.json            (RFC 7517)
+    {{ include "mock-passport-broker.issuer" . }}/jwt/keys                         (fence format: [[kid, pem]])
+    {{ include "mock-passport-broker.issuer" . }}/_status
+
+Get a passport:
+
+    kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "mock-passport-broker.fullname" . }} 8080:{{ .Values.service.port }}
+    curl -s localhost:8080/openid/connect/v1.1/userinfo | jq -r .passport_jwt_v11
+
+This chart is a test fixture with no authentication. Do not run it in production.
