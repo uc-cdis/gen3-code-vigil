@@ -205,9 +205,10 @@ class TestTaskTokenWithGen3Workflow:
         assert res.json().get("error") == "dpop_required"
 
         # DPoP not required: anonymous call accepted
-        # TODO uncomment once fixed: https://github.com/uc-cdis/gen3-workflow/pull/190#discussion_r4252314808
-        # res = requests.get(url)
-        # assert res.status_code == 200, "Anonynous user should be allowed to list TES tasks"
+        res = requests.get(url)
+        assert (
+            res.status_code == 200
+        ), "Anonynous user should be allowed to list TES tasks"
 
     def test_task_token_audience_mismatch(self):
         """
@@ -218,7 +219,7 @@ class TestTaskTokenWithGen3Workflow:
             workflow_task_token,
             _,
         ):
-            # should fail to hit a Fence endpoint
+            # should fail to hit a Fence endpoint with a WORKFLOW token
             url = f"{pytest.root_url}/user/user"
             res = requests.get(
                 url, headers={"Authorization": f"bearer {workflow_task_token}"}
@@ -226,9 +227,22 @@ class TestTaskTokenWithGen3Workflow:
             assert res.status_code == 401, res.text
             assert "token audience validation failed" in res.text
 
-            # should fail to hit a non-Fence endpoint
-            # TODO: add test here hitting a service other than arborist, where authutils is updated
+            # should fail to hit a non-Fence, non-WORKFLOW endpoint (indexd) with a WORKFLOW token
+            data = {
+                "form": "object",
+                "size": 0,
+                "urls": [],
+                "hashes": {"md5": "f36c8c3a550320a66b780768320d14bb"},
+            }
+            res = requests.post(
+                f"{pytest.root_url}/index/index",
+                json=data,
+                headers={"Authorization": f"bearer {workflow_task_token}"},
+            )
+            assert res.status_code == 401, res.text
+            assert "token audience validation failed" in res.text
 
+        # should fail to hit a WORKFLOW endpoint with a non-WORKFLOW token
         with self.fence.get_dpop_bound_task_token("FOO") as (
             foo_task_token,
             proxy_url,
