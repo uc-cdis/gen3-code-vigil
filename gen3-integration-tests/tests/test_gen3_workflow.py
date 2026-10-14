@@ -1594,10 +1594,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 {
                     "image": "python:3.13-slim",
                     "workdir": "/work",
-                    # TODO simplify the SDK installation once the SDK DPoP PR is merged:
-                    # "command": [f"pip install 'gen3[dpop]' && python {script_file_name}"],
                     "command": [
-                        f"python -c \"import urllib.request; urllib.request.urlretrieve('https://github.com/uc-cdis/gen3sdk-python/archive/feat/dpop.zip', 'sdk.zip')\" && python -m zipfile -e sdk.zip sdk && cd sdk/gen3sdk-python-feat-dpop && pip install '.[dpop]' && pip install requests && cd ../.. && python {script_file_name}"
+                        f"pip install 'gen3[dpop]' && python {script_file_name}"
                     ],
                     "env": {
                         "API_KEY": pytest.api_keys[self.valid_user]["api_key"],
