@@ -37,6 +37,8 @@ def page_setup(page):
     "pdp-commons" in os.getenv("SOURCE_CONFIG", ""),
     reason="There is no workspace page in pdp-commons, only workspaces are present",
 )
+# Workspace launch can take a while (up to 20 min wait in pages/workspace.py)
+@pytest.mark.timeout(1200)
 @pytest.mark.workspace
 @pytest.mark.frontend
 class TestWorkspacePage:
