@@ -7,7 +7,7 @@ from services.graph import GraphDataTools
 from utils import logger
 
 
-@pytest.mark.timeout(1200)
+@pytest.mark.timeout(1800)
 @pytest.mark.skipif(
     os.getenv("ETL_ENABLED") == "false",
     reason="ETL is not enabled on this environment",

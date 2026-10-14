@@ -60,6 +60,9 @@ build-backend = "poetry.core.masonry.api"
 testpaths = ["tests/"]
 python_files = ["test_*.py"]
 addopts = "--log-cli-level=ERROR -ra -q"
+# Global per-test cap; 'thread' method can interrupt tests blocked inside Playwright greenlets
+timeout = 300
+timeout_method = "thread"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
