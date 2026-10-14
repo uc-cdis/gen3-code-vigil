@@ -44,6 +44,21 @@ def base_tes_payload(request):
     }
 
 
+def get_executor_log(task_info):
+    """
+    Returns the first executor log entry of a TES task, asserting that it exists and has 'stdout'.
+    """
+    task_logs = task_info.get("logs", [])
+    assert (
+        len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
+    ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
+    executor_log = task_logs[0]["logs"][0]
+    assert (
+        "stdout" in executor_log
+    ), f"Expected task log entry to have 'stdout', but got: {executor_log}"
+    return executor_log
+
+
 def _nextflow_parse_completed_line(log_line):
     """
     Parses a line from the nextflow log that indicates a completed task.
@@ -466,21 +481,15 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Step 5: Validate task logs
-        task_logs = task_info.get("logs", [])
-        assert (
-            len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
-        ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
-        assert (
-            "stdout" in task_logs[0]["logs"][0]
-        ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
+        executor_log = get_executor_log(task_info)
 
         # Check if the stdout contains the expected echo message
-        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        stdout = executor_log["stdout"].strip()
         assert (
             stdout == echo_message
         ), f"Expected stdout to be `{echo_message}`, but found `{stdout}` instead."
 
-        exit_code = task_logs[0]["logs"][0].get("exit_code")
+        exit_code = executor_log.get("exit_code")
         assert (
             exit_code == 0
         ), f"Expected successful task's exit code to be 0, but got {exit_code}"
@@ -585,10 +594,6 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=404,
         )
 
-    # FIXME: This test is currently not relying on networkpolicies to restrict access to internal endpoints,
-    #  To test the access restriction accurately, we need to run `curl http://arborist-service.<namespace>/user`
-    #  More info: https://ctds-planx.atlassian.net/browse/MIDRC-1227
-    @pytest.mark.skip(reason="test needs to be updated")
     def test_access_internal_endpoints(self, request):
         """
         Test Case: Access internal endpoints must be restricted
@@ -604,9 +609,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     {
                         "image": "quay.io/curl/curl:latest",
                         "command": [
-                            # Known Funnel issue (#38): tasks are failing too early, which causes worker pods to remain stuck in the RUNNING state.
-                            # Adding a temporary `sleep(10)` as a workaround to unblock the test until the underlying issue is fixed.
-                            "sleep 10 && curl http://arborist-service/user"
+                            f"curl http://arborist-service.{pytest.namespace}/user --connect-timeout 3s"
                         ],
                     }
                 ],
@@ -623,15 +626,20 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             task_id=task_id, user=self.valid_user, expected_final_state="EXECUTOR_ERROR"
         )
 
-        # FIXME: Ideally even if the test fails with an EXEC_ERROR we must be able to see the
-        # task_logs, but we currently see None. Need to investigate further, once fixed
-        # Uncomment the following code.
+        assert (
+            task_info.get("state") == "EXECUTOR_ERROR"
+        ), f"Expected task state to be 'EXECUTOR_ERROR', but got: {task_info.get('state')}"
+        executor_log = get_executor_log(task_info)
+        stdout = executor_log["stdout"].strip()
+        assert re.search(
+            r"curl: \(28\) Connection timed out after 3\d* milliseconds", stdout
+        ), f"Expected output to have an error message indicating arborist service connection failure, but found `{stdout}` instead"
 
-        # task_logs = task_info.get("logs", [])
-        # stdout = task_logs[0]["logs"][0]["stdout"].strip() if len(task_logs) > 0 else ""
-        # assert (
-        #     "Could not resolve host: arborist-service" in stdout
-        # ), "Expected output to have an error message indicating arborist service connection failure, but found {stdout} instead"
+        # curl exits with code 28 on timeout
+        exit_code = executor_log.get("exit_code")
+        assert (
+            exit_code == 28
+        ), f"Expected curl timeout exit code 28, but got {exit_code}"
 
     @pytest.mark.parametrize(
         "test_case",
@@ -849,7 +857,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=200,
         )
         if not bucket_contents:
-            logger.info(f"Failed to list objects, now attempting to list without `funnel-temp-files` prefix...")
+            logger.info(
+                f"Failed to list objects, now attempting to list without `funnel-temp-files` prefix..."
+            )
             bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
                 folder_path=f"{self.s3_storage_config.bucket_name}/{task_id}/",
                 s3_storage_config=self.s3_storage_config,
@@ -980,14 +990,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Check if the stdout contains the expected echo message
-        task_logs = task_info.get("logs", [])
-        assert (
-            len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
-        ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
-        assert (
-            "stdout" in task_logs[0]["logs"][0]
-        ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
-        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        stdout = get_executor_log(task_info)["stdout"].strip()
         assert (
             stdout == expected_stdout
         ), f"Expected stdout to be `{expected_stdout}`, but found `{stdout}` instead."
@@ -1198,14 +1201,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # Check if the stdout contains the expected echo message
-        task_logs = task_info.get("logs", [])
-        assert (
-            len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
-        ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
-        assert (
-            "stdout" in task_logs[0]["logs"][0]
-        ), f"Expected task log entry to have 'stdout', but got: {task_logs[0]['logs'][0]}"
-        stdout = task_logs[0]["logs"][0]["stdout"].strip()
+        stdout = get_executor_log(task_info)["stdout"].strip()
         assert (
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
