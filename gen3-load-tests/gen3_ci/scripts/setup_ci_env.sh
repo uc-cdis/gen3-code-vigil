@@ -26,8 +26,13 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$manifest_values_yaml"
 
+# Enable gen3-workflow when running the TES load test
+if [[ "$TEST_SUITE" == "ALL" || "$TEST_SUITE" == "TestTesPerformance" ]]; then
+  yq eval ".gen3-workflow.enabled = true" -i "$manifest_values_yaml"
+fi
+
 ####################################################################################
-# Update images for each service from $new_manifest_values_file_path
+# Update images for each service
 ####################################################################################
 echo "###################################################################################"
 if [[ -n $RELEASE_VERSION ]]; then
@@ -144,7 +149,7 @@ yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucke
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
 
-# Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
+# Parameter updates
 yq eval ".global.environment = \"$namespace\"" -i $manifest_values_yaml
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $manifest_values_yaml
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $manifest_values_yaml

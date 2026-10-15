@@ -136,7 +136,22 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             logger.info(result.stdout.decode("utf-8"))
         else:
             logger.info(
-                f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+                f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+
+        # get logs for all the pods in the JobsNamespace
+        cmd = [
+            f"kubectl -n workflow-pods-{pytest.namespace} get pods -o name | xargs -I {{}} kubectl logs -n workflow-pods-{pytest.namespace} {{}} --all-containers"
+        ]
+        logger.info(f"********** {" ".join(cmd)} **********")
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
             )
 
 
@@ -185,7 +200,7 @@ class Gen3Workflow:
         try:
             return auth.get_access_token()
         except Exception:
-            logger.info("Failed to get access token with Gen3Auth")
+            logger.info(f"Failed to get access token with Gen3Auth for '{user}'")
             raise
 
     def _get_s3_client(
@@ -224,7 +239,7 @@ class Gen3Workflow:
         client = self._get_s3_client(access_token, s3_storage_config)
         bucket, key = self._get_bucket_and_key(object_path)
         logger.info(
-            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
+            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content='{content[:100]}{'[...]' if len(content) > 100 else ''}'"
         )
         response = None
         try:
