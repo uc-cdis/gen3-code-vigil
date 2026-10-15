@@ -185,11 +185,17 @@ class TestTaskTokenWithGen3Workflow:
             regular_token,
             _,
         ):
+            # using the `bearer` scheme: should succeed
             url = f"{pytest.root_url}/ga4gh/tes/v1/tasks"
             res = requests.get(
                 url, headers={"Authorization": f"bearer {regular_token}"}
             )
             assert res.status_code == 200, "Should be allowed to list TES tasks"
+
+            # using the `dpop` scheme without using a DPoP-bound token: should fail
+            res = requests.get(url, headers={"Authorization": f"dpop {regular_token}"})
+            assert res.status_code == 401, "Should not be allowed to list TES tasks"
+            assert res.json().get("error") == "dpop_required"
 
     def test_call_task_token_endpoint_anonymously(self):
         """
