@@ -211,7 +211,7 @@ class TestTaskTokenWithGen3Workflow:
         assert res.json().get("error") == "dpop_required"
 
         # DPoP not required: anonymous call accepted
-        res = requests.get(url)
+        res = requests.get(f"{url}?all")
         assert (
             res.status_code == 200
         ), "Anonynous user should be allowed to list TES tasks"
