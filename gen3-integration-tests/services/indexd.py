@@ -5,7 +5,6 @@ import requests
 from gen3.auth import Gen3Auth
 from gen3.index import Gen3Index
 from utils import logger
-from utils.misc import retry
 
 
 class Indexd(object):
@@ -97,7 +96,6 @@ class Indexd(object):
             except Exception as e:
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
 
-    @retry(times=3, delay=10, exceptions=(AssertionError))
     def file_equals(self, res: dict, file_record: dict) -> None:
         logger.info(f"Response data: {res}")
         logger.info(f"File Node: {file_record.props}")
