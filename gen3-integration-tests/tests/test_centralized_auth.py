@@ -204,13 +204,11 @@ class TestCentralizedAuth:
         try:
             self.indexd.create_records(records=new_gen3_records, user="user2_account")
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
         try:
             self.indexd.create_records(records=new_abc_records, user="user2_account")
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
         # Create indexd records using indexing_user
         self.indexd.create_records(records=new_gen3_records)
@@ -283,8 +281,7 @@ class TestCentralizedAuth:
         try:
             self.indexd.create_records(records=new_gen3_records, user="main_account")
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
         self.indexd.create_records(records=new_abc_records, user="main_account")
 
