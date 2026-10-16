@@ -211,7 +211,7 @@ class TestGraphSubmitAndQuery:
         )
         # Validate no records are returned for the node
         assert (
-            len(response["data"][record.node_name]) != 0
+            len(response["data"][record.node_name]) == 0
         ), f"Expected no records for {record.node_name}. Response : {response}"
 
     @pytest.mark.graph_query
