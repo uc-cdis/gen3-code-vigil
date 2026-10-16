@@ -10,6 +10,8 @@
 
 # set -euo pipefail  # TODO enable once errors in this file are fixed
 
+# Dummy comment
+
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
