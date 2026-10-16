@@ -1177,6 +1177,8 @@ def get_ff_commons_info():
 
 
 def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
+    logger.info(f"Repository Name: {repo_name}")
+    logger.info(f"Branch Name: {branch_name}")
     shutil.rmtree(target_dir, ignore_errors=True)
     subprocess.run(
         [
