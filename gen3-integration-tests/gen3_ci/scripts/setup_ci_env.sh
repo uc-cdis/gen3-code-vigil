@@ -525,6 +525,25 @@ if [[ "$namespace" == nightly-build* ]]; then
   yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_VISA_UPDATE_CRON = true' -i "$ci_default_manifest_values_yaml"
 fi
 
+####################################################################################
+# Trust the mock passport broker for RFC 8693 token exchange. prepare_ci_environment.py
+# sets MOCK_PASSPORT_BROKER_ISSUER, and test_token_exchange.py deploys the broker
+# (gen3_ci/helm_charts/mock-passport-broker) when it runs
+####################################################################################
+fence_block=$(yq eval ".fence // \"key not found\"" "$ci_default_manifest_values_yaml")
+if [[ -n "$MOCK_PASSPORT_BROKER_ISSUER" && "$fence_block" != "key not found" ]]; then
+  echo "Configuring fence to trust the mock passport broker '$MOCK_PASSPORT_BROKER_ISSUER' for token exchange"
+
+  # The visas in exchanged passports are validated against GA4GH_VISA_ISSUER_ALLOWLIST. Keep fence's defaults if it is unset
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.GA4GH_VISA_ISSUER_ALLOWLIST = ((.fence.FENCE_CONFIG_PUBLIC.GA4GH_VISA_ISSUER_ALLOWLIST // ["{{BASE_URL}}", "https://sts.nih.gov", "https://stsstg.nih.gov"]) + [strenv(MOCK_PASSPORT_BROKER_ISSUER)] | unique)' -i "$ci_default_manifest_values_yaml"
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.TOKEN_EXCHANGE.enabled = true' -i "$ci_default_manifest_values_yaml"
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.TOKEN_EXCHANGE.allowed_subject_token_issuers[strenv(MOCK_PASSPORT_BROKER_ISSUER)] = {
+    "allowed_subject_token_types": ["urn:ga4gh:params:oauth:token-type:passport", "urn:ietf:params:oauth:token-type:jwt"],
+    "allowed_scopes": ["openid", "user", "data"],
+    "max_token_lifetime": 3600
+  }' -i "$ci_default_manifest_values_yaml"
+fi
+
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: ${HOSTNAME_PROTOCOL}://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
 # Remove aws-es-proxy block

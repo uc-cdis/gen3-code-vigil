@@ -130,6 +130,11 @@ spec:
                     local delete_helm="${2:-True}"   # default = True
                     if [[ "$delete_helm" == "True" ]]; then
                         helm delete "$env" -n "$env"
+                        # deployed by test_token_exchange.py, which normally uninstalls it,
+                        # unless the run was interrupted
+                        if helm ls -n "$env" --short | grep -qx "mock-passport-broker"; then
+                            helm delete mock-passport-broker -n "$env"
+                        fi
                     fi
                     delete_pvcs $env
                     kubectl delete ns $env
