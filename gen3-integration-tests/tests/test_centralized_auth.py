@@ -202,11 +202,19 @@ class TestCentralizedAuth:
         # Create indexd records using dcf-user2 account
         # Both indexd record creations should fail, as dcf-user2 doesn't have access to /gen3 or /abc project
         try:
-            self.indexd.create_records(records=new_gen3_records, user="user2_account")
+            self.indexd.create_records(
+                records=new_gen3_records,
+                user="user2_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
             assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
         try:
-            self.indexd.create_records(records=new_abc_records, user="user2_account")
+            self.indexd.create_records(
+                records=new_abc_records,
+                user="user2_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
             assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
@@ -279,7 +287,11 @@ class TestCentralizedAuth:
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
-            self.indexd.create_records(records=new_gen3_records, user="main_account")
+            self.indexd.create_records(
+                records=new_gen3_records,
+                user="main_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
             assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
@@ -376,7 +388,9 @@ class TestCentralizedAuth:
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
             self.indexd.create_records(
-                records=new_gen3_records, access_token=access_token
+                records=new_gen3_records,
+                access_token=access_token,
+                proceed_after_failure=True,
             )
         except Exception as e:
             if "401" not in e:
