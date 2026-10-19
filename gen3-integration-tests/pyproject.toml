@@ -99,7 +99,8 @@ markers = [
   "pfb: tests for pfb file handling",
   "workspace: tests for workspace page",
   "sanity: tests for performing sanity check",
-  "study_registration: tests for study registration service"
+  "study_registration: tests for study registration service",
+  "gen3_fhir_proxy: tests for gen3-fhir-proxy service"
 ]
 pythonpath = "."
 md_report = "true"
