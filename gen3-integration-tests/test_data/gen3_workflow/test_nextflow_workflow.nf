@@ -1,4 +1,6 @@
 process dicom_to_png {
+	container 'quay.io/cdis/gen3-workflow:integration_tests_dicom_image'
+
     publishDir 'results'
 
     input:
@@ -17,6 +19,8 @@ process dicom_to_png {
 }
 
 process extract_metadata {
+	container 'quay.io/cdis/gen3-workflow:integration_tests_dicom_image'
+
     publishDir 'results'
 
     input:

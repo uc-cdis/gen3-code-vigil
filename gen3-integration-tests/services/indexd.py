@@ -11,7 +11,13 @@ class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index/index"
 
-    def create_records(self, records: dict, user="indexing_account", access_token=None):
+    def create_records(
+        self,
+        records: dict,
+        user="indexing_account",
+        access_token=None,
+        proceed_after_failure=False,
+    ):
         """Create new indexd record"""
         if access_token:
             auth = Gen3Auth(access_token=access_token)
@@ -26,7 +32,9 @@ class Indexd(object):
                 record = index.create_record(**record_data)
                 indexed_files.append(record)
             except Exception as e:
-                logger.exception(msg=f"Failed indexd submission got exception {e}")
+                logger.exception(msg=f"Failed indexd submission! Exception: {e}")
+                if not proceed_after_failure:
+                    raise
         return indexed_files
 
     def get_record(self, indexd_guid: str, user="indexing_account", access_token=None):
