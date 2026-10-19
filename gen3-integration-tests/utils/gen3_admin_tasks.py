@@ -1161,15 +1161,10 @@ def get_ff_commons_info():
     if result.returncode == 0:
         repo_name = result.stdout.strip().split("/")[-1].split(":")[0]
         branch_name = (
-            result.stdout.strip()
-            .split("/")[-1]
-            .split(":")[-1]
-            .replace("'", "")
-            .strip()
-            .removesuffix("_test")
+            result.stdout.strip().split("/")[-1].split(":")[-1].replace("'", "").strip()
         )
         if not branch_name.startswith(("main", "master")):
-            branch_name = branch_name.replace("_", "/", 1)
+            branch_name = branch_name.removesuffix("_test").replace("_", "/", 1)
         target_dir = "commons-frontend-app"
         return repo_name, branch_name, target_dir
     else:
