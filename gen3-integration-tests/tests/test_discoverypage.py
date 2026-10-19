@@ -62,13 +62,13 @@ class TestDiscoveryPage(object):
             "694b1d13b8148756442739fa2cc37fd6"  # pragma: allowlist secret
         )
 
-    # @classmethod
-    # def teardown_class(cls):
-    #     logger.info(
-    #         "Tearing down - delete indexd record and study metadata, and terminate workspace"
-    #     )
-    #     mds = MetadataService()
-    #     mds.delete_metadata_object(cls.variables["did"])
+    @classmethod
+    def teardown_class(cls):
+        logger.info(
+            "Tearing down - delete indexd record and study metadata, and terminate workspace"
+        )
+        mds = MetadataService()
+        mds.delete_metadata_object(cls.variables["did"])
 
     def test_study_publish_search_export(self, page_setup):
         """
