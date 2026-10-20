@@ -1,0 +1,74 @@
+# Default values for mock-passport-broker.
+# This chart is a TEST FIXTURE. It signs GA4GH passports for anyone who asks and, by
+# design, has no authentication in front of it. Do not deploy it to a production commons.
+
+# -- (string) Name used for every resource in this chart. Defaults to the chart
+# name so the in-cluster DNS name (and therefore the issuer URL) is stable and does
+# not depend on the release name.
+fullnameOverride: ""
+
+# -- (string) The `iss` of every passport and visa this broker signs, and the base URL
+# it builds `jwks_uri` from. Leave empty to use `http://<fullname>.<namespace>.svc.cluster.local`,
+# which matches the Service below when `service.port` is 80. Fence must trust exactly
+# this value, in both GA4GH_VISA_ISSUER_ALLOWLIST and
+# TOKEN_EXCHANGE.allowed_subject_token_issuers.
+issuer: ""
+
+# -- (string) Key ID advertised in the JWKS and set in the header of every token.
+# Leave empty to use the RFC 7638 thumbprint of the signing key, so the key ID changes
+# whenever the key does and fence never validates against a stale cached key.
+kid: ""
+
+signingKey:
+  # -- (string) Name of an existing secret holding the RSA private key (PKCS#1 or
+  # PKCS#8 PEM) to sign with. Leave empty to have this chart generate a key on
+  # install and keep it across upgrades.
+  existingSecret: ""
+  # -- (string) Key within `existingSecret` containing the PEM private key.
+  existingSecretKey: private_key.pem
+
+image:
+  repository: quay.io/cdis/amazonlinux-base
+  tag: "3.13-pythonbase"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  # -- (int) Service port. Keep this at 80 so the issuer URL needs no port suffix.
+  port: 80
+
+# -- (int) Port the server listens on inside the pod.
+containerPort: 8080
+
+replicaCount: 1
+
+revisionHistoryLimit: 2
+
+podAnnotations: {}
+
+podLabels: {}
+
+netPolicy:
+  # -- (bool) Create a NetworkPolicy that allows ingress from `ingressApps`. Gen3
+  # network policies deny all traffic by default when `global.netPolicy.enabled` is set
+  # in the commons, and fence must be able to fetch the broker's JWKS. The broker
+  # makes no outbound requests, so it needs no egress.
+  enabled: true
+  # -- (list) Values of the `app` label of the pods allowed to reach the broker.
+  ingressApps:
+    - fence
+    - presigned-url-fence
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 500m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
