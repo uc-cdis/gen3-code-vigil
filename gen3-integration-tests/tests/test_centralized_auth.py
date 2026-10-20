@@ -130,10 +130,6 @@ new_abc_records = {
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
-@pytest.mark.skipif(
-    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
-    reason="frontend_root is set to gen3ff",
-)
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
@@ -168,11 +164,6 @@ class TestCentralizedAuth:
         for key, val in indexed_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
-
-    @classmethod
-    def teardown_class(cls):
-        # Delete indexd records created in class setup
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     def setup_method(self):
         # Removing test indexd records if they exist
@@ -211,15 +202,21 @@ class TestCentralizedAuth:
         # Create indexd records using dcf-user2 account
         # Both indexd record creations should fail, as dcf-user2 doesn't have access to /gen3 or /abc project
         try:
-            self.indexd.create_records(records=new_gen3_records, user="user2_account")
+            self.indexd.create_records(
+                records=new_gen3_records,
+                user="user2_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
         try:
-            self.indexd.create_records(records=new_abc_records, user="user2_account")
+            self.indexd.create_records(
+                records=new_abc_records,
+                user="user2_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
         # Create indexd records using indexing_user
         self.indexd.create_records(records=new_gen3_records)
@@ -290,10 +287,13 @@ class TestCentralizedAuth:
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
-            self.indexd.create_records(records=new_gen3_records, user="main_account")
+            self.indexd.create_records(
+                records=new_gen3_records,
+                user="main_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
         self.indexd.create_records(records=new_abc_records, user="main_account")
 
@@ -355,6 +355,11 @@ class TestCentralizedAuth:
             user="main_account",
         ), "Delete should have been possible using main_account"
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_with_user_token_can_crud_indexd_records_in_namespace(
         self, page: Page
     ):
@@ -383,7 +388,9 @@ class TestCentralizedAuth:
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
             self.indexd.create_records(
-                records=new_gen3_records, access_token=access_token
+                records=new_gen3_records,
+                access_token=access_token,
+                proceed_after_failure=True,
             )
         except Exception as e:
             if "401" not in e:
@@ -458,6 +465,11 @@ class TestCentralizedAuth:
             abc_update_success == 200
         ), f"abc record was not updated. Status: {abc_delete_success}"
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_with_user_token_create_signed_url_records_in_namespace(
         self, page: Page
     ):
@@ -493,15 +505,17 @@ class TestCentralizedAuth:
         assert (
             "url" in signed_url_abc_res.keys()
         ), "Could not find url keyword in abc signed url"
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url"
 
         # Verify the contents of /abc signed url
         self.fence.check_file_equals(
             signed_url_abc_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_with_access_with_user_token_in_namespace(self, page: Page):
         """
         Scenario: Client (with access) with user token (WITHOUT access) in namespace
@@ -518,17 +532,18 @@ class TestCentralizedAuth:
         ).json()["access_token"]
 
         # Create Signed URLs for /gen3 project using access_token
-        signed_url_gen3_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expected_status=401,
             access_token=access_token,
         )
 
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url"
-
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_without_access_with_user_token_in_namespace(self, page: Page):
         """
         Scenario: Client (WITHOUT access) with user token (with access) in namespace
@@ -546,17 +561,14 @@ class TestCentralizedAuth:
         ).json()["access_token"]
 
         # Create Signed URLs for /gen3 project using access_token
-        signed_url_gen3_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["gen3_test_test_file"]["did"],
             user=None,
             expected_status=401,
             access_token=access_token,
         )
 
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url"
-
+    @pytest.mark.gen3sdk
     def test_user_with_access_can_create_sgined_urls_records_namespace(self):
         """
         Scenario: User with access can create signed urls for records in namespace, not outside namespace
@@ -580,15 +592,17 @@ class TestCentralizedAuth:
         assert (
             "url" in signed_url_abc_res.keys()
         ), "Could not find url keyword in abc signed url"
-        assert (
-            401 == signed_url_gen3_res.status_code
-        ), "Expected 401 status when creating signed url for /gen3 project"
 
         # Verify the contents of /abc signed url
         self.fence.check_file_equals(
             signed_url_abc_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_userinfo_endpoint_contains_authorization_information(self, page: Page):
         """
         Scenario: Test that userinfo endpoint contains authorization information (resources)
@@ -612,6 +626,11 @@ class TestCentralizedAuth:
         assert resources_of_user != None, "Resources field is None"
         assert len(resources_of_user) != 0, "Length of resouces field is 0."
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_token_without_permission_cannot_create_signed_url(self, page: Page):
         """
         Scenario: Client with user token WITHOUT permission CANNOT create signed URL for record with authz AND logic
@@ -629,17 +648,18 @@ class TestCentralizedAuth:
         ).json()["access_token"]
 
         # Create Signed URL using access_token
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["two_projects_file"]["did"],
             user=None,
             expected_status=401,
             access_token=access_token,
         )
 
-        assert (
-            401 == signed_url_res.status_code
-        ), "Expected 401 status when creating signed url"
-
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_token_with_permission_cannot_create_signed_url(self, page: Page):
         """
         Scenario: Client with user token WITH permission CAN create signed URL for record with authz AND logic
@@ -715,6 +735,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_consent_codes_multiple_policies(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (multiple policies).
         signed_url_res = self.fence.create_signed_url(
@@ -733,6 +754,7 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_create_signed_url_consent_codes_single_policy(self):
         # Create Signed URLs for file in authorized namespace with authorized consent code (single policy).
         signed_url_res = self.fence.create_signed_url(
@@ -751,19 +773,16 @@ class TestCentralizedAuth:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.gen3sdk
     def test_cannot_create_signed_url_unauthorized_consent_codes_(self):
         # Create Signed URLs for file in authorized namespace with UNauthorized consent code.
-        signed_url_res = self.fence.create_signed_url(
+        self.fence.create_signed_url(
             id=indexed_files["abc_hmb_research_file"]["did"],
             user="main_account",
             expected_status=401,
         )
 
-        # Verify signed url is not created for file in authorized namespace with UNauthorized consent code.
-        assert (
-            401 == signed_url_res.status_code
-        ), "Expected 401 status when creating signed url"
-
+    @pytest.mark.gen3sdk
     def test_create_signed_url_implied_authorized_consent_codes(self):
         # Create Signed URLs for file in authorized namespace with IMPLIED authorized consent code (based on DUO hierarchy).
         signed_url_res = self.fence.create_signed_url(

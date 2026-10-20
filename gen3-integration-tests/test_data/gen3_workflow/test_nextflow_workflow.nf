@@ -1,20 +1,28 @@
-dicom_data = "$baseDir/input_data/*.dcm"
-
 process dicom_to_png {
+	container 'quay.io/cdis/gen3-workflow:integration_tests_dicom_image'
+
+    publishDir 'results'
+
     input:
     path dicom_files
 
     output:
     stdout emit: dicom_to_png_log
-    path('*.png'), emit: png_files
+    path('outputs/*.png')
 
     script:
     """
     python3 /utils/dicom_to_png.py $dicom_files
+    mkdir -p outputs
+    cp *.png outputs/
     """
 }
 
 process extract_metadata {
+	container 'quay.io/cdis/gen3-workflow:integration_tests_dicom_image'
+
+    publishDir 'results'
+
     input:
     path dicom_files
 
@@ -29,6 +37,7 @@ process extract_metadata {
 }
 
 workflow {
+    dicom_data = "$baseDir/input_data/*.dcm"
     dicom_files = Channel.fromPath(dicom_data)
     dicom_to_png(dicom_files)
     extract_metadata(dicom_files)

@@ -12,11 +12,11 @@ def setup_env_for_helm(arguments):
         [file_path] + arguments, capture_output=True, text=True, timeout=1200
     )
     if result.returncode == 0:
-        logger.info("Script executed successfully. Output:")
+        logger.info("Script executed successfully. Logs:")
         logger.info(result.stdout)
         return "SUCCESS"
     else:
-        logger.info("Script execution failed. Error:")
+        logger.info("Script execution failed. Logs:")
         logger.info(result.stderr)
         logger.info(result.stdout)
         return "FAILURE"
@@ -30,7 +30,7 @@ def prep_dev_env(namespace):
     """
     helm_branch = "master"
     ci_default_manifest = (
-        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/dev_env/values"
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/ci/default/values"
     )
     target_manifest_path = f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops/{os.getenv('SOURCE_CONFIG')}/values"
 

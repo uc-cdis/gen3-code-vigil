@@ -11,7 +11,13 @@ class Indexd(object):
     def __init__(self):
         self.BASE_URL = f"{pytest.root_url}/index/index"
 
-    def create_records(self, records: dict, user="indexing_account", access_token=None):
+    def create_records(
+        self,
+        records: dict,
+        user="indexing_account",
+        access_token=None,
+        proceed_after_failure=False,
+    ):
         """Create new indexd record"""
         if access_token:
             auth = Gen3Auth(access_token=access_token)
@@ -26,7 +32,9 @@ class Indexd(object):
                 record = index.create_record(**record_data)
                 indexed_files.append(record)
             except Exception as e:
-                logger.exception(msg=f"Failed indexd submission got exception {e}")
+                logger.exception(msg=f"Failed indexd submission! Exception: {e}")
+                if not proceed_after_failure:
+                    raise
         return indexed_files
 
     def get_record(self, indexd_guid: str, user="indexing_account", access_token=None):
@@ -97,33 +105,33 @@ class Indexd(object):
                 logger.exception(msg=f"Failed to delete record with guid {guid} : {e}")
 
     def file_equals(self, res: dict, file_record: dict) -> None:
-        logger.info(f"Response data : {res}")
+        logger.info(f"Response data: {res}")
         logger.info(f"File Node: {file_record.props}")
         errors = []
-        if res["hashes"]["md5"] != file_record.props["md5sum"]:
+        if res.get("hashes", {}).get("md5") != file_record.props.get("md5sum"):
             errors.append(
-                f"md5 value mismatch: '{res['hashes']['md5']}' != '{file_record.props['md5sum']}'"
+                f"md5 value mismatch: '{res.get("hashes", {}).get("md5")}' != '{file_record.props.get("md5sum")}'"
             )
-        if res["size"] != file_record.props["file_size"]:
+        if res.get("size") != file_record.props.get("file_size"):
             errors.append(
-                f"file_size value mismatch: '{res['size']}' != '{file_record.props['file_size']}'"
+                f"file_size value mismatch: '{res.get("size")}' != '{file_record.props.get('file_size')}'"
             )
         if "urls" not in res.keys():
             errors.append(f"urls keyword missing in {res.keys()}")
         if "urls" in file_record.props.keys():
-            if file_record.props["urls"] not in res["urls"]:
+            if file_record.props.get("urls") not in res.get("urls", []):
                 errors.append(
-                    f"urls value mismatch: {file_record.props['urls']} not in {res['urls']}"
+                    f"urls value mismatch: {file_record.props.get('urls')} not in {res.get('urls')}"
                 )
         if "authz" in file_record.props.keys():
-            for authz_val in file_record.props["authz"]:
-                if authz_val not in res["authz"]:
+            for authz_val in file_record.props.get("authz", []):
+                if authz_val not in res.get("authz", []):
                     errors.append(
-                        f"{authz_val} not found in authz list: {res['authz']}"
+                        f"{authz_val} not found in authz list: {res.get('authz')}"
                     )
         if errors:
             logger.error(f"indexd.file_equals(): files do not match: {errors}")
-        return len(errors) == 0, errors
+        assert len(errors) == 0, errors
 
     def clear_previous_upload_files(self, user="main_account"):
         """Delete indexd record if upload is not happening through gen3-sdk"""

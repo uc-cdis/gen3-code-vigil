@@ -28,6 +28,8 @@ jobs:
 
           gh repo clone uc-cdis/${REPO}
           cd ${REPO}
+          # To deal with internally forked repos, e.g.: FEF repos
+          gh repo set-default uc-cdis/${REPO}
 
           gh pr checkout ${PR_NUM}
           git log -1
@@ -43,6 +45,8 @@ jobs:
           # Create PR from the branch
           existing_pr=$(gh pr list --head "$testing_branch" --state open --json number --jq '.[0].number // empty')
 
+          base_branch=$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name')
+          echo "ℹ️ Base branch for the repo is $base_branch"
           pr_title="Testing external contributor PR #${PR_NUM}"
           pr_body="$(cat <<EOF
           *** DO NOT MERGE ***
@@ -56,7 +60,7 @@ jobs:
             echo "🆕 Creating new PR from testing branch"
             new_pr=$(gh pr create \
               --title "$pr_title" \
-              --base "master" \
+              --base "$base_branch" \
               --head "$testing_branch" \
               --body "$pr_body")
 

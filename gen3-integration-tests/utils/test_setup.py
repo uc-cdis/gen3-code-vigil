@@ -2,6 +2,7 @@ import csv
 import json
 import os
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -62,7 +63,7 @@ def setup_fence_test_clients_info():
 def get_rotated_client_id_secret():
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "client_rotate_creds.txt"
     if not os.path.exists(path):
-        logger.info("clients_creds.txt doesn't exist.")
+        logger.debug("clients_creds.txt doesn't exist.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -82,7 +83,7 @@ def get_client_id_secret():
     """Gets the fence client information from TEST_DATA_PATH_OBJECT/fence_client folder"""
     path = TEST_DATA_PATH_OBJECT / "fence_clients" / "clients_creds.txt"
     if not os.path.exists(path):
-        logger.info("client_rotate_creds.txt doesn't exist.")
+        logger.debug("client_rotate_creds.txt doesn't exist.")
         return
     with open(path, "r") as file:
         content = file.read()
@@ -101,9 +102,29 @@ def get_client_id_secret():
 
 
 def run_usersync():
+    # check which job to run: if there are "useryaml" pods, then the "useryaml" job is deployed and
+    # should be used. If not, the "useryaml" job is not deployed, but the "usersync" cronjob is.
+    cmd = [
+        "kubectl",
+        "get",
+        "pod",
+        "-n",
+        pytest.namespace,
+        "--selector=job-name=useryaml",
+        "-o",
+        "name",
+    ]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        raise Exception(f"[run_usersync] unable to list pods with 'job-name=useryaml'")
+
+    pods = [p for p in result.stdout.decode("utf-8").split("\n") if p]
+    job_name, job_type = ("useryaml", "job") if pods else ("usersync", "cronjob")
+
     gen3_admin_tasks.run_gen3_job(
-        "usersync",
+        job_name,
         test_env_namespace=pytest.namespace,
+        job_type=job_type,
     )
 
 

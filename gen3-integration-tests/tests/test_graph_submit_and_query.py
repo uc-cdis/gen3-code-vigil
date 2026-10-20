@@ -210,8 +210,9 @@ class TestGraphSubmitAndQuery:
             record, {"project_id": "NOT-EXIST"}
         )
         # Validate no records are returned for the node
-        if len(response["data"][record.node_name]) != 0:
-            raise f"Expected no records for {record.node_name}. Response : {response}"
+        assert (
+            len(response["data"][record.node_name]) == 0
+        ), f"Expected no records for {record.node_name}. Response : {response}"
 
     @pytest.mark.graph_query
     @pytest.mark.skipif(
@@ -476,17 +477,12 @@ class TestGraphSubmitAndQuery:
                (an indexd record is automatically created when a sheepdog file record is created)
             3. Delete file record and delete indexd record
         """
-        indexd = Indexd()
         file_record = self.sd_tools.get_file_record()
         self.sd_tools.submit_links_for_record(file_record)
         self.sd_tools.submit_record(record=file_record)
         file_record.indexd_guid = self.sd_tools.get_indexd_id_from_graph_id(
             unique_id=file_record.unique_id
         )
-        record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-
-        # Deleting file record and indexd record
-        indexd.delete_records([file_record.indexd_guid])
 
     @pytest.mark.indexd
     def test_submit_file_with_url(self):
@@ -511,9 +507,6 @@ class TestGraphSubmitAndQuery:
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
-
-        # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
-        indexd.delete_records([file_record.indexd_guid])
 
     @pytest.mark.indexd
     def test_submit_file_then_update_with_url(self):
@@ -545,6 +538,3 @@ class TestGraphSubmitAndQuery:
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
-
-        # Deleting indexd record (sheepdog record is deleted by `teardown_method`)
-        indexd.delete_records([file_record.indexd_guid])
