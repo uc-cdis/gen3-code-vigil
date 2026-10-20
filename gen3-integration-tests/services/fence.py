@@ -2,11 +2,12 @@ import base64
 import io
 import json
 import re
-from contextlib import redirect_stdout
+from contextlib import ExitStack, contextmanager, redirect_stdout
 
 import pytest
 import requests
 from gen3.auth import Gen3Auth, Gen3AuthError
+from gen3.dpop import dpop_proxy_context
 from gen3.file import Gen3File
 from pages.login import LoginPage
 from pages.user_register import UserRegister
@@ -83,12 +84,53 @@ class Fence(object):
             response = requests.get(self.BASE_URL + url, auth={})
             status_code = response.status_code
             response = response.content.decode()
-        logger.info("Status code : " + str(status_code))
+        logger.info(f"Status code: {status_code} - {response}")
         assert (
             expected_status == status_code
         ), f"Expected response {expected_status}, but got {status_code}"
         if status_code == 200:
             return json.loads(response)
+        return response
+
+    @retry(times=3, delay=20, exceptions=(AssertionError, Gen3AuthError))
+    def create_bulk_signed_urls(
+        self, guids, user=None, expected_status=200, access_token=None
+    ):
+        """Creates presigned urls for multiple GUIDs"""
+        url = f"{self.DATA_DOWNLOAD_ENDPOINT}/bulk"
+
+        payload = {"guids": guids}
+
+        if user:
+            auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+                auth=auth,
+            )
+        elif access_token:
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"bearer {access_token}",
+                },
+            )
+        else:
+            response = requests.post(
+                self.BASE_URL + url,
+                json=payload,
+            )
+
+        logger.info("Status code : " + str(response.status_code))
+
+        assert (
+            expected_status == response.status_code
+        ), f"Expected response {expected_status}, but got {response.status_code}"
+
+        if response.status_code == 200:
+            return response.json()
         return response
 
     def get_url_for_data_upload(self, file_name: str, user: str) -> dict:
@@ -482,3 +524,49 @@ class Fence(object):
         url = f"{self.BASE_URL}{self.ADMIN_FENCE_ENDPOINT}/{pytest.users[username]}/reactivate"
         response = requests.post(url=url, auth=auth)
         return response
+
+    @contextmanager
+    def get_dpop_bound_task_token(
+        self, token_type, user="main_account", expires_in=3600, expected_status_code=200
+    ):
+        """
+        Use the Gen3 SDK's DPoP proxy to obtain a DPoP-bound task token from Fence.
+        This requires `DPOP_ENABLED: true` in the Fence configuration.
+
+        Returns:
+            tuple (task token, proxy URL)
+
+        Usage:
+            with self.fence.get_dpop_bound_task_token("WORKFLOW") as (task_token, proxy_url):
+                url = f"{proxy_url}/..."
+                res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
+        """
+        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=pytest.root_url)
+        token, url = None, None
+        with ExitStack() as stack:
+            try:
+                task_token, proxy_port = stack.enter_context(
+                    dpop_proxy_context(
+                        auth=auth,
+                        task_token_type=token_type,
+                        task_token_expiration=expires_in,
+                    )
+                )
+                token, url = task_token, f"http://127.0.0.1:{proxy_port}"
+            except Exception as e:
+                if expected_status_code == 200:
+                    logger.error(
+                        f"Unable to get a '{token_type}' task token for '{user}': {e}"
+                    )
+                    raise
+                assert f"[{expected_status_code}]" in str(e)
+            yield token, url
+
+    def revoke_token(self, token):
+        """Adds a token to Fence's denylist"""
+        res = requests.post(
+            f"{self.BASE_URL}/oauth2/revoke",
+            headers={"Authorization": f"bearer {token}"},
+            data={"token": token},
+        )
+        assert res.status_code == 200, res.text

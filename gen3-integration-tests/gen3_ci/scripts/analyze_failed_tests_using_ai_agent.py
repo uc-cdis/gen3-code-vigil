@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import shlex
 import socket
 import subprocess
 import time
@@ -13,106 +14,103 @@ from utils import logger
 load_dotenv()
 
 
-def setup_ollama_helm_chart():
-    cmd = [
-        "helm",
-        "install",
-        "ollama",
-        "gen3_ci/ollama",
-        "-n",
-        os.getenv("NAMESPACE"),
-    ]
-
-    helm_install_result = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if not helm_install_result.returncode == 0:
-        raise Exception(
-            f"Unable to install ollama. Error: {helm_install_result.stderr.strip()}"
-        )
-
+def run_analysis(execute_command) -> str:
+    # Get Pod Name
+    logger.info("Running Analysis on Failure-analysis pod")
     cmd = [
         "kubectl",
-        "wait",
-        "--for=condition=ready",
-        "pod",
+        "-n",
+        "qabot",
+        "get",
+        "pods",
         "-l",
-        "app=ollama",
-        "--timeout=10m",
-        "-n",
-        os.getenv("NAMESPACE"),
+        "app=failure-analysis",
     ]
-
-    ollama_pod_ready_result = subprocess.run(
+    failure_analysis_pod_result = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        timeout=600,
     )
-    if not ollama_pod_ready_result.returncode == 0:
-        raise Exception(
-            f"Ollama pod hasn't started yet. Error: {ollama_pod_ready_result.stderr.strip()}"
+    if not failure_analysis_pod_result.returncode == 0:
+        logger.info(
+            f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
         )
-
-
-def wait_for_port(host="localhost", port=11434, timeout=60):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            with socket.create_connection((host, port), timeout=2):
-                return True
-        except OSError:
-            time.sleep(1)
-    raise TimeoutError("Port-forward did not become ready")
-
-
-def setup_port_forwarding():
-    cmd = [
+        raise Exception(
+            f"Failed to get failure-analysis pod. Error: {failure_analysis_pod_result.stderr.strip()}"
+        )
+    failure_analysis_pod_name = failure_analysis_pod_result.stdout.splitlines()[
+        -1
+    ].split()[0]
+    failure_analysis_cmd = (
+        f"kubectl -n qabot exec {failure_analysis_pod_name} -- {execute_command}"
+    )
+    # Delete existing report (although its overwritten, making sure a new file is generated)
+    delete_cmd = [
         "kubectl",
-        "port-forward",
-        "svc/ollama",
-        "11434:11434",
         "-n",
-        os.getenv("NAMESPACE"),
+        "qabot",
+        "exec",
+        failure_analysis_pod_name,
+        "--",
+        "rm",
+        "-rf",
+        f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
     ]
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
-    )
-    wait_for_port("localhost", 11434, timeout=60)
-    return process
-
-
-def uninstall_ollama_helm_chart():
-    cmd = [
-        "helm",
-        "uninstall",
-        "ollama",
-        "-n",
-        os.getenv("NAMESPACE"),
-    ]
-
-    helm_install_result = subprocess.run(
-        cmd,
+    delete_report_result = subprocess.run(
+        delete_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
+        timeout=600,
     )
-    if not helm_install_result.returncode == 0:
-        raise Exception(
-            f"Unable to uninstall ollama. Error: {helm_install_result.stderr.strip()}"
+    if not delete_report_result.returncode == 0:
+        logger.info(
+            f"deleting report command failed. Error: {delete_report_result.stderr.strip()}"
         )
+    # Run analysis
+    failure_analysis_result = subprocess.run(
+        failure_analysis_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+        shell=True,
+    )
+    if not failure_analysis_result.returncode == 0:
+        logger.info(
+            f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+        )
+        return f"failure-analysis command failed. Error: {failure_analysis_result.stderr.strip()}"
+    # Pull the report out
+    report_cmd = [
+        "kubectl",
+        "-n",
+        "qabot",
+        "exec",
+        failure_analysis_pod_name,
+        "--",
+        "cat",
+        f"/tmp/summary-{os.getenv("NAMESPACE")}.txt",
+    ]
+    report_result = subprocess.run(
+        report_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        timeout=600,
+    )
+    if not report_result.returncode == 0:
+        logger.info(f"report command failed. Error: {report_result.stderr.strip()}")
+        raise Exception(f"report command failed. Error: {report_result.stderr.strip()}")
+    return report_result.stdout.strip()
 
 
-def validate_ollama_model():
-    response = requests.get("http://localhost:11434/api/tags")
-    logger.info(response.json())
-    return response.json()
+def analyze_env_setup_failure_using_kubectl_ai() -> str:
+    kubectl_prompt = f'"List unhealthy pods in the {os.getenv("NAMESPACE")} namespace (CrashLoopBackOff, Error, Pending). For each pod, inspect only relevant events and the last 50 log lines. Summarize the root cause briefly. Write a concise report to /tmp/summary-{os.getenv("NAMESPACE")}.txt."'
+    execute_command = f"kubectl-ai --llm-provider=openai --model=Qwen/Qwen3.8-27B-FP8 --skip-permissions --quiet {kubectl_prompt}"
+    return run_analysis(execute_command)
 
 
 def analyze_env_setup_failure() -> str:
@@ -145,17 +143,20 @@ def analyze_env_setup_failure() -> str:
     Log:
     {logfile_content}
     """
-    messages = [
-        {"role": "system", "content": debug_prompt},
-        {"role": "user", "content": "analyse the errors from this logfile"},
-    ]
-    payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
-    headers = {"Content-Type": "application/json"}
-    url = "http://localhost:11434/v1/chat/completions"
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code != 200:
-        logger.info(f"API call failed. Response: {response.text}")
-    return response.content
+    messages = [{"role": "system", "content": debug_prompt}]
+    payload = {"model": "Qwen/Qwen3.8-27B-FP8", "messages": messages, "temperature": 0}
+    payload_json = json.dumps(payload)
+    execute_command = "sh -c " + shlex.quote(
+        f"curl -X POST "
+        f'-H "Content-Type: application/json" '
+        f"-d {shlex.quote(payload_json)} "
+        f'"$OPENAI_ENDPOINT/chat/completions" '
+        f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
+    )
+    response = run_analysis(execute_command)
+    data = json.load(response)
+    reasoning = data["choices"][0]["message"].get("content")
+    return reasoning
 
 
 def analyze_failed_tests() -> str:
@@ -201,31 +202,47 @@ def analyze_failed_tests() -> str:
         Status Trace:
         {failed_tests}
         """
-        messages = [
-            {"role": "system", "content": debug_prompt},
-            {"role": "user", "content": "analyse the failed tests"},
-        ]
-        payload = {"model": "gemma4:e4b", "messages": messages, "temperature": 0}
-        headers = {"Content-Type": "application/json"}
-        url = "http://localhost:11434/v1/chat/completions"
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code != 200:
-            logger.info(f"API call failed. Response: {response.text}")
-        return response.content
+        messages = [{"role": "system", "content": debug_prompt}]
+        payload = {
+            "model": "Qwen/Qwen3.8-27B-FP8",
+            "messages": messages,
+            "temperature": 0,
+        }
+        payload_json = json.dumps(payload)
+        execute_command = "sh -c " + shlex.quote(
+            f"curl -X POST "
+            f'-H "Content-Type: application/json" '
+            f"-d {shlex.quote(payload_json)} "
+            f'"$OPENAI_ENDPOINT/chat/completions" '
+            f"> /tmp/summary-{os.getenv('NAMESPACE')}.txt"
+        )
+        response = run_analysis(execute_command)
+        logger.info(f"Response: {response}")
+        data = json.loads(response)
+        reasoning = data["choices"][0]["message"].get("content")
+        return reasoning
     logger.info("No allure report folder found")
     return analyze_env_setup_failure()
 
 
 def run_test_failure_analysis():
-    if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
-        response = analyze_env_setup_failure()
+    if os.getenv("PR_ERROR_MSG") and "Failed to Prepare CI environment" in os.getenv(
+        "PR_ERROR_MSG"
+    ):
+        try:
+            response = analyze_env_setup_failure_using_kubectl_ai()
+        except Exception as e:
+            logger.info(
+                f"Failed to run analyze_env_setup_failure_using_kubectl_ai: {e}"
+            )
     else:
-        response = analyze_failed_tests()
+        try:
+            response = analyze_failed_tests()
+        except Exception as e:
+            logger.info(f"Failed to run analyze_failed_tests: {e}")
     if response is None:
         return "No logs found to analyze"
-    data = json.loads(response.decode("utf-8"))
-    reasoning = data["choices"][0]["message"].get("content")
-    return reasoning
+    return response, process
 
 
 def generate_slack_report():
@@ -255,16 +272,13 @@ def generate_slack_report():
     else:
         slack_report_json["channel"] = os.getenv("SLACK_CHANNEL")
     slack_report_json["thread_ts"] = os.getenv("THREAD_TS")
-    json.dump(slack_report_json, open("test_analysis_slack_report.json", "w"))
+    json.dump(slack_report_json, open("failure_analysis_slack_report.json", "w"))
 
 
 if __name__ == "__main__":
     process = None
     try:
-        setup_ollama_helm_chart()
-        process = setup_port_forwarding()
-        assert "gemma4:e4b" in str(validate_ollama_model())
-        response = run_test_failure_analysis()
+        response, process = run_test_failure_analysis()
         with open("logs/failure_analysis.txt", "w") as f:
             f.write(response)
         generate_slack_report()
@@ -274,4 +288,3 @@ if __name__ == "__main__":
         if process and process.poll() is None:
             process.terminate()
             process.wait()
-    uninstall_ollama_helm_chart()

@@ -117,6 +117,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Check if multiple yaml files are present and convert them into values.yaml
     new_manifest_values_file_path=$ci_default_manifest_dir/manifest_values.yaml
+    git clone https://github.com/uc-cdis/gen3-helm.git gen3-helm-ci
+    gen3_helm_values_file_path=gen3-helm-ci/helm/gen3/values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
         echo >> "$new_manifest_values_file_path"
@@ -162,6 +164,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
+        yq -i 'del(.portal.portalBuild)' $ci_default_manifest_values_yaml
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Found customConfig enabled for Portal. Updating repo and branch..."
@@ -223,10 +226,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
+      gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
+          yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
+      elif [ "$service_enabled_value" = null ] && [ "$gen3_helm_enabled_value" = "false" ]; then
+          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values and ${gen3_helm_enabled_value} in gen3-helm"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
@@ -234,12 +241,16 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         if [[ "$ci_enabled_value" == "false" && "$service_enabled_value" == "true" ]]; then
           yq eval ".${key}.enabled = true" -i $ci_default_manifest_values_yaml
         fi
-        echo "Updating ${key} service with ${image_tag_value}"
+        echo "Updating ${key} service to tag ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            repository=$(yq eval ".${key}.image.repository" $new_manifest_values_file_path 2>/dev/null)
             if [[ "$key" == "frontend-framework" ]]; then
               repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
-              yq eval ".frontend-framework.image.repository = \"${repository}\"" -i "$ci_default_manifest_values_yaml"
+            fi
+            if [ "$repository" != "null" ]; then
+              echo "Updating ${key} service to repo ${repository}"
+              yq eval ".${key}.image.repository = \"$repository\"" -i $ci_default_manifest_values_yaml
             fi
         fi
       fi
@@ -295,6 +306,37 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         fi
     done
 
+    ############################################################################################################################
+    # Configure PR-specific workspace namespace for JEG and workspace-proxy
+    # Example:
+    #   namespace:           gen3-gitops-pr-2128
+    #   workspace namespace: jupyter-pods-gen3-gitops-pr-2128
+    # JEG, Hatchery and workspace-proxy must all use the same workspace namespace.
+    ############################################################################################################################
+    workspace_namespace="jupyter-pods-${namespace}"
+    echo "###################################################################################"
+    echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
+
+    # Configure JEG when present
+    jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+    if [ "$jeg_enabled" = "true" ]; then
+        echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
+        yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+        yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+    fi
+
+    # Configure workspace-proxy when present
+    workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+    if [ "$workspace_proxy_enabled" = "true" ]; then
+        echo "workspace-proxy is enabled."
+        yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+        yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+    fi
+
     # Update mds_url and common_url under metadata if present
     json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml")
     if [ -n "$json_content" ] && [ "$json_content" != "key not found" ]; then
@@ -346,6 +388,9 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
+
+    # Remove auroraRdsCopyJob. Testing to see if this is blocking midrc prs
+    yq eval 'del(."auroraRdsCopyJob")' -i $ci_default_manifest_values_yaml
 fi
 
 # Check whether specific services are enabled in the final manifest
@@ -437,6 +482,7 @@ if [[ "$HOSTNAME_WITHOUT_PORT" == *":"* ]]; then
 fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
+  ".fence.FENCE_CONFIG_PUBLIC.MAX_BULK_DRS_REQUESTS|2"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
   ".indexd.defaultPrefix|$ENV_PREFIX/"
   ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"
@@ -455,7 +501,7 @@ common_param_updates=(
   ".ssjdispatcher.gen3Namespace|${namespace}"
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
+  ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -731,6 +777,15 @@ if install_helm_chart; then
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"
     exit 1
+  fi
+
+  # Configure frontend-framework Jupyter assets for JEG/Workspaces
+  jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+  if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG enabled. Configuring frontend-framework Jupyter assets path."
+    kubectl set env deployment/frontend-framework-deployment \
+      -n "${namespace}" \
+      JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
   fi
 else
   echo "❌ Helm chart installation failed"
