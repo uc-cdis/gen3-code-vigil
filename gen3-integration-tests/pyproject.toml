@@ -20,6 +20,7 @@ dependencies = [
     "pytest>=7.4.0,<8",
     "pytest-md-report>=0.5.0,<0.6",
     "pytest-playwright>=0.4.3,<0.5",
+    "pytest-timeout>=2.3.1",
     "pytest-xdist>=3.3.1,<4",
     "python-dateutil",
     "python-dotenv>=1.0.0,<2",
