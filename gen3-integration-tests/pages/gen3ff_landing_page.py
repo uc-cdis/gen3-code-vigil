@@ -1,11 +1,10 @@
 # Gen3 Frontend Framework Landing Page
 import os
-import pytest
 import re
 
-from utils import logger
+import pytest
 from playwright.sync_api import Page, expect
-
+from utils import logger
 from utils.test_execution import screenshot
 
 

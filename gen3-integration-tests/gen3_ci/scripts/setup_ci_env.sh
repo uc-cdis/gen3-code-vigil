@@ -8,6 +8,8 @@
 # setup_type - type of setup being performed
 # helm_branch - gen3 helm branch to bring up the env
 
+# set -euo pipefail  # TODO enable once errors in this file are fixed
+
 namespace="$1"
 setup_type="$2"
 helm_branch="$3"
@@ -28,10 +30,12 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$ci_default_manifest_values_yaml"
 
-
 if [ "$setup_type" == "test-env-setup" ] ; then
     # If PR is under test repository, then do nothing
     echo "Setting Up Test PR Env..."
+    echo "Explicitly enabling gen3-workflow service for test PR env setup"
+    yq eval ".gen3-workflow.enabled = true" -i "$ci_default_manifest_values_yaml"
+
 elif [ "$setup_type" == "service-env-setup" ]; then
     # If PR is under a service repository, then update the image for the given service
     echo "Setting Up Service PR Env..."
@@ -41,14 +45,33 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     service_name="$5"
     image_name="$6"
     service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
+    echo "Looking for '$service_name' (tag '$image_name') in ci_default_manifest_values_yaml. Result: $service_values_block"
     if [ "$service_values_block" != "key not found" ]; then
         echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
-        if [[ "$service" == "etl" ]]; then
+        if [[ "$service_name" == "etl" ]]; then
           yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+        elif [[ "$service_name" == "funnel" ]]; then
+          yq eval ".${service_name}.funnel.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         else
+          if [[ "$service_name" == "gen3-workflow" ]]; then
+            echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
+            yq eval ".${service_name}.enabled = true" -i "$ci_default_manifest_values_yaml"
+          fi
           yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
         fi
-    elif [ "$service_yaml_block" != "key not found" ]; then
+    elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
+    then
+        echo "Found a frontend framework based repo '$service_name'"
+        if [[ "$CI_ENV" == "gen3ff" ]]; then
+          if [[ "$REPO" == "commons-frontend-app" ]]; then
+            yq eval ".frontend-framework.image.tag = \"${image_name}_test\"" -i "$ci_default_manifest_values_yaml"
+          else
+            yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+          fi
+          repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$ci_default_manifest_values_yaml")
+          yq eval ".frontend-framework.image.repository = \"${repository%/*}/$service_name\"" -i "$ci_default_manifest_values_yaml"
+        fi
+    else
         echo "Key '$service_name' not found."
         # Skip image update for repos which dont need it
         skip_service_list=("gen3-client")
@@ -94,6 +117,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
 
     # Check if multiple yaml files are present and convert them into values.yaml
     new_manifest_values_file_path=$ci_default_manifest_dir/manifest_values.yaml
+    git clone https://github.com/uc-cdis/gen3-helm.git gen3-helm-ci
+    gen3_helm_values_file_path=gen3-helm-ci/helm/gen3/values.yaml
     for file in "$target_manifest_path"/*.yaml; do
       if [[ -f "$file" ]]; then
         echo >> "$new_manifest_values_file_path"
@@ -139,10 +164,11 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
+        yq -i 'del(.portal.portalBuild)' $ci_default_manifest_values_yaml
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Found customConfig enabled for Portal. Updating repo and branch..."
-          yq eval '.portal.customConfig.dir = strenv(UPDATED_FOLDERS) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
+          yq eval '.portal.customConfig.dir = strenv(SOURCE_CONFIG) + "/values/portal/"' -i "$ci_default_manifest_values_yaml"
           yq eval '.portal.customConfig.repo = "https://github.com/" + strenv(REPO_FN) + ".git"' -i "$ci_default_manifest_values_yaml"
           yq eval '.portal.customConfig.branch = strenv(BRANCH)' -i "$ci_default_manifest_values_yaml"
         else
@@ -187,10 +213,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     echo "###################################################################################"
     for key in $keys_manifest; do
     if ! echo "$keys_ci" | grep -q "^$key$"; then
-      if [[ "$key" != "mutatingWebhook" && "$key" != "neuvector" && "$key" != "dashboard" ]]; then
-        echo "Adding ${key} section in default ci manifest as its present in target manifest"
-        yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
-      fi
+      echo "Adding ${key} section in default ci manifest as its present in target manifest"
+      yq eval ". |= . + {\"$key\": $(yq eval .$key $new_manifest_values_file_path -o=json)}" -i $ci_default_manifest_values_yaml
     fi
     done
 
@@ -199,19 +223,35 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
-    if [ "$key" != "global" ]; then
+    if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
+      ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
+      gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
       image_tag_value=$(yq eval ".${key}.image.tag" $new_manifest_values_file_path 2>/dev/null)
       # Check if the service_enabled_value is false
       if [ "$(echo -n $service_enabled_value)" = "false" ]; then
           echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values"
           yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
+      elif [ "$service_enabled_value" = null ] && [ "$gen3_helm_enabled_value" = "false" ]; then
+          echo "Disabling ${key} service as enabled is set to ${service_enabled_value} in new manifest values and ${gen3_helm_enabled_value} in gen3-helm"
+          yq eval ".${key}.enabled = false" -i "$ci_default_manifest_values_yaml"
       elif [ "$image_tag_value" = "null" ]; then
           echo "Using CI default image value for ${key}"
       else
-        echo "Updating ${key} service with ${image_tag_value}"
+        if [[ "$ci_enabled_value" == "false" && "$service_enabled_value" == "true" ]]; then
+          yq eval ".${key}.enabled = true" -i $ci_default_manifest_values_yaml
+        fi
+        echo "Updating ${key} service to tag ${image_tag_value}"
         if [ ! -z "$image_tag_value" ]; then
             yq eval ".${key}.image.tag = \"$image_tag_value\"" -i $ci_default_manifest_values_yaml
+            repository=$(yq eval ".${key}.image.repository" $new_manifest_values_file_path 2>/dev/null)
+            if [[ "$key" == "frontend-framework" ]]; then
+              repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$new_manifest_values_file_path")
+            fi
+            if [ "$repository" != "null" ]; then
+              echo "Updating ${key} service to repo ${repository}"
+              yq eval ".${key}.image.repository = \"$repository\"" -i $ci_default_manifest_values_yaml
+            fi
         fi
       fi
     else
@@ -224,10 +264,10 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ############################################################################################################################
     keys=("global.dictionaryUrl"
       "global.portalApp"
-      "global.netpolicy"
+      "global.netPolicy.enabled"
+      "global.netPolicy.dbSubnets"
       "global.environment"
       "global.frontendRoot"
-      "global.clusterName"
       "ssjdispatcher.indexing"
       "metadata.useAggMds"
       # "metadata.aggMdsNamespace"
@@ -238,14 +278,14 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         ci_value=$(yq eval ".$key // \"key not found\"" $ci_default_manifest_values_yaml)
         manifest_value=$(yq eval ".$key // \"key not found\"" $new_manifest_values_file_path)
         if [ "$manifest_value" = "key not found" ]; then
-            echo "The key '$key' is not present in target manifest."
+            echo "The key '$key' is not present in target manifest: making sure it's unset in CI manifest..."
             if [[ "$ci_value" != "key not found" ]]; then
                 echo "Removing key '$key' from CI env configuration"
                 yq eval "del(.$key)" -i $ci_default_manifest_values_yaml
             fi
         else
             echo "CI default value of the key '$key' is: $ci_value"
-            echo "Manifest value of the key '$key' is: $manifest_value"
+            echo "Manifest value of the key '$key' is: $manifest_value: updating '$key' to that in CI manifest..."
             yq eval ".${key} = \"${manifest_value}\"" -i "$ci_default_manifest_values_yaml"
         fi
     done
@@ -265,6 +305,37 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
             yq eval ".${key} = \"\"" -i "$ci_default_manifest_values_yaml"
         fi
     done
+
+    ############################################################################################################################
+    # Configure PR-specific workspace namespace for JEG and workspace-proxy
+    # Example:
+    #   namespace:           gen3-gitops-pr-2128
+    #   workspace namespace: jupyter-pods-gen3-gitops-pr-2128
+    # JEG, Hatchery and workspace-proxy must all use the same workspace namespace.
+    ############################################################################################################################
+    workspace_namespace="jupyter-pods-${namespace}"
+    echo "###################################################################################"
+    echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
+
+    # Configure JEG when present
+    jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+    if [ "$jeg_enabled" = "true" ]; then
+        echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
+        yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+        yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+    fi
+
+    # Configure workspace-proxy when present
+    workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+    if [ "$workspace_proxy_enabled" = "true" ]; then
+        echo "workspace-proxy is enabled."
+        yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+        yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
+            -i "$ci_default_manifest_values_yaml"
+    fi
 
     # Update mds_url and common_url under metadata if present
     json_content=$(yq eval ".metadata.aggMdsConfig // \"key not found\"" "$ci_default_manifest_values_yaml")
@@ -295,50 +366,82 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     if [[ "$google_enabled" != "true" ]]; then
       yq -i 'del(.global.manifestGlobalExtraValues.google_enabled)' $ci_default_manifest_values_yaml
     fi
+
+    # This is to make sure any changes for ci/default are run with portal for now
+    if [[ $SOURCE_CONFIG == "ci/default" ]]; then
+      echo "Current change is in ci/default, removing frontend-framework config"
+      yq eval "del(.frontend-framework)" -i $ci_default_manifest_values_yaml
+    fi
+
+    # # To handle ohif-viewer APP_CONFIG for dicom-server and enable dicom-server
+    # # TODO: Remove once dicom-server is removed from midrc prod
+    ohif_appconfig_block=$(yq eval '.["ohif-viewer"].APP_CONFIG // "key not found"' "$new_manifest_values_file_path")
+    if [[ "$ohif_appconfig_block" != "key not found" ]]; then
+      yq eval-all '
+        select(fileIndex == 0) as $dest |
+        select(fileIndex == 1) as $src |
+        $dest * {
+          "ohif-viewer": ($dest.["ohif-viewer"] * {"APP_CONFIG": $src.["ohif-viewer"].APP_CONFIG})
+        }
+      ' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
+    fi
+
+    # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
+    yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
+
+    # Remove auroraRdsCopyJob. Testing to see if this is blocking midrc prs
+    yq eval 'del(."auroraRdsCopyJob")' -i $ci_default_manifest_values_yaml
 fi
+
+# Check whether specific services are enabled in the final manifest
+audit_disabled=$(yq eval '.audit.enabled == false' $ci_default_manifest_values_yaml)
+portal_disabled=$(yq eval '.portal.enabled == false' $ci_default_manifest_values_yaml)
+ssjdispatcher_disabled=$(yq eval '.ssjdispatcher.enabled == false' $ci_default_manifest_values_yaml)
 
 # Generate Google Prefix by using a random suffix so it is unqiue for each env.
 random_suffix=$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c6)
 ENV_PREFIX="ci$random_suffix"
 echo "ENV_PREFIX = $ENV_PREFIX"
 
-# Create sqs queues and save to var.
+# Create audit sqs queue and save to var.
 AUDIT_QUEUE_NAME="ci-audit-service-sqs-${namespace}"
-AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
-UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
-UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
-UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
-UPLOAD_SNS_NAME="ci-data-upload-bucket"
-UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
-
-if [ -z "$AUDIT_QUEUE_URL" ]; then
-  echo "Initial Audit SQS queue creation failed, retrying in 60 seconds..."
-  sleep 60
+if [[ $audit_disabled != "true" ]]; then
   AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
   if [ -z "$AUDIT_QUEUE_URL" ]; then
-    echo "SQS Audit queue creation failed after retry."
-    exit 1
+    echo "Initial Audit SQS queue creation failed, retrying in 60 seconds..."
+    sleep 60
+    AUDIT_QUEUE_URL=$(aws sqs create-queue --queue-name "$AUDIT_QUEUE_NAME" --query 'QueueUrl' --output text)
+    if [ -z "$AUDIT_QUEUE_URL" ]; then
+      echo "SQS Audit queue creation failed after retry."
+      exit 1
+    fi
   fi
 fi
 
-if [ -z "$UPLOAD_QUEUE_URL" ]; then
-  echo "Initial Upload SQS queue creation failed, retrying in 60 seconds..."
-  sleep 60
+# Create data upload sqs queue and save to var.
+UPLOAD_QUEUE_NAME="ci-data-upload-bucket-${namespace}"
+UPLOAD_SNS_ARN="arn:aws:sns:us-east-1:707767160287:ci-data-upload-bucket"
+if [[ $ssjdispatcher_disabled != "true" ]]; then
   UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+  UPLOAD_QUEUE_ARN=$(aws sqs get-queue-attributes --queue-url "$UPLOAD_QUEUE_URL" --attribute-name QueueArn --query 'Attributes.QueueArn' --output text)
   if [ -z "$UPLOAD_QUEUE_URL" ]; then
-    echo "SQS Upload queue creation failed after retry."
-    exit 1
+    echo "Initial Upload SQS queue creation failed, retrying in 60 seconds..."
+    sleep 60
+    UPLOAD_QUEUE_URL=$(aws sqs create-queue --queue-name "$UPLOAD_QUEUE_NAME" --query 'QueueUrl' --output text)
+    if [ -z "$UPLOAD_QUEUE_URL" ]; then
+      echo "SQS Upload queue creation failed after retry."
+      exit 1
+    fi
   fi
-fi
 
-# Subscribing the SQS queue to the SNS topic.
-aws sns subscribe \
-  --topic-arn "$UPLOAD_SNS_ARN" \
-  --protocol sqs \
-  --notification-endpoint "$UPLOAD_QUEUE_ARN"
+  # Subscribing the SQS queue to the SNS topic.
+  aws sns subscribe \
+    --topic-arn "$UPLOAD_SNS_ARN" \
+    --protocol sqs \
+    --notification-endpoint "$UPLOAD_QUEUE_ARN"
 
-# Set SQS policy on SQS queue.
-cat <<EOF > raw-policy.json
+  # Set SQS policy on SQS queue.
+  cat <<EOF > raw-policy.json
 {
   "Version": "2012-10-17",
   "Id": "sqspolicy",
@@ -359,19 +462,27 @@ cat <<EOF > raw-policy.json
 }
 EOF
 
-# Step 2: Escape the policy JSON into a single string and embed it in the final file and save as final attributes JSON
-escaped_policy=$(jq -c . raw-policy.json | jq -R '{ Policy: . }')
-echo "$escaped_policy" > policy.json
+  # Step 2: Escape the policy JSON into a single string and embed it in the final file and save as final attributes JSON
+  escaped_policy=$(jq -c . raw-policy.json | jq -R '{ Policy: . }')
+  echo "$escaped_policy" > policy.json
 
-if ! aws sqs set-queue-attributes \
-  --queue-url "$UPLOAD_QUEUE_URL" \
-  --attributes file://policy.json ; then
-  echo "❌ Failed to set SQS queue attributes" >&2
-  exit 1
+  if ! aws sqs set-queue-attributes \
+    --queue-url "$UPLOAD_QUEUE_URL" \
+    --attributes file://policy.json ; then
+    echo "❌ Failed to set SQS queue attributes" >&2
+    exit 1
+  fi
 fi
 
+HOSTNAME_WITHOUT_PORT=$HOSTNAME
+if [[ "$HOSTNAME_WITHOUT_PORT" == *":"* ]]; then
+  # Strip the port from the hostname to avoid `Invalid value: "localhost:8000"` errors in
+  # some templates
+  HOSTNAME_WITHOUT_PORT="${HOSTNAME_WITHOUT_PORT%%:*}"
+fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
+  ".fence.FENCE_CONFIG_PUBLIC.MAX_BULK_DRS_REQUESTS|2"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
   ".indexd.defaultPrefix|$ENV_PREFIX/"
   ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"
@@ -384,14 +495,13 @@ common_param_updates=(
   ".ssjdispatcher.ssjcreds.jobPattern|s3://gen3-helm-data-upload-bucket/${ENV_PREFIX}/*"
   ".ssjdispatcher.ssjcreds.jobPassword|$EKS_CLUSTER_NAME"
   ".ssjdispatcher.ssjcreds.metadataservicePassword|$EKS_CLUSTER_NAME"
-  ".revproxy.ingress.hosts[0].host|$HOSTNAME"
+  ".revproxy.ingress.hosts[0].host|$HOSTNAME_WITHOUT_PORT"
   ".manifestservice.manifestserviceG3auto.hostname|$HOSTNAME"
-  ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|https://${HOSTNAME}/user"
+  ".fence.FENCE_CONFIG_PUBLIC.BASE_URL|${HOSTNAME_PROTOCOL}://${HOSTNAME}/user"
   ".ssjdispatcher.gen3Namespace|${namespace}"
-  ".gen3-workflow.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
-  ".gen3-workflow.funnel.Kubernetes.JobsNamespace|gen3-${namespace}-workflow-pods"
-  ".gen3-workflow.funnel.Plugins.Params.S3Url|gen3-workflow-service.${namespace}.svc.cluster.local"
-  ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl|https://${HOSTNAME}/user"
+  ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
+  ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
+  ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -405,7 +515,17 @@ for item in "${common_param_updates[@]}"; do
   fi
 done
 
-sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $ci_default_manifest_values_yaml
+####################################################################################
+# Enable RAS passport/visa parsing features only for nightly-build-ff
+####################################################################################
+if [[ "$namespace" == nightly-build* ]]; then
+  echo "Enabling visa parsing settings for nightly-builds"
+
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.GLOBAL_PARSE_VISAS_ON_LOGIN = true' -i "$ci_default_manifest_values_yaml"
+  yq eval '.fence.FENCE_CONFIG_PUBLIC.ENABLE_VISA_UPDATE_CRON = true' -i "$ci_default_manifest_values_yaml"
+fi
+
+sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: ${HOSTNAME_PROTOCOL}://${HOSTNAME}|" $ci_default_manifest_values_yaml
 
 # Remove aws-es-proxy block
 yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
@@ -414,14 +534,14 @@ yq -i 'del(.aws-es-proxy)' $ci_default_manifest_values_yaml
 sheepdog_fence_url=$(yq eval ".sheepdog.fenceUrl // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$sheepdog_fence_url" != "key not found" ]; then
     echo "Key sheepdog.fenceUrl found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".sheepdog.fenceUrl = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+    yq eval ".sheepdog.fenceUrl = \"${HOSTNAME_PROTOCOL}://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # Check if global manifestGlobalExtraValues fenceUrl key is present and update it.
 manifest_global_extra_values_fence_url=$(yq eval ".global.fenceURL // \"key not found\"" "$ci_default_manifest_values_yaml")
 if [ "$manifest_global_extra_values_fence_url" != "key not found" ]; then
     echo "Key global.fenceURL found in \"$ci_default_manifest_values_yaml\""
-    yq eval ".global.fenceURL = \"https://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
+    yq eval ".global.fenceURL = \"${HOSTNAME_PROTOCOL}://$HOSTNAME/user\"" -i "$ci_default_manifest_values_yaml"
 fi
 
 # delete the ssjdispatcher deployment so a new one will get created and use the new configuration file.
@@ -433,30 +553,80 @@ echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
 # Move portal block out of values.yaml into portal.yaml
 touch $ci_default_manifest_portal_yaml
-yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
-yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+if [[ $portal_disabled != "true" ]]; then
+  yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_portal_yaml $ci_default_manifest_values_yaml -i
+  yq eval 'del(.portal)' $ci_default_manifest_values_yaml -i
+fi
 
 # TODO: Delete this after nightly-build teardown is working properly with helm-ci-cleanup
-if [ "$namespace" == "nightly-build" ]; then
+if [[ "$namespace" == nightly-build* ]]; then
   echo "Deleting indexd-userdb for nightly-build"
   kubectl delete job indexd-userdb -n $namespace
 fi
 
-# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
-echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
 
-echo $HOSTNAME
+# For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
+# For manifest-env-setup where target manifest is also ci/default, we will use portal and switch in future
+# so env doesnt need portal configuration
+if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" || ("$setup_type" == "manifest-env-setup"  && "$SOURCE_CONFIG" == "ci/default") ]]; then
+  if [[ "$CI_ENV" == "gen3ff" ]]; then
+    echo "Disabling portal service"
+    yq eval ".portal.enabled = false" -i "$ci_default_manifest_portal_yaml"
+    yq eval '.global.frontendRoot = "gen3ff"' --inplace "$ci_default_manifest_values_yaml"
+  else
+    echo "Deleting frontend service"
+    yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
+  fi
+fi
+
+# Update job container images using flags in global section
+# .global.fence_container_image
+# .global.awshelper_container_image
+yq eval '.global.fence_container_image = (.fence.image.repository + ":" + .fence.image.tag)' -i "$ci_default_manifest_values_yaml"
+awshelper_block=$(yq eval ".awshelper // \"key not found\"" $ci_default_manifest_values_yaml)
+if [ "$awshelper_block" != "key not found" ]; then
+  yq eval '.global.awshelper_container_image = (.awshelper.image.repository + ":" + .awshelper.image.tag)' -i "$ci_default_manifest_values_yaml"
+fi
+
+# TODO: https://ctds-planx.atlassian.net/browse/GPE-2406
+# Disable embedding-management-service if defined in values
+if yq -e '.["embedding-management-service"]' "$ci_default_manifest_values_yaml" >/dev/null; then
+  yq eval '.["embedding-management-service"].enabled = false' -i "$ci_default_manifest_values_yaml"
+fi
+
 install_helm_chart() {
-  #For custom helm branch
-  if [ "$helm_branch" != "master" ]; then
+  [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
+  install_funnel_chart_branch=$?
+
+  # For custom helm branch
+  if [[ "$helm_branch" != "master" || $install_funnel_chart_branch -eq 0 ]]; then
     git clone --branch "$helm_branch" https://github.com/uc-cdis/gen3-helm.git
-    echo "dependency update"
+
+    if [[ $install_funnel_chart_branch -eq 0 ]]; then
+      echo "manually installing funnel helm chart (branch: $BRANCH)"
+
+      # clone the modified OHSU Funnel chart repo, and call it version 999.0.0
+      git clone --branch "$BRANCH" https://github.com/$REPO_FN.git gen3-helm/helm/ohsu-funnel-chart
+      yq eval -i '.version = "999.0.0"' gen3-helm/helm/ohsu-funnel-chart/charts/funnel/Chart.yaml
+      helm dependency update gen3-helm/helm/ohsu-funnel-chart/charts/funnel
+
+      # update the Gen3 Funnel chart to point to the above (path to directory + matching version),
+      # and call it version 999.0.0
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .repository) = "file://../ohsu-funnel-chart/charts/funnel"' gen3-helm/helm/funnel/Chart.yaml
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
+      yq eval -i '.version = "999.0.0"' gen3-helm/helm/funnel/Chart.yaml
+      helm dependency update gen3-helm/helm/funnel
+
+      # update the Gen3 chart to point to the above, and call it version 999.0.0
+      yq eval -i '(.dependencies[] | select(.name == "funnel") | .version) = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
+      yq eval -i '.version = "999.0.0"' gen3-helm/helm/gen3/Chart.yaml
+    fi
+
     helm dependency update gen3-helm/helm/gen3
-    echo "grep"
     cat $ci_default_manifest_values_yaml | grep -i "elasticsearch:"
+
     echo "installing helm chart"
-    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
+    if helm upgrade --install ${namespace} gen3-helm/helm/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -464,7 +634,7 @@ install_helm_chart() {
   else
     helm repo add gen3 https://helm.gen3.org
     helm repo update
-    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}"; then
+    if helm upgrade --install ${namespace} gen3/gen3 --set global.hostname="${HOSTNAME_WITHOUT_PORT}" -f $ci_default_manifest_values_yaml -f $ci_default_manifest_portal_yaml -n "${namespace}" --debug; then
       echo "Helm chart installed!"
     else
       return 1
@@ -479,8 +649,8 @@ ci_es_indices_setup() {
   max_retries=3
   delay=30
 
-  for attempt in $(seq 0 $max_retries); do
-    echo "Attempt $((attempt + 1))..."
+  for attempt in $(seq 1 $max_retries); do
+    echo "Attempt $attempt..."
     if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
       if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
         echo "Pod is ready!"
@@ -494,7 +664,7 @@ ci_es_indices_setup() {
       echo "Retrying in $delay seconds..."
       sleep "$delay"
     else
-      echo "Failed after $((max_retries + 1)) attempts."
+      echo "Failed after $max_retries attempts."
       exit 1
     fi
   done
@@ -510,11 +680,15 @@ ci_es_indices_setup() {
 }
 
 wait_for_pods_ready() {
-  export timeout=900
+  export timeout=1800  # 30 min
   export interval=20
 
   end=$((SECONDS + timeout))
+  failedPodsTimneout=$((SECONDS + 300))  # 5 min
   while [ $SECONDS -lt $end ]; do
+    echo '[wait_for_pods_ready] Pods:'
+    kubectl get pods -n ${namespace}
+
     # Get JSON for not-ready, non-terminating pods
     not_ready_json=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | \
       jq '[.items[]
@@ -528,15 +702,58 @@ wait_for_pods_ready() {
     not_ready_count=$(echo "$not_ready_json" | jq 'length')
 
     if [ "$not_ready_count" -eq 0 ]; then
+      n_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq '[.items[]]' | jq 'length')
+      if [ "$n_pods" -eq 0 ]; then
+        echo "❌ No running pods!"
+        return 1
+      fi
       echo "✅ All pods containers are Ready"
       return 0
     fi
 
     echo "⏳ Waiting... ($not_ready_count pods have containers not ready)"
     sleep $interval
+
+    failure_pods=$(kubectl get pods -l app!=gen3job -n "${namespace}" -o json | jq -r '
+      .items[]
+      | select(
+          any(.status.containerStatuses[]?;
+            .state.waiting.reason == "ImagePullBackOff"
+            or .state.waiting.reason == "ErrImagePull"
+            or .state.waiting.reason == "CrashLoopBackOff"
+          )
+        )
+      | .metadata.name')
+    # give failed pods a chance to recover (e.g. some apps fail until other apps are running),
+    # but give up early if they don't recover in time
+    if [[ $SECONDS -gt $failedPodsTimneout && -n "$failure_pods" ]]; then
+      echo "❌ Giving up! Failed pods: $failure_pods"
+      # add multiline list of failed pods to GITHUB_ENV so they can be commented on the PR
+      echo "FAILURE_PODS<<EOF" >> $GITHUB_ENV
+      echo $failure_pods >> $GITHUB_ENV
+      echo "EOF" >> $GITHUB_ENV
+
+      echo "[wait_for_pods_ready] Describing failed pods:"
+      echo "$failure_pods" | while IFS= read -r pod; do
+        echo "======= Describing $pod:"
+        kubectl describe pod $pod -n "${namespace}"
+        echo "======= Logs for $pod:"
+        kubectl logs $pod -n "${namespace}" --all-containers --tail -1
+      done
+      return 1
+    fi
   done
 
   echo "❌ Timeout: Pods' containers not ready"
+
+  echo "[wait_for_pods_ready] Describing pods that are not ready:"
+  echo "$not_ready_json" | jq -r '.[] | .metadata.name as $pod_name | $pod_name' | while IFS= read -r pod; do
+    echo "======= Describing $pod:"
+    kubectl describe pod $pod -n "${namespace}"
+    echo "======= Logs for $pod:"
+    kubectl logs $pod -n "${namespace}" --all-containers --tail -1
+  done
+
   echo "$not_ready_json" | jq -r '.[] |
     .metadata.name as $pod_name |
     .status.containerStatuses[]?
@@ -561,13 +778,35 @@ if install_helm_chart; then
     echo "❌ wait_for_pods_ready failed"
     exit 1
   fi
+
+  # Configure frontend-framework Jupyter assets for JEG/Workspaces
+  jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+  if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG enabled. Configuring frontend-framework Jupyter assets path."
+    kubectl set env deployment/frontend-framework-deployment \
+      -n "${namespace}" \
+      JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
+  fi
 else
   echo "❌ Helm chart installation failed"
   exit 1
 fi
 
-kubectl delete job usersync-manual -n ${namespace}
-kubectl create job --from=cronjob/usersync usersync-manual -n ${namespace}
-kubectl wait --for=condition=complete job/usersync-manual --namespace=${namespace} --timeout=5m
+echo "Running usersync..."
+jobName="usersync-manual"
+kubectl delete job $jobName -n ${namespace}
+kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
+kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=10m
+if [ $? -eq 0 ]; then
+  echo "usersync completed successfully"
+else
+  echo "usersync did not complete successfully:"
+  echo "======= Describing $jobName:"
+  kubectl describe pod -l job-name=$jobName -n "${namespace}"
+  echo "======= Logs for $jobName:"
+  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
+  exit 1
+fi
 
 echo "YAY!!! Env is up..."
+exit 0

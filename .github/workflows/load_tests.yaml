@@ -5,21 +5,13 @@ on:
   pull_request:
     paths:
       - .github/workflows/load_tests.yaml
-      - gen3-load-tests/*
+      - gen3-load-tests/**
   workflow_dispatch:
     inputs:
       TEST_SUITE:
-        description: 'Load test to execute, use all to run all tests'
+        description: 'Load tests to execute (comma-separated and no spaces, or "ALL")'
         required: false
-        type: choice
-        options:
-          - TestFencePresignedURL
-          - TestGa4ghDrsPerformance
-          - TestIndexdCreateRecords
-          - TestIndexdDrsEndpoint
-          - TestMetadataCreateAndQuery
-          - TestSheepdogImportClinicalMetadata
-          - ALL
+        type: string
         default: ALL
       RELEASE_VERSION:
         description: 'Release version'
@@ -72,15 +64,22 @@ jobs:
           BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_NUM: ${{ github.event.pull_request.number }}
           RUN_NUM: ${{ github.run_number }}
+          ATTEMPT_NUM: ${{ github.run_attempt }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
           MTLS_CRT: ${{ secrets.MTLS_CRT }}
           MTLS_KEY: ${{ secrets.MTLS_KEY }}
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
           RELEASE_VERSION: ${{ needs.setup.outputs.RELEASE_VERSION }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
+          HELM_BRANCH: 'master'
 
 
         steps:
+          - name: Set Start Time
+            working-directory: ${{ github.workspace }}
+            run: |
+              echo "GITHUB_RUN_STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
+
           # Checkout master branch of gen3-code-vigil when another repo is under test
           - name: Checkout integration test code
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -115,34 +114,35 @@ jobs:
           # gen3-load-tests run with python 3.13
           - name: Set up Python
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-python@v5
+            uses: actions/setup-python@v6
             with:
               python-version: '3.13'
 
           - name: Set up Go
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-go@v5
+            uses: actions/setup-go@v6
             with:
               go-version: '1.17'
+              cache: false
 
           # allure report generation needs node
           - name: Set up node
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: actions/setup-node@v4
+            uses: actions/setup-node@v6
             with:
-              node-version: 20
+              node-version: 24
 
           # Setup kubectl
           - name: Set Up kubectl
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-kubectl@v3
+            uses: azure/setup-kubectl@v5
             with:
               version: latest
 
           # Setup helm
           - name: Set Up Helm
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: azure/setup-helm@v4.3.0
+            uses: azure/setup-helm@v5.0.0
             with:
               version: latest
 
@@ -176,7 +176,7 @@ jobs:
           # Configure credentials to access cluster.
           - name: Configure AWS Credentials
             if: ${{ env.SKIP_TESTS != 'true' }}
-            uses: aws-actions/configure-aws-credentials@v3
+            uses: aws-actions/configure-aws-credentials@v6
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
                 role-session-name: GitHub_to_AWS_via_FederatedOIDC
@@ -194,12 +194,14 @@ jobs:
           # Create PR namespace and PR hostname env var
           - name: Create namespace and env vars
             if: ${{ env.SKIP_TESTS != 'true' }}
+            id: create_ns
             # Change the HOSTNAME with full domain name
             run: |
               NAMESPACE=ci-perf
               HOSTNAME=perf.ci.planx-pla.net
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
+              echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
               namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
               if [ -n "$namespace_exists" ]; then
                 echo "Namespace $NAMESPACE exists, performing teardown..."
@@ -207,6 +209,22 @@ jobs:
                 kubectl delete ns $NAMESPACE
               fi
               kubectl create namespace $NAMESPACE
+
+          - name: Get test labels
+            id: get_test_labels
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
+            continue-on-error: true  # if this fails, we still need to run clean-up steps
+            run: |
+              if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+                test_label="${TEST_SUITE//,/ or }"
+              elif [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+                test_label=$(gh api "repos/$REPO_FN/pulls/$PR_NUM" --jq '.labels | map(select(.name | test("^(?i)test"))) | map(.name) | if length > 0 then join(" or ") else "" end')
+                if [[ -z "$test_label" ]]; then
+                  test_label="ALL"
+                fi
+              fi
+              echo "$test_label"
+              echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
@@ -217,10 +235,9 @@ jobs:
 
           - name: Prepare CI environment
             id: prep_ci_env
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.create_ns.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
-              echo $UPDATED_FOLDERS
               mkdir $HOME/.gen3
               poetry run python -m gen3_ci.scripts.prepare_ci_environment
               if [ $? -ne 0 ]; then
@@ -264,43 +281,28 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               DATE=$(date +%Y%m%d)
-              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE
+              aws s3 sync ./allure-report s3://ci-allure-reports/load-tests/$DATE/$RUN_NUM/$ATTEMPT_NUM
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Failed to upload allure report to s3 bucket" >> $GITHUB_ENV
               fi
 
+          - name: Generate Slack report
+            id: generate_slack_report
+            if: ${{ env.SKIP_TESTS != 'true' && steps.upload_allure_report.outcome == 'success' }}
+            continue-on-error: true # if this fails, we still need to run clean-up steps
+            run: poetry run python -m gen3_ci.scripts.generate_slack_report
 
-          - name: Generate markdown report
-            id: generate_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
-            continue-on-error: true
-            # It is possible for env is prepped but tests error out, the pod logs will help in debugging env issues
-            run: |
-              if [ -n "${{ env.PR_ERROR_MSG }}" ]; then
-                echo -e "\n${{ env.PR_ERROR_MSG }}" >> output/report.md
-              fi
-              if [ "${{ steps.upload_allure_report.outcome }}" == "success" ]; then
-                DATE=$(date +%Y%m%d)
-                echo -e "\nPlease find the detailed integration test report [here](https://allure.ci.planx-pla.net/load-tests/$DATE/index.html)" >> output/report.md
-              fi
-              if [ "${{steps.archive_pod_logs.outcome}}" == "success" ]; then
-                if [ ! -d output ]; then
-                  mkdir output
-                fi
-                if [ ! -f "output/report.md" ]; then
-                  touch "output/report.md"
-                fi
-                echo -e "\nPlease find the ci env pod logs [here]($POD_LOGS_URL)" >> output/report.md
-              fi
-
-          - name: Render report to the PR
-            id: publish_md_report
-            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' || steps.archive_pod_logs.outcome == 'success' }}
+          - name: Publish report to Slack
+            id: slack_notify
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_slack_report.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
-            run: gh pr comment $PR_NUM --body-file output/report.md -R $REPO_FN
-            env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            uses: slackapi/slack-github-action@v4.0.0
+            with:
+              method: chat.postMessage
+              token: ${{ secrets.CI_SLACK_BOT_TOKEN }}
+              payload-file-path: "./gen3-load-tests/slack_report.json"
+              payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_service_tests.outcome != 'success' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1

@@ -1,10 +1,10 @@
-import pytest
 import os
-from utils import logger
 import time
 
-from utils.test_execution import screenshot
+import pytest
 from playwright.sync_api import Page, expect
+from utils import logger
+from utils.test_execution import screenshot
 
 
 class StudyRegistrationPage(object):

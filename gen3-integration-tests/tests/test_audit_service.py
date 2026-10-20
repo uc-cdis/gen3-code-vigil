@@ -159,6 +159,7 @@ class TestAuditService:
         )
 
     @pytest.mark.indexd
+    @pytest.mark.gen3sdk
     @pytest.mark.skipif(
         "indexd" not in pytest.deployed_services,
         reason="indexd is not running on this environment",
@@ -239,7 +240,7 @@ class TestAuditService:
                 expected_results,
             )
 
-            # Private File - mainAcct fails to request a presigned URL with a file that doesn't exists
+            # Private File - mainAcct fails to request a presigned URL with a file that doesn't exist
             expected_results = {
                 "action": "download",
                 "username": pytest.users["main_account"],

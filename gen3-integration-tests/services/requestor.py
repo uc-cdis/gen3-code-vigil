@@ -117,6 +117,7 @@ class Requestor(object):
         """Gets the request_status for the user's request_id in requestor"""
         auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
         status_res = auth.curl(path=request_id)
+        assert status_res.status_code == 200, status_res.text
         status_data_json = status_res.json()
         req_status = status_data_json["status"]
 

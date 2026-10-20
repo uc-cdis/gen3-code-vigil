@@ -1,10 +1,10 @@
-import pytest
 import os
-from utils import logger
-import utils.gen3_admin_tasks as gat
 
-from utils.test_execution import screenshot
+import pytest
+import utils.gen3_admin_tasks as gat
 from playwright.sync_api import Page
+from utils import logger
+from utils.test_execution import screenshot
 
 portal_config = gat.get_portal_config()
 study_viewer_config = portal_config.get("studyViewerConfig", [])

@@ -70,4 +70,6 @@ class TestEnvSanity:
         #     raise Exception(
         #         f"List of services where version validation failed: {failed_services}"
         #     )
-        logger.info(f"List of services where version validation failed: {failed_services}")
+        logger.info(
+            f"List of services where version validation failed: {failed_services}"
+        )

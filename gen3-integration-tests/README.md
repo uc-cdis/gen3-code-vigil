@@ -23,6 +23,12 @@ The integration tests look for API keys in this location. Make sure you created 
 
 #### Create `.env` file
 Switch to `gen3-integration-tests` directory and create a `.env` file. The code is designed to fetch environment variables set in this file.
+The following are some environment variables to set:
+```
+HOSTNAME=<your namespace>.planx-pla.net
+NAMESPACE=<namespace>
+HOSTNAME_PROTOCOL=https/http
+```
 
 #### Create output and install dependencies
 *The output directory is used to store the markdown report that is also generated along with the allure report.*
@@ -48,7 +54,7 @@ User permissions required for the tests to pass are documented [here](test_data/
 We run guppy tests with fixed ES data to enable data validation consistently. Before running guppy tests we must ensure the indices are created with the required data. We can use the setup script located [here](test_data/test_setup/guppy_es).
 
 ## Run tests and review results
-Read these [docs](docs/howto/run_tests/) for specific information on how to run tests.
+Read these [docs](docs/howto/run_tests.md) for specific information on how to run tests.
 
 The report can be viewed by running `allure serve allure-results`
 

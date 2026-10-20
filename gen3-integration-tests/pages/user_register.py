@@ -6,8 +6,12 @@ from utils.test_execution import screenshot
 
 class UserRegister(object):
     def __init__(self):
-        self.BASE_URL = f"{pytest.root_url_portal}/login"
-        self.EXPLORER_ENDPOINT = f"{pytest.root_url_portal}/explorer"
+        if pytest.frontend_url:
+            self.BASE_URL = f"{pytest.root_url_portal}/Login"
+            exploration_path = pytest.navigation_urls.get("Exploration", "/Explorer")
+        else:
+            exploration_path = pytest.navigation_urls.get("Exploration", "/explorer")
+        self.EXPLORER_ENDPOINT = f"{pytest.root_url_portal}{exploration_path}"
         self.REGISTER_ENDPOINT = f"{pytest.root_url_portal}/user/register/"
         # Locators
         self.REGISTER_BUTTON = "//button[contains(text(),'Register')]"

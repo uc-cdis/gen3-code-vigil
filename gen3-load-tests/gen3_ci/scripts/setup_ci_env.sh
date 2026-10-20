@@ -43,7 +43,7 @@ if [[ -n $RELEASE_VERSION ]]; then
     elif [ "$(echo -n $service_enabled_value)" = "false" ]; then
         echo "Skipping image update for ${key} as service enabled is set to false"
     elif [ ! -z "$image_tag_value" ]; then
-        echo "Updating ${key} service with ${image_tag_value}"
+        echo "Updating ${key} service from ${image_tag_value} to ${INTEGRATION_BRANCH}"
         yq eval ".${key}.image.tag = \"$INTEGRATION_BRANCH\"" -i $manifest_values_yaml
     fi
   else
@@ -150,10 +150,9 @@ yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $manifest_values_ya
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $manifest_values_yaml
 yq eval ".fence.FENCE_CONFIG_PUBLIC.BASE_URL = \"https://${HOSTNAME}/user\"" -i $manifest_values_yaml
 yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $manifest_values_yaml
-yq eval ".gen3-workflow.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
-yq eval ".gen3-workflow.funnel.Kubernetes.JobsNamespace = \"gen3-${namespace}-workflow-pods\"" -i $manifest_values_yaml
-yq eval ".gen3-workflow.funnel.Plugins.Params.S3Url = \"gen3-workflow-service.${namespace}.svc.cluster.local\"" -i $manifest_values_yaml
-yq eval ".gen3-workflow.funnel.Plugins.Params.OidcTokenUrl = \"https://${HOSTNAME}/user\"" -i $manifest_values_yaml
+yq eval ".funnel.externalSecrets.dbcreds = \"${namespace}-funnel-creds\"" -i $manifest_values_yaml
+yq eval ".funnel.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
+yq eval ".funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
 # Remove aws-es-proxy block
@@ -184,9 +183,11 @@ kubectl delete deployment -l app=ssjdispatcher -n ${namespace}
 ETL_ENABLED=$(yq '.etl.enabled // "false"' "$manifest_values_yaml")
 echo "ETL_ENABLED=$ETL_ENABLED" >> "$GITHUB_ENV"
 
-# Ensure funnel-oidc-client for this namespace does not exist in secrets manager before installing the helm chart
-echo "Deleting $namespace-funnel-oidc-client from aws secrets manager, if it exists"
-aws secretsmanager delete-secret --secret-id $namespace-funnel-oidc-client --force-delete-without-recovery 2>&1
+# This is to make sure any changes for ci/perf are run with portal for now
+echo "Current change is in ci/perf, removing frontend-framework config"
+yq eval "del(.frontend-framework)" -i $manifest_values_yaml
+
+
 
 echo $HOSTNAME
 install_helm_chart() {
@@ -216,31 +217,6 @@ install_helm_chart() {
 }
 
 ci_es_indices_setup() {
-  echo "Setting up ES port-forward..."
-  label="app=gen3-elasticsearch-master"
-  max_retries=3
-  delay=30
-
-  for attempt in $(seq 0 $max_retries); do
-    echo "Attempt $((attempt + 1))..."
-    if kubectl get pod -l "$label" -n ${namespace}| grep -q 'gen3-elasticsearch-master'; then
-      if kubectl wait --for=condition=ready pod -l "$label" --timeout=5m -n ${namespace}; then
-        echo "Pod is ready!"
-        break
-      fi
-    else
-      echo "Elasticsearch Pod not found."
-    fi
-
-    if [ "$attempt" -lt "$max_retries" ]; then
-      echo "Retrying in $delay seconds..."
-      sleep "$delay"
-    else
-      echo "Failed after $((max_retries + 1)) attempts."
-      exit 1
-    fi
-  done
-
   echo "Running ci_setup.sh with timeout..."
   chmod 755 test_data/test_setup/ci_es_setup/ci_setup.sh
   touch output.txt

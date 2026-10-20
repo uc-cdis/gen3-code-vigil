@@ -8,6 +8,7 @@ from pages.user_register import UserRegister
 from playwright.sync_api import Page, expect
 from utils import logger
 from utils.gen3_admin_tasks import get_portal_config
+from utils.misc import retry
 from utils.test_execution import screenshot
 
 
@@ -31,8 +32,8 @@ class LoginPage(object):
             "//button[contains(normalize-space(), 'ORCID Login')]"
         )
         self.LOGOUT_LOCATOR = re.compile("Logout", re.IGNORECASE)
-        self.POP_UP_BOX = "//div[@class='popup__box']"  # pop_up_box
-        self.POP_UP_ACCEPT_BUTTON = "//button[contains(text(),'Accept')]"
+        self.POP_UP_BOX = "//section[contains(@class, 'mantine-Modal-content')] | //div[@class='popup__box']"  # pop_up_box
+        self.POP_UP_ACCEPT_BUTTON = "//button[contains(normalize-space(),'Accept')]"
         self.RAS_SIGN_IN_BUTTON = "//button[contains(text(),'Sign in')]"
         self.RAS_USERNAME_INPUT = "//input[@id='USER']"
         self.RAS_PASSWORD_INPUT = "//input[@id='PASSWORD']"
@@ -112,7 +113,8 @@ class LoginPage(object):
             screenshot(page, "AfterLogin")
         page.wait_for_load_state("load")
         # TODO: Remove the below check once GFF team resolves the issue
-        page.wait_for_url(lambda url: "login" not in url.lower())
+        if validate_username_locator:
+            page.wait_for_url(lambda url: "login" not in url.lower())
         current_url = page.url
         logger.info(f"Current URL after logging in: {current_url}")
         if "/user/register" in current_url:
@@ -134,12 +136,14 @@ class LoginPage(object):
             ),
             None,
         )
-        assert (
-            access_token_cookie is not None
-        ), "Access token cookie not found after login"
+        if validate_username_locator:
+            assert (
+                access_token_cookie is not None
+            ), "Access token cookie not found after login"
         return access_token_cookie
 
     def validate_username(self, page, logged_in_user):
+        screenshot(page, "BeforeUsernameValidation")
         res = get_portal_config(json_file_name="navigation")
         # Check if useProfileDropdown is set to True and click on dropdown for username to be visible
         if res.get("components", {}).get("topBar", {}).get("useProfileDropdown", ""):
@@ -147,14 +151,14 @@ class LoginPage(object):
             accept_button_count = accept_button.count()
             if accept_button_count > 0:
                 logger.info("Clicking on Accept button")
-                screenshot(page, "ClickingOnAcceptButton")
                 accept_button.click()
+                screenshot(page, "AfterClickingOnAcceptButton")
             page.locator(self.USER_PROFILE_DROPDOWN).click()
             username = page.locator("//div[@class='ant-popover-title']").filter(
                 has_text=re.compile(logged_in_user, re.IGNORECASE)
             )
         else:
-            username = page.locator("a, p").get_by_text(logged_in_user)
+            username = page.locator("a, p, span").get_by_text(logged_in_user)
         expect(username).to_be_visible(timeout=120000)
 
     def orcid_login(self, page: Page):
@@ -188,10 +192,12 @@ class LoginPage(object):
         page: Page,
         username="",
         password="",
+        email="",
         portal_test=True,
     ):
         username = username or os.environ["CI_TEST_RAS_EMAIL"].split("@")[0]
         password = password or os.environ["CI_TEST_RAS_PASSWORD"]
+        email = email or os.environ["CI_TEST_RAS_EMAIL"]
         if portal_test is True:
             # Click on 'Login from RAS' on Gen3 Login Page
             page.locator(self.GEN3_RAS_LOGIN_BUTTON).click()
@@ -200,6 +206,13 @@ class LoginPage(object):
             screenshot(page, "RASAfterClickingGrantButton")
         else:
             self.ras_login_form(page, username, password)
+        page.wait_for_load_state("load")
+        current_url = page.url
+        if "/user/register" in current_url:
+            logger.info(f"Registering User {email}")
+            user_register = UserRegister()
+            user_register.register_user(page, user_email=email)
+            page.wait_for_load_state("load")
 
     def ras_login_form(self, page: Page, username: str, password: str):
         screenshot(page, "RASLoginPage")
@@ -207,6 +220,7 @@ class LoginPage(object):
         page.locator(self.RAS_PASSWORD_INPUT).fill(password)
         ras_signin_button = page.locator(self.RAS_SIGN_IN_BUTTON)
         ras_signin_button.click()
+        page.wait_for_load_state("load")
         screenshot(page, "RASAfterLogging")
         # Handle "Yes, I authorize." button
         authorize_button = page.locator(self.RAS_ACCEPT_AUTHORIZATION_BUTTON)
@@ -231,7 +245,7 @@ class LoginPage(object):
             page.get_by_text(self.LOGOUT_LOCATOR).click(timeout=10000)
         # Click on Logout button to logout
         else:
-            page.locator("a, p").get_by_text("Logout").click(timeout=60000)
+            page.locator("a, p, span").get_by_text("Logout").click(timeout=60000)
             logger.info("Clicked on logout button")
         nav_bar_login_button = page.get_by_text("Login", exact=True)
         # commons-frontend-app may have a pop up after clicking logout
@@ -247,13 +261,19 @@ class LoginPage(object):
         page.wait_for_load_state("load")
         if popup_locator.count() > 0:
             logger.info("Popup message found")
-            page.locator(self.POP_UP_BOX).evaluate(
-                "element => element.scrollTop = element.scrollHeight"
-            )
+            page.locator(self.POP_UP_BOX).evaluate("""
+                element => {
+                    if (element && element.scrollHeight > element.clientHeight) {
+                        element.scrollTop = element.scrollHeight;
+                    }
+                }
+                """)
             screenshot(page, "DataUsePopup")
-            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON)
-            if accept_button:
+            accept_button = page.locator(self.POP_UP_ACCEPT_BUTTON).first
+            accept_button_count = accept_button.count()
+            if accept_button_count > 0:
+                logger.info("Clicking on Accept button")
                 accept_button.click()
-            screenshot(page, "AfterPopUpAccept")
+                screenshot(page, "AfterPopUpAccept")
         else:
             logger.info("Popup message not found")

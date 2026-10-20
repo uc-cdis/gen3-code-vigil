@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: failure-analysis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: failure-analysis
+  template:
+    metadata:
+      labels:
+        app: failure-analysis
+    spec:
+      serviceAccountName: failure-analysis-service-account
+      containers:
+        - name: failure-analysis
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          ports:
+            - containerPort: 80
+          env:
+            - name: OPENAI_ENDPOINT
+              value: {{ .Values.openaiInfo.openaiEndpoint | quote }}
+            - name: OPENAI_API_KEY
+              value: {{ .Values.openaiInfo.key | quote }}

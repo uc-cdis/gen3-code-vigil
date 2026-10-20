@@ -8,8 +8,27 @@ from utils import logger
 
 
 def get_failed_suites():
+    allure_folder = (
+        "rerun-allure-report"
+        if os.environ.get("FAILED_TEST_SUITES")
+        else "allure-report"
+    )
+    # Handle replay command when no tests are run in Rerun failed tests step
+    rerun_summary_report_path = (
+        Path(__file__).parent.parent.parent
+        / "rerun-allure-report"
+        / "widgets"
+        / "summary.json"
+    )
+    use_previous_failed_test_labels = False
+    if os.path.isfile(rerun_summary_report_path):
+        with open(rerun_summary_report_path) as f:
+            data = json.load(f)
+        if data.get("statistic", {}).get("total", 0) == 0:
+            use_previous_failed_test_labels = True
+
     suite_report_path = (
-        Path(__file__).parent.parent.parent / "allure-report" / "data" / "suites.csv"
+        Path(__file__).parent.parent.parent / allure_folder / "data" / "suites.csv"
     )
     if suite_report_path.exists():
         failed_suites = set()
@@ -20,8 +39,15 @@ def get_failed_suites():
                 if row["STATUS"] not in ("passed", "skipped"):
                     failed_suites.add(row["SUB SUITE"])
         failed_test_labels = ",".join(failed_suites)
+        if use_previous_failed_test_labels:
+            failed_test_labels = (os.environ.get("FAILED_TEST_SUITES")).replace(
+                " or ", ","
+            )
         if os.getenv("IS_NIGHTLY_RUN") == "true":
-            replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run {failed_test_labels}`"
+            if os.getenv("CI_ENV") == "gen3ff":
+                replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run-gen3ff {failed_test_labels}`"
+            else:
+                replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-nightly-run {failed_test_labels}`"
         else:
             replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')} {failed_test_labels}`"
         failed_suites_block = {
@@ -36,12 +62,11 @@ def get_failed_suites():
         return None
 
 
-def get_test_result_and_metrics():
+def get_test_result_and_metrics(
+    allure_folder="allure-report", metrics_msg="Test Metrics"
+):
     allure_summary_path = (
-        Path(__file__).parent.parent.parent
-        / "allure-report"
-        / "widgets"
-        / "summary.json"
+        Path(__file__).parent.parent.parent / allure_folder / "widgets" / "summary.json"
     )
     if allure_summary_path.exists():
         with open(allure_summary_path) as f:
@@ -72,7 +97,7 @@ def get_test_result_and_metrics():
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": f"*Test Metrics*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
+                "text": f"*{metrics_msg}*:   :white_check_mark: Passed - {passed}    :x: Failed  - {failed}    :large_yellow_circle: Skipped  - {skipped}    :stopwatch: Test Run Time - {test_duration} minutes",
             },
         }
         return (test_result, test_metrics_block)
@@ -83,17 +108,23 @@ def get_test_result_and_metrics():
 def generate_slack_report():
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         pr_link = f"https://github.com/{os.getenv('REPO_FN')}/actions/runs/{os.getenv('RUN_ID')}"
-        report_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/index.html"
-        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run/{datetime.now().strftime('%Y%m%d')}/gh_action_logs.txt"
+        report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}-rerun/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        gh_logs_link = f"https://allure.ci.planx-pla.net/nightly-run-{os.getenv('CI_ENV')}/{datetime.now().strftime('%Y%m%d')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
     else:
-        pr_link = (
-            f"https://github.com/{os.getenv('REPO_FN')}/pull/{os.getenv('PR_NUM')}"
-        )
+        pull_or_action = "actions" if os.getenv("RUNNING_DEV_ENV_TESTS") else "pull"
+        pr_link = f"https://github.com/{os.getenv('REPO_FN')}/{pull_or_action}/{os.getenv('PR_NUM')}"
         report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/index.html"
+        rerun_report_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}-rerun/index.html"
         gh_logs_link = f"https://allure.ci.planx-pla.net/{os.getenv('REPO')}/{os.getenv('PR_NUM')}/{os.getenv('RUN_NUM')}/{os.getenv('ATTEMPT_NUM')}/gh_action_logs.txt"
     slack_report_json = {}
     # Fetch run result and test metrics
     test_result, test_metrics_block = get_test_result_and_metrics()
+    rerun_test_metrics_block = None
+    if os.environ.get("FAILED_TEST_SUITES"):
+        test_result, rerun_test_metrics_block = get_test_result_and_metrics(
+            allure_folder="rerun-allure-report", metrics_msg="Rerun Test Metrics"
+        )
     test_result_icons = {"Successful": ":tada:", "Failed": ":fire:"}
     slack_report_json["text"] = f"Integration Test Result: {pr_link}"
     slack_report_json["blocks"] = []
@@ -106,14 +137,14 @@ def generate_slack_report():
             "emoji": True,
         },
     }
+    if os.getenv("CI_ENV") == "gen3ff":
+        header_block["text"]["text"] = "Integration Test Results - Gen3FF"
     slack_report_json["blocks"].append(header_block)
     # Calculate gh action time
     start_time = os.getenv("GITHUB_RUN_STARTED_AT")
     logger.info(f"GITHUB_RUN_STARTED_AT: {start_time}")
     start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-    gh_duration = round(
-        (datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2
-    )
+    gh_duration = round((datetime.now(timezone.utc) - start_dt).total_seconds() / 60, 2)
     # Run summary
     summary_block = {
         "type": "section",
@@ -125,7 +156,11 @@ def generate_slack_report():
     slack_report_json["blocks"].append(summary_block)
     # Test metrics
     if test_metrics_block:
-        slack_report_json["blocks"].append(test_metrics_block)
+        if rerun_test_metrics_block:
+            slack_report_json["blocks"].append(test_metrics_block)
+            slack_report_json["blocks"].append(rerun_test_metrics_block)
+        else:
+            slack_report_json["blocks"].append(test_metrics_block)
         report_link_block = {
             "type": "section",
             "text": {
@@ -134,6 +169,15 @@ def generate_slack_report():
             },
         }
         slack_report_json["blocks"].append(report_link_block)
+        if os.environ.get("FAILED_TEST_SUITES"):
+            rerun_report_link_block = {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"*Rerun Failed Test Report*: <{rerun_report_link}|click here>",
+                },
+            }
+            slack_report_json["blocks"].append(rerun_report_link_block)
     else:
         logger.info(
             "Allure report was not found. Skipping test metrics block generation."
@@ -153,6 +197,24 @@ def generate_slack_report():
         failed_suites_block = get_failed_suites()
         if failed_suites_block:
             slack_report_json["blocks"].append(failed_suites_block)
+
+    # Add replay message if CI env setup fails
+    if os.getenv("PR_ERROR_MSG") == "Failed to Prepare CI environment":
+        if os.getenv("IS_NIGHTLY_RUN") == "true":
+            if os.getenv("CI_ENV") == "gen3ff":
+                replay_message = "To label & retry, just send the following message:\n `@qa-bot replay-nightly-run-gen3ff`"
+            else:
+                replay_message = "To label & retry, just send the following message:\n `@qa-bot replay-nightly-run`"
+        else:
+            replay_message = f"To label & retry, just send the following message:\n `@qa-bot replay-pr {os.getenv('REPO')} {os.getenv('PR_NUM')}`"
+        replay_block = {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": replay_message,
+            },
+        }
+        slack_report_json["blocks"].append(replay_block)
 
     if os.getenv("IS_NIGHTLY_RUN") == "true":
         slack_report_json["channel"] = "#nightly-builds"
