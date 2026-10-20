@@ -2,19 +2,16 @@
 DRS Endpoint
 """
 
-import os
 from uuid import uuid4
 
 import pytest
-import requests
-from cdislogging import get_logger
+import utils.gen3_admin_tasks as gat
 from gen3.auth import Gen3Auth
 from packaging.version import Version
 from services.drs import Drs
 from services.fence import Fence
 from services.indexd import Indexd
-
-logger = get_logger(__name__, log_level=os.getenv("LOG_LEVEL", "info"))
+from utils import logger
 
 indexd_files = {
     "allowed": {
@@ -60,11 +57,6 @@ class TestDrsEndpoints:
         for key, val in indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
             cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
-
-    @classmethod
-    def teardown_class(cls):
-        # Removing test indexd records
-        cls.indexd.delete_records(cls.variables["created_indexd_dids"])
 
     def test_get_drs_object(self):
         """
@@ -135,7 +127,7 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
         "urls_metadata": {
             "s3://cdis-presigned-url-test/testdata": {
@@ -150,7 +142,7 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
         "urls_metadata": {
             "s3://cdis-presigned-url-test/testdata": {"available": False}
@@ -162,7 +154,7 @@ drs_15_indexd_files = {
         "urls": ["gs://some-gs-bucket/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
         "urls_metadata": {"gs://some-gs-bucket/testdata": {"available": True}},
     },
@@ -172,7 +164,7 @@ drs_15_indexd_files = {
         "urls": ["s3://cdis-presigned-url-test/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
     },
     # Unknown protocol "s2"
@@ -181,7 +173,7 @@ drs_15_indexd_files = {
         "urls": ["s2://some-bucket/testdata"],
         "hashes": {"md5": "73d643ec3f4beb9020eef0beed440ad0"},
         "acl": ["jenkins"],
-        "authz": ["/programs/jenkins"],
+        "authz": ["/programs/jnkns"],
         "size": 9,
     },
     # Open access record
@@ -211,7 +203,8 @@ class TestDrsMetadata:
         cls.drs = Drs()
         cls.indexd = Indexd()
         cls.fence = Fence()
-        cls.variables = {"created_indexd_dids": []}
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
 
         # skip all these tests if DRS < 1.5
         try:
@@ -226,15 +219,6 @@ class TestDrsMetadata:
             pytest.skip("DRS 1.5 not deployed on this environment")
 
         # Create DRS 1.5 test records
-        auth = Gen3Auth(
-            refresh_token=pytest.api_keys["indexing_account"],
-            endpoint=pytest.root_url,
-        )
-        access_token = auth.get_access_token()
-        headers = {
-            "Authorization": f"bearer {access_token}",
-            "Content-Type": "application/json",
-        }
         # Adding indexd files
         for key, val in drs_15_indexd_files.items():
             indexd_record = cls.indexd.create_records(records={key: val})
@@ -311,9 +295,9 @@ class TestDrsMetadata:
 
         buckets = buckets_resp.json()
         expected_region = None
-        for bucket_name, info in buckets.items():
-            if "cdis-presigned-url-test" in bucket_name:
-                expected_region = info.get("region")
+        for bucket_type, info in buckets.items():
+            if "cdis-presigned-url-test" in info:
+                expected_region = info.get("cdis-presigned-url-test").get("region")
                 break
         if not expected_region:
             pytest.skip("cdis-presigned-url-test bucket not in Fence bucket config")
@@ -519,7 +503,8 @@ class TestDrsBulkEndpoints:
     def setup_class(cls):
         cls.drs = Drs()
         cls.indexd = Indexd()
-        cls.variables = {"created_indexd_dids": []}
+        cls.variables = {}
+        cls.variables["created_indexd_dids"] = []
 
         # bulk endpoints require DRS >= 1.4
         try:
@@ -542,27 +527,9 @@ class TestDrsBulkEndpoints:
         )
 
         # Create DRS 1.5 test records
-        auth = Gen3Auth(
-            refresh_token=pytest.api_keys["indexing_account"],
-            endpoint=pytest.root_url,
-        )
-        access_token = auth.get_access_token()
-        headers = {
-            "Authorization": f"bearer {access_token}",
-            "Content-Type": "application/json",
-        }
         for key, val in drs_15_indexd_files.items():
-            val.setdefault("did", str(uuid4()))
-            resp = requests.post(
-                f"{pytest.root_url}/index/index/",
-                json=val,
-                headers=headers,
-            )
-            assert resp.status_code == 200, (
-                f"Failed to create indexd record '{key}': "
-                f"{resp.status_code} {resp.text}"
-            )
-            cls.variables["created_indexd_dids"].append(resp.json()["did"])
+            indexd_record = cls.indexd.create_records(records={key: val})
+            cls.variables["created_indexd_dids"].append(indexd_record[0]["did"])
 
     @classmethod
     def teardown_class(cls):
@@ -587,8 +554,10 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk objects, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk drs objects: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert summary.get("requested") == len(object_ids), (
             f"Expected summary.requested={len(object_ids)}, "
             f"got {summary.get('requested')}"
@@ -597,7 +566,7 @@ class TestDrsBulkEndpoints:
             object_ids
         ), f"Expected all objects resolved, got resolved={summary.get('resolved')}"
 
-        resolved = data.get("resolved_drs_object", [])
+        resolved = data.get("resolved_drs_objects", [])
         assert len(resolved) == len(
             object_ids
         ), f"Expected {len(object_ids)} resolved objects, got {len(resolved)}"
@@ -635,8 +604,10 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk objects, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk drs objects: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert (
             summary.get("requested") == 2
         ), f"Expected summary.requested=2, got {summary.get('requested')}"
@@ -659,6 +630,10 @@ class TestDrsBulkEndpoints:
             fake_id in unresolved_ids
         ), f"Expected '{fake_id}' in unresolved object IDs, got {unresolved_ids}"
 
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("indexd", "2026.10", "6.3.0"),
+        reason="Current indexd version doesn't have the changes for this test",
+    )
     def test_bulk_drs_objects_request_too_large(self):
         """
         Scenario: Verify 413 when bulk request exceeds maxBulkRequestLength
@@ -668,6 +643,8 @@ class TestDrsBulkEndpoints:
             3. Verify response status is 413.
         """
         oversized_ids = [str(uuid4()) for _ in range(self.max_bulk + 1)]
+        logger.info(len(oversized_ids))
+        logger.info(oversized_ids)
         resp = self.drs.get_bulk_drs_objects(object_ids=oversized_ids)
         assert resp.status_code == 413, (
             f"Expected 413 for oversized bulk request "
@@ -691,14 +668,16 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk object authorization: {data}")
 
         summary = data.get("summary", {})
+        logger.info(f"Summary: {summary}")
         assert summary.get("requested") == len(object_ids), (
             f"Expected summary.requested={len(object_ids)}, "
             f"got {summary.get('requested')}"
         )
 
-        resolved = data.get("resolved_drs_object", [])
+        resolved = data.get("resolved_drs_objects", [])
         assert len(resolved) == len(
             object_ids
         ), f"Expected {len(object_ids)} resolved auth entries, got {len(resolved)}"
@@ -729,8 +708,9 @@ class TestDrsBulkEndpoints:
             resp.status_code == 200
         ), f"Expected 200 from bulk OPTIONS, got {resp.status_code}"
         data = resp.json()
+        logger.info(f"Data from getting bulk object authorization: {data}")
 
-        resolved = data.get("resolved_drs_object", [])
+        resolved = data.get("resolved_drs_objects", [])
 
         # Build a lookup by drs_object_id
         auth_by_id = {
@@ -757,6 +737,10 @@ class TestDrsBulkEndpoints:
             "None" in open_types
         ), f"Expected 'None' for open-access record, got {open_types}"
 
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("indexd", "2026.10", "6.3.0"),
+        reason="Current indexd version doesn't have the changes for this test",
+    )
     def test_bulk_authorizations_request_too_large(self):
         """
         Scenario: Verify 413 when bulk OPTIONS exceeds maxBulkRequestLength
@@ -772,6 +756,10 @@ class TestDrsBulkEndpoints:
             f"got {resp.status_code}"
         )
 
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_bulk_signed_urls_success(self):
         """
         Scenario: Verify bulk presigned URL generation for authorized GUIDs
@@ -803,7 +791,7 @@ class TestDrsBulkEndpoints:
                 "bulk_access_ids": [default_methods[0]["access_id"]],
             },
         ]
-
+        logger.info(bulk_access_ids)
         resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
         assert (
             resp.status_code == 200
@@ -832,6 +820,60 @@ class TestDrsBulkEndpoints:
                 "url"
             ], f"Bulk access URL for '{entry.get('drs_object_id')}' is empty"
 
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
+    def test_bulk_signed_urls_too_large(self):
+        """
+        Scenario: Verify bulk presigned URL fails for authorized GUIDs on exceeding MAX_BULK_DRS_REQUESTS
+        Steps:
+            1. Get DRS objects for authorized records to discover access IDs.
+            2. POST /objects/access with the object_id/access_id pairs.
+            3. Verify 413 error code is returned
+        """
+        # Get access IDs from the DRS objects
+        s3_obj = self.drs.get_drs_object(file=drs_15_indexd_files["s3_available"])
+        assert s3_obj.status_code == 200
+        s3_methods = s3_obj.json().get("access_methods", [])
+        assert len(s3_methods) > 0, "s3_available has no access methods"
+
+        default_obj = self.drs.get_drs_object(
+            file=drs_15_indexd_files["default_available"]
+        )
+        assert default_obj.status_code == 200
+        default_methods = default_obj.json().get("access_methods", [])
+        assert len(default_methods) > 0, "default_available has no access methods"
+
+        open_obj = self.drs.get_drs_object(file=drs_15_indexd_files["open_access"])
+        assert open_obj.status_code == 200
+        open_methods = open_obj.json().get("access_methods", [])
+        assert len(open_methods) > 0, "open_available has no access methods"
+
+        bulk_access_ids = [
+            {
+                "bulk_object_id": drs_15_indexd_files["s3_available"]["did"],
+                "bulk_access_ids": [s3_methods[0]["access_id"]],
+            },
+            {
+                "bulk_object_id": drs_15_indexd_files["default_available"]["did"],
+                "bulk_access_ids": [default_methods[0]["access_id"]],
+            },
+            {
+                "bulk_object_id": drs_15_indexd_files["open_access"]["did"],
+                "bulk_access_ids": [open_methods[0]["access_id"]],
+            },
+        ]
+        logger.info(bulk_access_ids)
+        resp = self.drs.get_bulk_signed_urls(bulk_access_ids=bulk_access_ids)
+        assert (
+            resp.status_code == 413
+        ), f"Expected 413 from bulk signed URLs, got {resp.status_code}"
+
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("fence", "2026.09", "13.3.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
     def test_bulk_signed_urls_partial_auth(self):
         """
         Scenario: Verify partial auth — authorized and unauthorized GUIDs

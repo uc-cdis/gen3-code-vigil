@@ -20,12 +20,15 @@ from utils.misc import retry
 load_dotenv()
 
 
+_SERVICE_VERSION_CACHE = {}
+
+
 @retry(times=5, delay=60, exceptions=(AssertionError))
 def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
     deployed_services = get_list_of_services_deployed()
     if pytest.frontend_url:
-        if os.getenv("REPO") == "commons-frontend-app":
+        if os.getenv("REPO") in ["commons-frontend-app", "gen3-code-vigil"]:
             folder_name = "ci"
         else:
             folder_name = "gen3"
@@ -49,30 +52,51 @@ def get_portal_config(json_file_name=None):
     return res
 
 
-def check_button_is_present(data, search_button):
+def get_navigation_url():
+    naviagtion_urls = {}
+    res = get_portal_config(json_file_name="navigation")
+    if not res:
+        logger.info("Portal/FeFF config not found. Skipping navigation url fetch.")
+        return naviagtion_urls
+    # This key is part of gitops for portal
+    if res.get("components"):
+        for item in res["components"]["navigation"]["items"]:
+            naviagtion_urls[item["name"]] = item["link"]
+    else:
+        for item in res["navigation"]["items"]:
+            naviagtion_urls[item["name"]] = item["href"]
+    return naviagtion_urls
+
+
+def check_button_is_present(data, search_button_or_title):
     # Checks manifest download button for Register User tests
     for button in data:
-        if search_button in button.get("type", "") and button.get("enabled"):
+        if (
+            search_button_or_title in button.get("type", "")
+            or search_button_or_title in button.get("title", "")
+        ) and button.get("enabled"):
             return True
     return False
 
 
-def validate_button_in_portal_config(data, search_button):
+def validate_button_in_portal_config(data, search_button_or_title):
     if isinstance(data, dict):
         if "buttons" in data and check_button_is_present(
-            data["buttons"], search_button
+            data["buttons"], search_button_or_title
         ):
-            if search_button == "export-to-pfb":
+            if search_button_or_title == "export-to-pfb":
                 return True
-            if search_button == "manifest":
+            if search_button_or_title == "Export All to Terra":
+                return True
+            if search_button_or_title == "manifest":
                 return data["tabTitle"]
         for val in data.values():
-            result = validate_button_in_portal_config(val, search_button)
+            result = validate_button_in_portal_config(val, search_button_or_title)
             if result:
                 return result
     elif isinstance(data, list):
         for item in data:
-            result = validate_button_in_portal_config(item, search_button)
+            result = validate_button_in_portal_config(item, search_button_or_title)
             if result:
                 return result
     return False
@@ -1140,11 +1164,12 @@ def get_ff_commons_info():
             result.stdout.strip()
             .split("/")[-1]
             .split(":")[-1]
-            .replace("_test", "")
-            .replace("_", "/", 1)
-            .strip()
             .replace("'", "")
+            .strip()
+            .removesuffix("_test")
         )
+        if not branch_name.startswith(("main", "master")):
+            branch_name = branch_name.replace("_", "/", 1)
         target_dir = "commons-frontend-app"
         return repo_name, branch_name, target_dir
     else:
@@ -1152,6 +1177,8 @@ def get_ff_commons_info():
 
 
 def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
+    logger.info(f"Repository Name: {repo_name}")
+    logger.info(f"Branch Name: {branch_name}")
     shutil.rmtree(target_dir, ignore_errors=True)
     subprocess.run(
         [
@@ -1167,32 +1194,45 @@ def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
     )
 
 
-def service_version_greater_than(service_name, min_release_version, min_sem_version):
+def service_version_lower_than(service_name, min_release_version, min_sem_version):
     """
     This function determines if a test can run based on the minimum supported version.
     min_release_version -> CALVER e.g. 2026.04
     min_sem_version -> SEMVER e.g. 13.1.0
+
+    Return:
+    - False if the current service version is greater than or equal to min_release_version/
+      min_sem_version, which means a test can be run.
+    - True if the current service version is lower, which means a test should be skipped.
     """
-    cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
-    result = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
-    )
-    if result.returncode == 0:
-        current_version = result.stdout.strip().replace('"', "")
+    if service_name in _SERVICE_VERSION_CACHE:
+        current_version = _SERVICE_VERSION_CACHE[service_name]
     else:
-        logger.info(f"Unable to run command. Error: {result.stderr}")
-        logger.info(f"Unable to run command. Output: {result.stdout}")
-    logger.info(f"Current Version: {current_version}")
-    logger.info(f"MinVersion: {min_release_version}")
+        cmd = f"helm get values {pytest.namespace} -n {pytest.namespace} -o yaml | yq '.{service_name}.image.tag'"
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True
+        )
+        if result.returncode == 0:
+            current_version = result.stdout.strip().replace('"', "")
+        else:
+            logger.info(f"Unable to run command `{cmd}`. Error: {result.stderr}")
+            logger.info(f"Unable to run command `{cmd}`. Output: {result.stdout}")
+            return False
+        _SERVICE_VERSION_CACHE[service_name] = current_version
+
+    logger.debug(
+        f"{service_name} Current Version: {current_version}; Min Version: {min_release_version}; Min SemVer Version: {min_sem_version}"
+    )
+
     try:
         parsed_current = Version(current_version)
         CALVER_RE = re.compile(r"^\d{4}\.\d{2}(\.\d+)?$")
         if CALVER_RE.match(current_version):
             # CALVER version
-            return Version(min_release_version) >= parsed_current
+            return Version(min_release_version) > parsed_current
         else:
             # SEMVER version
-            return Version(min_sem_version) >= parsed_current
+            return Version(min_sem_version) > parsed_current
     except InvalidVersion:
         # If the branch is master/main/branch with alphabets,
         # it will return False to execute the test
