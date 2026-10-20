@@ -252,7 +252,7 @@ def pytest_runtest_makereport(item):
 
 
 def pytest_unconfigure(config):
-    if pytest.frontend_url:
+    if pytest.frontend_url and not hasattr(config, "workerinput"):
         ff_dir = Path(__file__).parent / pytest.frontend_commons_name
         shutil.rmtree(ff_dir, ignore_errors=True)
     # Skip running code if --collect-only is passed
