@@ -21,6 +21,7 @@ pandas = "<3"
 pytest = "^7.4.0"
 pytest-md-report = "^0.5.0"
 pytest-playwright = "^0.4.3"
+pytest-timeout = "^2.3.1"
 pytest-xdist = "^3.3.1"
 python-dateutil = "*"
 python-dotenv = "^1.0.0"
@@ -59,6 +60,9 @@ build-backend = "poetry.core.masonry.api"
 testpaths = ["tests/"]
 python_files = ["test_*.py"]
 addopts = "--log-cli-level=ERROR -ra -q"
+# Global per-test cap; 'thread' method can interrupt tests blocked inside Playwright greenlets
+timeout = 300
+timeout_method = "thread"
 markers = [
   # general
   "wip: marks tests as `Work In Progress` and skips them in CI pipeline",
