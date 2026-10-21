@@ -561,12 +561,14 @@ if [[ "$namespace" == nightly-build* ]]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
-# Enable workspace nginx routes only for frontend-framework
-# environments targeting vadcprod or pdp-commons
+# Allow workspace nginx routes and workspace-proxy service only for frontend-framework and
+# if jeg and workspace-proxy is enabled.
 frontend_root=$(yq eval '.global.frontendRoot // ""' "$ci_default_manifest_values_yaml")
 frontend_enabled=$(yq eval '.frontend-framework.enabled // false' "$ci_default_manifest_values_yaml")
+jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
 if [[ "$frontend_root" == "gen3ff" && "$frontend_enabled" == "true" &&
-      ( "$SOURCE_CONFIG" == *"vadcprod"* || "$SOURCE_CONFIG" == *"pdp-commons"* ) ]]; then
+      "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
     echo "Keeping revproxy additionalConfigs for $SOURCE_CONFIG"
 else
     echo "Removing revproxy additionalConfigs"
