@@ -1615,6 +1615,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             task_id=task_id,
             user=self.valid_user,
             expected_final_state="COMPLETE",
+            max_retries=15,
         )
 
         # check the output: the job should have been able to use a task token to hit the
