@@ -571,10 +571,12 @@ if [[ "$frontend_root" == "gen3ff" && "$frontend_enabled" == "true" &&
       "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
     echo "Keeping revproxy additionalConfigs for $SOURCE_CONFIG"
 else
-    echo "Removing revproxy additionalConfigs"
+    echo "Removing revproxy additionalConfigs and disabling workspace-proxy and jeg"
     yq eval 'del(.revproxy.additionalConfigs)' \
       -i "$ci_default_manifest_values_yaml"
-     yq eval '.["workspace-proxy"].enabled = false' \
+    yq eval '.["workspace-proxy"].enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
+    yq eval '.jeg.enabled = false' \
       -i "$ci_default_manifest_values_yaml"
 fi
 
