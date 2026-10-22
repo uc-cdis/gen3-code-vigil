@@ -889,7 +889,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 expected_status=200,
             )
         assert bucket_contents and len(bucket_contents) >= 1
-        assert bucket_contents[0]["Key"].endswith("/output.txt")
+        # filter out directories and check that the expected output file is present
+        buckets_files = [f["Key"] for f in bucket_contents if not f["Key"].endswith("/")]
+        assert len(buckets_files) == 1, f"Expected exactly one file in bucket, but found: {buckets_files}"
+        assert buckets_files[0].endswith("/output.txt")
 
         # User A uploads a file to S3
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
