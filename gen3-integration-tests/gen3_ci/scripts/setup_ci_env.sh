@@ -567,8 +567,7 @@ frontend_root=$(yq eval '.global.frontendRoot // ""' "$ci_default_manifest_value
 frontend_enabled=$(yq eval '.frontend-framework.enabled // false' "$ci_default_manifest_values_yaml")
 jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
 workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
-if [[ "$frontend_root" == "gen3ff" && "$frontend_enabled" == "true" &&
-      "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
+if [[ "$frontend_enabled" == "true" && "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
     echo "Keeping revproxy additionalConfigs for $SOURCE_CONFIG"
 else
     echo "Removing revproxy additionalConfigs and disabling workspace-proxy and jeg"
