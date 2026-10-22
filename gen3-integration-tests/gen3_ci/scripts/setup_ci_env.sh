@@ -561,24 +561,6 @@ if [[ "$namespace" == nightly-build* ]]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
-# Allow workspace nginx routes and workspace-proxy service only for frontend-framework and
-# if jeg and workspace-proxy is enabled.
-frontend_root=$(yq eval '.global.frontendRoot // ""' "$ci_default_manifest_values_yaml")
-frontend_enabled=$(yq eval '.frontend-framework.enabled // false' "$ci_default_manifest_values_yaml")
-jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
-workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
-if [[ "$frontend_enabled" == "true" && "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
-    echo "Keeping revproxy additionalConfigs for $SOURCE_CONFIG"
-else
-    echo "Removing revproxy additionalConfigs and disabling workspace-proxy and jeg"
-    yq eval 'del(.revproxy.additionalConfigs)' \
-      -i "$ci_default_manifest_values_yaml"
-    yq eval '.["workspace-proxy"].enabled = false' \
-      -i "$ci_default_manifest_values_yaml"
-    yq eval '.jeg.enabled = false' \
-      -i "$ci_default_manifest_values_yaml"
-fi
-
 # For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
 # For manifest-env-setup where target manifest is also ci/default, we will use portal and switch in future
 # so env doesnt need portal configuration
@@ -591,6 +573,23 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
     echo "Deleting frontend service"
     yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
   fi
+fi
+
+# Allow workspace nginx routes and workspace-proxy service only for frontend-framework and
+# if jeg and workspace-proxy is enabled.
+frontend_enabled=$(yq eval '.frontend-framework.enabled // false' "$ci_default_manifest_values_yaml")
+jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+if [[ "$frontend_enabled" == "true" && "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
+    echo "Keeping revproxy additionalConfigs, jeg and workspace-proxy for $SOURCE_CONFIG"
+else
+    echo "Removing revproxy additionalConfigs and disabling workspace-proxy and jeg"
+    yq eval 'del(.revproxy.additionalConfigs)' \
+      -i "$ci_default_manifest_values_yaml"
+    yq eval '.["workspace-proxy"].enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
+    yq eval '.jeg.enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
 fi
 
 # Update job container images using flags in global section
