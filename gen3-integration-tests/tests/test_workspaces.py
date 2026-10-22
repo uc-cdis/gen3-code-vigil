@@ -23,11 +23,11 @@ def page_setup(page):
 )
 @pytest.mark.skipif(
     "jeg" not in pytest.deployed_services,
-    reason="wts service is not running on this environment",
+    reason="jeg for workspaces is not running on this environment",
 )
 @pytest.mark.skipif(
     "workspace-proxy" not in pytest.deployed_services,
-    reason="hatchery service is not running on this environment",
+    reason="workspace-proxy service is not running on this environment",
 )
 @pytest.mark.skipif(
     "frontend-framework" not in pytest.deployed_services,
