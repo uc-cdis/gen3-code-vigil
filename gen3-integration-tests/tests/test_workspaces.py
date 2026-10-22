@@ -22,11 +22,11 @@ def page_setup(page):
     reason="ambassador service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "wts" not in pytest.deployed_services,
+    "jeg" not in pytest.deployed_services,
     reason="wts service is not running on this environment",
 )
 @pytest.mark.skipif(
-    "hatchery" not in pytest.deployed_services,
+    "workspace-proxy" not in pytest.deployed_services,
     reason="hatchery service is not running on this environment",
 )
 @pytest.mark.skipif(
