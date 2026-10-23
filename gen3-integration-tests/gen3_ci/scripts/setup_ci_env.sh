@@ -794,7 +794,7 @@ if install_helm_chart; then
 
   # Configure frontend-framework Jupyter assets only for nightly-build-ff
   jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
-  if [[ ("$namespace" == "nightly-build-ff" || "$REPO" == "commons-frontend-app") && "$jeg_enabled" == "true" ]]; then
+  if [[ "$CI_ENV" == "gen3ff" && "$jeg_enabled" == "true" ]]; then
     echo "Configuring frontend-framework Jupyter assets path for nightly-build-ff."
     kubectl set env deployment/frontend-framework-deployment \
       -n "${namespace}" \
