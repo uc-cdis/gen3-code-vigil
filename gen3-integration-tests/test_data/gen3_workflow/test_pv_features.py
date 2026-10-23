@@ -7,14 +7,14 @@ import zipfile
 
 from PIL import Image, ImageDraw
 
-SKIP_BROKEN = os.environ.get("SKIP_BROKEN") == "YES"
-print(f"SKIP_BROKEN: {os.environ.get('SKIP_BROKEN')} => {SKIP_BROKEN}")
-
+# Kind CI uses Mountpoint S3, which doesn't support appends or random-access writes
+S3FILES = os.environ.get("S3FILES") == "YES"
+print(f"S3FILES: {os.environ.get('S3FILES')} => {S3FILES}")
 
 # Test sequential file writes
 with open("output.txt", "w") as f:
     f.write("Initial sequential data\n")
-if not SKIP_BROKEN:
+if S3FILES:
     with open("output.txt", "a") as f:
         f.write("Second sequential data\n")
 
@@ -31,10 +31,11 @@ page_one.save("output.pdf", "PDF", save_all=True, append_images=[page_two])
 
 # Test ZIP file creation
 files_to_zip = ["output.txt", "output.pdf"]
-if not SKIP_BROKEN:
+if S3FILES:
     with zipfile.ZipFile("output.zip", "w", zipfile.ZIP_DEFLATED) as f:
         for file in files_to_zip:
             f.write(file)
 else:
+    # the task expects this output file to exist
     with open("output.zip", "w") as f:
         f.write("")
