@@ -10,7 +10,6 @@ __pycache__
 allure-report/
 allure-results/
 worktrees/
-gen3-integration-tests/poetry.toml
 .idea/
 
 gen3-integration-tests/test_data/lock
