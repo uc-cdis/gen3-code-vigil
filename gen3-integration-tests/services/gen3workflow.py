@@ -504,7 +504,7 @@ class Gen3Workflow:
         response = self._perform_s3_action(
             "list", folder_path, s3_storage_config, user, expected_status
         )
-        return response.get("Contents")
+        return response.get("Contents", [])
 
     def put_bucket_object_with_boto3(
         self,
