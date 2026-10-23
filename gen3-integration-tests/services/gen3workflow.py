@@ -323,7 +323,7 @@ class Gen3Workflow:
         task_id,
         user,
         expected_final_state,
-        max_retries=30,
+        max_retries=15,
         poll_interval=15,
         use_dpop=False,
     ):
