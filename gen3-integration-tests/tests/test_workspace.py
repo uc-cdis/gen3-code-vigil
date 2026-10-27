@@ -37,6 +37,10 @@ def page_setup(page):
     "pdp-commons" in os.getenv("SOURCE_CONFIG", ""),
     reason="There is no workspace page in pdp-commons, only workspaces are present",
 )
+@pytest.mark.skipif(
+    "workspace-proxy" in pytest.deployed_services,
+    reason="Workspace(singular) does not load when workspace-proxy is enabled.",
+)
 # Workspace launch can take a while (up to 20 min wait in pages/workspace.py)
 @pytest.mark.timeout(1200)
 @pytest.mark.workspace

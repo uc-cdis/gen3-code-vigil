@@ -25,7 +25,7 @@ PROXY_GRACE_PERIOD_SEC = 30
     reason="fence service is not running on this environment",
 )
 @pytest.mark.skipif(
-    gat.service_version_lower_than("fence", "2026.10", "13.4.0"),
+    gat.service_version_lower_than("fence", "2026.11", "15.0.0"),
     reason="Current fence version doesn't have the changes for this test",
 )
 @pytest.mark.fence

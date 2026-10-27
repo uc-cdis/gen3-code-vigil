@@ -28,7 +28,7 @@ def get_portal_config(json_file_name=None):
     """Fetch portal config from the GUI"""
     deployed_services = get_list_of_services_deployed()
     if pytest.frontend_url:
-        if os.getenv("REPO") == "commons-frontend-app":
+        if os.getenv("REPO") in ["commons-frontend-app", "gen3-code-vigil"]:
             folder_name = "ci"
         else:
             folder_name = "gen3"
@@ -1177,6 +1177,8 @@ def get_ff_commons_info():
 
 
 def download_frontend_commons_app_repo(repo_name, branch_name, target_dir):
+    logger.info(f"Repository Name: {repo_name}")
+    logger.info(f"Branch Name: {branch_name}")
     shutil.rmtree(target_dir, ignore_errors=True)
     subprocess.run(
         [
