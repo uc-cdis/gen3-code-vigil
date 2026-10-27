@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -754,6 +755,12 @@ class Gen3Workflow:
                 log_file_content = log_file.read()
             if execution.status != "OK":
                 _print_tes_apps_logs(describe_task_pods=True)
+                for task_id in re.findall(
+                    # e.g. "[TES] Created task with ID: dac45sp88r2s73a7f5bg, name: sayHello (3)"
+                    r"\[TES\] Created task with ID: (\w+)",
+                    log_file_content,
+                ):
+                    _print_mountpoint_pod_logs(task_id)
             assert (
                 execution.status == "OK"
             ), f"Nextflow workflow execution failed with status: {execution.status} and log:\n{log_file_content}"
