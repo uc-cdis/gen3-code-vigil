@@ -175,6 +175,14 @@ class TestGen3Workflow(object):
         cls.gen3_workflow.cleanup_user_bucket()
         cls.gen3_workflow.cleanup_user_bucket(user=cls.other_valid_user)
 
+    def get_unique_s3_prefix_per_test_case(self, request):
+        """
+        Return an S3 path prefix unique to the current test case, so that tests running in
+        parallel don't read/write the same files.
+        """
+        test_case_name = re.sub(r"[^A-Za-z0-9_-]+", "_", request.node.name).strip("_")
+        return f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{test_case_name}"
+
 
 class TestGen3WorkflowService(TestGen3Workflow):
     def test_setup_storage_unauthorized(self):
@@ -414,11 +422,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 1: Upload input file to S3
         if with_input_output:
             input_file_contents = "hello beautiful world!"
-            # use a unique folder per test case so parallel runs don't write to the same files
-            test_case_name = re.sub(r"[^A-Za-z0-9_-]+", "_", request.node.name).strip(
-                "_"
-            )
-            s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{test_case_name}"
+            s3_path_prefix = self.get_unique_s3_prefix_per_testcase(request)
             self.gen3_workflow.put_bucket_object_with_boto3(
                 content=input_file_contents,
                 object_path=f"{s3_path_prefix}/input.txt",
@@ -786,7 +790,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # User A creates a TES task
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_testcase(request)
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
                 **base_tes_payload(request),
@@ -894,7 +898,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert bucket_contents[0]["Key"].endswith("/output.txt")
 
         # User A uploads a file to S3
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_testcase(request)
         self.gen3_workflow.put_bucket_object_with_boto3(
             content="User A's secret data",
             object_path=f"{s3_path_prefix}/user_a_file.txt",
@@ -1261,7 +1265,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         SKIP_BROKEN = "YES"
 
         # python script which includes some of the test cases
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_testcase(request)
         script_file_name = "test_multiple_executors_and_pv_features.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
@@ -1438,7 +1442,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         Check that the system can take a whole directory as input or output
         """
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_testcase(request)
         d1 = "mydir"
         d2 = "mysubdir"
         files = [
@@ -1566,7 +1570,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Run a task that obtains a DPoP-bound task token and uses it to hit a DPoP endpoint.
         """
         # upload the input file (python script that obtains and uses a task token)
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_testcase(request)
         script_file_name = "test_dpop_task_token_within_tes_task.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
