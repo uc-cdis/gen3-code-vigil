@@ -150,6 +150,7 @@ def _nextflow_parse_completed_tasks(completed_tasks):
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
+@pytest.mark.timeout(600)
 @pytest.mark.gen3_workflow
 @pytest.mark.fence
 class TestGen3Workflow(object):
