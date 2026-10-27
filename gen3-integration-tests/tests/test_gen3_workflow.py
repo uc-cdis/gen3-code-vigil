@@ -1565,6 +1565,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         gat.service_version_lower_than("fence", "2026.10", "13.4.0"),
         reason="Current fence version doesn't have the changes for this test",
     )
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname,
+        reason="DPOP is not supported by the Kind CI, yet",
+    )
     def test_dpop_task_token_within_tes_task(self, request):
         """
         Run a task that obtains a DPoP-bound task token and uses it to hit a DPoP endpoint.
