@@ -414,9 +414,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 1: Upload input file to S3
         if with_input_output:
             input_file_contents = "hello beautiful world!"
-            s3_path_prefix = (
-                f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+            # use a unique folder per test case so parallel runs don't write to the same files
+            test_case_name = re.sub(r"[^A-Za-z0-9_-]+", "_", request.node.name).strip(
+                "_"
             )
+            s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{test_case_name}"
             self.gen3_workflow.put_bucket_object_with_boto3(
                 content=input_file_contents,
                 object_path=f"{s3_path_prefix}/input.txt",
