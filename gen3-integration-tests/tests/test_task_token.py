@@ -279,7 +279,7 @@ class TestTaskTokenWithGen3Workflow:
                     "name": request.node.name,
                     "executors": [
                         {
-                            "image": "public.ecr.aws/docker/library/alpine:latest",
+                            "image": "quay.io/cdis/alpine:3.24.3",
                             "command": ["echo done"],
                         }
                     ],

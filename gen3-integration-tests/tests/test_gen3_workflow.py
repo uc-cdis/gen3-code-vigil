@@ -457,7 +457,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             # TODO: remove `|| true` temporarily added to unblock CI:
@@ -472,7 +472,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [f"echo {echo_message}"],
                     }
                 ],
@@ -561,7 +561,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["echo", "hello beautiful world!"],
                     }
                 ],
@@ -710,7 +710,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": test_case["command"],
                     }
                 ],
@@ -767,7 +767,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "name": f"{request.node.name} user B",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["echo", "Hello from User B!"],
                     }
                 ],
@@ -798,7 +798,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "name": f"{request.node.name} user A",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [
                             "touch",
                             "/work/output.txt",
@@ -938,7 +938,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "description": "This task has an invalid command format.",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # Invalid command format (should be a list of strings)
                         "command": "not_a_list",
                     }
@@ -1003,7 +1003,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [f"echo '{echo_message}'"],
                     }
                 ],
@@ -1050,7 +1050,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 },
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # sleep for long enough to describe the pod once it's running
                         "command": ["sleep 60"],
                     }
@@ -1143,7 +1143,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # sleep for long enough to get the logs
                         "command": ["sleep 60"],
                     }
@@ -1211,7 +1211,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["env"],
                         "env": {
                             "SOMETHING": "VALUE",
@@ -1346,7 +1346,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         ],
                     },
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             f"cp {input_10mb_file_name} {output_10mb_file_name}"
@@ -1467,7 +1467,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             f"mkdir -p {d1}/{d2} && echo '{files[0]['txt']}' > {d1}/{d2}/{files[0]['name']} && echo '{files[1]['txt']}' > {d1}/{d2}/{files[1]['name']}",
@@ -1530,7 +1530,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [f"ls -R && cat {d1}/{d2}/*"],
                     }
