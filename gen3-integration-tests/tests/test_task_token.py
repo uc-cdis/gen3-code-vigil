@@ -158,12 +158,12 @@ class TestTaskToken(object):
 
 
 @pytest.mark.skipif(
-    "gen3-workflow" not in pytest.deployed_services,
-    reason="gen3-workflow service is not running on this environment",
-)
-@pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "gen3-workflow" not in pytest.deployed_services,
+    reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.skipif(
     "localhost" in pytest.hostname,
