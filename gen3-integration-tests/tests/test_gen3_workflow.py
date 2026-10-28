@@ -150,6 +150,7 @@ def _nextflow_parse_completed_tasks(completed_tasks):
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
+@pytest.mark.timeout(600)
 @pytest.mark.gen3_workflow
 @pytest.mark.fence
 class TestGen3Workflow(object):
@@ -174,6 +175,14 @@ class TestGen3Workflow(object):
         # `storage_setup` so the user has access to empty the bucket)
         cls.gen3_workflow.cleanup_user_bucket()
         cls.gen3_workflow.cleanup_user_bucket(user=cls.other_valid_user)
+
+    def get_unique_s3_prefix_per_test_case(self, request):
+        """
+        Return an S3 path prefix unique to the current test case, so that tests running in
+        parallel don't read/write the same files.
+        """
+        test_case_name = re.sub(r"[^A-Za-z0-9_-]+", "_", request.node.name).strip("_")
+        return f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{test_case_name}"
 
 
 class TestGen3WorkflowService(TestGen3Workflow):
@@ -414,9 +423,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 1: Upload input file to S3
         if with_input_output:
             input_file_contents = "hello beautiful world!"
-            s3_path_prefix = (
-                f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-            )
+            s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
             self.gen3_workflow.put_bucket_object_with_boto3(
                 content=input_file_contents,
                 object_path=f"{s3_path_prefix}/input.txt",
@@ -450,7 +457,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             # TODO: remove `|| true` temporarily added to unblock CI:
@@ -465,7 +472,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [f"echo {echo_message}"],
                     }
                 ],
@@ -554,7 +561,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["echo", "hello beautiful world!"],
                     }
                 ],
@@ -703,7 +710,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": test_case["command"],
                     }
                 ],
@@ -760,7 +767,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "name": f"{request.node.name} user B",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["echo", "Hello from User B!"],
                     }
                 ],
@@ -784,14 +791,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # User A creates a TES task
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
                 **base_tes_payload(request),
                 "name": f"{request.node.name} user A",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [
                             "touch",
                             "/work/output.txt",
@@ -902,7 +909,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         assert buckets_files[0].endswith("/output.txt")
 
         # User A uploads a file to S3
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         self.gen3_workflow.put_bucket_object_with_boto3(
             content="User A's secret data",
             object_path=f"{s3_path_prefix}/user_a_file.txt",
@@ -938,7 +945,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "description": "This task has an invalid command format.",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # Invalid command format (should be a list of strings)
                         "command": "not_a_list",
                     }
@@ -1003,7 +1010,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [f"echo '{echo_message}'"],
                     }
                 ],
@@ -1050,7 +1057,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 },
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # sleep for long enough to describe the pod once it's running
                         "command": ["sleep 60"],
                     }
@@ -1143,7 +1150,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # sleep for long enough to get the logs
                         "command": ["sleep 60"],
                     }
@@ -1211,7 +1218,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["env"],
                         "env": {
                             "SOMETHING": "VALUE",
@@ -1269,7 +1276,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         SKIP_BROKEN = "YES"
 
         # python script which includes some of the test cases
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         script_file_name = "test_multiple_executors_and_pv_features.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
@@ -1346,7 +1353,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         ],
                     },
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             f"cp {input_10mb_file_name} {output_10mb_file_name}"
@@ -1446,7 +1453,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         Check that the system can take a whole directory as input or output
         """
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         d1 = "mydir"
         d2 = "mysubdir"
         files = [
@@ -1467,7 +1474,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             f"mkdir -p {d1}/{d2} && echo '{files[0]['txt']}' > {d1}/{d2}/{files[0]['name']} && echo '{files[1]['txt']}' > {d1}/{d2}/{files[1]['name']}",
@@ -1530,7 +1537,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [f"ls -R && cat {d1}/{d2}/*"],
                     }
@@ -1569,12 +1576,16 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         gat.service_version_lower_than("fence", "2026.10", "13.4.0"),
         reason="Current fence version doesn't have the changes for this test",
     )
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname,
+        reason="DPOP is not supported by the Kind CI, yet",
+    )
     def test_dpop_task_token_within_tes_task(self, request):
         """
         Run a task that obtains a DPoP-bound task token and uses it to hit a DPoP endpoint.
         """
         # upload the input file (python script that obtains and uses a task token)
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         script_file_name = "test_dpop_task_token_within_tes_task.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 import tempfile
 import time
@@ -134,6 +135,47 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             logger.info(
                 f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
             )
+
+
+def _print_mountpoint_pod_logs(task_id, namespace="mount-s3"):
+    """
+    Prints the logs of the mountpoint pods associated with a TES task. The pods are
+    identified by the annotation `s3.csi.aws.com/volume-id: s3-csi-<task-id>`.
+    """
+    volume_id = f"s3-csi-{task_id}"
+    logger.info(f"********** mountpoint logs for task '{task_id}' begin **********")
+    # annotations can't be used as selectors, so list all pods and filter them
+    cmd = ["kubectl", "-n", namespace, "get", "pods", "-o", "json"]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        logger.info(
+            f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+        )
+        logger.info(f"********** mountpoint logs for task '{task_id}' end **********")
+        return
+
+    pod_names = [
+        pod["metadata"]["name"]
+        for pod in json.loads(result.stdout.decode("utf-8")).get("items", [])
+        if (pod["metadata"].get("annotations") or {}).get("s3.csi.aws.com/volume-id")
+        == volume_id
+    ]
+    if not pod_names:
+        logger.info(
+            f"No mountpoint pods found in namespace '{namespace}' with volume-id '{volume_id}'"
+        )
+
+    for pod_name in pod_names:
+        cmd = ["kubectl", "-n", namespace, "logs", pod_name, "--all-containers"]
+        logger.info(f"********** {" ".join(cmd)} **********")
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"Unable to get {pod_name} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+    logger.info(f"********** mountpoint logs for task '{task_id}' end **********")
 
 
 class Gen3Workflow:
@@ -316,6 +358,7 @@ class Gen3Workflow:
             )
         except Exception:
             _print_tes_apps_logs(describe_task_pods=True)
+            _print_mountpoint_pod_logs(task_id)
             raise
 
     #############################
@@ -666,6 +709,12 @@ class Gen3Workflow:
                 log_file_content = log_file.read()
             if execution.status != "OK":
                 _print_tes_apps_logs(describe_task_pods=True)
+                for task_id in re.findall(
+                    # e.g. "[TES] Created task with ID: dac45sp88r2s73a7f5bg, name: sayHello (3)"
+                    r"\[TES\] Created task with ID: (\w+)",
+                    log_file_content,
+                ):
+                    _print_mountpoint_pod_logs(task_id)
             assert (
                 execution.status == "OK"
             ), f"Nextflow workflow execution failed with status: {execution.status} and log:\n{log_file_content}"
