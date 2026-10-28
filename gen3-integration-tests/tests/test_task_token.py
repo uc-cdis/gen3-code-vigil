@@ -13,7 +13,6 @@ import requests
 import utils.gen3_admin_tasks as gat
 from services.fence import Fence
 from services.gen3workflow import Gen3Workflow
-from utils import logger
 
 # allow extra time for the proxy startup, the nonce challenge/retry round trip, the
 # arborist call, etc
@@ -247,7 +246,7 @@ class TestTaskTokenWithGen3Workflow:
             res.status_code == 200
         ), "Anonynous user should be allowed to list TES tasks"
 
-    def test_task_token_audience_mismatch(self, request):
+    def test_task_token_audience_mismatch(self):
         """
         Fail to use a WORKFLOW task token on non-WORKFLOW endpoints.
         Fail to use a non-WORKFLOW task token on a WORKFLOW endpoint.
@@ -287,7 +286,7 @@ class TestTaskTokenWithGen3Workflow:
         "indexd" not in pytest.deployed_services,
         reason="indexd service is not running on this environment",
     )
-    def test_task_token_audience_mismatch_indexd(self, request):
+    def test_task_token_audience_mismatch_indexd(self):
         with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
             workflow_task_token,
             _,
@@ -306,7 +305,7 @@ class TestTaskTokenWithGen3Workflow:
             )
             assert res.status_code == 401, res.text
             assert (
-                f"token missing required audience (at least one of: gen3); contains: WORKFLOW"
+                "token missing required audience (at least one of: gen3); contains: WORKFLOW"
                 in res.text
             )
 
