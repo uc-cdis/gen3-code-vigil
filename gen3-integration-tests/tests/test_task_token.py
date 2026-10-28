@@ -247,10 +247,6 @@ class TestTaskTokenWithGen3Workflow:
             res.status_code == 200
         ), "Anonynous user should be allowed to list TES tasks"
 
-    @pytest.mark.skipif(
-        "indexd" not in pytest.deployed_services,
-        reason="indexd service is not running on this environment",
-    )
     def test_task_token_audience_mismatch(self, request):
         """
         Fail to use a WORKFLOW task token on non-WORKFLOW endpoints.
@@ -268,29 +264,6 @@ class TestTaskTokenWithGen3Workflow:
             assert res.status_code == 401, res.text
             assert "token audience validation failed" in res.text
 
-            if not gat.service_version_lower_than("arborist", "2026.12", "4.2.0"):
-                # should fail to hit a non-Fence, non-WORKFLOW endpoint (indexd) with a WORKFLOW token
-                data = {
-                    "form": "object",
-                    "size": 0,
-                    "urls": [],
-                    "hashes": {"md5": "f36c8c3a550320a66b780768320d14bb"},
-                }
-                res = requests.post(
-                    f"{pytest.root_url}/index/index",
-                    json=data,
-                    headers={"Authorization": f"bearer {workflow_task_token}"},
-                )
-                assert res.status_code == 401, res.text
-                assert (
-                    f"token missing required audience: [gen3]; contains: WORKFLOW"
-                    in res.text
-                )
-            else:
-                logger.info(
-                    f"Skipped '{request.node.name}' indexd test case: current arborist version doesn't have the changes for this test"
-                )
-
         # should fail to hit a WORKFLOW endpoint with a non-WORKFLOW token
         with self.fence.get_dpop_bound_task_token("FOO") as (
             foo_task_token,
@@ -303,6 +276,37 @@ class TestTaskTokenWithGen3Workflow:
             assert res.status_code == 401, "Should not be allowed to list TES tasks"
             assert (
                 "The access token is missing, malformed, expired or not accepted here"
+                in res.text
+            )
+
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("arborist", "2026.12", "4.2.0"),
+        reason="Current arborist version doesn't have the changes for this test",
+    )
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd service is not running on this environment",
+    )
+    def test_task_token_audience_mismatch_indexd(self, request):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            workflow_task_token,
+            _,
+        ):
+            # should fail to hit a non-Fence, non-WORKFLOW endpoint (indexd) with a WORKFLOW token
+            data = {
+                "form": "object",
+                "size": 0,
+                "urls": [],
+                "hashes": {"md5": "f36c8c3a550320a66b780768320d14bb"},
+            }
+            res = requests.post(
+                f"{pytest.root_url}/index/index",
+                json=data,
+                headers={"Authorization": f"bearer {workflow_task_token}"},
+            )
+            assert res.status_code == 401, res.text
+            assert (
+                f"token missing required audience: [gen3]; contains: WORKFLOW"
                 in res.text
             )
 
