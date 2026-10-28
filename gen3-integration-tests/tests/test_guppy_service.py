@@ -13,7 +13,7 @@ from services.guppy import Guppy
 from utils import TEST_DATA_PATH_OBJECT, logger
 
 skip_on_old_guppy = pytest.mark.skipif(
-    gat.service_version_lower_than("guppy", "2026.06", "0.22.0"),
+    gat.service_version_lower_than("guppy", "2026.07", "0.20.1"),
     reason="Current guppy version doesn't have support for extended ES filter for this test",
 )
 
