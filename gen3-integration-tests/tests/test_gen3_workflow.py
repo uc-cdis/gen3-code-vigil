@@ -139,12 +139,12 @@ def _nextflow_parse_completed_tasks(completed_tasks):
 
 
 @pytest.mark.skipif(
-    "gen3-workflow" not in pytest.deployed_services,
-    reason="gen3-workflow service is not running on this environment",
-)
-@pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "gen3-workflow" not in pytest.deployed_services,
+    reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.skipif(
     "fence" not in pytest.deployed_services,
@@ -841,7 +841,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Requestor is deployed: granting {pytest.users[user_C]} access to {pytest.users[user_A]}'s tasks"
             )
             requestor = Requestor()
-            with self.gen3_workflow.get_token_and_gen3_url(user_A) as (access_token, _):
+            with self.gen3_workflow.fence.get_token_and_gen3_url(user_A) as (
+                access_token,
+                _,
+            ):
                 user_A_id = jwt.decode(
                     access_token,
                     algorithms=["RS256"],
@@ -897,8 +900,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             )
         assert bucket_contents and len(bucket_contents) >= 1
         # filter out directories and check that the expected output file is present
-        buckets_files = [f["Key"] for f in bucket_contents if not f["Key"].endswith("/")]
-        assert len(buckets_files) == 1, f"Expected exactly one file in bucket, but found: {buckets_files}"
+        buckets_files = [
+            f["Key"] for f in bucket_contents if not f["Key"].endswith("/")
+        ]
+        assert (
+            len(buckets_files) == 1
+        ), f"Expected exactly one file in bucket, but found: {buckets_files}"
         assert buckets_files[0].endswith("/output.txt")
 
         # User A uploads a file to S3

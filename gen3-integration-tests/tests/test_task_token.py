@@ -113,26 +113,56 @@ class TestTaskToken(object):
             assert token == None
             assert url == None
 
-    def test_task_token_against_arborist(self):
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("arborist", "2026.12", "4.2.0"),
+        reason="Current arborist version doesn't have the changes for this test",
+    )
+    @pytest.mark.parametrize(
+        ["token_type", "expected_aud", "expected_status_code"],
+        [
+            ("regular", None, 200),
+            ("regular", "gen3", 200),
+            ("regular", "WORKFLOW", 401),
+            ("WORKFLOW", None, 401),
+            ("WORKFLOW", "gen3", 401),
+            ("WORKFLOW", "WORKFLOW", 200),
+            ("WORKFLOW", "FOO", 401),
+        ],
+    )
+    def test_token_audience_against_arborist(
+        self, token_type, expected_aud, expected_status_code
+    ):
         """
-        Succeed using a task token on an Arborist endpoint, regardless of task token type,
-        since Arborist should accept all tokens for authorization verification purposes
+        Token audience validation was added to Arborist as part of the task token feature.
+        We test various scenarios to ensure the audience is validated as expected by the
+        `GET /authz/mapping` endpoint (currently the only Arborist endpoint with token validation
+        that is publicly exposed).
         """
-        with self.fence.get_dpop_bound_task_token("FOO") as (foo_task_token, _):
+        # obtain a regular token or a task token
+        get_token_context = self.fence.get_token_and_gen3_url("main_account")
+        if token_type != "regular":
+            get_token_context = self.fence.get_dpop_bound_task_token(token_type)
+
+        # use the token against an Arborist endpoint
+        with get_token_context as (token, _):
             url = f"{pytest.root_url}/authz/mapping"
-            res = requests.get(
-                url, headers={"Authorization": f"bearer {foo_task_token}"}
+            if expected_aud:
+                url += f"?aud={expected_aud}"
+            res = requests.get(url, headers={"Authorization": f"bearer {token}"})
+            assert res.status_code == expected_status_code, (
+                res.text
+                if expected_status_code == 200
+                else f"Expected error {expected_status_code}"
             )
-            assert res.status_code == 200, res.text
 
 
-@pytest.mark.skipif(
-    "gen3-workflow" not in pytest.deployed_services,
-    reason="gen3-workflow service is not running on this environment",
-)
 @pytest.mark.skipif(
     "funnel" not in pytest.deployed_services,
     reason="funnel service is not running on this environment",
+)
+@pytest.mark.skipif(
+    "gen3-workflow" not in pytest.deployed_services,
+    reason="gen3-workflow service is not running on this environment",
 )
 @pytest.mark.skipif(
     "localhost" in pytest.hostname,
@@ -155,7 +185,7 @@ class TestTaskTokenWithGen3Workflow:
         """
         Use a regular token to hit an endpoint that requires DPoP-bound task tokens.
         """
-        with self.gen3_workflow.get_token_and_gen3_url("main_account") as (
+        with self.fence.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):
@@ -181,7 +211,7 @@ class TestTaskTokenWithGen3Workflow:
         Use a regular token to hit an endpoint that supports, but does not require, DPoP-bound task
         tokens.
         """
-        with self.gen3_workflow.get_token_and_gen3_url("main_account") as (
+        with self.fence.get_token_and_gen3_url("main_account") as (
             regular_token,
             _,
         ):
@@ -233,22 +263,6 @@ class TestTaskTokenWithGen3Workflow:
             assert res.status_code == 401, res.text
             assert "token audience validation failed" in res.text
 
-            # should fail to hit a non-Fence, non-WORKFLOW endpoint (indexd) with a WORKFLOW token
-            # TODO uncomment once https://github.com/uc-cdis/indexd/pull/463 is merged
-            # data = {
-            #     "form": "object",
-            #     "size": 0,
-            #     "urls": [],
-            #     "hashes": {"md5": "f36c8c3a550320a66b780768320d14bb"},
-            # }
-            # res = requests.post(
-            #     f"{pytest.root_url}/index/index",
-            #     json=data,
-            #     headers={"Authorization": f"bearer {workflow_task_token}"},
-            # )
-            # assert res.status_code == 401, res.text
-            # assert "token audience validation failed" in res.text
-
         # should fail to hit a WORKFLOW endpoint with a non-WORKFLOW token
         with self.fence.get_dpop_bound_task_token("FOO") as (
             foo_task_token,
@@ -261,6 +275,37 @@ class TestTaskTokenWithGen3Workflow:
             assert res.status_code == 401, "Should not be allowed to list TES tasks"
             assert (
                 "The access token is missing, malformed, expired or not accepted here"
+                in res.text
+            )
+
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("arborist", "2026.12", "4.2.0"),
+        reason="Current arborist version doesn't have the changes for this test",
+    )
+    @pytest.mark.skipif(
+        "indexd" not in pytest.deployed_services,
+        reason="indexd service is not running on this environment",
+    )
+    def test_task_token_audience_mismatch_indexd(self):
+        with self.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            workflow_task_token,
+            _,
+        ):
+            # should fail to hit a non-Fence, non-WORKFLOW endpoint (indexd) with a WORKFLOW token
+            data = {
+                "form": "object",
+                "size": 0,
+                "urls": [],
+                "hashes": {"md5": "f36c8c3a550320a66b780768320d14bb"},
+            }
+            res = requests.post(
+                f"{pytest.root_url}/index/index",
+                json=data,
+                headers={"Authorization": f"bearer {workflow_task_token}"},
+            )
+            assert res.status_code == 401, res.text
+            assert (
+                "token missing required audience (at least one of: gen3); contains: WORKFLOW"
                 in res.text
             )
 
