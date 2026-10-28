@@ -306,7 +306,7 @@ class TestTaskTokenWithGen3Workflow:
             )
             assert res.status_code == 401, res.text
             assert (
-                f"token missing required audience (at least one of: [gen3]); contains: WORKFLOW"
+                f"token missing required audience (at least one of: gen3); contains: WORKFLOW"
                 in res.text
             )
 
