@@ -1245,11 +1245,80 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
 
-    def test_multiple_executors_and_pv_features(self, request):
+    def test_multiple_executors(self, request):
         """
-        Test that a single task can have multiple executors.
+        Test that a single task can have multiple executors, which run sequentially and share
+        the same working directory.
+        """
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        first_executor_file_name = "first-executor-output.txt"
+        second_executor_file_name = "second-executor-output.txt"
+        task_response = self.gen3_workflow.create_tes_task(
+            {
+                **base_tes_payload(request),
+                "outputs": [
+                    {
+                        "path": f"/work/{first_executor_file_name}",
+                        "url": f"s3://{s3_path_prefix}/{first_executor_file_name}",
+                        "type": "FILE",
+                    },
+                    {
+                        "path": f"/work/{second_executor_file_name}",
+                        "url": f"s3://{s3_path_prefix}/{second_executor_file_name}",
+                        "type": "FILE",
+                    },
+                ],
+                "executors": [
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "workdir": "/work",
+                        "command": [
+                            f"echo 'written by executor 1' > {first_executor_file_name}"
+                        ],
+                    },
+                    {
+                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "workdir": "/work",
+                        "command": [
+                            f"{{ cat {first_executor_file_name}; echo 'written by executor 2'; }} > {second_executor_file_name}"
+                        ],
+                    },
+                ],
+            },
+            user=self.valid_user,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=self.valid_user,
+            expected_final_state="COMPLETE",
+        )
 
-        Also a regression test for various persistent volumes issues caused by S3-CSI driver
+        # both executors should have run, and the 2nd one should see the 1st one's output
+        executor_logs = task_info.get("logs", [{}])[0].get("logs", [])
+        assert (
+            len(executor_logs) == 2
+        ), f"Expected 2 executor logs, but got: {executor_logs}"
+        assert "written by executor 1" in executor_logs[1].get(
+            "stdout", ""
+        ), f"Expected executor 2 to read executor 1's file, but got: {executor_logs[1]}"
+
+        response = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/{second_executor_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            user=self.valid_user,
+            expected_status=200,
+        )
+        output_file_contents = response["Body"].read().decode("utf-8")
+        assert (
+            output_file_contents == "written by executor 1\nwritten by executor 2\n"
+        ), f"Unexpected output file contents: {output_file_contents}"
+
+    def test_pv_features(self, request):
+        """
+        Regression test for various persistent volumes issues caused by S3-CSI driver
         limitations. Fixed by switching PVs to S3Files.
         This is written as a single test to keep all the PV-related POSIX issues together, and to
         run fewer TES tasks to speed up testing.
@@ -1270,14 +1339,16 @@ class TestGen3WorkflowTES(TestGen3Workflow):
           not trivial to write since existing tests assume the files they download are already
           present in the S3 bucket, and here we need to upload a new GZ file to a bucket we have
           access to (so, likely through Fence, in a bucket configured in Fence).
+
+        Kind CI still uses Mountpoint S3, which doesn't support files >8MB, appends, renames
+        or random-access writes, so only the Mountpoint-compatible checks are run there.
         """
-        # temporarily used to disable tests that are broken in CI
-        # TODO remove this once we have switched to S3Files
-        SKIP_BROKEN = "YES"
+        # Kind uses Mountpoint S3; other environments use S3Files
+        s3files = "localhost" not in pytest.hostname
 
         # python script which includes some of the test cases
-        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
-        script_file_name = "test_multiple_executors_and_pv_features.py"
+        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        script_file_name = "test_pv_features.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
             filename=f"test_data/gen3_workflow/{script_file_name}",
@@ -1286,10 +1357,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=None,
         )
 
-        # Upload a 10MB file
+        # Upload a 10MB file (8MB with Mountpoint S3, which doesn't support larger files)
         input_10mb_file_name = "10mb-file-in.txt"
         output_10mb_file_name = "10mb-file-out.txt"
-        size = 8 if SKIP_BROKEN == "YES" else 10
+        size = 10 if s3files else 8
         input_file_contents = b"A" * (size * 1024 * 1024)
         self.gen3_workflow.put_bucket_object_with_boto3(
             content=input_file_contents,
@@ -1325,9 +1396,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     },
                     {
                         "path": (
-                            "/work/moved_output.pdf"
-                            if SKIP_BROKEN == "NO"
-                            else "/work/output.pdf"
+                            "/work/moved_output.pdf" if s3files else "/work/output.pdf"
                         ),
                         "url": f"s3://{s3_path_prefix}/output.pdf",
                         "type": "FILE",
@@ -1344,19 +1413,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "image": "quay.io/cdis/gen3-workflow:integration_tests_dicom_image",
                         "workdir": "/work",
                         "command": [
-                            # this includes renaming+moving+deleting a file (if not SKIP_BROKEN)
-                            (
-                                f"SKIP_BROKEN={SKIP_BROKEN} python3 {script_file_name}"
-                                if SKIP_BROKEN == "YES"
-                                else f"SKIP_BROKEN={SKIP_BROKEN} python3 {script_file_name} && mv output.pdf moved_output.pdf && rm {script_file_name}"
-                            ),
-                        ],
-                    },
-                    {
-                        "image": "quay.io/cdis/alpine:3.24.3",
-                        "workdir": "/work",
-                        "command": [
-                            f"cp {input_10mb_file_name} {output_10mb_file_name}"
+                            # with S3Files, this includes renaming+moving+deleting a file
+                            f"S3FILES={'YES' if s3files else 'NO'} python3 {script_file_name}"
+                            + (
+                                f" && mv output.pdf moved_output.pdf && rm {script_file_name}"
+                                if s3files
+                                else ""
+                            )
+                            + f" && cp {input_10mb_file_name} {output_10mb_file_name}",
                         ],
                     },
                 ],
@@ -1387,11 +1451,10 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Failed to read or decode content of {out_file_name} from S3. Error: {e}"
             )
             raise
-        if SKIP_BROKEN == "NO":
-            assert (
-                output_file_contents
-                == "Initial sequential data\nSecond sequential data\n"
-            )
+        expected_contents = "Initial sequential data\n"
+        if s3files:
+            expected_contents += "Second sequential data\n"
+        assert output_file_contents == expected_contents
 
         # check the contents of the PDF output file
         out_file_name = "output.pdf"
@@ -1408,14 +1471,11 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 f"Failed to read or decode content of {out_file_name} from S3. Error: {e}"
             )
             raise
-        if (
-            SKIP_BROKEN == "NO" or "localhost" in pytest.hostname
-        ):  # Works in Kind, not in Dev env
-            assert b"/Width 100\n/Height 200" in output_file_contents  # page 1
-            assert b"/Width 300\n/Height 400" in output_file_contents  # page 2
+        assert b"/Width 100\n/Height 200" in output_file_contents  # page 1
+        assert b"/Width 300\n/Height 400" in output_file_contents  # page 2
 
         # check the contents of the ZIP output file
-        if SKIP_BROKEN == "NO":
+        if s3files:
             out_file_name = "output.zip"
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{out_file_name}",
