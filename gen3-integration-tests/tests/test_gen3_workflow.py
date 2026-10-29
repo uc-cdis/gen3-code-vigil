@@ -1251,14 +1251,20 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         the same working directory.
         """
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-        out_file_name = "multiple-executors-output.txt"
+        first_executor_file_name = "first-executor-output.txt"
+        second_executor_file_name = "second-executor-output.txt"
         task_response = self.gen3_workflow.create_tes_task(
             {
                 **base_tes_payload(request),
                 "outputs": [
                     {
-                        "path": f"/work/{out_file_name}",
-                        "url": f"s3://{s3_path_prefix}/{out_file_name}",
+                        "path": f"/work/{first_executor_file_name}",
+                        "url": f"s3://{s3_path_prefix}/{first_executor_file_name}",
+                        "type": "FILE",
+                    },
+                    {
+                        "path": f"/work/{second_executor_file_name}",
+                        "url": f"s3://{s3_path_prefix}/{second_executor_file_name}",
                         "type": "FILE",
                     },
                 ],
@@ -1266,13 +1272,15 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
                         "workdir": "/work",
-                        "command": [f"echo 'written by executor 1' > {out_file_name}"],
+                        "command": [
+                            f"echo 'written by executor 1' > {first_executor_file_name}"
+                        ],
                     },
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
                         "workdir": "/work",
                         "command": [
-                            f"cat {out_file_name} && echo 'written by executor 2' >> {out_file_name}"
+                            f"{{ cat {first_executor_file_name}; echo 'written by executor 2'; }} > {second_executor_file_name}"
                         ],
                     },
                 ],
@@ -1298,7 +1306,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         ), f"Expected executor 2 to read executor 1's file, but got: {executor_logs[1]}"
 
         response = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{s3_path_prefix}/{out_file_name}",
+            object_path=f"{s3_path_prefix}/{second_executor_file_name}",
             s3_storage_config=self.s3_storage_config,
             user=self.valid_user,
             expected_status=200,
