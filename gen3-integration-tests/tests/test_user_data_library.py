@@ -175,7 +175,7 @@ class TestUserDataLibrary(object):
         screenshot(page_setup, "ListDeleted")
 
     @pytest.mark.skipif(
-        gat.service_version_lower_than("gen3-user-data-library", "2026.11", "1.0.1"),
+        gat.service_version_lower_than("gen3-user-data-library", "2026.11", "1.2.0"),
         reason="gen3-user-data-library version is below 2026.11 and can't run this test",
     )
     def test_list_created_by_main_user_not_accessible_by_another_user(self):
