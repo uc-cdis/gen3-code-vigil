@@ -175,6 +175,7 @@ class TestDiscoveryPage(object):
         if not pytest.frontend_url:
             # Open study in workspace
             discovery_page.open_in_workspace(page_setup, self.variables["study_id"])
+            screenshot(page_setup, "AfterOpenInWorspaceClick")
             workspace_page = WorkspacePage()
             workspace_page.assert_page_loaded(page_setup)
             workspace_page.launch_workspace(
