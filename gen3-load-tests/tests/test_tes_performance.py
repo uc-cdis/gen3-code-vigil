@@ -34,6 +34,7 @@ from typing import List
 import boto3
 import pytest
 from botocore.config import Config
+from services.fence import get_dpop_bound_task_token
 from services.gen3workflow import Gen3Workflow
 from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
@@ -48,7 +49,7 @@ LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
 SCRIPTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
 )
-PARAMS = json.loads(os.getenv("PARAMS", {}))
+PARAMS = json.loads(os.getenv("PARAMS", "{}"))
 
 TESTS = [
     # {
@@ -57,6 +58,7 @@ TESTS = [
     #     "n_concurrent_runs": 5,
     # },
 ]
+ONE_HOUR = 60 * 60
 
 # Nextflow tests
 for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
@@ -65,6 +67,7 @@ for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
             "type": "Nextflow",
             "n_concurrent_runs": concurrency,
             "n_tasks": n_tasks,
+            "token_lifetime_sec": ONE_HOUR,
         }
         if PARAMS.get("nextflow", {}).get("test_case_simple", True):
             # Note: Nextflow tests always include inputs/outputs
@@ -91,6 +94,7 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
     base = {
         "type": "TES",
         "n_concurrent_runs": concurrency,
+        "token_lifetime_sec": ONE_HOUR,
     }
     if PARAMS.get("tes", {}).get("test_case_simple", True):
         TESTS.append(
@@ -115,6 +119,7 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
             {
                 **base,
                 "name": f"TES test with inputs-outputs (concurrency {concurrency})",
+                "token_lifetime_sec": 2 * ONE_HOUR,
                 "payload": {
                     "name": "Input-Output-Test",
                     "inputs": [
@@ -148,6 +153,7 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
             {
                 **base,
                 "name": f"TES test with 8MB S3 upload (concurrency {concurrency})",
+                "token_lifetime_sec": 2 * ONE_HOUR,
                 "payload": {
                     "name": "TES-S3-Upload-Test-8MB",
                     "outputs": [
@@ -493,7 +499,7 @@ class TestTesPerformance:
         cls.gen3_workflow.cleanup_user_bucket()
 
         # upload the input file used by TES tests
-        with cls.gen3_workflow.fence.get_dpop_bound_task_token("WORKFLOW") as (
+        with get_dpop_bound_task_token("WORKFLOW") as (
             access_token,
             proxy_url,
         ):
@@ -535,8 +541,10 @@ class TestTesPerformance:
         else:
             raise Exception(f"Unknown test type '{_type}'")
 
-        # launch `n_concurrent_runs` concurrent runs
-        with self.gen3_workflow.fence.get_dpop_bound_task_token("WORKFLOW") as (
+        # launch `n_concurrent_runs` concurrent runsgs
+        with get_dpop_bound_task_token(
+            "WORKFLOW", expires_in=config["token_lifetime_sec"]
+        ) as (
             access_token,
             proxy_url,
         ):

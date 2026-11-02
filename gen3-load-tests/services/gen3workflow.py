@@ -4,34 +4,28 @@ NOTE: Most of this logic is copy/pasted from gen3-integration-tests/services/gen
 
 from typing import Dict
 
-import pytest
 import requests
-from services.fence import Fence
+from services.fence import get_token_and_gen3_url
 
 
 class Gen3Workflow:
     def __init__(self):
-        self.fence = Fence()
-        self.BASE_URL = pytest.root_url
         # `SERVICE_URL` is only used for endpoints that do NOT require DPoP; the rest go through
         # the Gen3 SDK's DPoP proxy
         self.SERVICE_URL = "/workflows"
 
     def setup_storage(self, user: str = "main_account", expected_status=200) -> Dict:
         """Makes a GET request to the `/storage/setup` endpoint."""
-        with self.fence.get_token_and_gen3_url(user, suffix=self.SERVICE_URL) as (
-            access_token,
-            url,
-        ):
-            storage_url = f"{url}/storage/setup"
-            headers = (
-                {
-                    "Authorization": f"bearer {access_token}",
-                }
-                if user
-                else {}
-            )
-            response = requests.get(url=storage_url, headers=headers)
+        access_token, url = get_token_and_gen3_url(suffix=self.SERVICE_URL)
+        storage_url = f"{url}/storage/setup"
+        headers = (
+            {
+                "Authorization": f"bearer {access_token}",
+            }
+            if user
+            else {}
+        )
+        response = requests.get(url=storage_url, headers=headers)
         assert (
             response.status_code == expected_status
         ), f"Expected {expected_status}, got {response.status_code} when making a GET request to {storage_url}: {response.text}"
@@ -58,23 +52,20 @@ class Gen3Workflow:
             AssertionError: If the response status code does not match the expected status.
 
         """
-        with self.fence.get_token_and_gen3_url(user, suffix=self.SERVICE_URL) as (
-            access_token,
-            url,
-        ):
-            cleanup_url = (
-                f"{url}/storage/user-bucket"
-                if delete_bucket
-                else f"{url}/storage/user-bucket/objects"
-            )
-            headers = (
-                {
-                    "Authorization": f"bearer {access_token}",
-                }
-                if user
-                else {}
-            )
-            response = requests.delete(url=cleanup_url, headers=headers)
+        access_token, url = get_token_and_gen3_url(suffix=self.SERVICE_URL)
+        cleanup_url = (
+            f"{url}/storage/user-bucket"
+            if delete_bucket
+            else f"{url}/storage/user-bucket/objects"
+        )
+        headers = (
+            {
+                "Authorization": f"bearer {access_token}",
+            }
+            if user
+            else {}
+        )
+        response = requests.delete(url=cleanup_url, headers=headers)
 
         # If ignore_missing is True, we allow 404 as a valid response status
         allowed_statuses = (
