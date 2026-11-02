@@ -279,6 +279,8 @@ if install_helm_chart; then
   # TODO: remove this - guppy and MDS are currently failing to start in ci-perf-tes env
   kubectl delete deployment guppy-deployment -n ${namespace}
   kubectl delete deployment metadata-deployment -n ${namespace}
+  # TODO: remove this - gen3-embeddings deployment is currently broken
+  kubectl delete deployment gen3-embeddings -n ${namespace}
   # TODO: remove this - temp to speed things up
   kubectl delete deployment portal-deployment -n ${namespace}
 
