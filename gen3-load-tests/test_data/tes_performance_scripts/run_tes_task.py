@@ -19,7 +19,7 @@ def log(level, msg):
 
 def create_task(endpoint, body):
     response = requests.post(
-        f"{endpoint}/workflows/ga4gh/tes/v1/tasks",
+        f"{endpoint}/ga4gh/tes/v1/tasks",
         json=body,
         headers={"authorization": f"bearer {os.environ['GEN3_TOKEN']}"},
         timeout=60,
@@ -35,7 +35,7 @@ def monitor_task(endpoint, task_id):
     data = {}
     for i in range(max_i):
         response = requests.get(
-            f"{endpoint}/workflows/ga4gh/tes/v1/tasks/{task_id}?view=FULL",
+            f"{endpoint}/ga4gh/tes/v1/tasks/{task_id}?view=FULL",
             headers={"authorization": f"bearer {os.environ['GEN3_TOKEN']}"},
             timeout=60,
         )

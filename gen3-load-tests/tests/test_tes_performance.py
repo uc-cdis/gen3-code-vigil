@@ -34,7 +34,7 @@ from typing import List
 import boto3
 import pytest
 from botocore.config import Config
-from services.gen3workflow import _get_access_token, cleanup_user_bucket, setup_storage
+from services.gen3workflow import Gen3Workflow
 from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
 from utils.test_execution import attach_output_file
@@ -420,6 +420,7 @@ async def run_tes_task(
     config: dict,
     endpoint: str,
     bucket: str,
+    access_token: str,
 ) -> RunStats:
     # simulate tasks that take 0 to 5s to complete
     sleep_time = random.randint(0, 5)
@@ -446,7 +447,7 @@ async def run_tes_task(
         cmd,
         conc_id,
         config,
-        {"GEN3_TOKEN": _get_access_token("main_account")},
+        {"GEN3_TOKEN": access_token},
     )
 
 
@@ -456,6 +457,7 @@ async def run_nextflow_workflow(
     config: dict,
     endpoint: str,
     bucket: str,
+    access_token: str,
 ) -> RunStats:
     # to run multiple Nextflow workflows at the same time, each must run inside its own directory:
     # generate a unique ID that will be used to generate a unique workdir and log file
@@ -473,7 +475,7 @@ async def run_nextflow_workflow(
         conc_id,
         config,
         {
-            "GEN3_TOKEN": _get_access_token("main_account"),
+            "GEN3_TOKEN": access_token,
             "ENDPOINT": endpoint,
             "BUCKET": bucket,
             "GPU": "yes" if config["gpu"] else "no",
@@ -485,22 +487,27 @@ async def run_nextflow_workflow(
 class TestTesPerformance:
     @classmethod
     def setup_class(cls):
-        cls.s3_storage_config = setup_storage()
-        cleanup_user_bucket()
+        cls.gen3_workflow = Gen3Workflow()
+        cls.s3_storage_config = cls.gen3_workflow.setup_storage()
+        cls.gen3_workflow.cleanup_user_bucket()
 
         # upload the input file used by TES tests
-        s3_client = boto3.client(
-            service_name="s3",
-            aws_access_key_id=_get_access_token("main_account"),
-            aws_secret_access_key="N/A",
-            endpoint_url=f"{pytest.root_url}/workflows/s3",
-            config=Config(region_name=cls.s3_storage_config["region"]),
-        )
-        s3_client.put_object(
-            Bucket=cls.s3_storage_config["bucket"],
-            Key="inputs/test-file.txt",
-            Body="this is my test file\n",
-        )
+        with cls.gen3_workflow.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            access_token,
+            proxy_url,
+        ):
+            s3_client = boto3.client(
+                service_name="s3",
+                aws_access_key_id=access_token,
+                aws_secret_access_key="N/A",
+                endpoint_url=f"{proxy_url}/s3",
+                config=Config(region_name=cls.s3_storage_config["region"]),
+            )
+            s3_client.put_object(
+                Bucket=cls.s3_storage_config["bucket"],
+                Key="inputs/test-file.txt",
+                Body="this is my test file\n",
+            )
 
     @pytest.fixture(scope="class", autouse=True)
     def print_logs_at_end_of_tests(self):
@@ -528,18 +535,22 @@ class TestTesPerformance:
             raise Exception(f"Unknown test type '{_type}'")
 
         # launch `n_concurrent_runs` concurrent runs
-        n_concurrent_runs = config["n_concurrent_runs"]
-        tasks = [
-            method(
-                log_file,
-                conc_id=conc_run,
-                config=config,
-                endpoint=pytest.root_url,
-                bucket=self.s3_storage_config["bucket"],
-            )
-            for conc_run in range(1, n_concurrent_runs + 1)
-        ]
-        run_stats = await asyncio.gather(*tasks)
+        with self.gen3_workflow.fence.get_dpop_bound_task_token("WORKFLOW") as (
+            access_token,
+            proxy_url,
+        ):
+            tasks = [
+                method(
+                    log_file,
+                    conc_id=conc_run,
+                    config=config,
+                    endpoint=proxy_url,
+                    bucket=self.s3_storage_config["bucket"],
+                    access_token=access_token,
+                )
+                for conc_run in range(1, config["n_concurrent_runs"] + 1)
+            ]
+            run_stats = await asyncio.gather(*tasks)
 
         test_duration_seconds = time.perf_counter() - test_start
         log(

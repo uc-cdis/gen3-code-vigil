@@ -42,7 +42,7 @@ def main(workflow_script, nextflow_config_file, n_tasks):
                 for part in parts[1:]:
                     task_id = part.split(", name: ")[0]
                     response = requests.get(
-                        f"{os.environ['ENDPOINT']}/workflows/ga4gh/tes/v1/tasks/{task_id}?view=FULL",
+                        f"{os.environ['ENDPOINT']}/ga4gh/tes/v1/tasks/{task_id}?view=FULL",
                         headers={"authorization": f"bearer {os.environ['GEN3_TOKEN']}"},
                         timeout=60,
                     )
