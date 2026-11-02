@@ -61,14 +61,17 @@ TESTS = [
 # Nextflow tests
 for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
     for n_tasks in PARAMS.get("nextflow", {}).get("n_tasks", [1, 5]):
+        base = {
+            "type": "Nextflow",
+            "n_concurrent_runs": concurrency,
+            "n_tasks": n_tasks,
+        }
         if PARAMS.get("nextflow", {}).get("test_case_simple", True):
             # Note: Nextflow tests always include inputs/outputs
             TESTS.append(
                 {
+                    **base,
                     "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
-                    "type": "Nextflow",
-                    "n_concurrent_runs": concurrency,
-                    "n_tasks": n_tasks,
                     "gpu": False,
                     "workflow_file": "hello.nf",
                 }
@@ -76,10 +79,8 @@ for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
         if PARAMS.get("nextflow", {}).get("test_case_gpu", True):
             TESTS.append(
                 {
+                    **base,
                     "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-                    "type": "Nextflow",
-                    "n_tasks": n_tasks,
-                    "n_concurrent_runs": concurrency,
                     "gpu": True,
                     "workflow_file": "gpu.nf",
                 }
@@ -87,12 +88,15 @@ for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
 
 # TES tests
 for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
+    base = {
+        "type": "TES",
+        "n_concurrent_runs": concurrency,
+    }
     if PARAMS.get("tes", {}).get("test_case_simple", True):
         TESTS.append(
             {
+                **base,
                 "name": f"TES test (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
                 "payload": {
                     "name": f"Hello-World (concurrency {concurrency})",
                     "executors": [
@@ -109,9 +113,8 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
     if PARAMS.get("tes", {}).get("test_case_inputs_outputs", True):
         TESTS.append(
             {
+                **base,
                 "name": f"TES test with inputs-outputs (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
                 "payload": {
                     "name": "Input-Output-Test",
                     "inputs": [
@@ -143,9 +146,8 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
     if PARAMS.get("tes", {}).get("test_case_8mb_s3_upload", True):
         TESTS.append(
             {
+                **base,
                 "name": f"TES test with 8MB S3 upload (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
                 "payload": {
                     "name": "TES-S3-Upload-Test-8MB",
                     "outputs": [
@@ -171,9 +173,8 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
         # Note: the command doesn't actually need a GPU, we only test scheduling on the GPU node
         TESTS.append(
             {
+                **base,
                 "name": f"TES GPU test (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
                 "payload": {
                     "name": f"Hello-World (GPU, concurrency {concurrency})",
                     "tags": {"_GPU": "yes"},
