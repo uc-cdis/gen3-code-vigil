@@ -205,43 +205,6 @@ class Gen3Workflow:
     ##### Helper Functions #####
     ############################
 
-    @patch("gen3.auth.endpoint_from_token")
-    def _get_access_token(
-        self, user: str = "main_account", endpoint_from_token_mock=None
-    ) -> str:
-        """Helper function to retrieve an access token."""
-
-        if not user:
-            return None
-
-        auth = Gen3Auth(refresh_token=pytest.api_keys[user], endpoint=self.BASE_URL)
-
-        # When running the tests in a Kind cluster:
-        # - Fence's `BASE_URL` is set to `http://fence-service.<namespace>.svc.cluster.local`, so
-        #   API keys and access tokens have that as their issuer. This allows other pods in the
-        #   cluster to reach Fence to validate tokens.
-        # - However, the tests cannot reach this URL from outside the cluster. The cluster is
-        #   exposed at `http://localhost:8000` and that's where the tests can reach Fence to obtain
-        #   access tokens.
-        # - The SDK's `endpoint_from_token` method extracts the endpoint from the API key. We mock
-        #   this method to return `http://localhost:8000` instead of `http://fence-service.
-        #   <namespace>.svc.cluster.local` so `Gen3Auth` knows to reach Fence there.
-        # - Note: Setting Fence's `BASE_URL` to `http://localhost:8000` would fix this on the tests
-        #   side, but other pods in the cluster would not be able to reach Fence to validate tokens
-        #   (because within a container, localhost refers to the container itself).
-        if "localhost" in self.BASE_URL:
-            endpoint_from_token_mock.return_value = (
-                remove_trailing_whitespace_and_slashes_in_url(self.BASE_URL)
-            )
-        else:  # otherwise, no mocking
-            endpoint_from_token_mock.side_effect = lambda arg: endpoint_from_token(arg)
-
-        try:
-            return auth.get_access_token()
-        except Exception:
-            logger.info(f"Failed to get access token with Gen3Auth for '{user}'")
-            raise
-
     def _get_s3_client(
         self,
         access_token: str,
@@ -277,59 +240,17 @@ class Gen3Workflow:
         config=None,
     ):
         """Generic function for performing S3 actions like GET, PUT, DELETE through the gen3-workflow /s3 endpoint"""
-        access_token = self._get_access_token(user)
-        client = self._get_s3_client(access_token, s3_storage_config)
-        bucket, key = self._get_bucket_and_key(object_path)
-        logger.info(
-            f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content='{content[:100]}{'[...]' if len(content) > 100 else ''}'"
-        )
-        response = None
-        try:
-            if action == "list":
-                response = client.list_objects_v2(Bucket=bucket, Prefix=key)
-            elif action == "get":
-                response = client.get_object(
-                    Bucket=bucket, Key=key, Range=f"bytes=0-{range-1}" if range else ""
-                )
-            elif action == "put":
-                response = client.put_object(Bucket=bucket, Key=key, Body=content or "")
-            elif action == "upload_file":
-                response = client.upload_file(
-                    Filename=filename, Bucket=bucket, Key=key, Config=config
-                )
-            elif action == "copy":
-                dest_bucket, dest_key = self._get_bucket_and_key(dest_object_path)
-                response = client.copy(
-                    CopySource={"Bucket": bucket, "Key": key},
-                    Bucket=dest_bucket,
-                    Key=dest_key,
-                    Config=config,
-                )
-            elif action == "delete":
-                response = client.delete_object(Bucket=bucket, Key=key)
-            else:
-                raise ValueError(f"Unsupported S3 action: {action}")
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response.get("Error", {}).get("Code", "")
-            _print_tes_apps_logs(with_arborist=error_code == "403")
-            if error_code == "NoSuchKey":
-                response_status = 404
-            elif error_code == "403":
-                response_status = 403
-            else:
-                logger.error(
-                    f"Received an error from s3_client, expected status was {expected_status}. Error: {e.response}"
-                )
-                raise  # Reraise for other errors
-        except Exception as e:
-            _print_tes_apps_logs()
-            logger.error(f"Received an error from s3_client. Error: {e}")
-            raise
-        else:
-            response_status = (
-                response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-                if response
-                else None
+        requires_dpop = action != "list"
+        with self.fence.get_token_and_gen3_url(
+            user, use_dpop=requires_dpop, suffix=self.SERVICE_URL
+        ) as (
+            access_token,
+            url,
+        ):
+            client = self._get_s3_client(access_token, url, s3_storage_config)
+            bucket, key = self._get_bucket_and_key(object_path)
+            logger.info(
+                f"Performing {action=} on {bucket=} and {key=}. More info: {user=} and content={content[:100]}{'[...]' if len(content) > 100 else ''}"
             )
             response = None
             try:
