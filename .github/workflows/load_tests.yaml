@@ -94,7 +94,7 @@ jobs:
     build-image:
       name: Build image (load tests)
       needs: setup
-      if: ${{ needs.setup.outputs.RUN_TES_TESTS == 'true' }}
+      if: false #${{ needs.setup.outputs.RUN_TES_TESTS == 'true' }}
       uses: uc-cdis/.github/.github/workflows/image_build_push_native.yaml@master
       with:
         DOCKERFILE_LOCATION: "./gen3-load-tests/Dockerfile"
@@ -303,10 +303,10 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              # if [ $? -ne 0 ]; then
-              #   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              # fi
+              poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              if [ $? -ne 0 ]; then
+                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              fi
 
           - name: Run tests
             id: run_tests
