@@ -175,8 +175,8 @@ class TestUserDataLibrary(object):
         screenshot(page_setup, "ListDeleted")
 
     @pytest.mark.skipif(
-        True,
-        reason="# KNOWN DEFECT - https://ctds-planx.atlassian.net/browse/PD-61",
+        gat.service_version_lower_than("gen3-user-data-library", "2026.11", "1.2.0"),
+        reason="gen3-user-data-library version is below 2026.11 and can't run this test",
     )
     def test_list_created_by_main_user_not_accessible_by_another_user(self):
         """
@@ -204,10 +204,10 @@ class TestUserDataLibrary(object):
         # Retrieve the list
         logger.info("Reading list by indexing_account user")
         indexing_account_list = gen3_udl.read_list(
-            user="indexing_account", list_id=list_id
+            user="indexing_account", list_id=list_id, expected_status=404
         )
         assert (
-            indexing_account_list == "list_id not found!"
+            indexing_account_list.get("detail") == "list_id not found!"
         ), f"Expected no list but got {indexing_account_list}"
 
         # Delete the data library list
