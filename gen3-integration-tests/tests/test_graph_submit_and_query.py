@@ -210,8 +210,9 @@ class TestGraphSubmitAndQuery:
             record, {"project_id": "NOT-EXIST"}
         )
         # Validate no records are returned for the node
-        if len(response["data"][record.node_name]) != 0:
-            raise f"Expected no records for {record.node_name}. Response : {response}"
+        assert (
+            len(response["data"][record.node_name]) == 0
+        ), f"Expected no records for {record.node_name}. Response : {response}"
 
     @pytest.mark.graph_query
     @pytest.mark.skipif(

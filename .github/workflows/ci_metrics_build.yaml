@@ -9,14 +9,14 @@ on:
         required: false
   push:
     paths:
-      - gen3-integration-tests/gen3_ci/ci_metrics/**
+      - gen3-integration-tests/gen3_ci/k8s_manifests/ci_metrics/**
 
 jobs:
   AmazonLinuxBase2023:
     name: Build Helm Cleanup Image
     uses: uc-cdis/.github/.github/workflows/image_build_push.yaml@master
     with:
-      DOCKERFILE_LOCATION: "./gen3-integration-tests/gen3_ci/ci_metrics/Dockerfile"
+      DOCKERFILE_LOCATION: "./gen3-integration-tests/gen3_ci/k8s_manifests/ci_metrics/Dockerfile"
       OVERRIDE_REPO_NAME: "ci_metrics"
       OVERRIDE_TAG_NAME: "$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
     secrets: inherit
