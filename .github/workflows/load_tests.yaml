@@ -60,18 +60,22 @@ jobs:
       steps:
         - name: Determine TEST_SUITE and RELEASE_VERSION
           id: setvars
+          env:
+            # this maps the workflow dispatch input to a step-level env variable, which preserves
+            # double quotes (since PARAMS is a JSON string)
+            RAW_PARAMS: ${{ inputs.PARAMS }}
           run: |
             # Determine values based on trigger
             if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
-              RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
-              GITOPS_BRANCH="${{ github.event.inputs.GITOPS_BRANCH }}"
+              TEST_SUITE="${{ inputs.TEST_SUITE }}"
+              RELEASE_VERSION="${{ inputs.RELEASE_VERSION }}"
+              GITOPS_BRANCH="${{ inputs.GITOPS_BRANCH }}"
               if [[ -n $RELEASE_VERSION ]]; then
                 echo "ignoring GITOPS_BRANCH parameter since RELEASE_VERSION is specified"
                 GITOPS_BRANCH=master
               fi
-              PARAMS="${{ github.event.inputs.PARAMS }}"
-              RUN_TES_TESTS="${{ github.event.inputs.RUN_TES_TESTS }}"
+              PARAMS="$RAW_PARAMS"
+              RUN_TES_TESTS="${{ inputs.RUN_TES_TESTS }}"
             else
               TEST_SUITE="ALL"
               RELEASE_VERSION=""
@@ -100,7 +104,7 @@ jobs:
       with:
         DOCKERFILE_LOCATION: "./gen3-load-tests/Dockerfile"
         OVERRIDE_REPO_NAME: "gen3-integration-tests"
-        OVERRIDE_TAG_NAME: "load_tests_$(echo ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+        OVERRIDE_TAG_NAME: "load_tests_$(echo ${{ github.event_name == 'workflow_dispatch' && inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
         DOCKERFILE_BUILD_CONTEXT: "./gen3-load-tests"
       secrets: inherit
     load_tests:
@@ -317,10 +321,10 @@ jobs:
               mkdir output
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+                poetry run pytest -s -n 1 -m "not wip and not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -s -n 1 -m "not wip and not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
               fi
 
               if [ $? -ne 0 ]; then

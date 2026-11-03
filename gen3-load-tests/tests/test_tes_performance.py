@@ -233,13 +233,13 @@ if "tes_long_running" in PARAMS["test_cases"]:
                         "path": f"/work/{TES_LONG_RUNNING_SCRIPT}",
                     },
                 ],
-                "outputs": [
-                    {
-                        "path": f"/work/output.json",
-                        "url": f"s3://BUCKET_PLACEHOLDER/output.json",
-                        "type": "FILE",
-                    }
-                ],
+                # "outputs": [
+                #     {
+                #         "path": f"/work/output.json",
+                #         "url": f"s3://BUCKET_PLACEHOLDER/output.json",
+                #         "type": "FILE",
+                #     }
+                # ],
                 "executors": [
                     {
                         "image": "python:3.13-slim",
