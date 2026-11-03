@@ -1245,23 +1245,28 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             "SOMETHING=VALUE" in stdout
         ), f"Expected env var to be set, but `env` returned: {stdout}"
 
-    def test_multiple_executors(self, request):
+    @pytest.mark.parametrize("with_volume", [True, False])
+    def test_multiple_executors(self, request, with_volume):
         """
         Test that a single task can have multiple executors, which run sequentially and share
         the same working directory.
+        With `with_volume`, the 1st executor writes its output to a task volume instead, and the
+        2nd executor must be able to read it from that volume.
         """
         s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        volume_path = "/vol/shared"
         first_executor_file_name = "first-executor-output.txt"
         second_executor_file_name = "second-executor-output.txt"
+        first_executor_file_path = (
+            f"{volume_path}/{first_executor_file_name}"
+            if with_volume
+            else first_executor_file_name
+        )
         task_response = self.gen3_workflow.create_tes_task(
             {
                 **base_tes_payload(request),
+                **({"volumes": [volume_path]} if with_volume else {}),
                 "outputs": [
-                    {
-                        "path": f"/work/{first_executor_file_name}",
-                        "url": f"s3://{s3_path_prefix}/{first_executor_file_name}",
-                        "type": "FILE",
-                    },
                     {
                         "path": f"/work/{second_executor_file_name}",
                         "url": f"s3://{s3_path_prefix}/{second_executor_file_name}",
@@ -1274,13 +1279,19 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "workdir": "/work",
                         "command": [
                             f"echo 'written by executor 1' > {first_executor_file_name}"
+                            + (
+                                f" && mv {first_executor_file_name} {first_executor_file_path}"
+                                if with_volume
+                                else ""
+                            )
                         ],
                     },
                     {
                         "image": "public.ecr.aws/docker/library/alpine:latest",
                         "workdir": "/work",
                         "command": [
-                            f"cat {first_executor_file_name} && {{ cat {first_executor_file_name}; echo 'written by executor 2'; }} > {second_executor_file_name}"
+                            f"cat {first_executor_file_path}"
+                            f" && printf '%s\\nwritten by executor 2\\n' \"$(cat {first_executor_file_path})\" > {second_executor_file_name}"
                         ],
                     },
                 ],
