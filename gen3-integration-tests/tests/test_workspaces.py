@@ -25,6 +25,10 @@ def page_setup(page):
     "frontend-framework" not in pytest.deployed_services,
     reason="WorkSpaces(plural) runs only on frontend-framework",
 )
+@pytest.mark.skip(
+    reason="Justin's PR-https://github.com/uc-cdis/gen3-helm/pull/720 has new settings for workspace-proxy"
+    "and revproxy settings, skipping for the interim."
+)
 @pytest.mark.workspaces
 @pytest.mark.frontend
 class TestWorkspacesPage:
