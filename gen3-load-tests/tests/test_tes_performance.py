@@ -54,17 +54,20 @@ DEFAULT_PARAMS = {
     "nextflow_concurrency": [5, 10, 20],
     "nextflow_n_tasks": [1, 5],
     "test_cases": [
+        "nextflow_basic",
+        "nextflow_gpu",
         "tes_basic",
         "tes_inputs_outputs",
         "tes_8mb_s3_upload",
         "tes_gpu",
-        "nextflow_basic",
-        "nextflow_gpu",
+        "tes_long_running",
     ],
+    "tes_long_running_n_hours": 24,
 }
 PARAMS = json.loads(os.getenv("PARAMS", "{}"))
 PARAMS = {**DEFAULT_PARAMS, **PARAMS}
 ONE_HOUR = 60 * 60
+TES_LONG_RUNNING_SCRIPT = "tes_long_running.py"
 
 
 ######################### START DEFINE TESTS
@@ -108,12 +111,12 @@ for concurrency in PARAMS["nextflow_concurrency"]:
             )
 
 # TES tests
+base = {
+    "type": "TES",
+    "token_lifetime": ONE_HOUR,
+}
 for concurrency in PARAMS["tes_concurrency"]:
-    base = {
-        "type": "TES",
-        "n_concurrent_runs": concurrency,
-        "token_lifetime": ONE_HOUR,
-    }
+    base["n_concurrent_runs"] = concurrency
     if "tes_basic" in PARAMS["test_cases"]:
         TESTS.append(
             {
@@ -214,6 +217,45 @@ for concurrency in PARAMS["tes_concurrency"]:
             }
         )
 
+if "tes_long_running" in PARAMS["test_cases"]:
+    TESTS.append(
+        {
+            **base,
+            "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
+            "n_concurrent_runs": 1,
+            "token_lifetime": PARAMS["tes_long_running_n_hours"] * ONE_HOUR,
+            "payload": {
+                "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
+                "inputs": [
+                    {
+                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/{TES_LONG_RUNNING_SCRIPT}",
+                        "path": f"/work/{TES_LONG_RUNNING_SCRIPT}",
+                    },
+                ],
+                "outputs": [
+                    {
+                        "path": f"/work/output.json",
+                        "url": f"s3://BUCKET_PLACEHOLDER/output.json",
+                        "type": "FILE",
+                    }
+                ],
+                "executors": [
+                    {
+                        "image": "python:3.13-slim",
+                        "workdir": "/work",
+                        "command": [
+                            f"pip install 'gen3[dpop]' && python {TES_LONG_RUNNING_SCRIPT}"
+                        ],
+                        "env": {
+                            "API_KEY": pytest.api_keys["main_account"]["api_key"],
+                        },
+                    },
+                ],
+            },
+        }
+    )
+
+logger.info(f"Parameters: {json.dumps(PARAMS)}")
 logger.info(f"Running test cases: {[t['name'] for t in TESTS]}")
 
 
@@ -536,6 +578,12 @@ class TestTesPerformance:
                 Key="inputs/test-file.txt",
                 Body="this is my test file\n",
             )
+            if "tes_long_running" in PARAMS["test_cases"]:
+                s3_client.upload_file(
+                    Filename=f"test_data/tes_performance_scripts/{TES_LONG_RUNNING_SCRIPT}",
+                    Bucket=cls.s3_storage_config["bucket"],
+                    Key=f"inputs/{TES_LONG_RUNNING_SCRIPT}",
+                )
 
     @pytest.fixture(scope="class", autouse=True)
     def print_logs_at_end_of_tests(self):
@@ -564,7 +612,7 @@ class TestTesPerformance:
 
         # launch `n_concurrent_runs` concurrent runsgs
         with get_dpop_bound_task_token(
-            "WORKFLOW", expires_in=config["token_lifetime"]
+            "WORKFLOW", expires_in=int(config["token_lifetime"])
         ) as (
             access_token,
             proxy_url,

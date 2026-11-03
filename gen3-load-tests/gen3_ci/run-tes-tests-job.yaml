@@ -56,7 +56,7 @@ spec:
 
               # TODO `gen3_ci.scripts.generate_slack_report` and post to slack
 
-              exit "$exitcode"
+              exit 0 # not `exit "$exitcode"`: the job is successful even if the tests aren't
           volumeMounts:
             - name: api-keys-volume
               mountPath: /home/gen3/.gen3

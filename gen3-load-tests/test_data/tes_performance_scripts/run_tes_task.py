@@ -18,6 +18,11 @@ def log(level, msg):
 
 
 def create_task(endpoint, body):
+    # TODO remove this - testing
+    if "long-running" in body["name"]:
+        body["executors"][0]["env"]["DPOP_TOKEN"] = os.environ["GEN3_TOKEN"]
+    print("body", body)
+
     response = requests.post(
         f"{endpoint}/ga4gh/tes/v1/tasks",
         json=body,
