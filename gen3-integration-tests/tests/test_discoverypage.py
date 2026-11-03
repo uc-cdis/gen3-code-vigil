@@ -46,7 +46,7 @@ def page_setup(page):
     reason="batch-export is not part of sower in manifest",
 )
 @pytest.mark.skip(
-    reason="Justin's PR - https://github.com/uc-cdis/gen3-helm/pull/720 is causing this test to fail"
+    reason="Justin's PR-https://github.com/uc-cdis/gen3-helm/pull/720 is causing this test to fail and crashes workers"
 )
 @pytest.mark.workspace
 @pytest.mark.mds
