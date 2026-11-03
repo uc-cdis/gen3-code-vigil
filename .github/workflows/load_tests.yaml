@@ -21,11 +21,14 @@ on:
         required: false
         default: master
       PARAMS:
-        description: 'Custom parameters as a JSON string, as defined by each test'
+        description: |
+          Custom parameters as a JSON string, as defined by each test.
+
+          For TES: {"tes_concurrency": [5, 100], "nextflow_concurrency": [5, 10, 20], "nextflow_n_tasks": [1, 5], "test_cases": [...]}
         required: false
         default: '{}'
       RUN_TES_TESTS:
-        description: 'Use this to run the TES load tests (overwrites some of the parameters above)'
+        description: 'Use this to run (only) the TES load tests (overwrites some of the parameters above)'
         required: false
         type: choice
         options:
@@ -33,7 +36,7 @@ on:
           - 'false'
         default: 'false'
   # TODO remove below
-  push:
+  # push:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -82,8 +85,6 @@ jobs:
 
             if [[ "$RUN_TES_TESTS" == "true" ]]; then
               TEST_SUITE="TestTesPerformance"
-              # TODO revert PARAMS to '{}'
-              PARAMS='{"tes": {"concurrency": [500, 1000], "test_case_simple": true, "test_case_inputs_outputs": true, "test_case_8mb_s3_upload": false, "test_case_gpu": false}, "nextflow": {"concurrency": [10], "n_tasks": [5], "test_case_simple": true, "test_case_gpu": false}}'
             fi
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
@@ -94,7 +95,7 @@ jobs:
     build-image:
       name: Build image (load tests)
       needs: setup
-      if: ${{ needs.setup.outputs.RUN_TES_TESTS == 'true' }}
+      if: false #${{ needs.setup.outputs.RUN_TES_TESTS == 'true' }}
       uses: uc-cdis/.github/.github/workflows/image_build_push_native.yaml@master
       with:
         DOCKERFILE_LOCATION: "./gen3-load-tests/Dockerfile"
@@ -303,10 +304,10 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              fi
+              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              # if [ $? -ne 0 ]; then
+              #   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              # fi
 
           - name: Run tests
             id: run_tests
@@ -350,11 +351,11 @@ jobs:
               echo $HOME/.gen3
               ls -lah $HOME/.gen3
 
-              # create or update API keys secret
-              kubectl create secret generic api-keys \
-                --from-file="$HOME/.gen3" \
-                --namespace=$NAMESPACE \
-                --dry-run=client -o yaml | kubectl apply -f -
+              # # create or update API keys secret
+              # kubectl create secret generic api-keys \
+              #   --from-file="$HOME/.gen3" \
+              #   --namespace=$NAMESPACE \
+              #   --dry-run=client -o yaml | kubectl apply -f -
 
               kubectl delete -f $JOB --ignore-not-found
               kubectl apply -f $JOB

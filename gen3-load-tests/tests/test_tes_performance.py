@@ -49,7 +49,26 @@ LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
 SCRIPTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
 )
+DEFAULT_PARAMS = {
+    "tes_concurrency": [5, 100],
+    "nextflow_concurrency": [5, 10, 20],
+    "nextflow_n_tasks": [1, 5],
+    "test_cases": [
+        "tes_basic",
+        "tes_inputs_outputs",
+        "tes_8mb_s3_upload",
+        "tes_gpu",
+        "nextflow_basic",
+        "nextflow_gpu",
+    ],
+}
 PARAMS = json.loads(os.getenv("PARAMS", "{}"))
+PARAMS = {**DEFAULT_PARAMS, **PARAMS}
+ONE_HOUR = 60 * 60
+
+
+######################### START DEFINE TESTS
+
 
 TESTS = [
     # {
@@ -58,18 +77,17 @@ TESTS = [
     #     "n_concurrent_runs": 5,
     # },
 ]
-ONE_HOUR = 60 * 60
 
 # Nextflow tests
-for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
-    for n_tasks in PARAMS.get("nextflow", {}).get("n_tasks", [1, 5]):
+for concurrency in PARAMS["nextflow_concurrency"]:
+    for n_tasks in PARAMS["nextflow_n_tasks"]:
         base = {
             "type": "Nextflow",
             "n_concurrent_runs": concurrency,
             "n_tasks": n_tasks,
-            "token_lifetime_sec": ONE_HOUR,
+            "token_lifetime": ONE_HOUR,
         }
-        if PARAMS.get("nextflow", {}).get("test_case_simple", True):
+        if "nextflow_basic" in PARAMS["test_cases"]:
             # Note: Nextflow tests always include inputs/outputs
             TESTS.append(
                 {
@@ -79,7 +97,7 @@ for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
                     "workflow_file": "hello.nf",
                 }
             )
-        if PARAMS.get("nextflow", {}).get("test_case_gpu", True):
+        if "nextflow_gpu" in PARAMS["test_cases"]:
             TESTS.append(
                 {
                     **base,
@@ -90,13 +108,13 @@ for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
             )
 
 # TES tests
-for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
+for concurrency in PARAMS["tes_concurrency"]:
     base = {
         "type": "TES",
         "n_concurrent_runs": concurrency,
-        "token_lifetime_sec": ONE_HOUR,
+        "token_lifetime": ONE_HOUR,
     }
-    if PARAMS.get("tes", {}).get("test_case_simple", True):
+    if "tes_basic" in PARAMS["test_cases"]:
         TESTS.append(
             {
                 **base,
@@ -114,12 +132,12 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_inputs_outputs", True):
+    if "tes_inputs_outputs" in PARAMS["test_cases"]:
         TESTS.append(
             {
                 **base,
                 "name": f"TES test with inputs-outputs (concurrency {concurrency})",
-                "token_lifetime_sec": 2 * ONE_HOUR,
+                "token_lifetime": 2 * ONE_HOUR,
                 "payload": {
                     "name": "Input-Output-Test",
                     "inputs": [
@@ -148,12 +166,12 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_8mb_s3_upload", True):
+    if "tes_8mb_s3_upload" in PARAMS["test_cases"]:
         TESTS.append(
             {
                 **base,
                 "name": f"TES test with 8MB S3 upload (concurrency {concurrency})",
-                "token_lifetime_sec": 2 * ONE_HOUR,
+                "token_lifetime": 2 * ONE_HOUR,
                 "payload": {
                     "name": "TES-S3-Upload-Test-8MB",
                     "outputs": [
@@ -175,7 +193,7 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_gpu", True):
+    if "tes_gpu" in PARAMS["test_cases"]:
         # Note: the command doesn't actually need a GPU, we only test scheduling on the GPU node
         TESTS.append(
             {
@@ -197,6 +215,9 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
         )
 
 logger.info(f"Running test cases: {[t['name'] for t in TESTS]}")
+
+
+######################### END DEFINE TESTS
 
 
 @dataclass
@@ -543,7 +564,7 @@ class TestTesPerformance:
 
         # launch `n_concurrent_runs` concurrent runsgs
         with get_dpop_bound_task_token(
-            "WORKFLOW", expires_in=config["token_lifetime_sec"]
+            "WORKFLOW", expires_in=config["token_lifetime"]
         ) as (
             access_token,
             proxy_url,

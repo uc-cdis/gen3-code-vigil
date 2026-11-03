@@ -52,7 +52,9 @@ spec:
               echo "Exit code: $exitcode"
 
               echo "Uploading outputs to S3 bucket"
-              aws s3 cp output s3://tes-load-tests-outputs/$(date "+%Y-%m-%d_%H:%M:%S")_${RUN_NUM}_${ATTEMPT_NUM} --recursive
+              aws s3 cp output s3://tes-load-tests-outputs/$(date "+%Y-%m-%d")_RUN_${RUN_NUM}_ATTEMPT_${ATTEMPT_NUM} --recursive
+
+              # TODO `gen3_ci.scripts.generate_slack_report` and post to slack
 
               exit "$exitcode"
           volumeMounts:
