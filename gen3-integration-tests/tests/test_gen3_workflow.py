@@ -1280,7 +1280,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         "image": "public.ecr.aws/docker/library/alpine:latest",
                         "workdir": "/work",
                         "command": [
-                            f"{{ cat {first_executor_file_name}; echo 'written by executor 2'; }} > {second_executor_file_name}"
+                            f"cat {first_executor_file_name} && {{ cat {first_executor_file_name}; echo 'written by executor 2'; }} > {second_executor_file_name}"
                         ],
                     },
                 ],
