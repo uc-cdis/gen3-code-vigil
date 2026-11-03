@@ -582,6 +582,10 @@ jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml"
 workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
 if [[ "$frontend_enabled" == "true" && "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
     echo "Keeping revproxy additionalConfigs, jeg and workspace-proxy for $SOURCE_CONFIG"
+    # Disable ambassador to avoid workspace-proxy-service conflict
+    echo "workspace-proxy enabled; disabling ambassador"
+    yq eval '.ambassador.enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
 else
     echo "Removing revproxy additionalConfigs and disabling workspace-proxy and jeg"
     yq eval 'del(.revproxy.additionalConfigs)' \
