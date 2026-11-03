@@ -64,6 +64,7 @@ DEFAULT_PARAMS = {
     ],
     "tes_long_running_n_hours": 24,
 }
+print("PARAMS debug:", os.getenv("PARAMS", "{}"))
 PARAMS = json.loads(os.getenv("PARAMS", "{}"))
 PARAMS = {**DEFAULT_PARAMS, **PARAMS}
 ONE_HOUR = 60 * 60
