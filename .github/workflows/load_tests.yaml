@@ -304,10 +304,10 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              fi
+              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
+              # if [ $? -ne 0 ]; then
+              #   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              # fi
 
           - name: Run tests
             id: run_tests
@@ -351,11 +351,11 @@ jobs:
               echo $HOME/.gen3
               ls -lah $HOME/.gen3
 
-              # create or update API keys secret
-              kubectl create secret generic api-keys \
-                --from-file="$HOME/.gen3" \
-                --namespace=$NAMESPACE \
-                --dry-run=client -o yaml | kubectl apply -f -
+              # # create or update API keys secret
+              # kubectl create secret generic api-keys \
+              #   --from-file="$HOME/.gen3" \
+              #   --namespace=$NAMESPACE \
+              #   --dry-run=client -o yaml | kubectl apply -f -
 
               kubectl delete -f $JOB --ignore-not-found
               kubectl apply -f $JOB
