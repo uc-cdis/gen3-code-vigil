@@ -382,7 +382,7 @@ async def run_command(
                 None,  # uses default ThreadPoolExecutor
                 lambda: subprocess.run(
                     cmd,
-                    env={**os.environ.copy(), "TIMEOUT": timeout, **env},
+                    env={**os.environ.copy(), "TIMEOUT": str(timeout), **env},
                     capture_output=True,
                     text=True,
                     timeout=timeout,

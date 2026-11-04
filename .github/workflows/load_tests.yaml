@@ -374,7 +374,7 @@ jobs:
               ' $JOB
 
               # add a timestamp to differentiate multiple simultaneous runs
-              yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d)_RUN_${RUN_NUM}_ATTEMPT_${ATTEMPT_NUM}\"" "$JOB"
+              yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d).run-${RUN_NUM}.attempt-${ATTEMPT_NUM}\"" "$JOB"
 
               echo $JOB:
               cat $JOB
