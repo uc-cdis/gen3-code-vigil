@@ -82,8 +82,8 @@ def pytest_runtest_logreport(report):
         "http_req_duration_max": metrics["http_req_duration"]["max"],
         "http_req_duration_p90": metrics["http_req_duration"]["p(90)"],
         "http_req_duration_p95": metrics["http_req_duration"]["p(95)"],
-        "data_sent_count": metrics["data_sent"]["count"],
-        "data_sent_rate": metrics["data_sent"]["rate"],
+        "data_sent_count": metrics.get("data_sent", {}).get("count", 0),
+        "data_sent_rate": metrics.get("data_sent", {}).get("rate", 0),
         "iterations_count": metrics["iterations"]["count"],
         "iterations_rate": metrics["iterations"]["rate"],
         "bulk_objects_requested_count": metrics.get("bulk_objects_requested", {}).get(

@@ -58,7 +58,7 @@ DEFAULT_PARAMS = {
         "tes_inputs_outputs",
         "tes_8mb_s3_upload",
         "tes_gpu",
-        # NOT included because it does not need to run along the other, shorter tests:
+        # NOT included because it does not need to run alongside the other, shorter tests:
         # "tes_long_running"
     ],
     "tes_long_running_n_hours": 24,
@@ -72,13 +72,10 @@ TES_LONG_RUNNING_SCRIPT = "tes_long_running.py"
 ######################### START DEFINE TESTS
 
 
-TESTS = [
-    # {
-    #     "name": "Random failures",
-    #     "type": "Random",
-    #     "n_concurrent_runs": 5,
-    # },
-]
+TESTS = []
+
+# Mocks a load test without making real TES requests. Uncomment it to use during development.
+# TESTS.append({"name": "Random failures", "type": "Random", "n_concurrent_runs": 5})
 
 # Nextflow tests
 for concurrency in PARAMS["nextflow_concurrency"]:
@@ -358,16 +355,15 @@ def print_stats(stats_list, run_time_seconds):
                 "p(90)": round(percentile(all_run_times, 90), 2),
                 "p(95)": round(percentile(all_run_times, 95), 2),
             },
-            "data_sent": {"count": 0, "rate": 0},
         }
     }
     return summary
 
 
 async def run_command(
-    cmd: List[str], conc_id: int, config: dict, env: dict = {}
+    cmd: List[str], conc_id: int, test_case: dict, env: dict = {}
 ) -> RunStats:
-    test_name = config["name"]
+    test_name = test_case["name"]
 
     try:
         loop = asyncio.get_event_loop()
@@ -438,23 +434,23 @@ async def run_command(
         )
 
 
-async def run_random_failures(conc_id: int, config: dict, **kwargs) -> RunStats:
+async def run_random_failures(conc_id: int, test_case: dict, **kwargs) -> RunStats:
     r = random.randint(-2, 3)
-    # log(f"Random failure: {r=}")
+    log("debug", f"Random failure: {r=}")
     cmd = ["sleep", str(r)]
-    return await run_command(cmd, conc_id, config)
+    return await run_command(cmd, conc_id, test_case)
 
 
 async def run_tes_task(
     conc_id: int,
-    config: dict,
+    test_case: dict,
     endpoint: str,
     bucket: str,
     access_token: str,
 ) -> RunStats:
     # simulate tasks that take 0 to 5s to complete
     sleep_time = random.randint(0, 5)
-    payload = config["payload"]
+    payload = test_case["payload"]
     payload["executors"][0]["command"][0] = payload["executors"][0]["command"][
         0
     ].replace("SLEEP_TIME_PLACEHOLDER", str(sleep_time))
@@ -475,37 +471,37 @@ async def run_tes_task(
     return await run_command(
         cmd,
         conc_id,
-        config,
+        test_case,
         {"GEN3_TOKEN": access_token},
     )
 
 
 async def run_nextflow_workflow(
     conc_id: int,
-    config: dict,
+    test_case: dict,
     endpoint: str,
     bucket: str,
     access_token: str,
 ) -> RunStats:
     # to run multiple Nextflow workflows at the same time, each must run inside its own directory:
     # generate a unique ID that will be used to generate a unique workdir and log file
-    unique_nf_run_id = f"{str(abs(hash(config['name'])))[:6]}_{conc_id}"
+    unique_nf_run_id = f"{str(abs(hash(test_case['name'])))[:6]}_{conc_id}"
     cmd = [
         "python",
         os.path.join(SCRIPTS_DIR, "run_nextflow_workflow.py"),
-        os.path.join(SCRIPTS_DIR, config["workflow_file"]),
+        os.path.join(SCRIPTS_DIR, test_case["workflow_file"]),
         os.path.join(SCRIPTS_DIR, "base_nextflow.config"),
-        str(config["n_tasks"]),
+        str(test_case["n_tasks"]),
     ]
     return await run_command(
         cmd,
         conc_id,
-        config,
+        test_case,
         {
             "GEN3_TOKEN": access_token,
             "ENDPOINT": endpoint,
             "BUCKET": bucket,
-            "GPU": "yes" if config["gpu"] else "no",
+            "GPU": "yes" if test_case["gpu"] else "no",
             "RUN_ID": unique_nf_run_id,
         },
     )
@@ -564,13 +560,14 @@ class TestTesPerformance:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "config", [pytest.param(config, id=config["name"]) for config in TESTS]
+        "test_case",
+        [pytest.param(test_case, id=test_case["name"]) for test_case in TESTS],
     )
-    async def test_gen3_workflow_tes_performance(self, config):
+    async def test_gen3_workflow_tes_performance(self, test_case):
         test_start = time.perf_counter()
-        log("info", f"'{config['name']}' starting")
+        log("info", f"'{test_case['name']}' starting")
 
-        _type = config["type"]
+        _type = test_case["type"]
         if _type == "Random":
             method = run_random_failures
         elif _type == "Nextflow":
@@ -582,7 +579,7 @@ class TestTesPerformance:
 
         # launch `n_concurrent_runs` concurrent runsgs
         with get_dpop_bound_task_token(
-            "WORKFLOW", expires_in=int(config.get("token_lifetime", ONE_HOUR))
+            "WORKFLOW", expires_in=int(test_case.get("token_lifetime", ONE_HOUR))
         ) as (
             access_token,
             proxy_url,
@@ -590,22 +587,22 @@ class TestTesPerformance:
             tasks = [
                 method(
                     conc_id=conc_run,
-                    config=config,
+                    test_case=test_case,
                     endpoint=proxy_url,
                     bucket=self.s3_storage_config["bucket"],
                     access_token=access_token,
                 )
-                for conc_run in range(1, config["n_concurrent_runs"] + 1)
+                for conc_run in range(1, test_case["n_concurrent_runs"] + 1)
             ]
             run_stats = await asyncio.gather(*tasks)
 
         test_duration_seconds = time.perf_counter() - test_start
-        log("info", f"✅ '{config['name']}' stats:")
+        log("info", f"✅ '{test_case['name']}' stats:")
         summary = print_stats(run_stats, test_duration_seconds)
         log("info", json.dumps(summary, indent=2))
 
         service = "gen3-workflow"
-        scenario = f"tes-performance[{config['name']}]"
+        scenario = f"tes-performance[{test_case['name']}]"
         file_name = f"{service}-{scenario}.json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:

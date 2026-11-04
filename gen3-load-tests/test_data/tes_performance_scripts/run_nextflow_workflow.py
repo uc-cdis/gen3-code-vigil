@@ -1,5 +1,3 @@
-# pylint: disable=missing-function-docstring
-
 import json
 import os
 import shutil
@@ -14,6 +12,20 @@ CURRENT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def main(workflow_script, nextflow_config_file, n_tasks):
+    """
+    Runs a Nextflow workflow via the TES backend and reports results.
+
+    Usage:
+        python run_nextflow_workflow.py <workflow_script> <nextflow_config_file> <n_tasks>
+
+    Environment variables required:
+        RUN_ID       - Unique identifier for this run (used to isolate workdirs and log files).
+        ENDPOINT     - Base URL of the TES-compatible endpoint.
+        GEN3_TOKEN   - Bearer token for authenticating requests to the TES API.
+
+    On success the workflow exits 0. On failure it prints Nextflow logs and, where
+    available, full TES task details fetched from the API, then exits 1.
+    """
     run_id = os.environ["RUN_ID"]
     print(f"Run ID: {run_id}")
     original_cwd = Path.cwd()
@@ -38,6 +50,8 @@ def main(workflow_script, nextflow_config_file, n_tasks):
             with open(".nextflow.log", "r") as log_file:
                 log_file_content = log_file.read()
             try:
+                # extract the task IDs from the logs
+                # example log: `Nov-02 15:52:39.315 [Task submitter] INFO  n.ga4gh.tes.executor.TesTaskHandler - [TES] Created task with ID: dbkgc9os7m4c73c3en50, name: HELLO_TASK (task-1)`
                 parts = log_file_content.split("Created task with ID: ")
                 for part in parts[1:]:
                     task_id = part.split(", name: ")[0]
