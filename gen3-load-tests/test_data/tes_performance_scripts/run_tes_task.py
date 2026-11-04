@@ -1,6 +1,7 @@
 # pylint: disable=missing-function-docstring
 
 import json
+import math
 import os
 import sys
 import time
@@ -30,7 +31,8 @@ def create_task(endpoint, body):
 
 
 def monitor_task(endpoint, task_id):
-    max_attempt = 120  # wait up to 10 min
+    sleep_time = 5
+    max_attempt = math.ceil(int(os.environ["TIMEOUT"]) / sleep_time)
     status = None
     data = {}
     for attempt in range(max_attempt):
@@ -50,9 +52,9 @@ def monitor_task(endpoint, task_id):
             log("info", "Task failed")
             break
         if attempt == max_attempt - 1:
-            log("info", "Task did not complete in time")
+            log("info", f"Task did not complete in time ({max_attempt} attempts)")
             break
-        time.sleep(5)
+        time.sleep(sleep_time)
     return status, data
 
 

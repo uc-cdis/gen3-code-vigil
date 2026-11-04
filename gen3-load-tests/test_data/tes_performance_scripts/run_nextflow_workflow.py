@@ -27,7 +27,6 @@ def main(workflow_script, nextflow_config_file, n_tasks):
     available, full TES task details fetched from the API, then exits 1.
     """
     run_id = os.environ["RUN_ID"]
-    print(f"Run ID: {run_id}")
     original_cwd = Path.cwd()
     workflow_files_dir = Path(CURRENT_DIR).resolve()
     workdir = workflow_files_dir / f".nextflow.{run_id}"

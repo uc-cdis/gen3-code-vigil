@@ -42,6 +42,7 @@ from utils.misc import percentile
 from utils.test_execution import attach_output_file
 
 # TODO why do TES runs take 20 min, 30 min, 1h? this timeout works for Nextflow runs
+# check if this is still the case after the latest updates...
 EACH_JOB_TIMEOUT = 60 * 20  # 20 min
 LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
 LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
@@ -381,7 +382,7 @@ async def run_command(
                 None,  # uses default ThreadPoolExecutor
                 lambda: subprocess.run(
                     cmd,
-                    env={**os.environ.copy(), **env},
+                    env={**os.environ.copy(), "TIMEOUT": timeout, **env},
                     capture_output=True,
                     text=True,
                     timeout=timeout,
