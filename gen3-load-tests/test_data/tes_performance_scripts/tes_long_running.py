@@ -19,7 +19,8 @@ sleep_min = 5
 i = 0
 while time.time() < end_time:
     print(
-        f"I have been running for {datetime.timedelta(seconds=time.time()-start_time)}"
+        f"I have been running for {datetime.timedelta(seconds=time.time()-start_time)}",
+        flush=True,
     )
 
     if i % 6 == 0:
@@ -36,7 +37,7 @@ while time.time() < end_time:
             msg = f"Request to /ga4gh/tes/v1/tasks: {res.status_code}"
             if res.status_code != 200:
                 msg += f" - {res.text}"
-            print(msg)
+            print(msg, flush=True)
 
     time.sleep(60 * sleep_min)
     i += 1

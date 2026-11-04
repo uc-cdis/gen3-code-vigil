@@ -41,7 +41,8 @@ from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
 from utils.test_execution import attach_output_file
 
-EACH_JOB_TIMEOUT = 1200  # 10 min # TODO why do TES runs take 20 min, 30 min, 1h? works for Nextflow runs
+# TODO why do TES runs take 20 min, 30 min, 1h? this timeout works for Nextflow runs
+EACH_JOB_TIMEOUT = 60 * 20  # 20 min
 LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
 LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
 SCRIPTS_DIR = os.path.join(
@@ -364,6 +365,9 @@ async def run_command(
     cmd: List[str], conc_id: int, test_case: dict, env: dict = {}
 ) -> RunStats:
     test_name = test_case["name"]
+    timeout = (
+        test_case["token_lifetime"] if "long_running" in test_name else EACH_JOB_TIMEOUT
+    )
 
     try:
         loop = asyncio.get_event_loop()
@@ -380,7 +384,7 @@ async def run_command(
                     env={**os.environ.copy(), **env},
                     capture_output=True,
                     text=True,
-                    timeout=EACH_JOB_TIMEOUT,
+                    timeout=timeout,
                     cwd=temp_dir,
                 ),
             )
@@ -417,7 +421,7 @@ async def run_command(
         )
         run_time = 0
         if type(e) == subprocess.TimeoutExpired:
-            run_time = EACH_JOB_TIMEOUT
+            run_time = timeout
             log("debug", "Timed out. Logs:\n")
             if e.stdout:
                 for line in e.stdout.split(b"\n"):
