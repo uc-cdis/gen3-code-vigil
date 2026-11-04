@@ -20,6 +20,13 @@ on:
         description: 'A "uc-cdis/gen3-gitops" branch. Make changes to "uc-cdis/gen3-gitops/ci/perf" to run load tests on different images or configuration. Ignored if RELEASE_VERSION is specified.'
         required: false
         default: copy_brh_stg+2-6_replicas # TODO revert to master
+      RESET_NAMESPACE:
+        required: false
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        default: 'true'
       PARAMS:
         description: |
           Custom parameters as a JSON string, as defined by each test.
@@ -41,7 +48,11 @@ concurrency:
   # /!\ this may affect performance results! but can be useful to run long-running tests.
   group: >-
     ${{ github.workflow }}-${{
-      (github.event_name == 'workflow_dispatch' && inputs.RUN_TES_TESTS == 'true') && github.run_id
+      (
+        github.event_name == 'workflow_dispatch'
+        && inputs.RESET_NAMESPACE == 'false'
+        && inputs.RUN_TES_TESTS == 'true'
+      ) && github.run_id
       || (github.event.pull_request.number || github.ref)
     }}
   cancel-in-progress: true
@@ -274,13 +285,16 @@ jobs:
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
-              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-              # if [ -n "$namespace_exists" ]; then
-              #   echo "Namespace $NAMESPACE exists, performing teardown..."
-              #   helm delete $NAMESPACE -n $NAMESPACE || true
-              #   kubectl delete ns $NAMESPACE
-              # fi
-              # kubectl create namespace $NAMESPACE
+
+              if [[ "${{ inputs.RESET_NAMESPACE }}" == "true" ]]; then
+                namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+                if [ -n "$namespace_exists" ]; then
+                  echo "Namespace $NAMESPACE exists, performing teardown..."
+                  helm delete $NAMESPACE -n $NAMESPACE || true
+                  kubectl delete ns $NAMESPACE
+                fi
+                kubectl create namespace $NAMESPACE
+              fi
 
           - name: Get test labels
             id: get_test_labels
@@ -311,10 +325,12 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              # poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              # if [ $? -ne 0 ]; then
-              #   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
-              # fi
+              if [[ "${{ inputs.RESET_NAMESPACE }}" == "true" ]]; then
+                poetry run python -m gen3_ci.scripts.prepare_ci_environment
+                if [ $? -ne 0 ]; then
+                  echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+                fi
+              fi
 
           - name: Run tests
             id: run_tests
@@ -362,11 +378,13 @@ jobs:
               echo $HOME/.gen3
               ls -lah $HOME/.gen3
 
-              # # create or update API keys secret
-              # kubectl create secret generic api-keys \
-              #   --from-file="$HOME/.gen3" \
-              #   --namespace=$NAMESPACE \
-              #   --dry-run=client -o yaml | kubectl apply -f -
+              # create or update API keys secret
+              if [[ "${{ inputs.RESET_NAMESPACE }}" == "true" ]]; then
+                kubectl create secret generic api-keys \
+                  --from-file="$HOME/.gen3" \
+                  --namespace=$NAMESPACE \
+                  --dry-run=client -o yaml | kubectl apply -f -
+              fi
 
               kubectl delete -f $JOB --ignore-not-found
               kubectl apply -f $JOB
