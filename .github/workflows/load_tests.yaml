@@ -349,6 +349,12 @@ jobs:
                   {"name": "RELEASE_VERSION", "value": strenv(RELEASE_VERSION)}
                 ]
               ' $JOB
+
+              # the timestamp allows for multiple simultaneous runs
+              # /!\ this may affect performance results!
+              # but can be useful to run long-running tests that use few resources.
+              yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d.%H-%M-%S)\"" "$JOB"
+
               echo $JOB:
               cat $JOB
 
