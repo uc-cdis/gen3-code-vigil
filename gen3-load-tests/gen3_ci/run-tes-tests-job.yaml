@@ -54,7 +54,7 @@ spec:
               echo "Uploading outputs to S3 bucket"
               aws s3 cp output s3://tes-load-tests-outputs/$(date "+%Y-%m-%d")_RUN_${RUN_NUM}_ATTEMPT_${ATTEMPT_NUM} --recursive
 
-              # TODO `gen3_ci.scripts.generate_slack_report` and post to slack
+              # TODO post notification to slack?
 
               exit 0 # not `exit "$exitcode"`: the job is successful even if the tests aren't
           volumeMounts:

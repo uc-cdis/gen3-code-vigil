@@ -276,12 +276,13 @@ if install_helm_chart; then
   ci_es_indices_setup
   kubectl rollout restart deployment guppy-deployment -n ${namespace}
 
-  # TODO: remove this - guppy and MDS are currently failing to start in ci-perf-tes env
+  # TODO: remove this
+  # guppy and MDS are currently failing to start in ci-perf-tes env
+  # gen3-embeddings deployment is currently broken
+  # portal is not needed by TES tests, remove it to speed things up
   kubectl delete deployment guppy-deployment -n ${namespace}
   kubectl delete deployment metadata-deployment -n ${namespace}
-  # TODO: remove this - gen3-embeddings deployment is currently broken
   kubectl delete deployment gen3-embeddings -n ${namespace}
-  # TODO: remove this - temp to speed things up
   kubectl delete deployment portal-deployment -n ${namespace}
 
   wait_for_pods_ready

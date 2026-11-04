@@ -58,7 +58,8 @@ DEFAULT_PARAMS = {
         "tes_inputs_outputs",
         "tes_8mb_s3_upload",
         "tes_gpu",
-        "tes_long_running",
+        # NOT included because it does not need to run along the other, shorter tests:
+        # "tes_long_running"
     ],
     "tes_long_running_n_hours": 24,
 }

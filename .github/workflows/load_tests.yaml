@@ -19,7 +19,7 @@ on:
       GITOPS_BRANCH:
         description: 'A "uc-cdis/gen3-gitops" branch. Make changes to "uc-cdis/gen3-gitops/ci/perf" to run load tests on different images or configuration. Ignored if RELEASE_VERSION is specified.'
         required: false
-        default: master
+        default: copy_brh_stg+2-6_replicas # TODO revert to master
       PARAMS:
         description: |
           Custom parameters as a JSON string, as defined by each test.
@@ -34,9 +34,7 @@ on:
         options:
           - 'true'
           - 'false'
-        default: 'false'
-  # TODO remove below
-  # push:
+        default: 'true' # TODO revert to false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -83,9 +81,6 @@ jobs:
               PARAMS='{}'
               RUN_TES_TESTS='false'
             fi
-
-            RUN_TES_TESTS='true' # TODO remove this line
-            GITOPS_BRANCH=copy_brh_stg+2-6_replicas # TODO unpin once merged
 
             if [[ "$RUN_TES_TESTS" == "true" ]]; then
               TEST_SUITE="TestTesPerformance"
@@ -292,8 +287,7 @@ jobs:
                 fi
               fi
               echo "$test_label"
-              # TODO reenable, this is broken for `push` events
-              # echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
+              echo "TEST_SUITE=$test_label" >> $GITHUB_ENV
 
           - name: Download Thor repo_list.txt file
             if: ${{ env.SKIP_TESTS != 'true' }}
