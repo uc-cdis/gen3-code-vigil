@@ -422,6 +422,7 @@ async def run_command(
         )
         run_time = 0
         if type(e) == subprocess.TimeoutExpired:
+            # TODO cancel task if it timed out
             run_time = timeout
             log("debug", "Timed out. Logs:\n")
             if e.stdout:

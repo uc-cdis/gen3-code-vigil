@@ -32,7 +32,7 @@ def create_task(endpoint, body):
 
 def monitor_task(endpoint, task_id):
     sleep_time = 5
-    max_attempt = math.ceil(int(os.environ["TIMEOUT"]) / sleep_time)
+    max_attempt = math.ceil(int(float(os.environ["TIMEOUT"])) / sleep_time)
     status = None
     data = {}
     for attempt in range(max_attempt):
@@ -53,6 +53,7 @@ def monitor_task(endpoint, task_id):
             break
         if attempt == max_attempt - 1:
             log("info", f"Task did not complete in time ({max_attempt} attempts)")
+            # TODO cancel task if timed out
             break
         time.sleep(sleep_time)
     return status, data
