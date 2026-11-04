@@ -224,7 +224,8 @@ if "tes_long_running" in PARAMS["test_cases"]:
             **base,
             "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
             "n_concurrent_runs": 1,
-            "token_lifetime": PARAMS["tes_long_running_n_hours"] * ONE_HOUR,
+            # token valid for 30 min longer in case the task takes time to start
+            "token_lifetime": (PARAMS["tes_long_running_n_hours"] + 0.5) * ONE_HOUR,
             "payload": {
                 "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
                 "inputs": [
@@ -249,6 +250,7 @@ if "tes_long_running" in PARAMS["test_cases"]:
                         ],
                         "env": {
                             "API_KEY": pytest.api_keys["main_account"]["api_key"],
+                            "RUN_N_HOURS": str(PARAMS["tes_long_running_n_hours"]),
                         },
                     },
                 ],
