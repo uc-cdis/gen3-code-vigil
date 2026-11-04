@@ -367,7 +367,7 @@ async def run_command(
 ) -> RunStats:
     test_name = test_case["name"]
     timeout = (
-        test_case["token_lifetime"] if "long_running" in test_name else EACH_JOB_TIMEOUT
+        test_case["token_lifetime"] if "long-running" in test_name else EACH_JOB_TIMEOUT
     )
 
     try:

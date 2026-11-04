@@ -42,4 +42,4 @@ while time.time() < end_time:
     time.sleep(60 * sleep_min)
     i += 1
 
-print("Done!")
+print(f"Done! I ran for {datetime.timedelta(seconds=time.time()-start_time)}")
