@@ -279,7 +279,7 @@ if install_helm_chart; then
   # TODO: remove this
   # guppy and MDS are currently failing to start in ci-perf-tes env
   # gen3-embeddings deployment is currently broken
-  # portal is not needed by TES tests, remove it to speed things up
+  # portal is not needed for TES tests, remove it to speed things up
   kubectl delete deployment guppy-deployment -n ${namespace}
   kubectl delete deployment metadata-deployment -n ${namespace}
   kubectl delete deployment gen3-embeddings -n ${namespace}

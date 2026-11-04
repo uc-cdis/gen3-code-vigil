@@ -70,6 +70,7 @@ jobs:
         TEST_SUITE: ${{ steps.setvars.outputs.TEST_SUITE }}
         RELEASE_VERSION: ${{ steps.setvars.outputs.RELEASE_VERSION }}
         GITOPS_BRANCH: ${{ steps.setvars.outputs.GITOPS_BRANCH }}
+        RESET_NAMESPACE: ${{ steps.setvars.outputs.RESET_NAMESPACE }}
         PARAMS: ${{ steps.setvars.outputs.PARAMS }}
         RUN_TES_TESTS: ${{ steps.setvars.outputs.RUN_TES_TESTS }}
       steps:
@@ -89,12 +90,14 @@ jobs:
                 echo "ignoring GITOPS_BRANCH parameter since RELEASE_VERSION is specified"
                 GITOPS_BRANCH=master
               fi
+              RESET_NAMESPACE="${{ inputs.RESET_NAMESPACE }}"
               PARAMS="$RAW_PARAMS"
               RUN_TES_TESTS="${{ inputs.RUN_TES_TESTS }}"
             else
               TEST_SUITE="ALL"
               RELEASE_VERSION=""
               GITOPS_BRANCH="master"
+              RESET_NAMESPACE='true'
               PARAMS='{}'
               RUN_TES_TESTS='false'
             fi
@@ -109,6 +112,7 @@ jobs:
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
             echo "GITOPS_BRANCH=$GITOPS_BRANCH" >> $GITHUB_OUTPUT
+            echo "RESET_NAMESPACE=$RESET_NAMESPACE" >> $GITHUB_OUTPUT
             echo "PARAMS=$PARAMS" >> $GITHUB_OUTPUT
             echo "RUN_TES_TESTS=$RUN_TES_TESTS" >> $GITHUB_OUTPUT
     build-image:
@@ -286,7 +290,7 @@ jobs:
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
 
-              if [[ "${{ inputs.RESET_NAMESPACE }}" == "true" ]]; then
+              if [[ "${{ needs.setup.outputs.RESET_NAMESPACE }}" == "true" ]]; then
                 namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
                 if [ -n "$namespace_exists" ]; then
                   echo "Namespace $NAMESPACE exists, performing teardown..."
@@ -325,7 +329,7 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              if [[ "${{ inputs.RESET_NAMESPACE }}" == "true" ]]; then
+              if [[ "${{ needs.setup.outputs.RESET_NAMESPACE }}" == "true" ]]; then
                 poetry run python -m gen3_ci.scripts.prepare_ci_environment
                 if [ $? -ne 0 ]; then
                   echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
@@ -369,7 +373,7 @@ jobs:
                 ]
               ' $JOB
 
-              # the timestamp allows for multiple simultaneous runs
+              # add a timestamp to differentiate multiple simultaneous runs
               yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d.%H-%M-%S)\"" "$JOB"
 
               echo $JOB:
@@ -379,14 +383,13 @@ jobs:
               ls -lah $HOME/.gen3
 
               # create or update API keys secret
-              if [[ "${{ inputs.RESET_NAMESPACE }}" == "true" ]]; then
+              if [[ "${{ needs.setup.outputs.RESET_NAMESPACE }}" == "true" ]]; then
                 kubectl create secret generic api-keys \
                   --from-file="$HOME/.gen3" \
                   --namespace=$NAMESPACE \
                   --dry-run=client -o yaml | kubectl apply -f -
               fi
 
-              kubectl delete -f $JOB --ignore-not-found
               kubectl apply -f $JOB
 
           - name: Generate allure report
