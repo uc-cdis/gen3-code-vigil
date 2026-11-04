@@ -37,7 +37,13 @@ on:
         default: 'true' # TODO revert to false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # allow multiple simultaneous runs for TES tests only
+  # /!\ this may affect performance results! but can be useful to run long-running tests.
+  group: >-
+    ${{ github.workflow }}-${{
+      (github.event_name == 'workflow_dispatch' && inputs.RUN_TES_TESTS == 'true') && github.run_id
+      || (github.event.pull_request.number || github.ref)
+    }}
   cancel-in-progress: true
 
 permissions:
@@ -85,6 +91,9 @@ jobs:
             if [[ "$RUN_TES_TESTS" == "true" ]]; then
               TEST_SUITE="TestTesPerformance"
             fi
+
+            echo "Validating PARAMS input (should be valid JSON)"
+            echo "$PARAMS" | jq empty || exit 1
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
@@ -345,8 +354,6 @@ jobs:
               ' $JOB
 
               # the timestamp allows for multiple simultaneous runs
-              # /!\ this may affect performance results!
-              # but can be useful to run long-running tests that use few resources.
               yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d.%H-%M-%S)\"" "$JOB"
 
               echo $JOB:
