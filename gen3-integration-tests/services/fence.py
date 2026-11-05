@@ -567,6 +567,7 @@ class Fence(object):
                     )
                     raise
                 assert f"[{expected_status_code}]" in str(e)
+            assert expected_status_code == 200, f"Should not have been able to obtain a task token; expected status code {expected_status_code}"
             yield token, url
 
     @contextmanager
