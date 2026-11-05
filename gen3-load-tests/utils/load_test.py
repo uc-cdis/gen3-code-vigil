@@ -39,4 +39,4 @@ def get_results(result, service, load_test_scenario):
     if pass_rate < pytest.pass_threshold:
         logger.info(result.stdout)
         logger.info(result.stderr)
-        raise f"Pass rate is below threshold of {pytest.pass_threshold}%"
+        raise Exception(f"Pass rate is below threshold of {pytest.pass_threshold}%")
