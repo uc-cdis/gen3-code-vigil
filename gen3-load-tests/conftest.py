@@ -58,7 +58,7 @@ def pytest_runtest_logreport(report):
     # for grafana charts data collection purpose
     release_version = os.getenv("RELEASE_VERSION")
     if release_version and release_version.startswith("integration"):
-        version = release_version[len("integration") :]
+        version = release_version[len("integration"):]
         release_version = f"{version[:4]}.{version[4:6]}"
     message = {
         "run_date": str(start_time.date()),
