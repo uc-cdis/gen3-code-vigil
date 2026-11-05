@@ -583,7 +583,7 @@ class TestTesPerformance:
         else:
             raise Exception(f"Unknown test type '{_type}'")
 
-        # launch `n_concurrent_runs` concurrent runsgs
+        # launch `n_concurrent_runs` concurrent runs
         with get_dpop_bound_task_token(
             "WORKFLOW", expires_in=int(test_case.get("token_lifetime", ONE_HOUR))
         ) as (
