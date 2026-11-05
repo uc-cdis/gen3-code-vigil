@@ -223,7 +223,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
-    if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
+    if [[ "$key" != "global" && "$key" != "ambassador" && "$key" != "gen3-embeddings" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
       gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
