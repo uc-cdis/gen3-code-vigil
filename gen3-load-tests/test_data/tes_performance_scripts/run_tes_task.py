@@ -7,15 +7,10 @@ import sys
 import time
 
 import requests
+from cdislogging import get_logger
 from dateutil import parser
 
-VERBOSE = False
-
-
-def log(level, msg):
-    if level == "debug" and not VERBOSE:
-        return
-    print(msg)
+logger = get_logger(__name__, log_level="debug")
 
 
 def create_task(endpoint, body):
@@ -44,15 +39,17 @@ def monitor_task(endpoint, task_id):
         assert response.status_code == 200, response.text
         data = response.json()
         status = data["state"]
-        log("debug", f"Task status: {status}")
+        logger.debug(f"Task status: {status}")
         if status == "COMPLETE":
-            log("info", "Task complete!")
+            logger.info("Task complete!")
             break
         if status in ["SYSTEM_ERROR", "EXECUTOR_ERROR"]:
-            log("info", "Task failed")
+            logger.info("info", "Task failed")
             break
         if attempt == max_attempt - 1:
-            log("info", f"Task did not complete in time ({max_attempt} attempts)")
+            logger.info(
+                "info", f"Task did not complete in time ({max_attempt} attempts)"
+            )
             # TODO cancel task if timed out
             break
         time.sleep(sleep_time)
@@ -84,16 +81,16 @@ def main(endpoint, body):
         try:
             duration = parser.parse(end_time) - parser.parse(start_time)
         except Exception as e:
-            print(
+            logger.warning(
                 f"Runtime: unknown. Unable to parse task start_time ({start_time}) and end_time ({end_time}): {e}"
             )
         else:
             total_seconds = int(duration.total_seconds())
             hours, remainder = divmod(total_seconds, 3600)
             minutes, seconds = divmod(remainder, 60)
-            print(f"Runtime: {hours}h {minutes}m {seconds}s")
+            logger.info(f"Runtime: {hours}h {minutes}m {seconds}s")
     else:
-        print(json.dumps(task_data, indent=2))
+        logger.info(json.dumps(task_data, indent=2))
         raise Exception("Task failed or did not complete")
 
 
@@ -102,5 +99,5 @@ if __name__ == "__main__":
         assert len(sys.argv) == 3, "Incorrect number of arguments"
         main(sys.argv[1], json.loads(sys.argv[2]))
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        logger.error(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
