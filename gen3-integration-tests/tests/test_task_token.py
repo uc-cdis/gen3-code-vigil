@@ -78,7 +78,7 @@ class TestTaskToken(object):
         default_max_exp = 3600
         requested_exp = default_max_exp + 177
         if not gat.service_version_lower_than("fence", "2026.12", "15.2.0"):
-            with self.fence.get_dpop_bound_task_token("FOO", expected_status_code=400) as (
+            with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp, expected_status_code=400) as (
                 token,
                 url,
             ):
