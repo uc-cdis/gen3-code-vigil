@@ -68,28 +68,35 @@ class TestTaskToken(object):
 
     def test_obtain_task_token_max_ttl(self):
         """
-        Should be able to obtain a task token by going through the DPoP proxy.
-
         A lifetime > MAX_ACCESS_TOKEN_TTL should not work for task token type != WORKFLOW since
-        it's not configured in MAX_TASK_TOKEN_TTL. We should get exp == MAX_ACCESS_TOKEN_TTL.
+        it's not configured in MAX_TASK_TOKEN_TTL.
 
         TODO: add test case for a user that has access to a specific task token lifetime,
         e.g. "/services/fence/task-token/WORKFLOW/4000" once this is done:
         https://ctds-planx.atlassian.net/browse/MIDRC-1319
         """
         default_max_exp = 3600
-        requested_exp = 3777
-        with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp) as (
-            other_task_token,
-            _,
-        ):
-            exp = jwt.decode(
+        requested_exp = default_max_exp + 177
+        if not gat.service_version_lower_than("fence", "2026.12", "15.2.0"):
+            with self.fence.get_dpop_bound_task_token("FOO", expected_status_code=400) as (
+                token,
+                url,
+            ):
+                assert token == None
+                assert url == None
+        else:
+            # TODO: remove this block once fence is updated everywhere
+            with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp) as (
                 other_task_token,
-                algorithms=["RS256"],
-                options={"verify_signature": False},
-            )["exp"]
-        now = int(time.time())
-        assert default_max_exp - PROXY_GRACE_PERIOD_SEC <= exp - now <= default_max_exp
+                _,
+            ):
+                exp = jwt.decode(
+                    other_task_token,
+                    algorithms=["RS256"],
+                    options={"verify_signature": False},
+                )["exp"]
+            now = int(time.time())
+            assert default_max_exp - PROXY_GRACE_PERIOD_SEC <= exp - now <= default_max_exp
 
     def test_obtain_task_token_unsupported_type(self):
         """
