@@ -31,8 +31,7 @@ mv "$master_values_yaml" "$manifest_values_yaml"
 ####################################################################################
 echo "###################################################################################"
 if [[ -n $RELEASE_VERSION ]]; then
-  INTEGRATION_BRANCH="integration${RELEASE_VERSION/./}"
-  echo "INTEGRATION BRANCH value : ${INTEGRATION_BRANCH}"
+  echo "Image value used for testing : ${RELEASE_VERSION}"
   keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
   for key in $keys_ci; do
   if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" ]]; then
@@ -43,8 +42,8 @@ if [[ -n $RELEASE_VERSION ]]; then
     elif [ "$(echo -n $service_enabled_value)" = "false" ]; then
         echo "Skipping image update for ${key} as service enabled is set to false"
     elif [ ! -z "$image_tag_value" ]; then
-        echo "Updating ${key} service from ${image_tag_value} to ${INTEGRATION_BRANCH}"
-        yq eval ".${key}.image.tag = \"$INTEGRATION_BRANCH\"" -i $manifest_values_yaml
+        echo "Updating ${key} service from ${image_tag_value} to ${RELEASE_VERSION}"
+        yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
     fi
   else
     echo "Skipping image update for ${key}"
