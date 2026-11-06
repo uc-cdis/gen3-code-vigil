@@ -28,9 +28,7 @@ spec:
             secretName: api-keys
       containers:
         - name: load-tests-tes
-          image: quay.io/cdis/gen3-integration-tests:load_tests_tes-load-test-k8s
-          # image: quay.io/cdis/gen3-integration-tests:load_tests_master
-          # TODO revert to this ^
+          image: quay.io/cdis/gen3-integration-tests:load_tests_master
           imagePullPolicy: Always
           command: ["/bin/bash"]
           args:
@@ -47,16 +45,17 @@ spec:
                 echo "Running only: $TEST_SUITE"
                 poetry run pytest -s -m "not wip" --dist loadscope -k "$TEST_SUITE"
               fi
-
-              exitcode=$?
-              echo "Exit code: $exitcode"
+              echo "Tests exit code: $?"
 
               echo "Uploading outputs to S3 bucket"
               aws s3 cp output s3://tes-load-tests-outputs/$(date +%Y-%m-%d).run-${RUN_NUM}.attempt-${ATTEMPT_NUM} --recursive
 
-              # TODO post notification to slack?
-
-              exit 0 # not `exit "$exitcode"`: the job is successful even if the tests aren't
+              echo "Posting notification to Slack"
+              poetry run python -m gen3_ci.scripts.generate_slack_report
+              curl -s -S -X POST "https://slack.com/api/chat.postMessage" \
+              -H "Authorization: Bearer ${CI_SLACK_BOT_TOKEN}" \
+              -H "Content-Type: application/json; charset=utf-8" \
+              --data-binary "@./tests/slack_report.json"
           volumeMounts:
             - name: api-keys-volume
               mountPath: /home/gen3/.gen3

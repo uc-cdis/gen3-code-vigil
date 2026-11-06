@@ -19,7 +19,7 @@ on:
       GITOPS_BRANCH:
         description: 'A "uc-cdis/gen3-gitops" branch. Make changes to "uc-cdis/gen3-gitops/ci/perf" to run load tests on different images or configuration. Ignored if RELEASE_VERSION is specified.'
         required: false
-        default: copy_brh_stg+2-6_replicas # TODO revert to master
+        default: master
       RESET_NAMESPACE:
         required: false
         type: choice
@@ -41,7 +41,7 @@ on:
         options:
           - 'true'
           - 'false'
-        default: 'true' # TODO revert to false
+        default: 'false'
 
 concurrency:
   # allow multiple simultaneous runs for TES tests only
@@ -147,6 +147,7 @@ jobs:
           RUN_NUM: ${{ github.run_number }}
           ATTEMPT_NUM: ${{ github.run_attempt }}
           SLACK_CHANNEL: ${{ secrets.CI_SLACK_CHANNEL_ID }}
+          CI_SLACK_BOT_TOKEN: ${{ secrets.CI_SLACK_BOT_TOKEN }}
           MTLS_CRT: ${{ secrets.MTLS_CRT }}
           MTLS_KEY: ${{ secrets.MTLS_KEY }}
           TEST_SUITE: ${{ needs.setup.outputs.TEST_SUITE }}
@@ -370,7 +371,10 @@ jobs:
                   {"name": "NAMESPACE", "value": strenv(NAMESPACE)},
                   {"name": "RUN_NUM", "value": strenv(RUN_NUM)},
                   {"name": "ATTEMPT_NUM", "value": strenv(ATTEMPT_NUM)},
-                  {"name": "RELEASE_VERSION", "value": strenv(RELEASE_VERSION)}
+                  {"name": "RELEASE_VERSION", "value": strenv(RELEASE_VERSION)},
+                  {"name": "GITHUB_RUN_STARTED_AT", "value": strenv(GITHUB_RUN_STARTED_AT)},
+                  {"name": "SLACK_CHANNEL", "value": strenv(SLACK_CHANNEL)},
+                  {"name": "CI_SLACK_BOT_TOKEN", "value": strenv(CI_SLACK_BOT_TOKEN)}
                 ]
               ' $JOB
 

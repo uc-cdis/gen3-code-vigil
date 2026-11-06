@@ -58,6 +58,14 @@ def get_task_with_backoff_retry(endpoint, task_id):
     return response.json()
 
 
+def cancel_task(endpoint, task_id):
+    response = requests.post(
+        url=f"{endpoint}/ga4gh/tes/v1/tasks/{task_id}:cancel",
+        headers={"authorization": f"bearer {os.environ['GEN3_TOKEN']}"},
+    )
+    assert response.status_code == 200, response.text
+
+
 def monitor_task(endpoint, task_id):
     sleep_time = 5
     max_attempt = math.ceil(int(float(os.environ["TIMEOUT"])) / sleep_time)
@@ -75,7 +83,7 @@ def monitor_task(endpoint, task_id):
             break
         if attempt == max_attempt - 1:
             logger.info(f"Task did not complete in time ({max_attempt} attempts)")
-            # TODO cancel task if timed out
+            cancel_task(endpoint, task_id)
             break
         time.sleep(sleep_time)
     return status, data
