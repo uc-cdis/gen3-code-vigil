@@ -21,7 +21,9 @@ Configuring the TES or Nextflow `concurrency` to `[]` skips those tests.
 """
 
 import asyncio
+import copy
 import json
+import logging
 import os
 import random
 import subprocess
@@ -34,65 +36,89 @@ from typing import List
 import boto3
 import pytest
 from botocore.config import Config
-from services.gen3workflow import _get_access_token, cleanup_user_bucket, setup_storage
+from services.fence import get_dpop_bound_task_token
+from services.gen3workflow import Gen3Workflow
 from utils import LOAD_TESTING_OUTPUT_PATH, load_test, logger
 from utils.misc import percentile
 from utils.test_execution import attach_output_file
 
-VERBOSE = False  # if false, details are not on stdout but are still in the log file
-INCLUDE_TIMESTAMPS_IN_LOGS = False
-RUN_TIMEOUT = 1200  # 10 min # TODO why do TES runs take 20 min, 30 min, 1h? works for Nextflow runs
+# TODO why do TES runs take 20 min, 30 min, 1h? this timeout works for Nextflow runs
+# check if this is still the case after the latest updates...
+EACH_JOB_TIMEOUT = 60 * 20  # 20 min
 LOG_FILE_NAME = f"gen3-workflow-tes-performance-logs-{int(time.time())}.txt"
-
 LOG_FILE_PATH = LOAD_TESTING_OUTPUT_PATH / LOG_FILE_NAME
 SCRIPTS_DIR = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "../test_data/tes_performance_scripts"
 )
-PARAMS = json.loads(os.getenv("PARAMS", {}))
+DEFAULT_PARAMS = {
+    "tes_concurrency": [5, 100],
+    "nextflow_concurrency": [5, 10, 20],
+    "nextflow_n_tasks": [1, 5],
+    "test_cases": [
+        "nextflow_basic",
+        "nextflow_gpu",
+        "tes_basic",
+        "tes_inputs_outputs",
+        "tes_8mb_s3_upload",
+        "tes_gpu",
+        # NOT included because it does not need to run alongside the other, shorter tests:
+        # "tes_long_running"
+    ],
+    "tes_long_running_n_hours": 24,  # limited by Fence's `MAX_TASK_TOKEN_TTL` configuration
+}
+PARAMS = json.loads(os.getenv("PARAMS", "{}"))
+PARAMS = {**DEFAULT_PARAMS, **PARAMS}
+ONE_HOUR = 60 * 60  # default token lifetime
+TES_LONG_RUNNING_SCRIPT = "tes_long_running.py"
 
-TESTS = [
-    # {
-    #     "name": "Random failures",
-    #     "type": "Random",
-    #     "n_concurrent_runs": 5,
-    # },
-]
+
+######################### START DEFINE TESTS
+
+
+TESTS = []
+
+# Mocks a load test without making real TES requests. Uncomment it to use during development.
+# TESTS.append({"name": "Random failures", "type": "Random", "n_concurrent_runs": 5})
 
 # Nextflow tests
-for concurrency in PARAMS.get("nextflow", {}).get("concurrency", [5, 10, 20]):
-    for n_tasks in PARAMS.get("nextflow", {}).get("n_tasks", [1, 5]):
-        if PARAMS.get("nextflow", {}).get("test_case_simple", True):
+for concurrency in PARAMS["nextflow_concurrency"]:
+    for n_tasks in PARAMS["nextflow_n_tasks"]:
+        base = {
+            "type": "Nextflow",
+            "n_concurrent_runs": concurrency,
+            "n_tasks": n_tasks,
+        }
+        if "nextflow_basic" in PARAMS["test_cases"]:
             # Note: Nextflow tests always include inputs/outputs
             TESTS.append(
                 {
+                    **base,
                     "name": f"Nextflow test ({n_tasks} tasks, concurrency {concurrency})",
-                    "type": "Nextflow",
-                    "n_concurrent_runs": concurrency,
-                    "n_tasks": n_tasks,
                     "gpu": False,
                     "workflow_file": "hello.nf",
                 }
             )
-        if PARAMS.get("nextflow", {}).get("test_case_gpu", True):
+        if "nextflow_gpu" in PARAMS["test_cases"]:
             TESTS.append(
                 {
+                    **base,
                     "name": f"Nextflow GPU test ({n_tasks} tasks, concurrency {concurrency})",
-                    "type": "Nextflow",
-                    "n_tasks": n_tasks,
-                    "n_concurrent_runs": concurrency,
                     "gpu": True,
                     "workflow_file": "gpu.nf",
                 }
             )
 
 # TES tests
-for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
-    if PARAMS.get("tes", {}).get("test_case_simple", True):
+base = {
+    "type": "TES",
+}
+for concurrency in PARAMS["tes_concurrency"]:
+    base["n_concurrent_runs"] = concurrency
+    if "tes_basic" in PARAMS["test_cases"]:
         TESTS.append(
             {
+                **base,
                 "name": f"TES test (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
                 "payload": {
                     "name": f"Hello-World (concurrency {concurrency})",
                     "executors": [
@@ -106,12 +132,12 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_inputs_outputs", True):
+    if "tes_inputs_outputs" in PARAMS["test_cases"]:
         TESTS.append(
             {
+                **base,
                 "name": f"TES test with inputs-outputs (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
+                "token_lifetime": 2 * ONE_HOUR,
                 "payload": {
                     "name": "Input-Output-Test",
                     "inputs": [
@@ -140,12 +166,12 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_8mb_s3_upload", True):
+    if "tes_8mb_s3_upload" in PARAMS["test_cases"]:
         TESTS.append(
             {
+                **base,
                 "name": f"TES test with 8MB S3 upload (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
+                "token_lifetime": 2 * ONE_HOUR,
                 "payload": {
                     "name": "TES-S3-Upload-Test-8MB",
                     "outputs": [
@@ -167,13 +193,12 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
                 },
             }
         )
-    if PARAMS.get("tes", {}).get("test_case_gpu", True):
+    if "tes_gpu" in PARAMS["test_cases"]:
         # Note: the command doesn't actually need a GPU, we only test scheduling on the GPU node
         TESTS.append(
             {
+                **base,
                 "name": f"TES GPU test (concurrency {concurrency})",
-                "type": "TES",
-                "n_concurrent_runs": concurrency,
                 "payload": {
                     "name": f"Hello-World (GPU, concurrency {concurrency})",
                     "tags": {"_GPU": "yes"},
@@ -189,7 +214,41 @@ for concurrency in PARAMS.get("tes", {}).get("concurrency", [5, 100]):
             }
         )
 
-logger.info(f"Running test cases: {[t['name'] for t in TESTS]}")
+if "tes_long_running" in PARAMS["test_cases"]:
+    TESTS.append(
+        {
+            **base,
+            "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
+            "n_concurrent_runs": 1,
+            # token valid for 30 min longer in case the task takes time to start
+            "token_lifetime": (PARAMS["tes_long_running_n_hours"] + 0.5) * ONE_HOUR,
+            "payload": {
+                "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
+                "inputs": [
+                    {
+                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/{TES_LONG_RUNNING_SCRIPT}",
+                        "path": f"/work/{TES_LONG_RUNNING_SCRIPT}",
+                    },
+                ],
+                "executors": [
+                    {
+                        "image": "python:3.13-slim",
+                        "workdir": "/work",
+                        "command": [
+                            f"pip install 'gen3[dpop]' && python {TES_LONG_RUNNING_SCRIPT}"
+                        ],
+                        "env": {
+                            "API_KEY": pytest.api_keys["main_account"]["api_key"],
+                            "RUN_N_HOURS": str(PARAMS["tes_long_running_n_hours"]),
+                        },
+                    },
+                ],
+            },
+        }
+    )
+
+
+######################### END DEFINE TESTS
 
 
 @dataclass
@@ -201,26 +260,10 @@ class RunStats:
     return_code: int
 
 
-@pytest.fixture(scope="session")
-def log_file():
-    logger.info(f"Printing to {LOG_FILE_PATH}")
-    log_file = open(LOG_FILE_PATH, "a")
-    yield log_file
-    log_file.close()
-
-
-def log(log_file, level, msg):
-    # print to terminal
-    if INCLUDE_TIMESTAMPS_IN_LOGS:
-        getattr(logger, level)(msg)
-    else:
-        if level != "debug" or VERBOSE:
-            print(msg)
-
-    # print to log file
+def log(level, msg):
     if type(msg) == bytes:
         msg = msg.decode()
-    log_file.write(msg + "\n")
+    getattr(logger, level)(msg)
 
 
 def seconds_to_human_format(total_seconds):
@@ -235,7 +278,11 @@ def seconds_to_human_format(total_seconds):
     return res
 
 
-def print_stats(log_file, stats_list, run_time_seconds):
+def print_stats(stats_list, run_time_seconds):
+    if not stats_list:
+        log("info", "No tests were run")
+        return
+
     n_runs = len(stats_list)
     n_successful_runs = 0
     avg_run_time = 0
@@ -255,49 +302,42 @@ def print_stats(log_file, stats_list, run_time_seconds):
     avg_run_time = avg_run_time / n_runs
     n_failed_runs = n_runs - n_successful_runs
 
-    log(log_file, "info", f"Number of runs: {n_runs}")
+    log("info", f"Number of runs: {n_runs}")
     log(
-        log_file,
         "info",
         f"Total run time: {seconds_to_human_format(run_time_seconds)}",
     )
-    log(log_file, "info", f"Successful runs: {n_successful_runs}")
+    log("info", f"Successful runs: {n_successful_runs}")
     if n_runs:
-        log(log_file, "info", f"Success rate: {n_successful_runs / n_runs * 100:.2f}%")
+        log("info", f"Success rate: {n_successful_runs / n_runs * 100:.2f}%")
     log(
-        log_file,
         "info",
         f"Average run time (all runs): {seconds_to_human_format(avg_run_time)}",
     )
     if n_successful_runs:
         log(
-            log_file,
             "info",
             f"Average run time (successful runs): {seconds_to_human_format(sum(successful_run_times) / n_successful_runs)}",
         )
         log(
-            log_file,
             "info",
             f"Min run time (successful runs): {seconds_to_human_format(min(successful_run_times))}",
         )
         log(
-            log_file,
             "info",
             f"Max run time (successful runs): {seconds_to_human_format(max(successful_run_times))}",
         )
     if n_failed_runs:
         log(
-            log_file,
             "info",
             f"Average run time (failed runs): {seconds_to_human_format(total_time_failed / n_failed_runs)}",
         )
     if len(successful_run_times) > 1:
         log(
-            log_file,
             "info",
             f"Run time standard deviation (successful runs): {seconds_to_human_format(stdev(successful_run_times))}",
         )
-    log(log_file, "info", "")
+    log("info", "")
 
     summary = {
         "metrics": {
@@ -322,16 +362,19 @@ def print_stats(log_file, stats_list, run_time_seconds):
                 "p(90)": round(percentile(all_run_times, 90), 2),
                 "p(95)": round(percentile(all_run_times, 95), 2),
             },
-            "data_sent": {"count": 0, "rate": 0},
         }
     }
     return summary
 
 
 async def run_command(
-    log_file, cmd: List[str], conc_id: int, config: dict, env: dict = {}
+    cmd: List[str], conc_id: int, test_case: dict, env: dict | None = None
 ) -> RunStats:
-    test_name = config["name"]
+    env = env or {}
+    test_name = test_case["name"]
+    timeout = (
+        test_case["token_lifetime"] if "long-running" in test_name else EACH_JOB_TIMEOUT
+    )
 
     try:
         loop = asyncio.get_event_loop()
@@ -345,32 +388,30 @@ async def run_command(
                 None,  # uses default ThreadPoolExecutor
                 lambda: subprocess.run(
                     cmd,
-                    env={**os.environ.copy(), **env},
+                    env={**os.environ.copy(), "TIMEOUT": str(timeout), **env},
                     capture_output=True,
                     text=True,
-                    timeout=RUN_TIMEOUT,
+                    timeout=timeout,
                     cwd=temp_dir,
                 ),
             )
         run_time = time.perf_counter() - start_time
 
         successful = True
-        if result.returncode != 0 or "ERROR" in result.stdout:
+        if result.returncode != 0:
             successful = False
         log(
-            log_file,
             "debug",
             f"    '{test_name}' run {conc_id} {'completed' if successful else 'failed'} in {run_time:.2f}s",
         )
         if not successful:
             stdout = f"{result.stdout}\n---\n" if result.stdout else ""
             log(
-                log_file,
                 "debug",
                 f"    Error code: {result.returncode}. Logs:\n{stdout}{result.stderr}",
             )
         elif result.stdout:
-            log(log_file, "debug", f"    Logs:\n{result.stdout}")
+            log("debug", f"    Logs:\n{result.stdout}")
 
         return RunStats(
             test_name=test_name,
@@ -382,20 +423,20 @@ async def run_command(
 
     except Exception as e:
         log(
-            log_file,
             "error",
             f"❌ '{test_name}' run {conc_id} failed: {e}",
         )
         run_time = 0
         if type(e) == subprocess.TimeoutExpired:
-            run_time = RUN_TIMEOUT
-            log(log_file, "debug", "Timed out. Logs:\n")
+            # TODO cancel task if it timed out
+            run_time = timeout
+            log("debug", "Timed out. Logs:\n")
             if e.stdout:
                 for line in e.stdout.split(b"\n"):
-                    log(log_file, "debug", line)
+                    log("debug", line)
             if e.stderr:
                 for line in e.stderr.split(b"\n"):
-                    log(log_file, "debug", line)
+                    log("debug", line)
         return RunStats(
             test_name=test_name,
             conc_id=conc_id,
@@ -405,25 +446,23 @@ async def run_command(
         )
 
 
-async def run_random_failures(
-    log_file, conc_id: int, config: dict, **kwargs
-) -> RunStats:
+async def run_random_failures(conc_id: int, test_case: dict, **kwargs) -> RunStats:
     r = random.randint(-2, 3)
-    # log(f"Random failure: {r=}")
+    log("debug", f"Random failure: {r=}")
     cmd = ["sleep", str(r)]
-    return await run_command(log_file, cmd, conc_id, config)
+    return await run_command(cmd, conc_id, test_case)
 
 
 async def run_tes_task(
-    log_file,
     conc_id: int,
-    config: dict,
+    test_case: dict,
     endpoint: str,
     bucket: str,
+    access_token: str,
 ) -> RunStats:
     # simulate tasks that take 0 to 5s to complete
     sleep_time = random.randint(0, 5)
-    payload = config["payload"]
+    payload = copy.deepcopy(test_case["payload"])
     payload["executors"][0]["command"][0] = payload["executors"][0]["command"][
         0
     ].replace("SLEEP_TIME_PLACEHOLDER", str(sleep_time))
@@ -442,65 +481,88 @@ async def run_tes_task(
         json.dumps(payload),
     ]
     return await run_command(
-        log_file,
         cmd,
         conc_id,
-        config,
-        {"GEN3_TOKEN": _get_access_token("main_account")},
+        test_case,
+        {"GEN3_TOKEN": access_token},
     )
 
 
 async def run_nextflow_workflow(
-    log_file,
     conc_id: int,
-    config: dict,
+    test_case: dict,
     endpoint: str,
     bucket: str,
+    access_token: str,
 ) -> RunStats:
     # to run multiple Nextflow workflows at the same time, each must run inside its own directory:
     # generate a unique ID that will be used to generate a unique workdir and log file
-    unique_nf_run_id = f"{str(abs(hash(config['name'])))[:6]}_{conc_id}"
+    unique_nf_run_id = f"{str(abs(hash(test_case['name'])))[:6]}_{conc_id}"
     cmd = [
         "python",
         os.path.join(SCRIPTS_DIR, "run_nextflow_workflow.py"),
-        os.path.join(SCRIPTS_DIR, config["workflow_file"]),
+        os.path.join(SCRIPTS_DIR, test_case["workflow_file"]),
         os.path.join(SCRIPTS_DIR, "base_nextflow.config"),
-        str(config["n_tasks"]),
+        str(test_case["n_tasks"]),
     ]
     return await run_command(
-        log_file,
         cmd,
         conc_id,
-        config,
+        test_case,
         {
-            "GEN3_TOKEN": _get_access_token("main_account"),
+            "GEN3_TOKEN": access_token,
             "ENDPOINT": endpoint,
             "BUCKET": bucket,
-            "GPU": "yes" if config["gpu"] else "no",
+            "GPU": "yes" if test_case["gpu"] else "no",
             "RUN_ID": unique_nf_run_id,
         },
     )
 
 
+@pytest.fixture(scope="class", autouse=True)
+def setup():
+    # for this test class, the logger also prints to a file
+    file_handler = logging.FileHandler(LOG_FILE_PATH, mode="a")
+    logger.addHandler(file_handler)
+
+    log("info", f"Parameters: {json.dumps(PARAMS)}")
+    log("info", f"Running test cases: {[t['name'] for t in TESTS]}")
+
+    yield
+
+    logger.removeHandler(file_handler)
+
+
 class TestTesPerformance:
     @classmethod
     def setup_class(cls):
-        cls.s3_storage_config = setup_storage()
-        cleanup_user_bucket()
+        cls.gen3_workflow = Gen3Workflow()
+        cls.s3_storage_config = cls.gen3_workflow.setup_storage()
+        cls.gen3_workflow.cleanup_user_bucket()
 
         # upload the input file used by TES tests
-        s3_client = boto3.client(
-            service_name="s3",
-            aws_access_key_id=_get_access_token("main_account"),
-            aws_secret_access_key="N/A",
-            endpoint_url=f"{pytest.root_url}/workflows/s3",
-            config=Config(region_name=cls.s3_storage_config["region"]),
-        )
-        s3_client.put_object(
-            Bucket=cls.s3_storage_config["bucket"],
-            Key="inputs/test-file.txt",
-            Body="this is my test file\n",
-        )
+        with get_dpop_bound_task_token("WORKFLOW") as (
+            access_token,
+            proxy_url,
+        ):
+            s3_client = boto3.client(
+                service_name="s3",
+                aws_access_key_id=access_token,
+                aws_secret_access_key="N/A",
+                endpoint_url=f"{proxy_url}/s3",
+                config=Config(region_name=cls.s3_storage_config["region"]),
+            )
+            s3_client.put_object(
+                Bucket=cls.s3_storage_config["bucket"],
+                Key="inputs/test-file.txt",
+                Body="this is my test file\n",
+            )
+            if "tes_long_running" in PARAMS["test_cases"]:
+                s3_client.upload_file(
+                    Filename=f"test_data/tes_performance_scripts/{TES_LONG_RUNNING_SCRIPT}",
+                    Bucket=cls.s3_storage_config["bucket"],
+                    Key=f"inputs/{TES_LONG_RUNNING_SCRIPT}",
+                )
 
     @pytest.fixture(scope="class", autouse=True)
     def print_logs_at_end_of_tests(self):
@@ -510,14 +572,14 @@ class TestTesPerformance:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "config", [pytest.param(config, id=config["name"]) for config in TESTS]
+        "test_case",
+        [pytest.param(test_case, id=test_case["name"]) for test_case in TESTS],
     )
-    async def test_gen3_workflow_tes_performance(self, log_file, config):
-
+    async def test_gen3_workflow_tes_performance(self, test_case):
         test_start = time.perf_counter()
-        log(log_file, "info", f"'{config['name']}' starting")
+        log("info", f"'{test_case['name']}' starting")
 
-        _type = config["type"]
+        _type = test_case["type"]
         if _type == "Random":
             method = run_random_failures
         elif _type == "Nextflow":
@@ -528,30 +590,31 @@ class TestTesPerformance:
             raise Exception(f"Unknown test type '{_type}'")
 
         # launch `n_concurrent_runs` concurrent runs
-        n_concurrent_runs = config["n_concurrent_runs"]
-        tasks = [
-            method(
-                log_file,
-                conc_id=conc_run,
-                config=config,
-                endpoint=pytest.root_url,
-                bucket=self.s3_storage_config["bucket"],
-            )
-            for conc_run in range(1, n_concurrent_runs + 1)
-        ]
-        run_stats = await asyncio.gather(*tasks)
+        with get_dpop_bound_task_token(
+            "WORKFLOW", expires_in=int(test_case.get("token_lifetime", ONE_HOUR))
+        ) as (
+            access_token,
+            proxy_url,
+        ):
+            tasks = [
+                method(
+                    conc_id=conc_run,
+                    test_case=test_case,
+                    endpoint=proxy_url,
+                    bucket=self.s3_storage_config["bucket"],
+                    access_token=access_token,
+                )
+                for conc_run in range(1, test_case["n_concurrent_runs"] + 1)
+            ]
+            run_stats = await asyncio.gather(*tasks)
 
         test_duration_seconds = time.perf_counter() - test_start
-        log(
-            log_file,
-            "info",
-            f"✅ '{config['name']}' stats:",
-        )
-        summary = print_stats(log_file, run_stats, test_duration_seconds)
-        log(log_file, "info", json.dumps(summary, indent=2))
+        log("info", f"✅ '{test_case['name']}' stats:")
+        summary = print_stats(run_stats, test_duration_seconds)
+        log("info", json.dumps(summary, indent=2))
 
         service = "gen3-workflow"
-        scenario = f"tes-performance[{config['name']}]"
+        scenario = f"tes-performance[{test_case['name']}]"
         file_name = f"{service}-{scenario}.json"
         output_path = LOAD_TESTING_OUTPUT_PATH / file_name
         with open(output_path, "w") as f:

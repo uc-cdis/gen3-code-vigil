@@ -19,14 +19,42 @@ on:
       GITOPS_BRANCH:
         description: 'A "uc-cdis/gen3-gitops" branch. Make changes to "uc-cdis/gen3-gitops/ci/perf" to run load tests on different images or configuration. Ignored if RELEASE_VERSION is specified.'
         required: false
-        default: master
+        default: copy_brh_stg+2-6_replicas # TODO revert to master
+      RESET_NAMESPACE:
+        required: false
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        default: 'true'
       PARAMS:
-        description: 'Custom parameters as a JSON string, as defined by each test'
+        description: |
+          Custom parameters as a JSON string, as defined by each test.
+
+          For TES: {"tes_concurrency": [5, 100], "nextflow_concurrency": [5, 10, 20], "nextflow_n_tasks": [1, 5], "test_cases": [...]}
         required: false
         default: '{}'
+      RUN_TES_TESTS:
+        description: 'Use this to run (only) the TES load tests (overwrites some of the parameters above)'
+        required: false
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+        default: 'true' # TODO revert to false
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # allow multiple simultaneous runs for TES tests only
+  # /!\ this may affect performance results! but can be useful to run long-running tests.
+  group: >-
+    ${{ github.workflow }}-${{
+      (
+        github.event_name == 'workflow_dispatch'
+        && inputs.RESET_NAMESPACE == 'false'
+        && inputs.RUN_TES_TESTS == 'true'
+      ) && github.run_id
+      || (github.event.pull_request.number || github.ref)
+    }}
   cancel-in-progress: true
 
 permissions:
@@ -42,35 +70,68 @@ jobs:
         TEST_SUITE: ${{ steps.setvars.outputs.TEST_SUITE }}
         RELEASE_VERSION: ${{ steps.setvars.outputs.RELEASE_VERSION }}
         GITOPS_BRANCH: ${{ steps.setvars.outputs.GITOPS_BRANCH }}
+        RESET_NAMESPACE: ${{ steps.setvars.outputs.RESET_NAMESPACE }}
         PARAMS: ${{ steps.setvars.outputs.PARAMS }}
+        RUN_TES_TESTS: ${{ steps.setvars.outputs.RUN_TES_TESTS }}
       steps:
         - name: Determine TEST_SUITE and RELEASE_VERSION
           id: setvars
+          env:
+            # this maps the workflow dispatch input to a step-level env variable, which preserves
+            # double quotes (since PARAMS is a JSON string)
+            RAW_PARAMS: ${{ inputs.PARAMS }}
           run: |
             # Determine values based on trigger
             if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-              TEST_SUITE="${{ github.event.inputs.TEST_SUITE }}"
-              RELEASE_VERSION="${{ github.event.inputs.RELEASE_VERSION }}"
-              GITOPS_BRANCH="${{ github.event.inputs.GITOPS_BRANCH }}"
+              TEST_SUITE="${{ inputs.TEST_SUITE }}"
+              RELEASE_VERSION="${{ inputs.RELEASE_VERSION }}"
+              GITOPS_BRANCH="${{ inputs.GITOPS_BRANCH }}"
               if [[ -n $RELEASE_VERSION ]]; then
                 echo "ignoring GITOPS_BRANCH parameter since RELEASE_VERSION is specified"
                 GITOPS_BRANCH=master
               fi
-              PARAMS="${{ github.event.inputs.PARAMS }}"
+              RESET_NAMESPACE="${{ inputs.RESET_NAMESPACE }}"
+              PARAMS="$RAW_PARAMS"
+              RUN_TES_TESTS="${{ inputs.RUN_TES_TESTS }}"
             else
               TEST_SUITE="ALL"
               RELEASE_VERSION=""
               GITOPS_BRANCH="master"
+              RESET_NAMESPACE='true'
               PARAMS='{}'
+              RUN_TES_TESTS='false'
             fi
+
+            if [[ "$RUN_TES_TESTS" == "true" ]]; then
+              TEST_SUITE="TestTesPerformance"
+            fi
+
+            echo "Validating PARAMS input (should be valid JSON)"
+            echo "$PARAMS" | jq empty || exit 1
 
             echo "TEST_SUITE=$TEST_SUITE" >> $GITHUB_OUTPUT
             echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
             echo "GITOPS_BRANCH=$GITOPS_BRANCH" >> $GITHUB_OUTPUT
+            echo "RESET_NAMESPACE=$RESET_NAMESPACE" >> $GITHUB_OUTPUT
             echo "PARAMS=$PARAMS" >> $GITHUB_OUTPUT
+            echo "RUN_TES_TESTS=$RUN_TES_TESTS" >> $GITHUB_OUTPUT
+    build-image:
+      name: Build image (load tests)
+      needs: setup
+      if: ${{ needs.setup.outputs.RUN_TES_TESTS == 'true' }}
+      uses: uc-cdis/.github/.github/workflows/image_build_push_native.yaml@master
+      with:
+        DOCKERFILE_LOCATION: "./gen3-load-tests/Dockerfile"
+        OVERRIDE_REPO_NAME: "gen3-integration-tests"
+        OVERRIDE_TAG_NAME: "load_tests_$(echo ${{ github.event_name == 'workflow_dispatch' && inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+        DOCKERFILE_BUILD_CONTEXT: "./gen3-load-tests"
+      secrets: inherit
     load_tests:
         runs-on: ubuntu-latest
-        needs: setup
+        needs:
+          - setup
+          - build-image
+        if: ${{ !failure() && !cancelled() }}  # run even if the `build-image` job is skipped
 
         defaults:
           run:
@@ -94,7 +155,7 @@ jobs:
           PARAMS: ${{ needs.setup.outputs.PARAMS }}
           EKS_CLUSTER_NAME : ${{ secrets.EKS_CLUSTER_NAME }}
           HELM_BRANCH: 'master'
-
+          SKIP_TESTS: 'false'
 
         steps:
           - name: Set Start Time
@@ -108,7 +169,7 @@ jobs:
             uses: actions/checkout@v4
             with:
               repository: uc-cdis/gen3-code-vigil
-              ref: ${{ inputs.TEST_REPO_BRANCH }}
+              ref: ${{ github.event.pull_request.head.ref }}
 
           # Ensure the PR is run under the same org as an Internal PR
           # and not by external forks/PRs
@@ -170,6 +231,7 @@ jobs:
 
           - name: Install dependencies
             if: ${{ env.SKIP_TESTS != 'true' }}
+            timeout-minutes: 10
             env:
               YQ_VERSION: v4.45.2
               YQ_BINARY: yq_linux_amd64
@@ -221,16 +283,23 @@ jobs:
             run: |
               NAMESPACE=ci-perf
               HOSTNAME=perf.ci.planx-pla.net
+              if [[ "${{ needs.setup.outputs.RUN_TES_TESTS }}" == "true" ]]; then
+                NAMESPACE=ci-perf-tes
+                HOSTNAME=tes-perf.ci.planx-pla.net
+              fi
               echo "NAMESPACE=$NAMESPACE" >> $GITHUB_ENV
               echo "HOSTNAME=$HOSTNAME" >> $GITHUB_ENV
               echo "HOSTNAME_PROTOCOL=https" >> $GITHUB_ENV
-              namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
-              if [ -n "$namespace_exists" ]; then
-                echo "Namespace $NAMESPACE exists, performing teardown..."
-                helm delete $NAMESPACE -n $NAMESPACE || true
-                kubectl delete ns $NAMESPACE
+
+              if [[ "${{ needs.setup.outputs.RESET_NAMESPACE }}" == "true" ]]; then
+                namespace_exists=$(kubectl get namespace "$NAMESPACE" --no-headers --ignore-not-found)
+                if [ -n "$namespace_exists" ]; then
+                  echo "Namespace $NAMESPACE exists, performing teardown..."
+                  helm delete $NAMESPACE -n $NAMESPACE || true
+                  kubectl delete ns $NAMESPACE
+                fi
+                kubectl create namespace $NAMESPACE
               fi
-              kubectl create namespace $NAMESPACE
 
           - name: Get test labels
             id: get_test_labels
@@ -261,28 +330,68 @@ jobs:
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir $HOME/.gen3
-              poetry run python -m gen3_ci.scripts.prepare_ci_environment
-              if [ $? -ne 0 ]; then
-                echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+              if [[ "${{ needs.setup.outputs.RESET_NAMESPACE }}" == "true" ]]; then
+                poetry run python -m gen3_ci.scripts.prepare_ci_environment
+                if [ $? -ne 0 ]; then
+                  echo "PR_ERROR_MSG=Failed to Prepare CI environment" >> $GITHUB_ENV
+                fi
               fi
 
           - name: Run tests
             id: run_tests
-            if: ${{ env.SKIP_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.RUN_TES_TESTS != 'true' && steps.prep_ci_env.outcome == 'success' }}
             continue-on-error: true  # if this fails, we still need to run clean-up steps
             run: |
               mkdir output
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope
+                poetry run pytest -n 1 -m "not wip" -k "not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                poetry run pytest -s -n 1 -m "not wip" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -n 1 -m "not wip" -k "not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
               fi
 
               if [ $? -ne 0 ]; then
                 echo "PR_ERROR_MSG=Test(s) failures encountered in PR" >> $GITHUB_ENV
               fi
+
+          - name: Run tests through k8s job
+            id: run_tests_job
+            if: ${{ env.SKIP_TESTS != 'true' && needs.setup.outputs.RUN_TES_TESTS == 'true' && steps.prep_ci_env.outcome == 'success' }}
+            run: |
+              JOB=gen3_ci/run-tes-tests-job.yaml
+              yq eval -i '
+                select(documentIndex == 1).spec.template.spec.containers[0].env = [
+                  {"name": "TEST_SUITE", "value": strenv(TEST_SUITE)},
+                  {"name": "GITOPS_BRANCH", "value": strenv(GITOPS_BRANCH)},
+                  {"name": "PARAMS", "value": strenv(PARAMS)},
+                  {"name": "HOSTNAME", "value": strenv(HOSTNAME)},
+                  {"name": "HOSTNAME_PROTOCOL", "value": strenv(HOSTNAME_PROTOCOL)},
+                  {"name": "NAMESPACE", "value": strenv(NAMESPACE)},
+                  {"name": "RUN_NUM", "value": strenv(RUN_NUM)},
+                  {"name": "ATTEMPT_NUM", "value": strenv(ATTEMPT_NUM)},
+                  {"name": "RELEASE_VERSION", "value": strenv(RELEASE_VERSION)}
+                ]
+              ' $JOB
+
+              # add a timestamp to differentiate multiple simultaneous runs
+              yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d).run-${RUN_NUM}.attempt-${ATTEMPT_NUM}\"" "$JOB"
+
+              echo $JOB:
+              cat $JOB
+
+              echo $HOME/.gen3
+              ls -lah $HOME/.gen3
+
+              # create or update API keys secret
+              if [[ "${{ needs.setup.outputs.RESET_NAMESPACE }}" == "true" ]]; then
+                kubectl create secret generic api-keys \
+                  --from-file="$HOME/.gen3" \
+                  --namespace=$NAMESPACE \
+                  --dry-run=client -o yaml | kubectl apply -f -
+              fi
+
+              kubectl apply -f $JOB
 
           - name: Generate allure report
             id: generate_allure_report
@@ -297,7 +406,7 @@ jobs:
 
           # Configure AWS credentials again: the previous creds may have expired
           - name: Configure AWS Credentials
-            if: ${{ env.SKIP_TESTS != 'true' }}
+            if: ${{ env.SKIP_TESTS != 'true' && steps.generate_allure_report.outcome == 'success' }}
             uses: aws-actions/configure-aws-credentials@v3
             with:
                 role-to-assume: arn:aws:iam::707767160287:role/github-action-role
@@ -334,5 +443,5 @@ jobs:
               payload-templated: true
 
           - name: Mark workflow as failed for unsuccessful test runs
-            if: ${{ env.SKIP_TESTS != 'true' && steps.run_tests.outcome != 'success' }}
+            if: ${{ env.SKIP_TESTS != 'true' && !(steps.run_tests.outcome == 'success' || steps.run_tests_job.outcome == 'success') }}
             run: echo "Test run was unsuccessful, marking workflow as failed" && exit 1

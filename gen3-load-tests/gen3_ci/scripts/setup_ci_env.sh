@@ -158,6 +158,7 @@ yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $manifest_values_ya
 yq eval ".funnel.externalSecrets.dbcreds = \"${namespace}-funnel-creds\"" -i $manifest_values_yaml
 yq eval ".funnel.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
 yq eval ".funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
+yq eval ".metadata.aggMdsNamespace = \"${namespace}\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
 # Remove aws-es-proxy block
@@ -273,7 +274,17 @@ wait_for_pods_ready() {
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
   ci_es_indices_setup
-  kubectl rollout restart guppy-deployment
+  kubectl rollout restart deployment guppy-deployment -n ${namespace}
+
+  # TODO: remove this
+  # guppy and MDS are currently failing to start in ci-perf-tes env
+  # gen3-embeddings deployment is currently broken
+  # portal is not needed for TES tests, remove it to speed things up
+  kubectl delete deployment guppy-deployment -n ${namespace}
+  kubectl delete deployment metadata-deployment -n ${namespace}
+  kubectl delete deployment gen3-embeddings -n ${namespace}
+  kubectl delete deployment portal-deployment -n ${namespace}
+
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"

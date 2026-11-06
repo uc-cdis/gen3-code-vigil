@@ -44,7 +44,7 @@ def modify_env_for_test_repo_pr(namespace):
     return setup_env_for_helm(arguments)
 
 
-def generate_api_keys_for_test_users(namespace):
+def generate_api_keys_for_test_users():
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
@@ -73,8 +73,9 @@ def prepare_ci_environment(namespace):
         assert result.lower() == "success"
     else:
         raise Exception("Load tests are run from test repository only.")
+
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users(namespace)
+    result = generate_api_keys_for_test_users()
     assert result.lower() == "success"
     return result
 
