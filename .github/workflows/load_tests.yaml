@@ -231,6 +231,7 @@ jobs:
 
           - name: Install dependencies
             if: ${{ env.SKIP_TESTS != 'true' }}
+            timeout-minutes: 10
             env:
               YQ_VERSION: v4.45.2
               YQ_BINARY: yq_linux_amd64
