@@ -21,6 +21,7 @@ Configuring the TES or Nextflow `concurrency` to `[]` skips those tests.
 """
 
 import asyncio
+import copy
 import json
 import logging
 import os
@@ -63,7 +64,7 @@ DEFAULT_PARAMS = {
         # NOT included because it does not need to run alongside the other, shorter tests:
         # "tes_long_running"
     ],
-    "tes_long_running_n_hours": 24,
+    "tes_long_running_n_hours": 24,  # limited by Fence's `MAX_TASK_TOKEN_TTL` configuration
 }
 PARAMS = json.loads(os.getenv("PARAMS", "{}"))
 PARAMS = {**DEFAULT_PARAMS, **PARAMS}
@@ -278,6 +279,10 @@ def seconds_to_human_format(total_seconds):
 
 
 def print_stats(stats_list, run_time_seconds):
+    if not stats_list:
+        log("info", "No tests were run")
+        return
+
     n_runs = len(stats_list)
     n_successful_runs = 0
     avg_run_time = 0
@@ -363,8 +368,9 @@ def print_stats(stats_list, run_time_seconds):
 
 
 async def run_command(
-    cmd: List[str], conc_id: int, test_case: dict, env: dict = {}
+    cmd: List[str], conc_id: int, test_case: dict, env: dict | None = None
 ) -> RunStats:
+    env = env or {}
     test_name = test_case["name"]
     timeout = (
         test_case["token_lifetime"] if "long-running" in test_name else EACH_JOB_TIMEOUT
@@ -456,7 +462,7 @@ async def run_tes_task(
 ) -> RunStats:
     # simulate tasks that take 0 to 5s to complete
     sleep_time = random.randint(0, 5)
-    payload = test_case["payload"]
+    payload = copy.deepcopy(test_case["payload"])
     payload["executors"][0]["command"][0] = payload["executors"][0]["command"][
         0
     ].replace("SLEEP_TIME_PLACEHOLDER", str(sleep_time))

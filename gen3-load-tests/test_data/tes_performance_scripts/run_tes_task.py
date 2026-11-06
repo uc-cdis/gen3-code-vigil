@@ -44,12 +44,10 @@ def monitor_task(endpoint, task_id):
             logger.info("Task complete!")
             break
         if status in ["SYSTEM_ERROR", "EXECUTOR_ERROR"]:
-            logger.info("info", "Task failed")
+            logger.info("Task failed")
             break
         if attempt == max_attempt - 1:
-            logger.info(
-                "info", f"Task did not complete in time ({max_attempt} attempts)"
-            )
+            logger.info(f"Task did not complete in time ({max_attempt} attempts)")
             # TODO cancel task if timed out
             break
         time.sleep(sleep_time)
@@ -99,5 +97,5 @@ if __name__ == "__main__":
         assert len(sys.argv) == 3, "Incorrect number of arguments"
         main(sys.argv[1], json.loads(sys.argv[2]))
     except Exception as e:
-        logger.error(f"Error: {e}", file=sys.stderr)
+        logger.error(f"Error: {e}")
         sys.exit(1)

@@ -344,10 +344,10 @@ jobs:
               mkdir output
               if [[ "${TEST_SUITE}" == "ALL" ]]; then
                 echo "Running full test suite..."
-                poetry run pytest -n 1 -m "not wip and not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope
+                poetry run pytest -n 1 -m "not wip" -k "not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope
               else
                 echo "Running only: $TEST_SUITE"
-                poetry run pytest -n 1 -m "not wip and not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
+                poetry run pytest -n 1 -m "not wip" -k "not TestTesPerformance" --alluredir allure-results --no-header --dist loadscope -k "$TEST_SUITE"
               fi
 
               if [ $? -ne 0 ]; then

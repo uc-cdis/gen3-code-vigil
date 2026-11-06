@@ -31,7 +31,7 @@ while time.time() < end_time:
             proxy_port,
         ):
             res = requests.get(
-                url=f"http://127.0.0.1:{proxy_port}/ga4gh/tes/v1/tasks?view=MINIMAL&page_size=1&tag_key=TEST_NAME&tag_value=test_dpop_task_token_within_tes_task",
+                url=f"http://127.0.0.1:{proxy_port}/ga4gh/tes/v1/tasks?page_size=1",
                 headers={"Authorization": f"bearer {task_token}"},
             )
             msg = f"Request to /ga4gh/tes/v1/tasks: {res.status_code}"
