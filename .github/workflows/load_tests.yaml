@@ -378,6 +378,10 @@ jobs:
                 ]
               ' $JOB
 
+              # use the image built for this branch (same as build-image step OVERRIDE_TAG_NAME)
+              tag_name="load_tests_$(echo ${{ github.event_name == 'workflow_dispatch' && inputs.tag || format('{0}', github.head_ref || github.ref_name) }} | tr / _)"
+              yq eval -i "select(documentIndex == 1).spec.template.spec.containers[0].image = \"quay.io/cdis/gen3-integration-tests:${tag_name}\"" "$JOB"
+
               # add a timestamp to differentiate multiple simultaneous runs
               yq eval -i "select(documentIndex == 1).metadata.name = \"run-tes-tests.$(date +%Y-%m-%d).run-${RUN_NUM}.attempt-${ATTEMPT_NUM}\"" "$JOB"
 
