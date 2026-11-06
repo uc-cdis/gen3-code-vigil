@@ -223,6 +223,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
+    # TODO: remove gen3-embeddings once the gen3-embedding issue is resolved
     if [[ "$key" != "global" && "$key" != "ambassador" && "$key" != "gen3-embeddings" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
