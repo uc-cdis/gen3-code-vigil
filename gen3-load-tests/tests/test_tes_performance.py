@@ -398,7 +398,7 @@ async def run_command(
         run_time = time.perf_counter() - start_time
 
         successful = True
-        if result.returncode != 0 or "ERROR" in result.stdout:
+        if result.returncode != 0:
             successful = False
         log(
             "debug",

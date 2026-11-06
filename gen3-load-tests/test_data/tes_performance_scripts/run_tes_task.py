@@ -6,11 +6,27 @@ import os
 import sys
 import time
 
+import backoff
 import requests
 from cdislogging import get_logger
 from dateutil import parser
+from gen3.utils import BACKOFF_NO_LOG_IF_NOT_RETRIED
 
-logger = get_logger(__name__, log_level="debug")
+logger = get_logger("run_tes_task", log_level="debug")
+
+
+BACKOFF_SETTINGS = {
+    **BACKOFF_NO_LOG_IF_NOT_RETRIED,
+    "base": 3,
+    "factor": 5,
+    # wait up to 5 min between calls, regardless of how many tries it takes to get to 5 min
+    "max_value": 300,
+    "max_tries": None,
+}
+
+
+class RetryableException(Exception):
+    pass
 
 
 def create_task(endpoint, body):
@@ -25,19 +41,30 @@ def create_task(endpoint, body):
     return data["id"]
 
 
+@backoff.on_exception(backoff.expo, RetryableException, **BACKOFF_SETTINGS)
+def get_task_with_backoff_retry(endpoint, task_id):
+    response = requests.get(
+        f"{endpoint}/ga4gh/tes/v1/tasks/{task_id}?view=FULL",
+        headers={"authorization": f"bearer {os.environ['GEN3_TOKEN']}"},
+        timeout=60,
+    )
+    if response.status_code != 200:
+        msg = f"Getting task '{task_id}': got status code {response.status_code}"
+        logger.error(f"{msg}. Details: {response.text}")
+        if response.status_code in [408, 409, 429, 502, 503, 504]:
+            raise RetryableException(msg)
+
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
 def monitor_task(endpoint, task_id):
     sleep_time = 5
     max_attempt = math.ceil(int(float(os.environ["TIMEOUT"])) / sleep_time)
     status = None
     data = {}
     for attempt in range(max_attempt):
-        response = requests.get(
-            f"{endpoint}/ga4gh/tes/v1/tasks/{task_id}?view=FULL",
-            headers={"authorization": f"bearer {os.environ['GEN3_TOKEN']}"},
-            timeout=60,
-        )
-        assert response.status_code == 200, response.text
-        data = response.json()
+        data = get_task_with_backoff_retry(endpoint, task_id)
         status = data["state"]
         logger.debug(f"Task status: {status}")
         if status == "COMPLETE":
