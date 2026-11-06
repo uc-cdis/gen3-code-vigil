@@ -62,14 +62,18 @@ def pytest_runtest_logreport(report):
 
     output = json.loads(output_path.read_text())
     metrics = output.get("metrics", {})
-    version = (
-        os.getenv("RELEASE_VERSION") or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
-    )
+    # Update integrationXXXX.XX to XXXX.XX (e.g. integration202601 to 2026.01)
+    # for grafana charts data collection purpose
+    release_version = os.getenv("RELEASE_VERSION")
+    if release_version and release_version.startswith("integration"):
+        version = release_version[len("integration") :]
+        release_version = f"{version[:4]}.{version[4:6]}"
+    release_version = release_version or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
     message = {
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
         "attempt_num": os.getenv("ATTEMPT_NUM"),
-        "release_version": version,
+        "release_version": release_version,
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
