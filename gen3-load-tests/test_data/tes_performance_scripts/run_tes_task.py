@@ -71,21 +71,19 @@ def monitor_task(endpoint, task_id):
     max_attempt = math.ceil(int(float(os.environ["TIMEOUT"])) / sleep_time)
     status = None
     data = {}
-    for attempt in range(max_attempt):
+    for _ in range(max_attempt):
         data = get_task_with_backoff_retry(endpoint, task_id)
         status = data["state"]
         logger.debug(f"Task status: {status}")
         if status == "COMPLETE":
             logger.info("Task complete!")
-            break
+            return status, data
         if status in ["SYSTEM_ERROR", "EXECUTOR_ERROR"]:
             logger.info("Task failed")
-            break
-        if attempt == max_attempt - 1:
-            logger.info(f"Task did not complete in time ({max_attempt} attempts)")
-            cancel_task(endpoint, task_id)
-            break
+            return status, data
         time.sleep(sleep_time)
+    logger.info(f"Task did not complete in time ({max_attempt} attempts)")
+    cancel_task(endpoint, task_id)
     return status, data
 
 
