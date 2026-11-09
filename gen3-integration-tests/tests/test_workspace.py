@@ -41,11 +41,6 @@ def page_setup(page):
     "workspace-proxy" in pytest.deployed_services,
     reason="Workspace(singular) does not load when workspace-proxy is enabled.",
 )
-# Workspace launch can take a while (up to 20 min wait in pages/workspace.py)
-@pytest.mark.skip(
-    reason="Justin's PR-https://github.com/uc-cdis/gen3-helm/pull/720 takes workspace to load more than 2 hours and "
-    "tests timeout"
-)
 @pytest.mark.timeout(1200)
 @pytest.mark.workspace
 @pytest.mark.frontend
