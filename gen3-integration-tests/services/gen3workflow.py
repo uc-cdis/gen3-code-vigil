@@ -17,6 +17,15 @@ from botocore.config import Config
 from services.fence import Fence
 from utils import logger
 
+# `main_account` and `user0_account` have access to create task tokens and use gen3-workflow
+VALID_USER = "main_account"
+OTHER_VALID_USER = "user0_account"
+# `dummy_one` has access to create task tokens, but not to use gen3-workflow
+INVALID_USER = "dummy_one"
+
+S3_FOLDER_NAME = "integration-tests"
+S3_FILE_NAME = "test-input.txt"
+
 
 @dataclass(frozen=True)
 class WorkflowStorageConfig:
@@ -56,6 +65,29 @@ class WorkflowStorageConfig:
             working_directory=data["workdir"],
             bucket_region=data["region"],
         )
+
+
+def base_tes_payload(request):
+    return {
+        "name": request.node.name,
+        "description": request.node.name,
+        "tags": {"_IMAGE_PULL_POLICY": "IfNotPresent"},
+    }
+
+
+def get_executor_log(task_info):
+    """
+    Returns the first executor log entry of a TES task, asserting that it exists and has 'stdout'.
+    """
+    task_logs = task_info.get("logs", [])
+    assert (
+        len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
+    ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
+    executor_log = task_logs[0]["logs"][0]
+    assert (
+        "stdout" in executor_log
+    ), f"Expected task log entry to have 'stdout', but got: {executor_log}"
+    return executor_log
 
 
 def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
@@ -216,7 +248,7 @@ class Gen3Workflow:
         action: str,
         object_path: str,
         s3_storage_config: WorkflowStorageConfig,
-        user: str = "main_account",
+        user: str = VALID_USER,
         expected_status=200,
         content: str = "",
         filename: str = "",
@@ -365,7 +397,7 @@ class Gen3Workflow:
     ##### /storage endpoint #####
     #############################
 
-    def setup_storage(self, user: str = "main_account", expected_status=200) -> Dict:
+    def setup_storage(self, user: str = VALID_USER, expected_status=200) -> Dict:
         """Makes a GET request to the `/storage/setup` endpoint."""
         with self.fence.get_token_and_gen3_url(user, suffix=self.SERVICE_URL) as (
             access_token,
@@ -392,7 +424,7 @@ class Gen3Workflow:
 
     def cleanup_user_bucket(
         self,
-        user: str = "main_account",
+        user: str = VALID_USER,
         ignore_missing=True,
         delete_bucket=False,
         expected_status=204,
@@ -401,7 +433,7 @@ class Gen3Workflow:
         Makes a DELETE request to the `/storage/user-bucket/objects` endpoint.
         This endpoint is used to delete the objects in a user's bucket in the Gen3 Workflow service.
         Args:
-            user (str): The user whose bucket is to be deleted. Defaults to "main_account".
+            user (str): The user whose bucket is to be deleted. Defaults to VALID_USER.
             ignore_missing (bool): If True, suppress error when the bucket does not exist (i.e., 404).
             delete_bucket(bool): If True, the s3 bucket is also deleted along with the object by making a request to DELETE /storage/user-bucket
             expected_status (int): Expected successful status code (default: 204 No Content).
@@ -442,7 +474,7 @@ class Gen3Workflow:
     ###############################################
 
     def get_bucket_object_with_unsigned_request(
-        self, object_path: str, user: str = "main_account", expected_status=401
+        self, object_path: str, user: str = VALID_USER, expected_status=401
     ):
         """Attempts to get an object without signing the request, expecting a failure."""
         with self.fence.get_token_and_gen3_url(
@@ -459,7 +491,7 @@ class Gen3Workflow:
         self,
         object_path: str,
         s3_storage_config: WorkflowStorageConfig,
-        user: str = "main_account",
+        user: str = VALID_USER,
         range: int = 0,
         expected_status=200,
     ):
@@ -483,7 +515,7 @@ class Gen3Workflow:
         self,
         folder_path: str,
         s3_storage_config: WorkflowStorageConfig,
-        user: str = "main_account",
+        user: str = VALID_USER,
         expected_status=200,
     ):
         """Retrieves a list of all S3 objects present in the given folder path."""
@@ -497,7 +529,7 @@ class Gen3Workflow:
         content: str,
         object_path: str,
         s3_storage_config: WorkflowStorageConfig,
-        user: str = "main_account",
+        user: str = VALID_USER,
         expected_status=200,
     ):
         """Uploads an object to S3."""
@@ -520,7 +552,7 @@ class Gen3Workflow:
         self,
         object_path: str,
         s3_storage_config: WorkflowStorageConfig,
-        user: str = "main_account",
+        user: str = VALID_USER,
         expected_status=200,
     ):
         """Deletes an object from S3."""
@@ -533,7 +565,7 @@ class Gen3Workflow:
     ######################################################
 
     def create_tes_task(
-        self, request_body: dict, user: str = "main_account", expected_status=200
+        self, request_body: dict, user: str = VALID_USER, expected_status=200
     ) -> str:
         """
         Takes in a request body and returns a string containing the task_id
@@ -556,7 +588,7 @@ class Gen3Workflow:
         return response.json()
 
     def list_tes_tasks(
-        self, user: str = "main_account", expected_status=200, use_dpop=False
+        self, user: str = VALID_USER, expected_status=200, use_dpop=False
     ):
         """
         Takes in a request body and returns a list of task objects
@@ -582,7 +614,7 @@ class Gen3Workflow:
     def get_tes_task(
         self,
         task_id: str,
-        user: str = "main_account",
+        user: str = VALID_USER,
         expected_status=200,
         use_dpop=False,
     ):
@@ -608,7 +640,7 @@ class Gen3Workflow:
         return response.json()
 
     def cancel_tes_task(
-        self, task_id: str, user: str = "main_account", expected_status=200
+        self, task_id: str, user: str = VALID_USER, expected_status=200
     ):
         """
         Takes in a request body and returns a task object which should have status 'CANCELING' or 'CANCELED'
@@ -635,7 +667,7 @@ class Gen3Workflow:
         workflow_script: str,
         s3_working_directory: str,
         s3_region: str,
-        user: str = "main_account",
+        user: str = VALID_USER,
         nextflow_config_file: str = None,
         params: Optional[dict] = None,
     ):
