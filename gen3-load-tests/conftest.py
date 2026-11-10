@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import boto3
 import pytest
@@ -48,18 +48,27 @@ def pytest_runtest_logreport(report):
     if report.when != "call":
         return
 
+    # generate the expected output file name from the test name (`report.nodeid`)
     test_nodeid = report.nodeid
     start_time = datetime.fromtimestamp(report.start)
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
+    if not os.path.exists(output_path):
+        logger.error(f"{output_path} not found")
+        logger.info(
+            f"If there's a mismatch, you may need to update your test name ('{test_nodeid}'). Files in dir '{LOAD_TESTING_OUTPUT_PATH}': {[str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()]}"
+        )
+        return
+
     output = json.loads(output_path.read_text())
     metrics = output.get("metrics", {})
     # Update integrationXXXX.XX to XXXX.XX (e.g. integration202601 to 2026.01)
     # for grafana charts data collection purpose
     release_version = os.getenv("RELEASE_VERSION")
     if release_version and release_version.startswith("integration"):
-        version = release_version[len("integration"):]
+        version = release_version[len("integration") :]
         release_version = f"{version[:4]}.{version[4:6]}"
+    release_version = release_version or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
     message = {
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
@@ -77,8 +86,8 @@ def pytest_runtest_logreport(report):
         "http_req_duration_max": metrics["http_req_duration"]["max"],
         "http_req_duration_p90": metrics["http_req_duration"]["p(90)"],
         "http_req_duration_p95": metrics["http_req_duration"]["p(95)"],
-        "data_sent_count": metrics["data_sent"]["count"],
-        "data_sent_rate": metrics["data_sent"]["rate"],
+        "data_sent_count": metrics.get("data_sent", {}).get("count", 0),
+        "data_sent_rate": metrics.get("data_sent", {}).get("rate", 0),
         "iterations_count": metrics["iterations"]["count"],
         "iterations_rate": metrics["iterations"]["rate"],
         "bulk_objects_requested_count": metrics.get("bulk_objects_requested", {}).get(

@@ -133,7 +133,22 @@ def _print_tes_apps_logs(describe_task_pods=False, with_arborist=False):
             logger.info(result.stdout.decode("utf-8"))
         else:
             logger.info(
-                f"Unable to get {app} logs: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+                f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
+            )
+
+        # get logs for all the pods in the JobsNamespace
+        cmd = [
+            f"kubectl -n workflow-pods-{pytest.namespace} get pods -o name | xargs -I {{}} kubectl logs -n workflow-pods-{pytest.namespace} {{}} --all-containers"
+        ]
+        logger.info(f"********** {" ".join(cmd)} **********")
+        result = subprocess.run(
+            cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        if result.returncode == 0:
+            logger.info(result.stdout.decode("utf-8"))
+        else:
+            logger.info(
+                f"{" ".join(cmd)} failed: code {result.returncode}. Stderr: {result.stderr.decode('utf-8')}"
             )
 
 

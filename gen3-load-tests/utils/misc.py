@@ -24,3 +24,16 @@ def retry(times, delay, exceptions):
         return newfn
 
     return decorator
+
+
+def percentile(values, p):
+    if not values:
+        return 0
+
+    values = sorted(values)
+    index = int(len(values) * (p / 100))
+
+    # prevent out-of-range index
+    index = min(index, len(values) - 1)
+
+    return values[index]
