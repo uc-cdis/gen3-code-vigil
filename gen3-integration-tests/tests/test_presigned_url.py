@@ -244,24 +244,23 @@ class TestPresignedURL:
         Scenario: Get bulk presigned-urls
         Steps:
             1. Use multiple indexd records created in setup
-            2. Request bulk signed urls
+            2. Request bulk signed urls for an allowed GUID and an allowed with authz GUID
             3. Validate urls are returned for each GUID
             4. Validate file contents match expected values
+            5. Request bulk signed urls for an allowed GUID and a not allowed GUID
+            6. Validate the allowed GUID is in urls and the not allowed GUID is in failed_guids
+        NOTE:
+            CI sets fence MAX_BULK_DRS_REQUESTS to 2, and fence returns 413 for
+            /data/download/bulk requests with more GUIDs than that.
         """
         allowed_record = indexd_files["allowed"]
         allowed_record2 = indexd_files["allowed2"]
         not_allowed_record = indexd_files["not_allowed"]
         allowed_authz_record = indexd_files["allowed_authz"]
 
-        guids = [
-            allowed_record["did"],
-            allowed_record2["did"],
-            allowed_authz_record["did"],
-            not_allowed_record["did"],
-        ]
-
+        # Validate success case
         res = self.fence.create_bulk_signed_urls(
-            guids=guids,
+            guids=[allowed_record["did"], allowed_authz_record["did"]],
             user="main_account",
             expected_status=200,
         )
@@ -275,9 +274,7 @@ class TestPresignedURL:
             dids.append(drs_obj["drs_object_id"])
             if drs_obj["drs_object_id"] == allowed_record["did"]:
                 signed_url_res = {"url": drs_obj["url"]}
-        # Validate success case
         assert allowed_record["did"] in dids, "Allowed GUID missing from urls"
-        assert allowed_record2["did"] in dids, "Allowed GUID missing from urls"
         assert (
             allowed_authz_record["did"] in dids
         ), "Allowed with authz GUID missing from urls"
@@ -286,12 +283,23 @@ class TestPresignedURL:
             signed_url_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+        # Validate partial success case
+        res = self.fence.create_bulk_signed_urls(
+            guids=[allowed_record2["did"], not_allowed_record["did"]],
+            user="main_account",
+            expected_status=200,
+        )
+
+        assert "urls" in res, f"'urls' missing in response: {res}"
+        assert "failed_guids" in res, f"'failed_guids' missing in response: {res}"
+
+        dids = [drs_obj["drs_object_id"] for drs_obj in res.get("urls")]
+        assert allowed_record2["did"] in dids, "Allowed GUID missing from urls"
+
         failed_ids = []
         for failure in res.get("failed_guids"):
             for id in failure.get("object_ids", []):
                 failed_ids.append(id)
-
-        # Validate failure case
         assert (
             not_allowed_record["did"] in failed_ids
         ), "Unauthorized GUID should be in failed_guids"
