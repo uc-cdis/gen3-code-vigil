@@ -1,0 +1,177 @@
+# inferno_uscore_nightly.yaml — Nightly Inferno US Core 6.1.0 integration tests.
+#
+# Architecture:
+#   - Runs against the qa-fhir Gen3 environment (qa-fhir.planx-pla.net).
+#   - Fence on qa-fhir uses MOCK_GOOGLE_AUTH: true; fence_authorize.rb / fence_ehr_launch.rb
+#     drive SMART OAuth by pre-seeding the dev_login cookie so Fence auto-authenticates.
+#   - gen3-fhir-proxy on qa-fhir uses the shared GCP FHIR store (fhir-test-487914).
+#   - Inferno runs on the GH Actions runner (not in qa-fhir).
+#   - gen3-specific scripts (fence_authorize.rb, execution YAML template, preset) are stored
+#     in gen3-fhir-proxy/dev_scripts/us-core-test-kit-scripts/ and overlaid onto a fresh
+#     checkout of the upstream inferno-framework/us-core-test-kit.
+#
+# One-time prerequisites in qa-fhir (admin setup, not automated):
+#   1. Add EXTRA_ALLOWED_SCOPE_PREFIXES: ["patient/","user/","system/","launch/"] and
+#      EXTRA_ALLOWED_SCOPES to Fence config (devplanetv2/qa-fhir-helm/values/values.yaml).
+#   2. Register three Inferno Fence clients (inferno-us-core, inferno-granular-1,
+#      inferno-granular-2) with redirect_uri http://localhost:8888/custom/smart/redirect
+#      and store their client_ids as repository secrets:
+#        QA_FHIR_INFERNO_CLIENT_ID
+#        QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID
+#        QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID
+#   3. Add the three clients to qa-fhir user.yaml (s3://cdis-gen3-users/qa-fhir/user.yaml)
+#      with policies matching local dev_scripts/user.yaml.
+#
+# For local testing, use gen3-fhir-proxy/dev_scripts/run_inferno.sh instead.
+
+name: Inferno US Core Nightly
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 00:00 CT / 06:00 UTC nightly
+  workflow_dispatch:
+    inputs:
+      inferno_ref:
+        description: 'us-core-test-kit branch/tag to check out'
+        default: 'main'
+        required: false
+      fhir_proxy_ref:
+        description: 'gen3-fhir-proxy branch/tag for execution scripts'
+        default: 'main'
+        required: false
+      qa_fhir_host:
+        description: 'qa-fhir hostname'
+        default: 'qa-fhir.planx-pla.net'
+        required: false
+
+env:
+  US_CORE_REF: ${{ github.event.inputs.inferno_ref || 'main' }}
+  FHIR_PROXY_REF: ${{ github.event.inputs.fhir_proxy_ref || 'main' }}
+  QA_FHIR_HOST: ${{ github.event.inputs.qa_fhir_host || 'qa-fhir.planx-pla.net' }}
+  FENCE_DEV_LOGIN_USER: 'test'
+
+jobs:
+  inferno_uscore:
+    name: Inferno US Core 6.1.0 (gen3-fhir-proxy @ qa-fhir)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout gen3-fhir-proxy (for Inferno scripts)
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/gen3-fhir-proxy
+          ref: ${{ env.FHIR_PROXY_REF }}
+          path: gen3-fhir-proxy
+
+      - name: Checkout us-core-test-kit
+        uses: actions/checkout@v4
+        with:
+          repository: inferno-framework/us-core-test-kit
+          ref: ${{ env.US_CORE_REF }}
+          path: us-core-test-kit
+
+      # ── Overlay gen3-specific files ───────────────────────────────────────
+      # Execution scripts, preset, and infrastructure config are stored in
+      # gen3-fhir-proxy/dev_scripts/us-core-test-kit-scripts/ and overlaid here.
+      - name: Overlay gen3-specific files into us-core-test-kit
+        run: |
+          SCRIPTS=gen3-fhir-proxy/dev_scripts/us-core-test-kit-scripts
+          mkdir -p us-core-test-kit/execution_scripts/gen3_fhir_proxy
+          mkdir -p us-core-test-kit/config/presets
+          mkdir -p us-core-test-kit/data/redis us-core-test-kit/data/igs us-core-test-kit/data/logs
+          cp "$SCRIPTS/execution_scripts/gen3_fhir_proxy/"* \
+             us-core-test-kit/execution_scripts/gen3_fhir_proxy/
+          cp "$SCRIPTS/config/presets/gen3_fhir_proxy_610_preset.json" \
+             us-core-test-kit/config/presets/
+          cp "$SCRIPTS/docker-compose.background.yml" us-core-test-kit/
+          cp "$SCRIPTS/.env.production"               us-core-test-kit/
+          cp "$SCRIPTS/config/nginx.conf"             us-core-test-kit/config/
+          cp "$SCRIPTS/config/nginx.background.conf"  us-core-test-kit/config/
+
+      # ── Inferno client IDs ────────────────────────────────────────────────
+      # Clients must be pre-registered in qa-fhir Fence with:
+      #   redirect_uri: http://localhost:8888/custom/smart/redirect
+      # Store the resulting client_ids as repository secrets (see header above).
+      - name: Set Inferno client IDs from repository secrets
+        run: |
+          echo "INFERNO_CLIENT_ID=${{ secrets.QA_FHIR_INFERNO_CLIENT_ID }}"           >> $GITHUB_ENV
+          echo "INFERNO_GRANULAR1_CLIENT_ID=${{ secrets.QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID }}" >> $GITHUB_ENV
+          echo "INFERNO_GRANULAR2_CLIENT_ID=${{ secrets.QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID }}" >> $GITHUB_ENV
+
+      # ── Ruby / Bundler for Inferno ────────────────────────────────────────
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: us-core-test-kit
+          bundler-cache: true
+
+      # ── Inferno background services + DB ──────────────────────────────────
+      - name: Start Inferno background services
+        working-directory: us-core-test-kit
+        run: |
+          chmod 777 data/redis
+          bundle exec inferno services start
+
+      - name: Wait for Redis
+        working-directory: us-core-test-kit
+        run: |
+          for i in $(seq 1 30); do
+            docker compose -f docker-compose.background.yml exec -T redis redis-cli ping 2>/dev/null | grep -q PONG && break
+            [ "$i" -eq 30 ] && echo "Redis did not become ready" && exit 1
+            sleep 2
+          done
+
+      - name: Migrate Inferno database
+        working-directory: us-core-test-kit
+        run: bundle exec inferno migrate
+
+      # ── Start Inferno server ───────────────────────────────────────────────
+      - name: Start Inferno server
+        working-directory: us-core-test-kit
+        run: bundle exec inferno start > /tmp/inferno.log 2>&1 &
+
+      - name: Wait for Inferno
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:4567 >/dev/null 2>&1 && echo "Inferno ready" && break
+            [ "$i" -eq 60 ] && echo "Inferno did not start" && cat /tmp/inferno.log && exit 1
+            sleep 2
+          done
+
+      # ── Generate execution YAML from template ─────────────────────────────
+      - name: Generate execution YAML
+        working-directory: us-core-test-kit
+        env:
+          INFERNO_FHIR_ENDPOINT: 'https://${{ env.QA_FHIR_HOST }}/fhir'
+        run: |
+          envsubst '${INFERNO_CLIENT_ID} ${INFERNO_GRANULAR1_CLIENT_ID} ${INFERNO_GRANULAR2_CLIENT_ID} ${INFERNO_FHIR_ENDPOINT}' \
+            < execution_scripts/gen3_fhir_proxy/gen3_fhir_proxy_610_smart_2.yaml.template \
+            > /tmp/gen3_fhir_proxy_610_smart_2.yaml
+
+      # ── Run Inferno ────────────────────────────────────────────────────────
+      - name: Run Inferno execution script
+        working-directory: us-core-test-kit
+        env:
+          FENCE_DEV_LOGIN_USER: ${{ env.FENCE_DEV_LOGIN_USER }}
+        run: |
+          bundle exec inferno execute_script \
+            --allow-commands \
+            /tmp/gen3_fhir_proxy_610_smart_2.yaml
+
+      # ── Cleanup & artifacts ────────────────────────────────────────────────
+      - name: Stop Inferno background services
+        if: always()
+        working-directory: us-core-test-kit
+        run: bundle exec inferno services stop || true
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inferno-logs
+          path: |
+            /tmp/inferno.log
+            /tmp/gen3_fhir_proxy_610_smart_2.yaml
+          retention-days: 7
