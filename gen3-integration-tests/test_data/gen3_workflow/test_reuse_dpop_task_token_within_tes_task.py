@@ -1,5 +1,5 @@
 """
-This script is used by the test of the same name in the `TestGen3Workflow` class
+This script is used by the test of the same name in the `TestTaskTokenWithGen3Workflow` class
 """
 
 import os
