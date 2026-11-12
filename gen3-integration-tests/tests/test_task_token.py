@@ -5,6 +5,8 @@ https://github.com/uc-cdis/fence/blob/master/docs/additional_documentation/task_
 The task token integration with Gen3Workflow/TES is included in `tests/test_gen3_workflow.py`.
 """
 
+import json
+import re
 import time
 
 import jwt
@@ -12,7 +14,15 @@ import pytest
 import requests
 import utils.gen3_admin_tasks as gat
 from services.fence import Fence
-from services.gen3workflow import Gen3Workflow
+from services.gen3workflow import (
+    S3_FOLDER_NAME,
+    VALID_USER,
+    Gen3Workflow,
+    WorkflowStorageConfig,
+    _print_tes_apps_logs,
+    base_tes_payload,
+    get_executor_log,
+)
 
 # allow extra time for the proxy startup, the nonce challenge/retry round trip, the
 # arborist call, etc
@@ -78,7 +88,9 @@ class TestTaskToken(object):
         default_max_exp = 3600
         requested_exp = default_max_exp + 177
         if not gat.service_version_lower_than("fence", "2026.12", "15.2.0"):
-            with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp, expected_status_code=400) as (
+            with self.fence.get_dpop_bound_task_token(
+                "FOO", expires_in=requested_exp, expected_status_code=400
+            ) as (
                 token,
                 url,
             ):
@@ -86,7 +98,9 @@ class TestTaskToken(object):
                 assert url == None
         else:
             # TODO: remove this block once fence is updated everywhere
-            with self.fence.get_dpop_bound_task_token("FOO", expires_in=requested_exp) as (
+            with self.fence.get_dpop_bound_task_token(
+                "FOO", expires_in=requested_exp
+            ) as (
                 other_task_token,
                 _,
             ):
@@ -96,7 +110,9 @@ class TestTaskToken(object):
                     options={"verify_signature": False},
                 )["exp"]
             now = int(time.time())
-            assert default_max_exp - PROXY_GRACE_PERIOD_SEC <= exp - now <= default_max_exp
+            assert (
+                default_max_exp - PROXY_GRACE_PERIOD_SEC <= exp - now <= default_max_exp
+            )
 
     def test_obtain_task_token_unsupported_type(self):
         """
@@ -186,7 +202,17 @@ class TestTaskTokenWithGen3Workflow:
     def setup_class(cls):
         cls.fence = Fence()
         cls.gen3_workflow = Gen3Workflow()
-        cls.gen3_workflow.setup_storage()
+        cls.s3_storage_config = WorkflowStorageConfig.from_dict(
+            cls.gen3_workflow.setup_storage()
+        )
+
+    def get_unique_s3_prefix_per_test_case(self, request):
+        """
+        Return an S3 path prefix unique to the current test case, so that tests running in
+        parallel don't read/write the same files.
+        """
+        test_case_name = re.sub(r"[^A-Za-z0-9_-]+", "_", request.node.name).strip("_")
+        return f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{test_case_name}"
 
     def test_dpop_task_token_endpoints_with_regular_token(self):
         """
@@ -383,3 +409,155 @@ class TestTaskTokenWithGen3Workflow:
             url = f"{proxy_url}/ga4gh/tes/v1/tasks"
             res = requests.get(url, headers={"Authorization": f"bearer {task_token}"})
             assert res.status_code == 403, "Should not be allowed to list TES tasks"
+
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("fence", "2026.11", "15.0.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname,
+        reason="DPOP is not supported by the Kind CI, yet",
+    )
+    def test_dpop_task_token_within_tes_task(self, request):
+        """
+        Run a task that obtains a DPoP-bound task token and uses it to hit a DPoP endpoint.
+        """
+        # upload the input file (python script that obtains and uses a task token)
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
+        script_file_name = "test_dpop_task_token_within_tes_task.py"
+        self.gen3_workflow._perform_s3_action(
+            "upload_file",
+            filename=f"test_data/gen3_workflow/{script_file_name}",
+            object_path=f"{s3_path_prefix}/{script_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            expected_status=None,
+        )
+
+        # run the task
+        body = {
+            **base_tes_payload(request),
+            "inputs": [
+                {
+                    "url": f"s3://{s3_path_prefix}/{script_file_name}",
+                    "path": f"/work/{script_file_name}",
+                },
+            ],
+            "outputs": [
+                {
+                    "path": f"/work/output.json",
+                    "url": f"s3://{s3_path_prefix}/output.json",
+                    "type": "FILE",
+                }
+            ],
+            "executors": [
+                {
+                    "image": "python:3.13-slim",
+                    "workdir": "/work",
+                    "command": [
+                        f"pip install 'gen3[dpop]' && python {script_file_name}"
+                    ],
+                    "env": {
+                        "API_KEY": pytest.api_keys[VALID_USER]["api_key"],
+                    },
+                },
+            ],
+        }
+        # this tag allows for quick lookup in the `script_file_name` python script
+        body["tags"]["TEST_NAME"] = "test_dpop_task_token_within_tes_task"
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body=body,
+            user=VALID_USER,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+        self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=VALID_USER,
+            expected_final_state="COMPLETE",
+        )
+
+        # check the output: the job should have been able to use a task token to hit the
+        # gen3-workflow task listing endpoint
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/output.json",
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_USER,
+        )
+
+        output_content = json.loads(response_s3_object["Body"].read().decode("utf-8"))
+        output_content.pop("next_page_token")
+        assert output_content == {"tasks": [{"id": task_id, "state": "RUNNING"}]}
+
+    @pytest.mark.skipif(
+        gat.service_version_lower_than("fence", "2026.11", "15.0.0"),
+        reason="Current fence version doesn't have the changes for this test",
+    )
+    @pytest.mark.skipif(
+        "localhost" in pytest.hostname,
+        reason="DPOP is not supported by the Kind CI, yet",
+    )
+    def test_reuse_dpop_task_token_within_tes_task(self, request):
+        """
+        Run a task that reuses an existing DPoP-bound task token generated on a different machine
+        sand uses it to hit a DPoP endpoint (this should fail).
+        """
+        # upload the input file (python script that attempts to reuse a task token)
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
+        script_file_name = "test_reuse_dpop_task_token_within_tes_task.py"
+        self.gen3_workflow._perform_s3_action(
+            "upload_file",
+            filename=f"test_data/gen3_workflow/{script_file_name}",
+            object_path=f"{s3_path_prefix}/{script_file_name}",
+            s3_storage_config=self.s3_storage_config,
+            expected_status=None,
+        )
+
+        # run the task - pass the task token as env var
+        with self.fence.get_token_and_gen3_url(
+            VALID_USER, use_dpop=True, suffix=self.gen3_workflow.SERVICE_URL
+        ) as (access_token, url):
+            body = {
+                **base_tes_payload(request),
+                "inputs": [
+                    {
+                        "url": f"s3://{s3_path_prefix}/{script_file_name}",
+                        "path": f"/work/{script_file_name}",
+                    },
+                ],
+                "executors": [
+                    {
+                        "image": "python:3.13-slim",
+                        "workdir": "/work",
+                        "command": [
+                            f"pip install 'gen3[dpop]' && python {script_file_name}"
+                        ],
+                        "env": {
+                            "API_KEY": pytest.api_keys[VALID_USER]["api_key"],
+                            "REUSED_TASK_TOKEN": access_token,
+                        },
+                    },
+                ],
+            }
+            response = requests.post(
+                url=f"{url}/ga4gh/tes/v1/tasks",
+                headers={"Authorization": f"bearer {access_token}"},
+                json=body,
+            )
+        if response.status_code != 200:
+            _print_tes_apps_logs(with_arborist=response.status_code == 403)
+        assert response.status_code == 200, response.text
+        task_id = response.json().get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {response}"
+
+        # the script only runs successfully if it FAILS to reuse the task token (as expected)
+        # NOTE: This is rejected by the DPoP proxy and should not even reach the Gen3 services.
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id,
+            user=VALID_USER,
+            expected_final_state="COMPLETE",
+        )
+        stdout = get_executor_log(task_info)["stdout"].strip()
+        assert (
+            "Refusing a request that did not present the task token. This proxy signs what it forwards, so only the process it was started for may use it."
+            in stdout
+        )
