@@ -68,6 +68,7 @@ class WorkspacePage(object):
         Launch the workspace with the given name
         Launches the first available one if `name` is not specified
         """
+        screenshot(page, "AddedForTesting")
         expect(page.locator(self.WORKSPACE_OPTIONS)).to_be_visible()
         # launch the specified workspace option if the name is provided
         logger.info(f"Launching workspace {name}")
