@@ -358,7 +358,7 @@ class TestRequestor:
         ), f"Request was not created for user1: {res.text}"
 
     @pytest.mark.skipif(
-        gat.service_version_lower_than("requestor", "2026.10", "2.0.0"),
+        gat.service_version_lower_than("requestor", "2026.11", "2.0.0"),
         reason="Requestor version does not support on-behalf-of authorization",
     )
     def test_request_on_behalf_of_other_user_no_access(self):
