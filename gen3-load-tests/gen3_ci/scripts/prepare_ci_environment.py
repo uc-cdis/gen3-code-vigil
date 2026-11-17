@@ -34,20 +34,21 @@ def modify_env_for_test_repo_pr(namespace):
     Run usersync
     """
     perf_default_manifest = (
-        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/default/values"
+        f"{os.getenv('GITHUB_WORKSPACE')}/gen3-gitops-ci/ci/perf/values"
     )
     arguments = [
         os.getenv("NAMESPACE"),
-        "master",
+        os.getenv("HELM_BRANCH"),
         perf_default_manifest,
     ]
     return setup_env_for_helm(arguments)
 
 
-def generate_api_keys_for_test_users(namespace):
+def generate_api_keys_for_test_users():
     cmd = [
         (HELM_SCRIPTS_PATH_OBJECT / "generate_api_keys.sh"),
         (TEST_DATA_PATH_OBJECT / "test_setup" / "users.csv"),
+        os.getenv("HOSTNAME_PROTOCOL"),
         os.getenv("HOSTNAME"),
         os.getenv("NAMESPACE"),
     ]
@@ -67,14 +68,14 @@ def generate_api_keys_for_test_users(namespace):
 def prepare_ci_environment(namespace):
     """Calls other functions in this module depending on the type of repo under test"""
     repo = os.getenv("REPO")
-    # if quay repo name is different from github repo name
     if repo in ("gen3-code-vigil", "gen3-qa"):  # Test repos
         result = modify_env_for_test_repo_pr(namespace)
         assert result.lower() == "success"
     else:
         raise Exception("Load tests are run from test repository only.")
+
     # generate api keys for test users for the ci env
-    result = generate_api_keys_for_test_users(namespace)
+    result = generate_api_keys_for_test_users()
     assert result.lower() == "success"
     return result
 

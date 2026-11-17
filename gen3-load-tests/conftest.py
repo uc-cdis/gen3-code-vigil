@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import boto3
 import pytest
@@ -17,10 +17,12 @@ collect_ignore = ["test_setup.py"]
 
 def pytest_configure(config):
     # Compute hostname and namespace
+    pytest.hostname = os.getenv("HOSTNAME")
     pytest.namespace = os.getenv("NAMESPACE")
     pytest.hostname = os.getenv("HOSTNAME")
     # Compute root_url
-    pytest.root_url = f"https://{pytest.hostname}"
+    pytest.root_url = f"{os.getenv("HOSTNAME_PROTOCOL")}://{pytest.hostname}"
+    logger.info(f"pytest root_url: '{pytest.root_url}'")
 
     # Generate api key and auth headers
     pytest.users = {
@@ -46,31 +48,66 @@ def pytest_runtest_logreport(report):
     if report.when != "call":
         return
 
+    # generate the expected output file name from the test name (`report.nodeid`)
     test_nodeid = report.nodeid
     start_time = datetime.fromtimestamp(report.start)
     file_name = test_nodeid.split("::")[-1].replace("test_", "").replace("_", "-")
     output_path = LOAD_TESTING_OUTPUT_PATH / f"{file_name}.json"
+    if not os.path.exists(output_path):
+        logger.error(f"{output_path} not found")
+        logger.info(
+            f"If there's a mismatch, you may need to update your test name ('{test_nodeid}'). Files in dir '{LOAD_TESTING_OUTPUT_PATH}': {[str(file) for file in LOAD_TESTING_OUTPUT_PATH.rglob("*") if file.is_file()]}"
+        )
+        return
+
     output = json.loads(output_path.read_text())
+    metrics = output.get("metrics", {})
+    # Update integrationXXXX.XX to XXXX.XX (e.g. integration202601 to 2026.01)
+    # for grafana charts data collection purpose
+    release_version = os.getenv("RELEASE_VERSION")
+    if release_version and release_version.startswith("integration"):
+        version = release_version[len("integration") :]
+        release_version = f"{version[:4]}.{version[4:6]}"
+    release_version = release_version or f"gitops branch {os.getenv("GITOPS_BRANCH")}"
     message = {
         "run_date": str(start_time.date()),
         "run_num": os.getenv("RUN_NUM"),
-        "release_version": os.getenv("RELEASE_VERSION"),
+        "attempt_num": os.getenv("ATTEMPT_NUM"),
+        "release_version": release_version,
         "test_suite": test_nodeid.split("::")[1],
         "test_case": test_nodeid.split("::")[-1],
         "result": report.outcome,
-        "checks_fails": output["metrics"]["checks"]["fails"],
-        "checks_passes": output["metrics"]["checks"]["passes"],
-        "checks_value": output["metrics"]["checks"]["value"],
-        "http_req_duration_avg": output["metrics"]["http_req_duration"]["avg"],
-        "http_req_duration_min": output["metrics"]["http_req_duration"]["min"],
-        "http_req_duration_med": output["metrics"]["http_req_duration"]["med"],
-        "http_req_duration_max": output["metrics"]["http_req_duration"]["max"],
-        "http_req_duration_p90": output["metrics"]["http_req_duration"]["p(90)"],
-        "http_req_duration_p95": output["metrics"]["http_req_duration"]["p(95)"],
-        "data_sent_count": output["metrics"]["data_sent"]["count"],
-        "data_sent_rate": output["metrics"]["data_sent"]["rate"],
-        "iterations_count": output["metrics"]["iterations"]["count"],
-        "iterations_rate": output["metrics"]["iterations"]["rate"],
+        "checks_fails": metrics["checks"]["fails"],
+        "checks_passes": metrics["checks"]["passes"],
+        "checks_value": metrics["checks"]["value"],
+        "http_req_duration_avg": metrics["http_req_duration"]["avg"],
+        "http_req_duration_min": metrics["http_req_duration"]["min"],
+        "http_req_duration_med": metrics["http_req_duration"]["med"],
+        "http_req_duration_max": metrics["http_req_duration"]["max"],
+        "http_req_duration_p90": metrics["http_req_duration"]["p(90)"],
+        "http_req_duration_p95": metrics["http_req_duration"]["p(95)"],
+        "data_sent_count": metrics.get("data_sent", {}).get("count", 0),
+        "data_sent_rate": metrics.get("data_sent", {}).get("rate", 0),
+        "iterations_count": metrics["iterations"]["count"],
+        "iterations_rate": metrics["iterations"]["rate"],
+        "bulk_objects_requested_count": metrics.get("bulk_objects_requested", {}).get(
+            "count"
+        ),
+        "bulk_objects_requested_rate": metrics.get("bulk_objects_requested", {}).get(
+            "rate"
+        ),
+        "bulk_objects_resolved_count": metrics.get("bulk_objects_resolved", {}).get(
+            "count"
+        ),
+        "bulk_objects_resolved_rate": metrics.get("bulk_objects_resolved", {}).get(
+            "rate"
+        ),
+        "bulk_objects_unresolved_count": metrics.get("bulk_objects_unresolved", {}).get(
+            "count"
+        ),
+        "bulk_objects_unresolved_rate": metrics.get("bulk_objects_unresolved", {}).get(
+            "rate"
+        ),
     }
 
     try:

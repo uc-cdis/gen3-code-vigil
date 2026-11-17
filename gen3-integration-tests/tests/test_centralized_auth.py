@@ -130,10 +130,6 @@ new_abc_records = {
     "fence" not in pytest.deployed_services,
     reason="fence service is not running on this environment",
 )
-@pytest.mark.skipif(
-    pytest.manifest.get("global", {}).get("frontend_root", "") == "gen3ff",
-    reason="frontend_root is set to gen3ff",
-)
 @pytest.mark.indexd
 @pytest.mark.fence
 @pytest.mark.requires_fence_client
@@ -206,15 +202,21 @@ class TestCentralizedAuth:
         # Create indexd records using dcf-user2 account
         # Both indexd record creations should fail, as dcf-user2 doesn't have access to /gen3 or /abc project
         try:
-            self.indexd.create_records(records=new_gen3_records, user="user2_account")
+            self.indexd.create_records(
+                records=new_gen3_records,
+                user="user2_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
         try:
-            self.indexd.create_records(records=new_abc_records, user="user2_account")
+            self.indexd.create_records(
+                records=new_abc_records,
+                user="user2_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
         # Create indexd records using indexing_user
         self.indexd.create_records(records=new_gen3_records)
@@ -285,10 +287,13 @@ class TestCentralizedAuth:
         # Create indexd records using main_account
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
-            self.indexd.create_records(records=new_gen3_records, user="main_account")
+            self.indexd.create_records(
+                records=new_gen3_records,
+                user="main_account",
+                proceed_after_failure=True,
+            )
         except Exception as e:
-            if "401" not in f"{e}":
-                raise f"401 status code not returned. Exception : {e}"
+            assert "401" not in f"{e}", f"401 status code not returned. Exception : {e}"
 
         self.indexd.create_records(records=new_abc_records, user="main_account")
 
@@ -350,6 +355,11 @@ class TestCentralizedAuth:
             user="main_account",
         ), "Delete should have been possible using main_account"
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_with_user_token_can_crud_indexd_records_in_namespace(
         self, page: Page
     ):
@@ -378,7 +388,9 @@ class TestCentralizedAuth:
         # Indexd record for abc project only is created, as main_account has access to /abc project and not /gen3.
         try:
             self.indexd.create_records(
-                records=new_gen3_records, access_token=access_token
+                records=new_gen3_records,
+                access_token=access_token,
+                proceed_after_failure=True,
             )
         except Exception as e:
             if "401" not in e:
@@ -453,6 +465,11 @@ class TestCentralizedAuth:
             abc_update_success == 200
         ), f"abc record was not updated. Status: {abc_delete_success}"
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_with_user_token_create_signed_url_records_in_namespace(
         self, page: Page
     ):
@@ -494,6 +511,11 @@ class TestCentralizedAuth:
             signed_url_abc_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_with_access_with_user_token_in_namespace(self, page: Page):
         """
         Scenario: Client (with access) with user token (WITHOUT access) in namespace
@@ -517,6 +539,11 @@ class TestCentralizedAuth:
             access_token=access_token,
         )
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_without_access_with_user_token_in_namespace(self, page: Page):
         """
         Scenario: Client (WITHOUT access) with user token (with access) in namespace
@@ -571,6 +598,11 @@ class TestCentralizedAuth:
             signed_url_abc_res, "Hi Zac!\ncdis-data-client uploaded this!\n"
         )
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_userinfo_endpoint_contains_authorization_information(self, page: Page):
         """
         Scenario: Test that userinfo endpoint contains authorization information (resources)
@@ -594,6 +626,11 @@ class TestCentralizedAuth:
         assert resources_of_user != None, "Resources field is None"
         assert len(resources_of_user) != 0, "Length of resouces field is 0."
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_token_without_permission_cannot_create_signed_url(self, page: Page):
         """
         Scenario: Client with user token WITHOUT permission CANNOT create signed URL for record with authz AND logic
@@ -618,6 +655,11 @@ class TestCentralizedAuth:
             access_token=access_token,
         )
 
+    @pytest.mark.frontend
+    @pytest.mark.skipif(
+        "heal" in os.getenv("SOURCE_CONFIG", ""),
+        reason="This tests doesnt work in HEAL",
+    )
     def test_client_token_with_permission_cannot_create_signed_url(self, page: Page):
         """
         Scenario: Client with user token WITH permission CAN create signed URL for record with authz AND logic

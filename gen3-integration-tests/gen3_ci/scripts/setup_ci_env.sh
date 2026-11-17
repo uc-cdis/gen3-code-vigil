@@ -164,6 +164,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
         #yq -i '.portal.resources = load(env(ci_default_manifest) + "/values.yaml").portal.resources' $new_manifest_values_file_path
         yq eval-all 'select(fileIndex == 0) * {"portal": select(fileIndex == 1).portal}' $ci_default_manifest_values_yaml $new_manifest_values_file_path -i
         yq -i 'del(.portal.replicaCount)' $ci_default_manifest_values_yaml
+        yq -i 'del(.portal.portalBuild)' $ci_default_manifest_values_yaml
         portal_custom_config_enabled=$(yq eval '.portal.customConfig.enabled == true' "$new_manifest_values_file_path")
         if [[ "$portal_custom_config_enabled" == "true" ]]; then
           echo "Found customConfig enabled for Portal. Updating repo and branch..."
@@ -222,7 +223,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
-    if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
+    # TODO: remove gen3-embeddings once the gen3-embedding issue is resolved
+    if [[ "$key" != "global" && "$key" != "ambassador" && "$key" != "gen3-embeddings" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
       gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
@@ -357,8 +359,8 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     # Make sure the below blocks are removed from ci_default_manifest_values_yaml before deploying helm
     yq eval 'del(."mutatingWebhook", ."neuvector", ."dashboard", ."access-backend")' -i "$ci_default_manifest_values_yaml"
 
-    # Remove workspace-proxy. This is temporary until we add workspace-proxy to CI
-    yq eval 'del(."workspace-proxy")' -i $ci_default_manifest_values_yaml
+    # Remove auroraRdsCopyJob. Testing to see if this is blocking midrc prs
+    yq eval 'del(."auroraRdsCopyJob")' -i $ci_default_manifest_values_yaml
 fi
 
 # Check whether specific services are enabled in the final manifest
@@ -450,6 +452,7 @@ if [[ "$HOSTNAME_WITHOUT_PORT" == *":"* ]]; then
 fi
 common_param_updates=(
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_GROUP_PREFIX|$ENV_PREFIX"
+  ".fence.FENCE_CONFIG_PUBLIC.MAX_BULK_DRS_REQUESTS|2"
   ".fence.FENCE_CONFIG_PUBLIC.GOOGLE_SERVICE_ACCOUNT_PREFIX|$ENV_PREFIX"
   ".indexd.defaultPrefix|$ENV_PREFIX/"
   ".indexd.secrets.userdb.fence|$EKS_CLUSTER_NAME"
@@ -469,11 +472,6 @@ common_param_updates=(
   ".funnel.externalSecrets.dbcreds|${namespace}-funnel-creds"
   ".funnel.externalSecrets.funnelOidcClient|${namespace}-funnel-oidc-client"
   ".funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
-  # TODO: Remove the next line after funnel helm chart is completely removed as a dependent chart.
-  # The legacy chart still expects `funnel.funnel.Kubernetes.JobsNamespace`,
-  # while the standalone chart uses `funnel.Kubernetes.JobsNamespace`.
-  # Keep both values in sync until the migration is complete.
-  ".funnel.funnel.Kubernetes.JobsNamespace|workflow-pods-${namespace}"
 )
 
 for item in "${common_param_updates[@]}"; do
@@ -486,6 +484,34 @@ for item in "${common_param_updates[@]}"; do
     echo "Skipping update of $property_path as $serviceblock not found"
   fi
 done
+
+############################################################################################################################
+# Enable JEG to be in its own namespace per pull request Ex: jupyter-pods-<namespace>
+# This applies to test-env, service-env, manifest-env, and nightly environments.
+############################################################################################################################
+workspace_namespace="jupyter-pods-${namespace}"
+#echo "###################################################################################"
+echo "Configuring workspace/JEG namespace: ${workspace_namespace}"
+
+# Configure JEG when present
+jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+if [ "$jeg_enabled" = "true" ]; then
+    echo "JEG is enabled. Setting JEG workspace namespace to ${workspace_namespace}"
+    yq eval ".jeg.workspaceNamespace = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+    yq eval ".jeg.env.EG_NAMESPACE = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+fi
+
+# Configure workspace-proxy when present
+workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+if [ "$workspace_proxy_enabled" = "true" ]; then
+    echo "workspace-proxy is enabled."
+    yq eval ".\"workspace-proxy\".workspaceNamespace = \"${workspace_namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+    yq eval ".\"workspace-proxy\".deploymentNamespace = \"${namespace}\"" \
+        -i "$ci_default_manifest_values_yaml"
+fi
 
 ####################################################################################
 # Enable RAS passport/visa parsing features only for nightly-build-ff
@@ -536,7 +562,6 @@ if [[ "$namespace" == nightly-build* ]]; then
   kubectl delete job indexd-userdb -n $namespace
 fi
 
-
 # For test-env-pr and  service-env-setup we set CI_ENV flag to gen3ff for frontend-framework
 # For manifest-env-setup where target manifest is also ci/default, we will use portal and switch in future
 # so env doesnt need portal configuration
@@ -549,6 +574,27 @@ if [[ "$setup_type" == "test-env-setup" || "$setup_type" == "service-env-setup" 
     echo "Deleting frontend service"
     yq eval 'del(.frontend-framework)' --inplace "$ci_default_manifest_values_yaml"
   fi
+fi
+
+# Allow workspace nginx routes and workspace-proxy service only for frontend-framework and
+# if jeg and workspace-proxy is enabled.
+frontend_enabled=$(yq eval '.frontend-framework.enabled // false' "$ci_default_manifest_values_yaml")
+jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+workspace_proxy_enabled=$(yq eval '.["workspace-proxy"].enabled // false' "$ci_default_manifest_values_yaml")
+if [[ "$frontend_enabled" == "true" && "$jeg_enabled" == "true" && "$workspace_proxy_enabled" == "true" ]]; then
+    echo "Keeping revproxy additionalConfigs, jeg and workspace-proxy for $SOURCE_CONFIG"
+    # Disable ambassador to avoid workspace-proxy-service conflict
+    echo "workspace-proxy enabled; disabling ambassador"
+    yq eval '.ambassador.enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
+else
+    echo "Removing revproxy additionalConfigs and disabling workspace-proxy and jeg"
+    yq eval 'del(.revproxy.additionalConfigs)' \
+      -i "$ci_default_manifest_values_yaml"
+    yq eval '.["workspace-proxy"].enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
+    yq eval '.jeg.enabled = false' \
+      -i "$ci_default_manifest_values_yaml"
 fi
 
 # Update job container images using flags in global section
@@ -752,6 +798,15 @@ if install_helm_chart; then
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"
     exit 1
+  fi
+
+  # Configure frontend-framework Jupyter assets only for nightly-build-ff
+  jeg_enabled=$(yq eval '.jeg.enabled // false' "$ci_default_manifest_values_yaml")
+  if [[ "$CI_ENV" == "gen3ff" && "$jeg_enabled" == "true" ]]; then
+    echo "Configuring frontend-framework jupyter_assets_path for FEF for config/ci workdir"
+    kubectl set env deployment/frontend-framework-deployment \
+      -n "${namespace}" \
+      JUPYTER_ASSETS_ROOT_PATH=/ci/jupyter-workspaces/assets
   fi
 else
   echo "❌ Helm chart installation failed"
