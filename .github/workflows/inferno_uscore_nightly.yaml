@@ -1,0 +1,96 @@
+# inferno_uscore_nightly.yaml — Nightly Inferno US Core 6.1.0 integration tests.
+#
+# Runs Inferno on the GH Actions runner against the gen3-fhir-proxy deployment in the
+# qa-fhir Gen3 environment. The test run is delegated to
+# gen3-fhir-proxy/dev_scripts/run_inferno.sh, the same script used for local testing.
+#
+# Requires three Inferno Fence clients registered in qa-fhir, with their client_ids stored
+# as repository secrets:
+#   QA_FHIR_INFERNO_CLIENT_ID
+#   QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID
+#   QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID
+# Environment setup is documented internally, not in this public repository.
+
+name: Inferno US Core Nightly
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 00:00 CT / 06:00 UTC nightly
+  workflow_dispatch:
+    inputs:
+      inferno_ref:
+        description: 'us-core-test-kit branch/tag to check out'
+        default: 'main'
+        required: false
+      fhir_proxy_ref:
+        description: 'gen3-fhir-proxy branch/tag for execution scripts'
+        default: 'main'
+        required: false
+      qa_fhir_host:
+        description: 'qa-fhir hostname'
+        default: 'qa-fhir.planx-pla.net'
+        required: false
+
+env:
+  US_CORE_REF: ${{ github.event.inputs.inferno_ref || 'main' }}
+  FHIR_PROXY_REF: ${{ github.event.inputs.fhir_proxy_ref || 'main' }}
+  QA_FHIR_HOST: ${{ github.event.inputs.qa_fhir_host || 'qa-fhir.planx-pla.net' }}
+
+permissions:
+  contents: read
+
+jobs:
+  inferno_uscore:
+    name: Inferno US Core 6.1.0 (gen3-fhir-proxy @ qa-fhir)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout gen3-fhir-proxy (for Inferno scripts)
+        uses: actions/checkout@v4
+        with:
+          repository: uc-cdis/gen3-fhir-proxy
+          ref: ${{ env.FHIR_PROXY_REF }}
+          path: gen3-fhir-proxy
+
+      - name: Checkout us-core-test-kit
+        uses: actions/checkout@v4
+        with:
+          repository: inferno-framework/us-core-test-kit
+          ref: ${{ env.US_CORE_REF }}
+          path: us-core-test-kit
+
+      # ── Overlay gen3 infrastructure config ────────────────────────────────
+      # run_inferno.sh syncs the execution scripts and preset itself; the
+      # background-service config is only needed for this fresh checkout.
+      - name: Overlay gen3 infrastructure config into us-core-test-kit
+        run: |
+          SCRIPTS=gen3-fhir-proxy/dev_scripts/us-core-test-kit-scripts
+          mkdir -p us-core-test-kit/data/redis us-core-test-kit/data/igs us-core-test-kit/data/logs
+          cp "$SCRIPTS/docker-compose.background.yml" "$SCRIPTS/.env.production" us-core-test-kit/
+          cp "$SCRIPTS/config/nginx.conf" "$SCRIPTS/config/nginx.background.conf" us-core-test-kit/config/
+
+      # ── Ruby / Bundler / foreman for Inferno ──────────────────────────────
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: us-core-test-kit
+          bundler-cache: true
+
+      - name: Install foreman (required by `inferno start`)
+        run: gem install foreman
+
+      # ── Run Inferno ────────────────────────────────────────────────────────
+      # Same script as local development: validates prerequisites, starts and
+      # stops Inferno services, generates the execution YAML, and compares
+      # results against the committed expected-results baseline.
+      - name: Run Inferno US Core tests
+        env:
+          US_CORE_TEST_KIT_DIR: ${{ github.workspace }}/us-core-test-kit
+          INFERNO_FHIR_ENDPOINT: https://${{ env.QA_FHIR_HOST }}/fhir
+          FHIR_CHECK_URL: https://${{ env.QA_FHIR_HOST }}/fhir/metadata
+          INFERNO_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_CLIENT_ID }}
+          INFERNO_GRANULAR1_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID }}
+          INFERNO_GRANULAR2_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID }}
+        run: bash gen3-fhir-proxy/dev_scripts/run_inferno.sh
