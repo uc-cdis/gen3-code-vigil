@@ -223,8 +223,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
-    # TODO: remove gen3-embeddings once the gen3-embedding issue is resolved
-    if [[ "$key" != "global" && "$key" != "ambassador" && "$key" != "gen3-embeddings" ]]; then
+    if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
       gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
@@ -611,6 +610,9 @@ fi
 if yq -e '.["embedding-management-service"]' "$ci_default_manifest_values_yaml" >/dev/null; then
   yq eval '.["embedding-management-service"].enabled = false' -i "$ci_default_manifest_values_yaml"
 fi
+
+# Gen3-embeddig update ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES
+yq -i ".fence.FENCE_CONFIG_PUBLIC.ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES = [\"https://${HOSTNAME}/ai\"]" "$ci_default_manifest_values_yaml"
 
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
