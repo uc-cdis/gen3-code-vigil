@@ -26,13 +26,17 @@ done
 # Move the combined file to values.yaml
 mv "$master_values_yaml" "$manifest_values_yaml"
 
+# Enable gen3-workflow when running the TES load test
+if [[ "$TEST_SUITE" == "ALL" || "$TEST_SUITE" == "TestTesPerformance" ]]; then
+  yq eval ".gen3-workflow.enabled = true" -i "$manifest_values_yaml"
+fi
+
 ####################################################################################
-# Update images for each service from $new_manifest_values_file_path
+# Update images for each service
 ####################################################################################
 echo "###################################################################################"
 if [[ -n $RELEASE_VERSION ]]; then
-  INTEGRATION_BRANCH="integration${RELEASE_VERSION/./}"
-  echo "INTEGRATION BRANCH value : ${INTEGRATION_BRANCH}"
+  echo "Image value used for testing : ${RELEASE_VERSION}"
   keys_ci=$(yq eval 'keys' $manifest_values_yaml -o=json | jq -r '.[]')
   for key in $keys_ci; do
   if [[ "$key" != "global" && "$key" != "postgresql" && "$key" != "elasticsearch" ]]; then
@@ -43,8 +47,8 @@ if [[ -n $RELEASE_VERSION ]]; then
     elif [ "$(echo -n $service_enabled_value)" = "false" ]; then
         echo "Skipping image update for ${key} as service enabled is set to false"
     elif [ ! -z "$image_tag_value" ]; then
-        echo "Updating ${key} service from ${image_tag_value} to ${INTEGRATION_BRANCH}"
-        yq eval ".${key}.image.tag = \"$INTEGRATION_BRANCH\"" -i $manifest_values_yaml
+        echo "Updating ${key} service from ${image_tag_value} to ${RELEASE_VERSION}"
+        yq eval ".${key}.image.tag = \"$RELEASE_VERSION\"" -i $manifest_values_yaml
     fi
   else
     echo "Skipping image update for ${key}"
@@ -144,7 +148,7 @@ yq eval ".ssjdispatcher.ssjcreds.jobPattern = \"s3://gen3-helm-data-upload-bucke
 yq eval ".ssjdispatcher.ssjcreds.jobPassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
 yq eval ".ssjdispatcher.ssjcreds.metadataservicePassword = \"$EKS_CLUSTER_NAME\"" -i $manifest_values_yaml
 
-# Add in hostname/namespace for revproxy, ssjdispatcher, hatchery, fence, and manifestservice configuration.
+# Parameter updates
 yq eval ".global.environment = \"$namespace\"" -i $manifest_values_yaml
 yq eval ".revproxy.ingress.hosts[0].host = \"$HOSTNAME\"" -i $manifest_values_yaml
 yq eval ".manifestservice.manifestserviceG3auto.hostname = \"$HOSTNAME\"" -i $manifest_values_yaml
@@ -153,6 +157,7 @@ yq eval ".ssjdispatcher.gen3Namespace = \"${namespace}\"" -i $manifest_values_ya
 yq eval ".funnel.externalSecrets.dbcreds = \"${namespace}-funnel-creds\"" -i $manifest_values_yaml
 yq eval ".funnel.externalSecrets.funnelOidcClient = \"${namespace}-funnel-oidc-client\"" -i $manifest_values_yaml
 yq eval ".funnel.Kubernetes.JobsNamespace = \"workflow-pods-${namespace}\"" -i $manifest_values_yaml
+yq eval ".metadata.aggMdsNamespace = \"${namespace}\"" -i $manifest_values_yaml
 sed -i "s|FRAME_ANCESTORS: .*|FRAME_ANCESTORS: https://${HOSTNAME}|" $manifest_values_yaml
 
 # Remove aws-es-proxy block
@@ -268,7 +273,8 @@ wait_for_pods_ready() {
 # 🚀 Run the helm install and then wait for pods if successful
 if install_helm_chart; then
   ci_es_indices_setup
-  kubectl rollout restart guppy-deployment
+  kubectl rollout restart deployment guppy-deployment -n ${namespace}
+
   wait_for_pods_ready
   if [[ $? -ne 0 ]]; then
     echo "❌ wait_for_pods_ready failed"

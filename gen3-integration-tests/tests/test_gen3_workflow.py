@@ -2,6 +2,10 @@
 The `TestGen3Workflow` class includes common setup and test selecting flags.
 The other classes inherit from the `TestGen3Workflow` class and run the actual tests.
 
+
+`quay.io/cdis/gen3-workflow:integration_tests_dicom_image` Dockerfile location:
+https://github.com/uc-cdis/bio-nextflow/tree/c8f9fd595135078b1ac1b365aa3393641b5cacdb/nextflow_notebooks/containerized_cpu_workflows/midrc_batch_demo
+
 Not fixed yet:
 - #38 (KMS encryption fails when using `executors.stdout`)
 - #57, #69, #71, #80 Maybe add a Funnel reconciler test: check that old resources are being cleared
@@ -31,32 +35,19 @@ import jwt
 import pytest
 from boto3.s3.transfer import TransferConfig
 from dateutil import parser
-from services.gen3workflow import Gen3Workflow, WorkflowStorageConfig
+from services.gen3workflow import (
+    INVALID_USER,
+    OTHER_VALID_USER,
+    S3_FILE_NAME,
+    S3_FOLDER_NAME,
+    VALID_USER,
+    Gen3Workflow,
+    WorkflowStorageConfig,
+    base_tes_payload,
+    get_executor_log,
+)
 from services.requestor import Requestor
 from utils import logger
-
-
-def base_tes_payload(request):
-    return {
-        "name": request.node.name,
-        "description": request.node.name,
-        "tags": {"_IMAGE_PULL_POLICY": "IfNotPresent"},
-    }
-
-
-def get_executor_log(task_info):
-    """
-    Returns the first executor log entry of a TES task, asserting that it exists and has 'stdout'.
-    """
-    task_logs = task_info.get("logs", [])
-    assert (
-        len(task_logs) > 0 and len(task_logs[0].get("logs", [])) > 0
-    ), f"Expected task logs to be present and have at least one log entry, but got: {task_logs}"
-    executor_log = task_logs[0]["logs"][0]
-    assert (
-        "stdout" in executor_log
-    ), f"Expected task log entry to have 'stdout', but got: {executor_log}"
-    return executor_log
 
 
 def _nextflow_parse_completed_line(log_line):
@@ -141,40 +132,49 @@ def _nextflow_parse_completed_tasks(completed_tasks):
     "gen3-workflow" not in pytest.deployed_services,
     reason="gen3-workflow service is not running on this environment",
 )
+@pytest.mark.skipif(
+    "fence" not in pytest.deployed_services,
+    reason="fence service is not running on this environment",
+)
+@pytest.mark.timeout(600)
 @pytest.mark.gen3_workflow
+@pytest.mark.fence
 class TestGen3Workflow(object):
     @classmethod
     def setup_class(cls):
         cls.gen3_workflow = Gen3Workflow()
-        cls.valid_user = "main_account"
-        cls.other_valid_user = "user0_account"
-        cls.invalid_user = "dummy_one"
-        cls.s3_folder_name = "integration-tests"
-        cls.s3_file_name = "test-input.txt"
 
         # Hit the storage setup endpoint for all users who will be creating tasks.
         cls.s3_storage_config = WorkflowStorageConfig.from_dict(
-            cls.gen3_workflow.setup_storage(user=cls.valid_user, expected_status=200)
+            cls.gen3_workflow.setup_storage(user=VALID_USER, expected_status=200)
         )
-        cls.gen3_workflow.setup_storage(user=cls.other_valid_user, expected_status=200)
+        cls.gen3_workflow.setup_storage(user=OTHER_VALID_USER, expected_status=200)
 
         # Ensure the bucket is emptied before running the tests (must run after
         # `storage_setup` so the user has access to empty the bucket)
         cls.gen3_workflow.cleanup_user_bucket()
-        cls.gen3_workflow.cleanup_user_bucket(user=cls.other_valid_user)
+        cls.gen3_workflow.cleanup_user_bucket(user=OTHER_VALID_USER)
+
+    def get_unique_s3_prefix_per_test_case(self, request):
+        """
+        Return an S3 path prefix unique to the current test case, so that tests running in
+        parallel don't read/write the same files.
+        """
+        test_case_name = re.sub(r"[^A-Za-z0-9_-]+", "_", request.node.name).strip("_")
+        return f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{test_case_name}"
 
 
 class TestGen3WorkflowService(TestGen3Workflow):
     def test_setup_storage_unauthorized(self):
         """Test GET /storage/setup without an access token or with an unauthorized token."""
         self.gen3_workflow.setup_storage(user=None, expected_status=401)
-        self.gen3_workflow.setup_storage(user=self.invalid_user, expected_status=403)
+        self.gen3_workflow.setup_storage(user=INVALID_USER, expected_status=403)
 
     def test_any_user_cannot_get_s3_file_with_unsigned_request(self):
         """Unsigned requests should receive 401 even if the user is authorized to get data."""
         self.gen3_workflow.get_bucket_object_with_unsigned_request(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
-            user=self.valid_user,
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
+            user=VALID_USER,
             expected_status=401,
         )
 
@@ -182,18 +182,18 @@ class TestGen3WorkflowService(TestGen3Workflow):
         """Unauthorized user should receive 403 when posting a S3 file."""
         self.gen3_workflow.put_bucket_object_with_boto3(
             content="dummy_S3_content",
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.invalid_user,
+            user=INVALID_USER,
             expected_status=403,
         )
 
     def test_unauthorized_user_cannot_get_s3_file(self):
         """Unauthorized user should receive 403 when trying to GET a S3 file."""
         self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.invalid_user,
+            user=INVALID_USER,
             expected_status=403,
         )
 
@@ -210,32 +210,32 @@ class TestGen3WorkflowService(TestGen3Workflow):
         input_content = "sample_S3_content"
         self.gen3_workflow.put_bucket_object_with_boto3(
             content=input_content,
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
 
         # Fetch all the contents in the given folder to verify the list-objects functionality
         response_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
-            folder_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/",
+            folder_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         assert (
             isinstance(response_contents, list) and len(response_contents) > 0
         ), f"Expected the function to return a list of at least one item but received: {response_contents}"
         assert any(
-            e.get("Key") == f"{self.s3_folder_name}/{self.s3_file_name}"
+            e.get("Key") == f"{S3_FOLDER_NAME}/{S3_FILE_NAME}"
             for e in response_contents
-        ), f"Expected bucket folder `{self.s3_folder_name}` to have file `{self.s3_file_name}` but received {response_contents}"
+        ), f"Expected bucket folder `{S3_FOLDER_NAME}` to have file `{S3_FILE_NAME}` but received {response_contents}"
 
         # Fetch the exact file to verify the get-object functionality
         response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         response_contents = response_s3_object["Body"].read().decode("utf-8")
@@ -246,16 +246,16 @@ class TestGen3WorkflowService(TestGen3Workflow):
         # Test the Copy functionality: copy the file from an S3 location to another
         self.gen3_workflow._perform_s3_action(
             "copy",
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
-            dest_object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
+            dest_object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}_copied",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=None,
         )
         response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}_copied",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         response_contents = response_s3_object["Body"].read().decode("utf-8")
@@ -272,24 +272,24 @@ class TestGen3WorkflowService(TestGen3Workflow):
         input_content = "sample_S3_content"
         self.gen3_workflow.put_bucket_object_with_boto3(
             content=input_content,
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
 
         self.gen3_workflow.delete_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=204,
         )
 
         # We expect the request to return a response with status 404
         self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=404,
         )
 
@@ -310,7 +310,7 @@ class TestGen3WorkflowService(TestGen3Workflow):
             self.gen3_workflow._perform_s3_action(
                 "upload_file",
                 filename=file_to_upload.name,
-                object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+                object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
                 s3_storage_config=self.s3_storage_config,
                 expected_status=None,  # boto3 `upload_file` returns None, so expect None response
                 config=TransferConfig(multipart_threshold=1),  # force multipart
@@ -319,19 +319,19 @@ class TestGen3WorkflowService(TestGen3Workflow):
         # Test the Copy functionality: copy the file from an S3 location to another
         self.gen3_workflow._perform_s3_action(
             "copy",
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
-            dest_object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
+            dest_object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}_copied",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=None,
             config=TransferConfig(multipart_threshold=1),  # force multipart
         )
 
         # Check the contents of the 2nd file to verify that both the upload and the copy succeeded
         response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}_copied",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}_copied",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         response_contents = response_s3_object["Body"].read().decode("utf-8")
@@ -342,9 +342,9 @@ class TestGen3WorkflowService(TestGen3Workflow):
         # Download the first 10 bytes of the file
         n_bytes = 10
         response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
-            object_path=f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}/{self.s3_file_name}",
+            object_path=f"{self.s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{S3_FILE_NAME}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             range=n_bytes,
             expected_status=206,
         )
@@ -359,7 +359,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         Expects: HTTP 200 with an empty task list in the response.
         """
         response = self.gen3_workflow.list_tes_tasks(
-            user=self.invalid_user,
+            user=INVALID_USER,
             expected_status=200,
         )
 
@@ -374,18 +374,24 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         self.gen3_workflow.create_tes_task(
             request_body={},
-            user=self.invalid_user,
+            user=INVALID_USER,
             expected_status=403,
         )
 
     @pytest.mark.parametrize("with_input_output", [True, False])
-    def test_happy_path_create_tes_task(self, request, with_input_output):
+    @pytest.mark.parametrize("use_dpop_even_when_not_required", [True, False])
+    def test_happy_path_create_tes_task(
+        self, request, with_input_output, use_dpop_even_when_not_required
+    ):
         """
         Test Case: Happy Path for TES Task Creation
         - Upload input file to S3
         - Submit TES task
         - Verify task creation, listing, retrieval, and completion
         - Validate outputs and logs
+
+        If `use_dpop_even_when_not_required` is True, use a DPoP-bound task token even when hitting
+        endpoints that do not require it.
 
         Regression test for TES issues:
         - #8 (create a task without input)
@@ -396,14 +402,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 1: Upload input file to S3
         if with_input_output:
             input_file_contents = "hello beautiful world!"
-            s3_path_prefix = (
-                f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
-            )
+            s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
             self.gen3_workflow.put_bucket_object_with_boto3(
                 content=input_file_contents,
                 object_path=f"{s3_path_prefix}/input.txt",
                 s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
+                user=VALID_USER,
                 expected_status=200,
             )
 
@@ -432,7 +436,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             # TODO: remove `|| true` temporarily added to unblock CI:
@@ -447,14 +451,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [f"echo {echo_message}"],
                     }
                 ],
             }
         task_response = self.gen3_workflow.create_tes_task(
             request_body=tes_task_payload,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
@@ -462,8 +466,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Step 3: Verify task is listed
         list_tes_tasks_response = self.gen3_workflow.list_tes_tasks(
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
+            use_dpop=use_dpop_even_when_not_required,
         )
 
         tasks_list = list_tes_tasks_response.get("tasks", [])
@@ -476,8 +481,9 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 4: Poll until the TES task completes or fails with a known status
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
+            use_dpop=use_dpop_even_when_not_required,
         )
 
         # Step 5: Validate task logs
@@ -501,7 +507,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{file_name}",
                 s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
+                user=VALID_USER,
                 expected_status=200,
             )
 
@@ -534,12 +540,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["echo", "hello beautiful world!"],
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_info.get("id", None)
@@ -548,7 +554,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 2: Cancel the TES task
         response = self.gen3_workflow.cancel_tes_task(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         assert response == {}
@@ -556,7 +562,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 3: Verify the task is cancelled
         task_info = self.gen3_workflow.get_tes_task(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
 
@@ -569,7 +575,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 4: Attempt to cancel the TES task again
         response = self.gen3_workflow.cancel_tes_task(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         assert response == {
@@ -584,13 +590,13 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         self.gen3_workflow.get_tes_task(
             task_id="does-not-exist",
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=404,
         )
 
         self.gen3_workflow.cancel_tes_task(
             task_id="does-not-exist",
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=404,
         )
 
@@ -614,7 +620,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
 
@@ -623,7 +629,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         # Step 2: Poll until the TES task completes or fails with a known status
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
-            task_id=task_id, user=self.valid_user, expected_final_state="EXECUTOR_ERROR"
+            task_id=task_id, user=VALID_USER, expected_final_state="EXECUTOR_ERROR"
         )
 
         assert (
@@ -683,12 +689,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": test_case["command"],
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
 
@@ -698,7 +704,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Step 2: Poll until the TES task fails with a known status
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state=test_case["expected_state"],
         )
 
@@ -729,8 +735,8 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         - #31 (first user B creates task B, then user A creates task A: task A must belong to
           user A == files in user A's bucket)
         """
-        user_A = self.valid_user
-        user_B = self.other_valid_user
+        user_A = VALID_USER
+        user_B = OTHER_VALID_USER
         user_C = "user1_account"
 
         # User B creates a TES task
@@ -740,7 +746,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "name": f"{request.node.name} user B",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["echo", "Hello from User B!"],
                     }
                 ],
@@ -764,14 +770,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
 
         # User A creates a TES task
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         task_response = self.gen3_workflow.create_tes_task(
             request_body={
                 **base_tes_payload(request),
                 "name": f"{request.node.name} user A",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [
                             "touch",
                             "/work/output.txt",
@@ -807,49 +813,60 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             expected_status=403,
         )
 
-        if "requestor" in pytest.deployed_services:
-            # Grant user C access to user A's tasks (not through the user.yaml because the resource
-            # path must include user A's ID, which is not guaranteed to be the same in all CI runs)
-            logger.info(
-                f"Requestor is deployed: granting {pytest.users[user_C]} access to {pytest.users[user_A]}'s tasks"
+        if "requestor" in pytest.deployed_services or "localhost" in pytest.hostname:
+            if "requestor" in pytest.deployed_services:
+                # Grant user C access to user A's tasks (not through the user.yaml because the
+                # resource path must include user A's ID, which is not guaranteed to be the same in
+                # all CI runs)
+                logger.info(
+                    f"Requestor is deployed: granting {pytest.users[user_C]} access to {pytest.users[user_A]}'s tasks"
+                )
+                requestor = Requestor()
+                with self.gen3_workflow.fence.get_token_and_gen3_url(user_A) as (
+                    access_token,
+                    _,
+                ):
+                    user_A_id = jwt.decode(
+                        access_token,
+                        algorithms=["RS256"],
+                        options={"verify_signature": False},
+                    )["sub"]
+                resource_path = f"/services/workflow/gen3-workflow/tasks/{user_A_id}"
+                resp = requestor.create_request_with_auth_header(
+                    username=pytest.users[user_C],
+                    resource_paths=[resource_path],
+                    role_ids=["gen3_workflow_reader"],
+                    request_status="SIGNED",
+                )
+                assert (
+                    resp.status_code == 201
+                ), f"Unable to grant {pytest.users[user_C]} access to {resource_path}"
+            else:
+                # in the gen3-workflow Kind CI, Requestor is not deployed but user A always has the
+                # same user ID, so access is granted through the user.yaml
+                logger.info(
+                    f"Requestor not is deployed, but this is running in a local cluster: assuming {pytest.users[user_C]} already has access to {pytest.users[user_A]}'s tasks"
+                )
+            self.gen3_workflow.get_tes_task(
+                task_id=task_id,
+                user=user_C,
+                expected_status=200,
             )
-            requestor = Requestor()
-            user_A_id = jwt.decode(
-                self.gen3_workflow._get_access_token(user_A),
-                algorithms=["RS256"],
-                options={"verify_signature": False},
-            )["sub"]
-            resource_path = f"/services/workflow/gen3-workflow/tasks/{user_A_id}"
-            resp = requestor.create_request_with_auth_header(
-                username=pytest.users[user_C],
-                resource_paths=[resource_path],
-                role_ids=["gen3_workflow_reader"],
-                request_status="SIGNED",
-            )
-            assert (
-                resp.status_code == 201
-            ), f"Unable to grant {pytest.users[user_C]} access to {resource_path}"
         else:
-            # in the gen3-workflow Kind CI, Requestor is not deployed but user A always has the
-            # same user ID, so access is granted through the user.yaml
             logger.info(
-                f"Requestor not is deployed: assuming {pytest.users[user_C]} already has access to {pytest.users[user_A]}'s tasks"
+                f"Requestor is not deployed: skipping 'Grant user C access to user A's tasks' test"
             )
-        self.gen3_workflow.get_tes_task(
-            task_id=task_id,
-            user=user_C,
-            expected_status=200,
-        )
 
         # Poll until the TES task completes
         self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
         )
 
         # Check that the output file is in the right user's bucket
-        # TODO `funnel-temp-files` is temporarily removed - remove the `if` block once it's back
+        # TODO (MIDRC-1353) `funnel-temp-files` is temporarily removed - remove the `if` block
+        # once it's back
         bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
             folder_path=f"{self.s3_storage_config.bucket_name}/funnel-temp-files/{task_id}/",
             s3_storage_config=self.s3_storage_config,
@@ -858,7 +875,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         )
         if not bucket_contents:
             logger.info(
-                f"Failed to list objects, now attempting to list without `funnel-temp-files` prefix..."
+                "Failed to list objects, now attempting to list without `funnel-temp-files` prefix..."
             )
             bucket_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
                 folder_path=f"{self.s3_storage_config.bucket_name}/{task_id}/",
@@ -867,10 +884,17 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 expected_status=200,
             )
         assert bucket_contents and len(bucket_contents) >= 1
-        assert bucket_contents[0]["Key"].endswith("/output.txt")
+        # filter out directories and check that the expected output file is present
+        buckets_files = [
+            f["Key"] for f in bucket_contents if not f["Key"].endswith("/")
+        ]
+        assert (
+            len(buckets_files) == 1
+        ), f"Expected exactly one file in bucket, but found: {buckets_files}"
+        assert buckets_files[0].endswith("/output.txt")
 
         # User A uploads a file to S3
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         self.gen3_workflow.put_bucket_object_with_boto3(
             content="User A's secret data",
             object_path=f"{s3_path_prefix}/user_a_file.txt",
@@ -906,7 +930,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 "description": "This task has an invalid command format.",
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # Invalid command format (should be a list of strings)
                         "command": "not_a_list",
                     }
@@ -933,7 +957,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
 
         self.gen3_workflow.create_tes_task(
             request_body=invalid_payload,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=400,
         )
 
@@ -971,12 +995,12 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": [f"echo '{echo_message}'"],
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
@@ -985,7 +1009,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Poll until the TES task completes or fails with a known status
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
         )
 
@@ -1018,13 +1042,13 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 },
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # sleep for long enough to describe the pod once it's running
                         "command": ["sleep 60"],
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
@@ -1033,7 +1057,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Poll until the task starts running so we know the worker pod has started
         self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="RUNNING",
         )
 
@@ -1111,13 +1135,13 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         # sleep for long enough to get the logs
                         "command": ["sleep 60"],
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
@@ -1126,7 +1150,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Poll until the task starts running so we know the worker pod has started
         self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="RUNNING",
         )
 
@@ -1179,7 +1203,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 **base_tes_payload(request),
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "command": ["env"],
                         "env": {
                             "SOMETHING": "VALUE",
@@ -1187,7 +1211,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
@@ -1196,7 +1220,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         # Poll until the TES task completes
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
         )
 
@@ -1237,7 +1261,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         SKIP_BROKEN = "YES"
 
         # python script which includes some of the test cases
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         script_file_name = "test_multiple_executors_and_pv_features.py"
         self.gen3_workflow._perform_s3_action(
             "upload_file",
@@ -1256,7 +1280,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             content=input_file_contents,
             object_path=f"{s3_path_prefix}/{input_10mb_file_name}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
 
@@ -1314,7 +1338,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                         ],
                     },
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             f"cp {input_10mb_file_name} {output_10mb_file_name}"
@@ -1322,14 +1346,14 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     },
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
         self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
         )
 
@@ -1338,7 +1362,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         response = self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/{out_file_name}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         try:
@@ -1359,7 +1383,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         response = self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/{out_file_name}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         try:
@@ -1381,7 +1405,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{out_file_name}",
                 s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
+                user=VALID_USER,
                 expected_status=200,
             )
             try:
@@ -1398,7 +1422,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         response = self.gen3_workflow.get_bucket_object_with_boto3(
             object_path=f"{s3_path_prefix}/{output_10mb_file_name}",
             s3_storage_config=self.s3_storage_config,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         try:
@@ -1414,7 +1438,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         """
         Check that the system can take a whole directory as input or output
         """
-        s3_path_prefix = f"{self.s3_storage_config.bucket_name}/{self.s3_folder_name}"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
         d1 = "mydir"
         d2 = "mysubdir"
         files = [
@@ -1435,7 +1459,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [
                             f"mkdir -p {d1}/{d2} && echo '{files[0]['txt']}' > {d1}/{d2}/{files[0]['name']} && echo '{files[1]['txt']}' > {d1}/{d2}/{files[1]['name']}",
@@ -1443,16 +1467,27 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
-        self.gen3_workflow.poll_until_task_reaches_expected_state(
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
         )
+
+        # In the GA4GH TES spec, the root-level `outputs` field defines the intended output files
+        # declared when submitting a task, whereas `logs.outputs` records the actual result and
+        # metadata of output files produced and uploaded after execution finishes. So when
+        # `outputs` is a directory, `logs.outputs` is the list of files in the uploaded dir.
+        assert len(task_info.get("logs", [])) > 0
+        actual_outputs = [o["url"] for o in task_info["logs"][-1].get("outputs", [])]
+        assert actual_outputs == [
+            f"s3://{s3_path_prefix}/{d1}/{d2}/{files[0]['name']}",
+            f"s3://{s3_path_prefix}/{d1}/{d2}/{files[1]['name']}",
+        ]
 
         # check that the expected output files are in S3
         for file in files:
@@ -1460,7 +1495,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{s3_path_prefix}/{full_path}",
                 s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
+                user=VALID_USER,
                 expected_status=200,
             )
             try:
@@ -1487,20 +1522,20 @@ class TestGen3WorkflowTES(TestGen3Workflow):
                 ],
                 "executors": [
                     {
-                        "image": "public.ecr.aws/docker/library/alpine:latest",
+                        "image": "quay.io/cdis/alpine:3.24.3",
                         "workdir": "/work",
                         "command": [f"ls -R && cat {d1}/{d2}/*"],
                     }
                 ],
             },
-            user=self.valid_user,
+            user=VALID_USER,
             expected_status=200,
         )
         task_id = task_response.get("id", None)
         assert task_id, f"Expected 'id' in response, but got: {task_response}"
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
-            user=self.valid_user,
+            user=VALID_USER,
             expected_final_state="COMPLETE",
         )
 
@@ -1551,8 +1586,8 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
             workflow_dir=workflow_dir,
             workflow_script="test_nextflow_workflow.nf",
-            nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
+            s3_region=self.s3_storage_config.bucket_region,
         )
         logger.info(f"Workflow log:")
         completed_tasks = []
@@ -1587,7 +1622,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             s3_file_list = self.gen3_workflow.list_bucket_objects_with_boto3(
                 folder_path=task["workDir"],
                 s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
+                user=VALID_USER,
             )
             assert (
                 s3_file_list
@@ -1602,14 +1637,14 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             # Unpacking the single overlapped filename from the set
             (expected_file,) = overlapped_filenames
             if "dicom_to_png" in task_name:
-                expected_file = f"/outputs/{expected_file}"
+                expected_file = f"outputs/{expected_file}"
             is_binary_file = expected_file.lower().endswith(".png")
 
             # - Check that the output file in S3 is non-empty
             response = self.gen3_workflow.get_bucket_object_with_boto3(
                 object_path=f"{task['workDir']}/{expected_file}",
                 s3_storage_config=self.s3_storage_config,
-                user=self.valid_user,
+                user=VALID_USER,
             )
             contents_in_s3 = response["Body"].read()
             if not is_binary_file:
@@ -1644,7 +1679,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
                 response = self.gen3_workflow.get_bucket_object_with_boto3(
                     object_path=f"{self.s3_storage_config.bucket_name}/{s3_key}",
                     s3_storage_config=self.s3_storage_config,
-                    user=self.valid_user,
+                    user=VALID_USER,
                 )
 
                 try:
@@ -1764,7 +1799,8 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             params = {"gpu": "true", "run": "TEST_GPU"}
 
             # ask the server to schedule on a GPU node
-            config_lines = ["tes.tags._GPU = 'yes'"]
+            with open(os.path.join(directory, "nextflow.config"), "a") as file:
+                file.write("\ntes.tags._GPU = 'yes'")
 
             # the test requests 10G memory, but our configured limit is 4G: override to 1G
             with open(f"{directory}/main.nf", "r") as file:
@@ -1774,31 +1810,6 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
         else:
             # do not run unsupported tests or the GPU test (no `gpu` param)
             params = {"skip": ",".join(known_unsupported)}
-            config_lines = []
-
-        # update the nextflow config
-        config_lines += [
-            "process.executor = 'tes'",
-            "process.time = '20 min'",
-            # for some reason using `plugins.id` here throws `UnsupportedOperationException`
-            "plugins {id 'nf-ga4gh'}",
-            "tes.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/ga4gh/tes\"",
-            "tes.oauthToken = env('GEN3_TOKEN')",
-            "tes.timeout = 120",
-            "tes.tags._IMAGE_PULL_POLICY = 'IfNotPresent'",
-            "aws.accessKey = env('GEN3_TOKEN')",
-            "aws.secretKey = 'N/A'",
-            f"aws.region = '{self.s3_storage_config.bucket_region}'",
-            "aws.client.endpoint = \"${env('HOSTNAME_PROTOCOL')}://${env('HOSTNAME')}/workflows/s3\"",
-            "aws.client.s3PathStyleAccess = true",
-            "aws.client.maxErrorRetry = 1",
-            "workDir = env('WORK_DIR')",
-            # this test tends to fail intermittently; improve stability with retries for now:
-            "process.errorStrategy = 'retry'",
-            "process.maxRetries = 2",
-        ]
-        with open(os.path.join(directory, "nextflow.config"), "a") as file:
-            file.write("\n".join(config_lines) + "\n")
 
         # run the test nextflow workflow
         workflow_log = self.gen3_workflow.run_nextflow_workflow(
@@ -1806,6 +1817,7 @@ class TestGen3WorkflowNextflow(TestGen3Workflow):
             workflow_script="main.nf",
             nextflow_config_file="nextflow.config",
             s3_working_directory=self.s3_storage_config.working_directory,
+            s3_region=self.s3_storage_config.bucket_region,
             params=params,
         )
 
