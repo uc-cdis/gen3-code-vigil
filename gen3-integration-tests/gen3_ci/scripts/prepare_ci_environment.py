@@ -8,6 +8,7 @@ from pathlib import Path
 import requests
 from dotenv import load_dotenv
 from utils import HELM_SCRIPTS_PATH_OBJECT, TEST_DATA_PATH_OBJECT, logger, test_setup
+from utils.gen3_admin_tasks import get_mock_passport_broker_issuer
 from utils.misc import retry
 
 load_dotenv()
@@ -209,6 +210,11 @@ def prepare_ci_environment(namespace):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
         quay_repo = repo
+    # Read by setup_ci_env.sh to configure fence to trust the mock passport broker,
+    # which the token exchange tests deploy when they run
+    os.environ["MOCK_PASSPORT_BROKER_ISSUER"] = get_mock_passport_broker_issuer(
+        namespace
+    )
 
     if repo in ("gen3-code-vigil"):  # Test repos
         result = modify_env_for_test_repo_pr(namespace)

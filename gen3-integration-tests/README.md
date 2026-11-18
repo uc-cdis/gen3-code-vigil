@@ -99,5 +99,6 @@ The integration tests perform Gen3 operations and admin tasks, e.g., etl, metada
 
 Code used for running integration tests in CI at CTDS is at `gen3-code-vigil/gen3-integration-tests/gen3_ci`.
 - **`scripts`** directory contains python scripts used in the github actions workflow.
+- **`helm_charts`** directory contains test fixtures that tests deploy into the environment they run against, e.g. the [mock passport broker](gen3_ci/helm_charts/mock-passport-broker/README.md) used by the token exchange tests.
 
 Tests are organized into test suites using classes as explained [here](https://docs.pytest.org/en/stable/getting-started.html#group-multiple-tests-in-a-class).

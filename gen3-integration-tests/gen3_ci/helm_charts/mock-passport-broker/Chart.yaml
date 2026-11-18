@@ -1,0 +1,13 @@
+apiVersion: v2
+name: mock-passport-broker
+description: |
+  A test-only GA4GH passport broker. Signs the passport defined in
+  files/generate_passport.py, a RAS-style passport with dbGaP permissions for RAS
+  test datasets, and serves the JWKS that verifies it. Used by the CI to exercise
+  fence's RFC 8693 token exchange without depending on RAS staging.
+
+type: application
+
+version: 0.1.0
+
+appVersion: "3.13-pythonbase"
