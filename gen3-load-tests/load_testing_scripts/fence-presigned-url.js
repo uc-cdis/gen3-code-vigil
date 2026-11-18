@@ -57,7 +57,7 @@ function parseVirtualUsers(virtualUsersStr) {
   }
 
 export default function () {
-  const url = `https://${GEN3_HOST}/user/data/download/${guids[Math.floor(Math.random() * guids.length)]}`;
+  const url = `https://${GEN3_HOST}/user/data/download/${guids[Math.floor(Math.random() * guids.length)]}?protocol=s3`;
   const params = {
     headers: {
       'Content-Type': 'application/json',
