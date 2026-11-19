@@ -269,5 +269,5 @@ def pytest_unconfigure(config):
         ):
             # Add failed test suites to GITHUB variable
             with open(os.getenv("GITHUB_ENV"), "a") as f:
-                f.write(f"FAILED_TEST_SUITES={' or '.join(failed_test_suites)}")
+                f.write(f"FAILED_TEST_SUITES={' or '.join(failed_test_suites)}\n")
             return
