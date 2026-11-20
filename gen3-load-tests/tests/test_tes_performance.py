@@ -35,6 +35,7 @@ from typing import List
 
 import boto3
 import pytest
+import requests
 from botocore.config import Config
 from services.fence import get_dpop_bound_task_token
 from services.gen3workflow import Gen3Workflow
@@ -62,20 +63,28 @@ DEFAULT_PARAMS = {
         "tes_8mb_s3_upload",
         "tes_gpu",
         # NOT included because it does not need to run alongside the other, shorter tests:
-        # "tes_long_running"
+        # "tes_long_running",
+        # "tes_long_dicom",
     ],
     "tes_long_running_n_hours": 24,  # limited by Fence's `MAX_TASK_TOKEN_TTL` configuration
 }
 PARAMS = json.loads(os.getenv("PARAMS", "{}"))
+PARAMS = {"test_cases": ["tes_long_dicom"], "tes_long_running_n_hours": 168}
 PARAMS = {**DEFAULT_PARAMS, **PARAMS}
 ONE_HOUR = 60 * 60  # default token lifetime
-TES_LONG_RUNNING_SCRIPT = "tes_long_running.py"
 
 
 ######################### START DEFINE TESTS
 
 
+def log(level, msg):
+    if type(msg) == bytes:
+        msg = msg.decode()
+    getattr(logger, level)(msg)
+
+
 TESTS = []
+INPUT_SCRIPTS = []
 
 # Mocks a load test without making real TES requests. Uncomment it to use during development.
 # TESTS.append({"name": "Random failures", "type": "Random", "n_concurrent_runs": 5})
@@ -215,6 +224,8 @@ for concurrency in PARAMS["tes_concurrency"]:
         )
 
 if "tes_long_running" in PARAMS["test_cases"]:
+    INPUT_SCRIPTS.append("tes_long_running.py")
+    input_script = INPUT_SCRIPTS[-1]
     TESTS.append(
         {
             **base,
@@ -226,8 +237,8 @@ if "tes_long_running" in PARAMS["test_cases"]:
                 "name": f"TES long-running test ({PARAMS['tes_long_running_n_hours']}h)",
                 "inputs": [
                     {
-                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/{TES_LONG_RUNNING_SCRIPT}",
-                        "path": f"/work/{TES_LONG_RUNNING_SCRIPT}",
+                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/{input_script}",
+                        "path": f"/work/{input_script}",
                     },
                 ],
                 "executors": [
@@ -235,7 +246,7 @@ if "tes_long_running" in PARAMS["test_cases"]:
                         "image": "python:3.13-slim",
                         "workdir": "/work",
                         "command": [
-                            f"pip install 'gen3[dpop]' && python {TES_LONG_RUNNING_SCRIPT}"
+                            f"pip install 'gen3[dpop]' && python {input_script}"
                         ],
                         "env": {
                             "API_KEY": pytest.api_keys["main_account"]["api_key"],
@@ -246,6 +257,70 @@ if "tes_long_running" in PARAMS["test_cases"]:
             },
         }
     )
+
+if "tes_long_dicom" in PARAMS["test_cases"]:
+    INPUT_SCRIPTS.append("tes_long_dicom.py")
+    input_script = INPUT_SCRIPTS[-1]
+    project_ids = "TCIA-RICORD_1a"  # change to project id of choice
+
+    log("info", "Downloading DICOM header test script...")
+    branch = "dicom-wf-pauline"  # TODO use master
+    response = requests.get(
+        f"https://raw.githubusercontent.com/uc-cdis/bio-nextflow/refs/heads/{branch}/tes/DICOM/DICOM_pipeline.py"
+    )
+    response.raise_for_status()
+    with open(f"{SCRIPTS_DIR}/{input_script}", "wb") as file:
+        file.write(response.content)
+
+    TESTS.append(
+        {
+            **base,
+            # "name": f"TES long-running DICOM headers test ({PARAMS['tes_long_running_n_hours']}h)",
+            "name": "TES long-running DICOM headers test",
+            "n_concurrent_runs": 1,
+            # token valid for 30 min longer in case the task takes time to start
+            # "token_lifetime": (PARAMS["tes_long_running_n_hours"] + 0.5) * ONE_HOUR,
+            "payload": {
+                "name": "TES long-running DICOM headers test",
+                "inputs": [
+                    # {"url": f"s3://{bucket}/inputs/credentials.json",
+                    # "path": "/work/credentials.json", "type": "FILE"},
+                    {
+                        "url": f"s3://BUCKET_PLACEHOLDER/inputs/{input_script}",
+                        "path": f"/work/{input_script}",
+                    },
+                ],
+                # "outputs": [
+                #     {"url": f"s3://{bucket}/outputs/{project_ids}/",
+                #     "path": "/work/outputs/", "type": "DIRECTORY"},
+                # ],
+                "executors": [
+                    {
+                        "image": "quay.io/cdis/gen3-workflow:integration_tests_dicom_image",
+                        "workdir": "/work",
+                        "command": [
+                            "sh",
+                            "-c",
+                            'printf \'{"api_key": "%s"}\n\' "$API_KEY" > /work/credentials.json && '
+                            # 'printf \'{"api_key": "%s"}\n\' "$API_KEY" > /work/credentials2.json && '
+                            # 'cat /work/credentials.json && '
+                            # 'cat /work/credentials2.json && '
+                            f"python3 /work/{input_script} --project-ids {project_ids} "
+                            "--endpoint staging.midrc.org "
+                            # "--credentials /work/credentials.json "
+                            "--working-dir /work/outputs --source-nodes ct_series_file --no-prompt",
+                        ],
+                        "env": {
+                            # "API_KEY": pytest.api_keys["main_account"]["api_key"],
+                            # "RUN_N_HOURS": str(PARAMS["tes_long_running_n_hours"]),
+                        },
+                    },
+                ],
+                # "resources": {"cpu_cores": 12, "ram_gb": 32, "disk_gb": 100}, #change resource allocation if needed
+            },
+        }
+    )
+    print(TESTS[-1]["payload"]["executors"][0]["command"])
 
 
 ######################### END DEFINE TESTS
@@ -258,12 +333,6 @@ class RunStats:
     successful: float
     run_time: float
     return_code: int
-
-
-def log(level, msg):
-    if type(msg) == bytes:
-        msg = msg.decode()
-    getattr(logger, level)(msg)
 
 
 def seconds_to_human_format(total_seconds):
@@ -373,7 +442,9 @@ async def run_command(
     env = env or {}
     test_name = test_case["name"]
     timeout = (
-        test_case["token_lifetime"] if "long-running" in test_name else EACH_JOB_TIMEOUT
+        test_case.get("token_lifetime", EACH_JOB_TIMEOUT)
+        if "long-running" in test_name
+        else EACH_JOB_TIMEOUT
     )
 
     try:
@@ -557,11 +628,11 @@ class TestTesPerformance:
                 Key="inputs/test-file.txt",
                 Body="this is my test file\n",
             )
-            if "tes_long_running" in PARAMS["test_cases"]:
+            for input_script in INPUT_SCRIPTS:
                 s3_client.upload_file(
-                    Filename=f"test_data/tes_performance_scripts/{TES_LONG_RUNNING_SCRIPT}",
+                    Filename=f"{SCRIPTS_DIR}/{input_script}",
                     Bucket=cls.s3_storage_config["bucket"],
-                    Key=f"inputs/{TES_LONG_RUNNING_SCRIPT}",
+                    Key=f"inputs/{input_script}",
                 )
 
     @pytest.fixture(scope="class", autouse=True)
