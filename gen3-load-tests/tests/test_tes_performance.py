@@ -471,8 +471,11 @@ async def run_tes_task(
             payload[field][0]["url"] = payload[field][0]["url"].replace(
                 "BUCKET_PLACEHOLDER", bucket
             )
-        except Exception:
+        except (KeyError, ValueError):
             pass
+    if "tags" not in payload:
+        payload["tags"] = {}
+    payload["tags"]["_IMAGE_PULL_POLICY"] = "IfNotPresent"
 
     cmd = [
         "python",
