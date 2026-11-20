@@ -943,6 +943,9 @@ clients:
   funnel-plugin-client:
     policies:
     - gen3_workflow_storage_admin
+  gen3-workflow-client:
+    policies:
+    - gen3_workflow_user
 
 users:
   main@example.org:

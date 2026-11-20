@@ -22,6 +22,12 @@ VALID_USER = "main_account"
 OTHER_VALID_USER = "user0_account"
 # `dummy_one` has access to create task tokens, but not to use gen3-workflow
 INVALID_USER = "dummy_one"
+# Clients with the `client_credentials` grant (see `test_data/test_setup/clients.csv`). They can
+# be passed as the `user` parameter of the `Gen3Workflow` functions, to make the calls with a
+# client token (not linked to a user) instead of a user token.
+# `gen3-workflow-client` has access to use gen3-workflow, `gen3-workflow-client-no-access` does not
+VALID_CLIENT = "gen3-workflow-client"
+INVALID_CLIENT = "gen3-workflow-client-no-access"
 
 S3_FOLDER_NAME = "integration-tests"
 S3_FILE_NAME = "test-input.txt"
@@ -237,6 +243,20 @@ class Gen3Workflow:
     ##### Helper Functions #####
     ############################
 
+    def is_dpop_required(self) -> bool:
+        """
+        Check whether this environment's gen3-workflow enforces DPoP (`DPOP_REQUIRED`), in which
+        case a task can only be launched with a DPoP-bound token: an anonymous request to create a
+        task is then rejected with a `dpop_required` error before any access check.
+        """
+        response = requests.post(
+            f"{self.BASE_URL}{self.SERVICE_URL}/ga4gh/tes/v1/tasks"
+        )
+        try:
+            return response.json().get("error") == "dpop_required"
+        except ValueError:
+            return False
+
     def _get_s3_client(
         self,
         access_token: str,
@@ -321,6 +341,8 @@ class Gen3Workflow:
                     response_status = 404
                 elif error_code in ["Forbidden", "403"]:
                     response_status = 403
+                elif error_code in ["Unauthorized", "401"]:
+                    response_status = 401
                 else:
                     logger.error(
                         f"Received an error from s3_client, expected status was {expected_status}. Error: {e.response}"
