@@ -12,6 +12,7 @@ from gen3.auth import (
     Gen3Auth,
     Gen3AuthError,
     endpoint_from_token,
+    get_access_token_with_client_credentials,
     remove_trailing_whitespace_and_slashes_in_url,
 )
 from gen3.dpop import dpop_proxy_context
@@ -603,10 +604,13 @@ class Fence(object):
                 resp = requests.get(url, headers={"Authorization": f"bearer {access_token}"})
 
         Args:
-            user (str)
+            user (str): name of a test user, or name of a test client (see `pytest.clients`) to
+                obtain a token through the `client_credentials` flow instead. If None, the call
+                is anonymous.
             use_dpop (bool): if True, this function simply proxies to `get_dpop_bound_task_token`.
                 If False, it uses the SDK to obtain a generic access token. If False and running in
-                a local cluster, the SDK is patched as described above.
+                a local cluster, the SDK is patched as described above. Ignored for clients: see
+                `get_client_credentials_token`.
             suffix (str): if `use_dpop` is False or the call is anonymous, the returned URL is
                 `<Gen3 env URL><suffix>`. If `use_dpop` is True, this parameter is ignored.
 
@@ -618,6 +622,10 @@ class Fence(object):
 
         if not user:
             yield None, f"{gen3_url}{suffix}"
+            return
+
+        if user in pytest.clients:
+            yield self.get_client_credentials_token(user), f"{gen3_url}{suffix}"
             return
 
         if use_dpop:
@@ -650,6 +658,29 @@ class Fence(object):
                 logger.info("Failed to get access token with Gen3Auth")
                 raise
             yield access_token, f"{gen3_url}{suffix}"
+
+    def get_client_credentials_token(self, client_name, scopes="openid user"):
+        """
+        Obtain an access token for a test client through the `client_credentials` flow. Such a
+        token is not linked to a user: it has no `sub` claim, and the client is identified by the
+        `azp` claim (client ID).
+
+        Fence only issues DPoP-bound tokens in exchange for a user's API key, so a client token is
+        never DPoP-bound: it is a plain bearer token, to be used directly against the Gen3 URL.
+
+        Args:
+            client_name (str): name of a `client_credentials` client in `pytest.clients`
+            scopes (str): space-separated list of scopes to request
+
+        Returns:
+            str: access token
+        """
+        client = pytest.clients[client_name]
+        return get_access_token_with_client_credentials(
+            endpoint=pytest.root_url,
+            client_credentials=(client["client_id"], client["client_secret"]),
+            scopes=scopes,
+        )
 
     def revoke_token(self, token):
         """Adds a token to Fence's denylist"""

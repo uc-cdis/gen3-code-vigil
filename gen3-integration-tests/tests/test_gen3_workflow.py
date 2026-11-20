@@ -33,13 +33,16 @@ import zipfile
 
 import jwt
 import pytest
+import utils.gen3_admin_tasks as gat
 from boto3.s3.transfer import TransferConfig
 from dateutil import parser
 from services.gen3workflow import (
+    INVALID_CLIENT,
     INVALID_USER,
     OTHER_VALID_USER,
     S3_FILE_NAME,
     S3_FOLDER_NAME,
+    VALID_CLIENT,
     VALID_USER,
     Gen3Workflow,
     WorkflowStorageConfig,
@@ -1556,6 +1559,449 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         stdout = task_logs[0]["logs"][0]["stdout"].strip()
         expected = f".:\n{d1}\n\n./{d1}:\n{d2}\n\n./{d1}/{d2}:\n{files[0]['name']}\n{files[1]['name']}\n{files[0]['txt']}\n{files[1]['txt']}"
         assert stdout == expected
+
+
+@pytest.mark.skipif(
+    gat.service_version_lower_than("gen3-workflow", "2026.12", "1.3.0"),
+    reason="Current gen3-workflow version doesn't have the changes for this test",
+)
+@pytest.mark.requires_fence_client
+class TestGen3WorkflowClientCredentials(TestGen3Workflow):
+    """
+    Use gen3-workflow with tokens obtained through the OAuth2 `client_credentials` flow. Such a
+    token is not linked to a user (no `sub` claim): the client itself, identified by its client
+    ID (`azp` claim), is the principal. Clients are subject to the same rules as users, with the
+    client ID taking the place of the user ID: they need access to create tasks, and they are
+    automatically granted access to their own tasks and their own bucket only.
+
+    Client tokens cannot be DPoP-bound (Fence only issues DPoP-bound tokens in exchange for a
+    user's API key). When gen3-workflow requires DPoP, a client can therefore not launch tasks or
+    read and write files, and the tests that do so are skipped: see the `dpop_not_required`
+    fixture.
+    """
+
+    @classmethod
+    def setup_class(cls):
+        # Not calling the parent's `setup_class`: it empties the test users' buckets, which the
+        # other test classes may be using since they run in parallel with this one.
+        cls.gen3_workflow = Gen3Workflow()
+        cls.client_id = pytest.clients[VALID_CLIENT]["client_id"]
+        cls.dpop_required = cls.gen3_workflow.is_dpop_required()
+        cls.s3_storage_config = None  # the client's storage
+        cls.user_s3_storage_config = None
+        if cls.dpop_required:
+            # The client would not be able to use its storage: do not create it.
+            return
+
+        # Hit the storage setup endpoint for the client and the user who will be creating tasks.
+        cls.s3_storage_config = WorkflowStorageConfig.from_dict(
+            cls.gen3_workflow.setup_storage(user=VALID_CLIENT, expected_status=200)
+        )
+        cls.user_s3_storage_config = WorkflowStorageConfig.from_dict(
+            cls.gen3_workflow.setup_storage(user=VALID_USER, expected_status=200)
+        )
+
+    @classmethod
+    def teardown_class(cls):
+        # A new client ID is generated every time the test clients are created, so the client's
+        # bucket is never reused: delete it.
+        if cls.s3_storage_config:
+            cls.gen3_workflow.cleanup_user_bucket(
+                user=VALID_CLIENT, delete_bucket=True, expected_status=202
+            )
+
+    @pytest.fixture
+    def dpop_not_required(self):
+        """
+        Skip the tests in which a client launches a task or reads or writes a file, when the
+        environment only allows it with a DPoP-bound token.
+        """
+        if self.dpop_required:
+            pytest.skip(
+                "gen3-workflow requires DPoP-bound tokens in this environment, and client tokens cannot be DPoP-bound"
+            )
+
+    def test_client_without_access(self):
+        """
+        A client that was not granted access to create tasks cannot set up its storage or create
+        tasks, and does not have access to any task.
+        """
+        self.gen3_workflow.setup_storage(user=INVALID_CLIENT, expected_status=403)
+
+        response = self.gen3_workflow.list_tes_tasks(
+            user=INVALID_CLIENT, expected_status=200
+        )
+        tasks = response.get("tasks", None)
+        assert tasks == [], f"Expected an empty task list, but got: {tasks}"
+
+        if not self.dpop_required:
+            # (when DPoP is required, the token is rejected before the access check: see
+            # `test_client_token_when_dpop_is_required`)
+            self.gen3_workflow.create_tes_task(
+                request_body={}, user=INVALID_CLIENT, expected_status=403
+            )
+
+    def test_client_token_when_dpop_is_required(self, request):
+        """
+        When gen3-workflow requires DPoP, a client token is accepted as an ordinary bearer token
+        by the endpoints that do not require a DPoP-bound token, but it cannot be used to launch
+        a task or to write a file.
+        """
+        if not self.dpop_required:
+            pytest.skip("gen3-workflow does not require DPoP in this environment")
+
+        response = self.gen3_workflow.create_tes_task(
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {"image": "quay.io/cdis/alpine:3.24.3", "command": ["echo done"]}
+                ],
+            },
+            user=VALID_CLIENT,
+            expected_status=401,
+        )
+        assert (
+            response.get("error") == "dpop_required"
+        ), f"Expected a 'dpop_required' error, but got: {response}"
+
+        # The request is rejected before the bucket is looked at, so any bucket will do: use a
+        # user's bucket rather than setting up the client's storage.
+        user_s3_storage_config = WorkflowStorageConfig.from_dict(
+            self.gen3_workflow.setup_storage(user=VALID_USER, expected_status=200)
+        )
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content="dummy_S3_content",
+            object_path=f"{user_s3_storage_config.bucket_name}/{S3_FOLDER_NAME}/{request.node.name}/{S3_FILE_NAME}",
+            s3_storage_config=user_s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=401,
+        )
+
+        response = self.gen3_workflow.list_tes_tasks(
+            user=VALID_CLIENT, expected_status=200
+        )
+        tasks = response.get("tasks", None)
+        assert tasks == [], f"Expected an empty task list, but got: {tasks}"
+
+    def test_client_setup_storage(self, dpop_not_required):
+        """
+        The client's bucket is named after the client ID, and is not a user's bucket.
+        """
+        storage_info = self.gen3_workflow.setup_storage(
+            user=VALID_CLIENT, expected_status=200
+        )
+        bucket_name = storage_info.get("bucket", "")
+        # bucket names are lowercase, unlike client IDs
+        assert bucket_name.endswith(
+            f"-{self.client_id.lower()}"
+        ), f"Expected the bucket to be named after client ID '{self.client_id}', but got: {storage_info}"
+        assert storage_info.get("workdir", "").startswith(f"s3://{bucket_name}/")
+        assert bucket_name != self.user_s3_storage_config.bucket_name
+
+    def test_client_upload_get_and_delete_s3_file(self, request, dpop_not_required):
+        """
+        The client can manage the files in its own bucket: upload a file, list the files, get the
+        file and delete it.
+        """
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
+        object_path = f"{s3_path_prefix}/{S3_FILE_NAME}"
+        input_content = "sample_S3_content"
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content=input_content,
+            object_path=object_path,
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+
+        response_contents = self.gen3_workflow.list_bucket_objects_with_boto3(
+            folder_path=f"{s3_path_prefix}/",
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+        expected_keys = [object_path.split("/", 1)[1]]
+        listed_keys = [e.get("Key") for e in response_contents]
+        assert (
+            listed_keys == expected_keys
+        ), f"Expected to list {expected_keys}, but got: {response_contents}"
+
+        response_s3_object = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=object_path,
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+        response_contents = response_s3_object["Body"].read().decode("utf-8")
+        assert (
+            input_content == response_contents
+        ), "Stored and retrieved content should match"
+
+        self.gen3_workflow.delete_bucket_object_with_boto3(
+            object_path=object_path,
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=204,
+        )
+        self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=object_path,
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=404,
+        )
+
+    def test_client_create_tes_task(self, request, dpop_not_required):
+        """
+        The client can run a task that reads an input file from, and writes an output file to,
+        the client's bucket:
+        - Upload input file to S3
+        - Submit TES task
+        - Verify task creation, ownership, listing and completion
+        - Validate logs and output
+        """
+        # Step 1: Upload input file to S3
+        input_file_contents = "hello beautiful world!"
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content=input_file_contents,
+            object_path=f"{s3_path_prefix}/input.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+
+        # Step 2: Create a TES task
+        echo_message = "done!"
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body={
+                **base_tes_payload(request),
+                "inputs": [
+                    {
+                        "url": f"s3://{s3_path_prefix}/input.txt",
+                        "path": "/work/input.txt",
+                    }
+                ],
+                "outputs": [
+                    {
+                        "path": "/work/output.txt",
+                        "url": f"s3://{s3_path_prefix}/output.txt",
+                        "type": "FILE",
+                    },
+                ],
+                "executors": [
+                    {
+                        "image": "quay.io/cdis/alpine:3.24.3",
+                        "workdir": "/work",
+                        "command": [
+                            # TODO: remove `|| true` (see `test_happy_path_create_tes_task`)
+                            f"touch output.txt || true && cat input.txt > output.txt && echo {echo_message}",
+                        ],
+                    }
+                ],
+            },
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        # Step 3: Verify the task is owned by the client
+        task_info = self.gen3_workflow.get_tes_task(
+            task_id=task_id, user=VALID_CLIENT, expected_status=200
+        )
+        authz = task_info.get("tags", {}).get("_AUTHZ")
+        assert (
+            authz
+            == f"/services/workflow/gen3-workflow/tasks/{self.client_id}/{task_id}"
+        ), f"Expected the task to be owned by client '{self.client_id}', but the task's authz is '{authz}'"
+
+        # Step 4: Verify the task is listed
+        list_tes_tasks_response = self.gen3_workflow.list_tes_tasks(
+            user=VALID_CLIENT, expected_status=200
+        )
+        assert any(
+            task["id"] == task_id for task in list_tes_tasks_response.get("tasks", [])
+        ), "The created task ID should be present in the task list."
+
+        # Step 5: Poll until the TES task completes, and validate the task logs
+        task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
+            task_id=task_id, user=VALID_CLIENT, expected_final_state="COMPLETE"
+        )
+        executor_log = get_executor_log(task_info)
+        stdout = executor_log["stdout"].strip()
+        assert (
+            stdout == echo_message
+        ), f"Expected stdout to be `{echo_message}`, but found `{stdout}` instead."
+        exit_code = executor_log.get("exit_code")
+        assert (
+            exit_code == 0
+        ), f"Expected successful task's exit code to be 0, but got {exit_code}"
+
+        # Step 6: Validate the task output, which should be in the client's bucket
+        response = self.gen3_workflow.get_bucket_object_with_boto3(
+            object_path=f"{s3_path_prefix}/output.txt",
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+        output_file_contents = response["Body"].read().decode("utf-8").strip()
+        assert (
+            input_file_contents == output_file_contents
+        ), f"Output file does not have the expected contents. Expected: '{input_file_contents}', but found '{output_file_contents}'."
+
+    def test_client_cancel_tes_task(self, request, dpop_not_required):
+        """
+        The client can cancel its own task.
+        """
+        task_response = self.gen3_workflow.create_tes_task(
+            request_body={
+                **base_tes_payload(request),
+                "executors": [
+                    {"image": "quay.io/cdis/alpine:3.24.3", "command": ["sleep 60"]}
+                ],
+            },
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+        task_id = task_response.get("id", None)
+        assert task_id, f"Expected 'id' in response, but got: {task_response}"
+
+        response = self.gen3_workflow.cancel_tes_task(
+            task_id=task_id, user=VALID_CLIENT, expected_status=200
+        )
+        assert response == {}
+
+        task_info = self.gen3_workflow.get_tes_task(
+            task_id=task_id, user=VALID_CLIENT, expected_status=200
+        )
+        final_state = task_info.get("state", None)
+        valid_states = {"CANCELING", "CANCELED"}
+        assert (
+            final_state in valid_states
+        ), f"Task state should be one of {valid_states} after cancellation. But found {final_state} instead. Task Info: {task_info}"
+
+    def test_client_and_user_isolation(self, request, dpop_not_required):
+        """
+        A client can only see and access its own tasks and storage, and users cannot see or
+        access the client's.
+        - The client and a user each create a TES task and upload a file to S3
+        - The client is denied access to the user's task and file
+        - The user is denied access to the client's task and file
+        """
+        storage_configs = {
+            VALID_CLIENT: self.s3_storage_config,
+            VALID_USER: self.user_s3_storage_config,
+        }
+        task_ids = {}
+        object_paths = {}
+        for principal, storage_config in storage_configs.items():
+            task_response = self.gen3_workflow.create_tes_task(
+                request_body={
+                    **base_tes_payload(request),
+                    "name": f"{request.node.name} {principal}",
+                    "executors": [
+                        {
+                            "image": "quay.io/cdis/alpine:3.24.3",
+                            "command": ["sleep 60"],
+                        }
+                    ],
+                },
+                user=principal,
+                expected_status=200,
+            )
+            task_ids[principal] = task_response.get("id", None)
+            assert task_ids[
+                principal
+            ], f"Expected 'id' in response, but got: {task_response}"
+
+            object_paths[principal] = (
+                f"{storage_config.bucket_name}/{S3_FOLDER_NAME}/{request.node.name}/secret.txt"
+            )
+            self.gen3_workflow.put_bucket_object_with_boto3(
+                content=f"{principal}'s secret data",
+                object_path=object_paths[principal],
+                s3_storage_config=storage_config,
+                user=principal,
+                expected_status=200,
+            )
+
+        for principal, other_principal in [
+            (VALID_CLIENT, VALID_USER),
+            (VALID_USER, VALID_CLIENT),
+        ]:
+            # Each one can get its own task and file
+            self.gen3_workflow.get_tes_task(
+                task_id=task_ids[principal], user=principal, expected_status=200
+            )
+            self.gen3_workflow.get_bucket_object_with_boto3(
+                object_path=object_paths[principal],
+                s3_storage_config=storage_configs[principal],
+                user=principal,
+                expected_status=200,
+            )
+
+            # But fails to get or cancel the other one's task, and to get the other one's file
+            self.gen3_workflow.get_tes_task(
+                task_id=task_ids[other_principal], user=principal, expected_status=403
+            )
+            self.gen3_workflow.cancel_tes_task(
+                task_id=task_ids[other_principal], user=principal, expected_status=403
+            )
+            self.gen3_workflow.get_bucket_object_with_boto3(
+                object_path=object_paths[other_principal],
+                s3_storage_config=storage_configs[other_principal],
+                user=principal,
+                expected_status=403,
+            )
+
+            # And only its own task is listed
+            listed_task_ids = [
+                task["id"]
+                for task in self.gen3_workflow.list_tes_tasks(
+                    user=principal, expected_status=200
+                ).get("tasks", [])
+            ]
+            assert (
+                task_ids[principal] in listed_task_ids
+            ), f"Expected {principal}'s own task to be listed"
+            assert (
+                task_ids[other_principal] not in listed_task_ids
+            ), f"{other_principal}'s task should not be listed for {principal}"
+
+        # Clean up: the tasks do not need to run to completion
+        for principal, task_id in task_ids.items():
+            self.gen3_workflow.cancel_tes_task(
+                task_id=task_id, user=principal, expected_status=200
+            )
+
+    def test_client_empty_bucket(self, request, dpop_not_required):
+        """
+        The client can delete all the files in its own bucket.
+        """
+        s3_path_prefix = self.get_unique_s3_prefix_per_test_case(request)
+        self.gen3_workflow.put_bucket_object_with_boto3(
+            content="sample_S3_content",
+            object_path=f"{s3_path_prefix}/{S3_FILE_NAME}",
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+
+        self.gen3_workflow.cleanup_user_bucket(
+            user=VALID_CLIENT, ignore_missing=False, expected_status=204
+        )
+
+        # Not checking that the whole bucket is empty: the tasks created by the other tests may
+        # still be writing to it.
+        remaining_files = self.gen3_workflow.list_bucket_objects_with_boto3(
+            folder_path=f"{s3_path_prefix}/",
+            s3_storage_config=self.s3_storage_config,
+            user=VALID_CLIENT,
+            expected_status=200,
+        )
+        assert (
+            remaining_files == []
+        ), f"Expected the uploaded file to be deleted, but found: {remaining_files}"
 
 
 class TestGen3WorkflowNextflow(TestGen3Workflow):
