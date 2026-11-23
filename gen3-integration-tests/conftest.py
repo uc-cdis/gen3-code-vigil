@@ -89,8 +89,8 @@ def pytest_collection_finish(session):
                 setup.setup_google_buckets()
                 requires_google_bucket_marker_present = True
         # Run Usersync job
-        if not os.getenv("RUNNING_LOCAL"):
-            setup.run_usersync()
+        # if not os.getenv("RUNNING_LOCAL"):
+        #     setup.run_usersync()
 
 
 @pytest.fixture(scope="session", autouse=True)
