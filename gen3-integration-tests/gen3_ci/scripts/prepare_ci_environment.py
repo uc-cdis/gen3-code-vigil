@@ -18,6 +18,8 @@ def wait_for_quay_build(repo, tag):
     """
     Wait for the branch image to be ready for testing.
     Used in service PRs.
+    `repo` is a quay repo name, or a comma-separated list of them for GitHub
+    repos that build several images; all of them must have the tag.
     """
     if os.getenv("SKIP_QUAY_BUILD") == "true":
         logger.info("[wait_for_quay_build] Skipped")
@@ -36,10 +38,6 @@ def wait_for_quay_build(repo, tag):
     logger.info(f"[wait_for_quay_build] Repo - {quay_org}/{repo}, image - {tag}")
     while not found and i < max_tries:
         for repo_item in repo_list:
-            # Check if repo name is in dict then fetch the quay repo name
-            repo_dict = {"gen3-ai": "gen3_embeddings"}
-            if repo_item in repo_dict.keys():
-                repo_item = repo_dict[repo_item]
             logger.info(
                 f"[wait_for_quay_build] Waiting for image '{quay_org}/{repo_item}:{tag}' to be built in quay"
             )
@@ -113,9 +111,11 @@ def setup_env_for_helm(arguments):
 
 def modify_env_for_service_pr(namespace, service, tag):
     """
-    Change the image tag for the service under test in the test env's manifest
+    Change the image tag for the service(s) under test in the test env's manifest
     Roll the environment
     Run usersync
+    `service` is a quay repo name, or a comma-separated list of them for GitHub
+    repos that build several images; each one gets its image tag set to `tag`.
     """
     helm_branch = os.getenv("HELM_BRANCH")
     ci_default_manifest = (
@@ -123,18 +123,22 @@ def modify_env_for_service_pr(namespace, service, tag):
     )
     helm_service_names = {
         "audit-service": "audit",
-        "gen3-ai": "gen3-embeddings",
+        "gen3_ai_model_repo": "gen3-ai-model-repo",
+        "gen3_embeddings": "gen3-embeddings",
         "tube": "etl",
         "data-portal": "portal",
         "metadata-service": "metadata",
         "workspace-token-service": "wts",
     }
+    helm_services = ",".join(
+        helm_service_names.get(item, item) for item in service.split(",")
+    )
     arguments = [
         namespace,
         "service-env-setup",
         helm_branch,
         ci_default_manifest,
-        helm_service_names.get(service, service),
+        helm_services,
         tag,
     ]
     return setup_env_for_helm(arguments)
@@ -209,7 +213,8 @@ def prepare_ci_environment(namespace):
     """Calls other functions in this module depending on the type of repo under test"""
     repo = os.getenv("REPO")
     repo_full_name = os.getenv("REPO_FN")
-    # if quay repo name is different from github repo name
+    # if quay repo name is different from github repo name, or the github repo
+    # builds several images (comma-separated, e.g. "gen3_embeddings,gen3_ai_model_repo")
     if os.getenv("QUAY_REPO"):
         quay_repo = os.getenv("QUAY_REPO").replace('"', "")
     else:
