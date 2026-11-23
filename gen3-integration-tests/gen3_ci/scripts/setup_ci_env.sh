@@ -810,20 +810,29 @@ else
   exit 1
 fi
 
-echo "Running usersync..."
-jobName="usersync-manual"
-kubectl delete job $jobName -n ${namespace}
-kubectl create job --from=cronjob/usersync $jobName -n ${namespace}
-kubectl wait --for=condition=complete job/$jobName --namespace=${namespace} --timeout=10m
-if [ $? -eq 0 ]; then
-  echo "usersync completed successfully"
+# Run usersync only when Fence is enabled
+fence_enabled=$(yq eval '.fence.enabled // false' "$ci_default_manifest_values_yaml")
+if [[ "$fence_enabled" == "true" ]]; then
+  echo "Fence is enabled. Running usersync..."
+  jobName="usersync-manual"
+  kubectl delete job "$jobName" -n "${namespace}" --ignore-not-found
+
+  if ! kubectl create job --from=cronjob/usersync "$jobName" -n "${namespace}"; then
+    echo "Failed to create usersync job"
+    exit 1
+  fi
+  if kubectl wait --for=condition=complete "job/$jobName" --namespace="${namespace}" --timeout=10m; then
+    echo "usersync completed successfully"
+  else
+    echo "usersync did not complete successfully:"
+    echo "======= Describing $jobName:"
+    kubectl describe pod -l job-name="$jobName" -n "${namespace}"
+    echo "======= Logs for $jobName:"
+    kubectl logs -l job-name="$jobName" -n "${namespace}" --all-containers --tail=-1
+    exit 1
+  fi
 else
-  echo "usersync did not complete successfully:"
-  echo "======= Describing $jobName:"
-  kubectl describe pod -l job-name=$jobName -n "${namespace}"
-  echo "======= Logs for $jobName:"
-  kubectl logs -l job-name=$jobName -n "${namespace}" --all-containers --tail -1
-  exit 1
+  echo "Fence is disabled. Skipping usersync."
 fi
 
 echo "YAY!!! Env is up..."
