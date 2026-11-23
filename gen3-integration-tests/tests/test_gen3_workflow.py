@@ -479,6 +479,7 @@ class TestGen3WorkflowTES(TestGen3Workflow):
         ), "The created task ID should be present in the task list."
 
         # Step 4: Poll until the TES task completes or fails with a known status
+        # TODO: use the gen3sdk version of this method
         task_info = self.gen3_workflow.poll_until_task_reaches_expected_state(
             task_id=task_id,
             user=VALID_USER,
