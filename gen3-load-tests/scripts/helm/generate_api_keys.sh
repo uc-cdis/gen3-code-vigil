@@ -26,12 +26,6 @@ OUTPUT_DIR="$HOME/.gen3"
 mkdir -p "$OUTPUT_DIR"
 chmod -R 755 "$OUTPUT_DIR"
 
-# If fence is not deployed skip api key generation.
-if ! kubectl get deployment fence-deployment -n "$NAMESPACE" >/dev/null 2>&1; then
-    echo "Fence is not deployed in namespace $NAMESPACE. Skipping API key generation."
-    exit 0
-fi
-
 # Get running fence pod
 FENCE_POD=$(kubectl get pods -l app=fence -o json -n "$NAMESPACE" | jq -r '.items[0].metadata.name // empty')
 
