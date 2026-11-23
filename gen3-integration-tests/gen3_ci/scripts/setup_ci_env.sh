@@ -811,8 +811,7 @@ else
 fi
 
 # Run usersync only when Fence is enabled
-fence_enabled=$(yq eval '.fence.enabled // false' "$ci_default_manifest_values_yaml")
-if [[ "$fence_enabled" == "true" ]]; then
+if kubectl get deployment fence-deployment -n "${namespace}" >/dev/null 2>&1; then
   echo "Fence is enabled. Running usersync..."
   jobName="usersync-manual"
   kubectl delete job "$jobName" -n "${namespace}" --ignore-not-found
@@ -832,7 +831,7 @@ if [[ "$fence_enabled" == "true" ]]; then
     exit 1
   fi
 else
-  echo "Fence is disabled. Skipping usersync."
+  echo "Fence is not deployed. Skipping usersync."
 fi
 
 echo "YAY!!! Env is up..."
