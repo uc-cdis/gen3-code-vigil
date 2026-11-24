@@ -44,7 +44,11 @@ def get_portal_config(json_file_name=None):
         with json_path.open("r", encoding="utf-8") as f:
             res = json.load(f)
     else:
-        if "portal" not in deployed_services:
+        # Dataguids uses a different portal and its information
+        # isn't required for running dataguids tests
+        if "portal" not in deployed_services or "dataguids" in os.getenv(
+            "SOURCE_CONFIG", ""
+        ):
             return {}
         res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
         assert res.status_code == 200, f"Expected 200 but got {res.status_code}"
