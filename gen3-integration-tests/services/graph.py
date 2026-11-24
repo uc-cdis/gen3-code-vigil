@@ -212,9 +212,11 @@ class GraphDataTools:
             expected_status_code: 200 by default, allows us to expect a failure in tests
         """
         try:
+            logger.info(f"Submission payload: {record.props}")  # NEW
             result = self.sdk.submit_record(
                 self.program_name, self.project_code, record.props
             )
+            logger.info(f"Submission response: {result}")  # NEW
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != expected_status_code:
                 logger.error(f"Error while submitting record: {e.response.text}")

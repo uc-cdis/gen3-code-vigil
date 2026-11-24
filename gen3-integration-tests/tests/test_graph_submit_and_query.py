@@ -504,6 +504,8 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
+        logger.info(f"Indexd GUID: {file_record.indexd_guid}")  # NEW
+        logger.info(f"Indexd URLs: {record.get('urls')}")  # NEW
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
