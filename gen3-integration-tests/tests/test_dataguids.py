@@ -13,6 +13,11 @@ from utils.test_execution import screenshot
 
 # TODO : enable this test after the manifest PRs are ready to roll
 @pytest.mark.frontend
+@pytest.mark.skipif(
+    "dataguids" not in os.getenv("SOURCE_CONFIG", "")
+    or "dataguids" not in pytest.hostname,
+    reason="TestDataGuids runs only on dataguids environment",
+)
 class TestDataGuids(object):
     @classmethod
     def setup_class(cls):
