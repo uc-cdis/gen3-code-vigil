@@ -123,10 +123,13 @@ def pytest_configure(config):
     # Accounts used for testing
     pytest.users = setup.get_users()
 
+    # List of services deployed
+    pytest.deployed_services = gat.get_list_of_services_deployed()
     # Generate api key and auth headers
     pytest.api_keys = {}
-    for user in pytest.users:
-        pytest.api_keys[user] = setup.get_api_key(user)
+    if "fence" in pytest.deployed_services:
+        for user in pytest.users:
+            pytest.api_keys[user] = setup.get_api_key(user)
 
     # Prevent pytest-xdist from running this on each worker individually
     if not hasattr(config, "workerinput"):
@@ -154,8 +157,6 @@ def pytest_configure(config):
     else:
         pytest.root_url_portal = pytest.root_url
 
-    # List of services deployed
-    pytest.deployed_services = gat.get_list_of_services_deployed()
     # List of sower jobs enabled
     pytest.enabled_sower_jobs = gat.get_enabled_sower_jobs()
     # # Is Flag enabled for USE_AGG_MDS
