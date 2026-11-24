@@ -499,12 +499,8 @@ class TestGraphSubmitAndQuery:
         test_url = "s3://cdis-presigned-url-test/testdata"
         file_record = self.sd_tools.get_file_record()
         # Generate unique file metadata to avoid record reuse
-        file_record.props["md5sum"] = uuid.uuid4().hex  # NEW
-        file_record.props["submitter_id"] = f"reference_file_{uuid.uuid4().hex}"  # NEW
-        # NEW
-        logger.info(f"Selected file node: {file_record.node_name}")
-        logger.info(f"Selected file category: {file_record.category}")
-        logger.info(f"Original file properties: {file_record.props}")
+        file_record.props["md5sum"] = uuid.uuid4().hex
+        file_record.props["submitter_id"] = f"reference_file_{uuid.uuid4().hex}"
         self.sd_tools.submit_links_for_record(file_record)
         file_record.props["urls"] = test_url
         self.sd_tools.submit_record(record=file_record)
@@ -512,8 +508,6 @@ class TestGraphSubmitAndQuery:
             unique_id=file_record.unique_id
         )
         record = indexd.get_record(indexd_guid=file_record.indexd_guid)
-        logger.info(f"Indexd GUID: {file_record.indexd_guid}")  # NEW
-        logger.info(f"Indexd URLs: {record.get('urls')}")  # NEW
 
         # Check record and indexd record contents
         indexd.file_equals(record, file_record)
