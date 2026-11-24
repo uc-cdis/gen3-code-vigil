@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import uuid
 
 import pytest
 import requests
@@ -497,6 +498,9 @@ class TestGraphSubmitAndQuery:
         indexd = Indexd()
         test_url = "s3://cdis-presigned-url-test/testdata"
         file_record = self.sd_tools.get_file_record()
+        # Generate unique file metadata to avoid record reuse
+        file_record.props["md5sum"] = uuid.uuid4().hex
+        file_record.props["submitter_id"] = f"reference_file_{uuid.uuid4().hex}"
         self.sd_tools.submit_links_for_record(file_record)
         file_record.props["urls"] = test_url
         self.sd_tools.submit_record(record=file_record)
