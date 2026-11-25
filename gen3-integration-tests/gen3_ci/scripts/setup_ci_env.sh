@@ -40,70 +40,74 @@ elif [ "$setup_type" == "service-env-setup" ]; then
     # If PR is under a service repository, then update the image for the given service
     echo "Setting Up Service PR Env..."
     # Inputs:
-    # service_name - name of service against which PR is run
-    # image_name - name of the quay image for the service PR
-    service_name="$5"
+    # service_names - name of service against which PR is run, or a comma-separated
+    #                 list of them for repos that build several images
+    # image_name - name of the quay image tag for the service PR (shared by all services)
+    service_names="$5"
     image_name="$6"
-    service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
-    echo "Looking for '$service_name' (tag '$image_name') in ci_default_manifest_values_yaml. Result: $service_values_block"
-    if [ "$service_values_block" != "key not found" ]; then
-        echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
-        if [[ "$service_name" == "etl" ]]; then
-          yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
-        elif [[ "$service_name" == "funnel" ]]; then
-          yq eval ".${service_name}.funnel.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+    IFS=',' read -ra service_name_list <<< "$service_names"
+    for service_name in "${service_name_list[@]}"; do
+        service_values_block=$(yq eval ".${service_name} // \"key not found\"" "$ci_default_manifest_values_yaml")
+        echo "Looking for '$service_name' (tag '$image_name') in ci_default_manifest_values_yaml. Result: $service_values_block"
+        if [ "$service_values_block" != "key not found" ]; then
+            echo "Key '$service_name' found in \"$ci_default_manifest_values_yaml.\""
+            if [[ "$service_name" == "etl" ]]; then
+              yq eval ".${service_name}.image.tube.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+            elif [[ "$service_name" == "funnel" ]]; then
+              yq eval ".${service_name}.funnel.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+            else
+              if [[ "$service_name" == "gen3-workflow" ]]; then
+                echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
+                yq eval ".${service_name}.enabled = true" -i "$ci_default_manifest_values_yaml"
+              fi
+              yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+            fi
+        elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
+        then
+            echo "Found a frontend framework based repo '$service_name'"
+            if [[ "$CI_ENV" == "gen3ff" ]]; then
+              if [[ "$REPO" == "commons-frontend-app" ]]; then
+                yq eval ".frontend-framework.image.tag = \"${image_name}_test\"" -i "$ci_default_manifest_values_yaml"
+              else
+                yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
+              fi
+              repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$ci_default_manifest_values_yaml")
+              yq eval ".frontend-framework.image.repository = \"${repository%/*}/$service_name\"" -i "$ci_default_manifest_values_yaml"
+            fi
         else
-          if [[ "$service_name" == "gen3-workflow" ]]; then
-            echo "Found gen3-workflow service, explicitly enabling it in values.yaml"
-            yq eval ".${service_name}.enabled = true" -i "$ci_default_manifest_values_yaml"
-          fi
-          yq eval ".${service_name}.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
-        fi
-    elif [[ "$service_name" == *data-commons* || "$service_name" == "commons-frontend-app" ]]
-    then
-        echo "Found a frontend framework based repo '$service_name'"
-        if [[ "$CI_ENV" == "gen3ff" ]]; then
-          if [[ "$REPO" == "commons-frontend-app" ]]; then
-            yq eval ".frontend-framework.image.tag = \"${image_name}_test\"" -i "$ci_default_manifest_values_yaml"
-          else
-            yq eval ".frontend-framework.image.tag = \"${image_name}\"" -i "$ci_default_manifest_values_yaml"
-          fi
-          repository=$(yq eval ".frontend-framework.image.repository // \"key not found\"" "$ci_default_manifest_values_yaml")
-          yq eval ".frontend-framework.image.repository = \"${repository%/*}/$service_name\"" -i "$ci_default_manifest_values_yaml"
-        fi
-    else
-        echo "Key '$service_name' not found."
-        # Skip image update for repos which dont need it
-        skip_service_list=("gen3-client")
-        raise_exception=true
-        for ITEM in "${skip_service_list[@]}"; do
-            if [[ "$ITEM" == "$service_name" ]]; then
+            echo "Key '$service_name' not found."
+            # Skip image update for repos which dont need it
+            skip_service_list=("gen3-client")
+            raise_exception=true
+            for ITEM in "${skip_service_list[@]}"; do
+                if [[ "$ITEM" == "$service_name" ]]; then
+                    raise_exception=false
+                    echo "Key '$ITEM' found, but skipping service update as this service isnt a kubectl deployment"
+                    break
+                fi
+            done
+            # Handle sowerConfig image updates
+            mapfile -t sower_job_names < <(yq '.sower.sowerConfig[].name' "$ci_default_manifest_values_yaml")
+            for ITEM in "${sower_job_names[@]}"; do
+                if [[ "$ITEM" == *"$service_name"* ]]; then
+                    sed -i "s|\(image: .*/$ITEM:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
+                    raise_exception=false
+                    echo "Key '$ITEM' found, updated the image with '$image_name'"
+                    break
+                fi
+            done
+            # Handle indexs3client image update
+            if [[ "$service_name" == "indexs3client" ]]; then
+                sed -i "s|\(indexing: .*/indexs3client:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
                 raise_exception=false
-                echo "Key '$ITEM' found, but skipping service update as this service isnt a kubectl deployment"
-                break
+                echo "Key indexs3client found, updated the image with '$image_name'"
+                continue
             fi
-        done
-        # Handle sowerConfig image updates
-        mapfile -t sower_job_names < <(yq '.sower.sowerConfig[].name' "$ci_default_manifest_values_yaml")
-        for ITEM in "${sower_job_names[@]}"; do
-            if [[ "$ITEM" == *"$service_name"* ]]; then
-                sed -i "s|\(image: .*/$ITEM:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
-                raise_exception=false
-                echo "Key '$ITEM' found, updated the image with '$image_name'"
-                break
+            if [[ "$raise_exception" == "true" ]]; then
+                exit 1
             fi
-        done
-        # Handle indexs3client image update
-        if [[ "$service_name" == "indexs3client" ]]; then
-            sed -i "s|\(indexing: .*/indexs3client:\).*|\1$image_name|" "$ci_default_manifest_values_yaml"
-            raise_exception=false
-            echo "Key indexs3client found, updated the image with '$image_name'"
-            break
         fi
-        if [[ "$raise_exception" == "true" ]]; then
-            exit 1
-        fi
-    fi
+    done
 elif [ "$setup_type" == "manifest-env-setup" ]; then
     # If PR is under a manifest repository, then update the yaml files as needed
     echo "Setting Up Manifest PR Env..."
@@ -223,8 +227,7 @@ elif [ "$setup_type" == "manifest-env-setup" ]; then
     ####################################################################################
     echo "###################################################################################"
     for key in $keys_manifest; do
-    # TODO: remove gen3-embeddings once the gen3-embedding issue is resolved
-    if [[ "$key" != "global" && "$key" != "ambassador" && "$key" != "gen3-embeddings" ]]; then
+    if [[ "$key" != "global" && "$key" != "ambassador" ]]; then
       service_enabled_value=$(yq eval ".${key}.enabled" $new_manifest_values_file_path)
       ci_enabled_value=$(yq eval ".${key}.enabled" $ci_default_manifest_values_yaml)
       gen3_helm_enabled_value=$(yq eval ".${key}.enabled" "$gen3_helm_values_file_path")
@@ -611,6 +614,9 @@ fi
 if yq -e '.["embedding-management-service"]' "$ci_default_manifest_values_yaml" >/dev/null; then
   yq eval '.["embedding-management-service"].enabled = false' -i "$ci_default_manifest_values_yaml"
 fi
+
+# Gen3-embeddig update ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES
+yq -i ".fence.FENCE_CONFIG_PUBLIC.ALLOWED_GEN3_EMBEDDINGS_BULK_URL_PREFIXES = [\"https://${HOSTNAME}/ai\"]" "$ci_default_manifest_values_yaml"
 
 install_helm_chart() {
   [[ "$REPO_FN" == "calypr/helm-charts" || "$REPO_FN" == "uc-cdis/ohsu-funnel-helm-charts" ]]
