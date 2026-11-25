@@ -104,6 +104,9 @@ def get_client_id_secret():
 def run_usersync():
     # check which job to run: if there are "useryaml" pods, then the "useryaml" job is deployed and
     # should be used. If not, the "useryaml" job is not deployed, but the "usersync" cronjob is.
+    if "fence" not in gen3_admin_tasks.get_list_of_services_deployed():
+        logger.info("Fence is not deployed in this env, skipping usersync")
+        return
     cmd = [
         "kubectl",
         "get",
