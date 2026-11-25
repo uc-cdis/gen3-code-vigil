@@ -50,8 +50,9 @@ def get_portal_config(json_file_name=None):
             "SOURCE_CONFIG", ""
         ):
             return {}
-        res = requests.get(f"{pytest.root_url_portal}/data/config/gitops.json")
-        assert res.status_code == 200, f"Expected 200 but got {res.status_code}"
+        url = f"{pytest.root_url_portal}/data/config/gitops.json"
+        res = requests.get(url)
+        assert res.status_code == 200, f"Expected 200 from '{url}' but got {res.status_code}"
         res = res.json()
     return res
 
