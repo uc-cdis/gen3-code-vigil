@@ -1,10 +1,13 @@
 # inferno_uscore_nightly.yaml — Nightly Inferno US Core 6.1.0 integration tests.
 #
-# Runs Inferno on the GH Actions runner against the gen3-fhir-proxy deployment in the
-# qa-fhir Gen3 environment. The test run is delegated to inferno-uscore/run_inferno.sh.
+# Runs the Inferno US Core v6.1.0 test suite against gen3-fhir-proxy on qa-fhir.
+# Inferno is managed as a pytest session-scoped fixture (conftest.py); the test
+# drives the suite via the Inferno REST API — no execute_script YAML or Ruby hook
+# scripts are used. Ruby is still required as the runtime for the Inferno server
+# itself (an upstream framework dependency, not Gen3 code).
 #
-# Requires three Inferno Fence clients registered in qa-fhir, with their client_ids stored
-# as repository secrets:
+# Requires three Inferno Fence clients registered in qa-fhir, with their client_ids
+# stored as repository secrets:
 #   QA_FHIR_INFERNO_CLIENT_ID
 #   QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID
 #   QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID
@@ -37,7 +40,7 @@ jobs:
   inferno_uscore:
     name: Inferno US Core 6.1.0 (gen3-fhir-proxy @ qa-fhir)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       # ── Checkout ─────────────────────────────────────────────────────────
@@ -51,15 +54,7 @@ jobs:
           ref: ${{ env.US_CORE_REF }}
           path: us-core-test-kit
 
-      # ── Overlay gen3 infrastructure config ────────────────────────────────
-      - name: Overlay gen3 infrastructure config into us-core-test-kit
-        run: |
-          SCRIPTS=inferno-uscore
-          mkdir -p us-core-test-kit/data/redis us-core-test-kit/data/igs us-core-test-kit/data/logs
-          cp "$SCRIPTS/docker-compose.background.yml" "$SCRIPTS/.env.production" us-core-test-kit/
-          cp "$SCRIPTS/config/nginx.conf" "$SCRIPTS/config/nginx.background.conf" us-core-test-kit/config/
-
-      # ── Ruby / Bundler / foreman for Inferno ──────────────────────────────
+      # ── Ruby / Bundler / foreman (Inferno server runtime) ─────────────────
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -69,11 +64,18 @@ jobs:
       - name: Install foreman (required by `inferno start`)
         run: gem install foreman
 
-      # ── Run Inferno ────────────────────────────────────────────────────────
-      # Same script as local development: validates prerequisites, starts and
-      # stops Inferno services, generates the execution YAML, and compares
-      # results against the committed expected-results baseline.
-      - name: Run Inferno US Core tests
+      # ── Python (pytest + Inferno REST client) ─────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install inferno-uscore test dependencies
+        run: |
+          pip install httpx pytest pytest-timeout
+
+      # ── Run tests ─────────────────────────────────────────────────────────
+      - name: Run Inferno US Core 6.1.0 tests
         env:
           US_CORE_TEST_KIT_DIR: ${{ github.workspace }}/us-core-test-kit
           INFERNO_FHIR_ENDPOINT: https://${{ env.QA_FHIR_HOST }}/fhir
@@ -81,4 +83,4 @@ jobs:
           INFERNO_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_CLIENT_ID }}
           INFERNO_GRANULAR1_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID }}
           INFERNO_GRANULAR2_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID }}
-        run: bash inferno-uscore/run_inferno.sh
+        run: pytest inferno-uscore/tests/ -v --timeout=7200
