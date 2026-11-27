@@ -1,8 +1,7 @@
 # inferno_uscore_nightly.yaml — Nightly Inferno US Core 6.1.0 integration tests.
 #
 # Runs Inferno on the GH Actions runner against the gen3-fhir-proxy deployment in the
-# qa-fhir Gen3 environment. The test run is delegated to
-# gen3-fhir-proxy/dev_scripts/run_inferno.sh, the same script used for local testing.
+# qa-fhir Gen3 environment. The test run is delegated to inferno-uscore/run_inferno.sh.
 #
 # Requires three Inferno Fence clients registered in qa-fhir, with their client_ids stored
 # as repository secrets:
@@ -22,10 +21,6 @@ on:
         description: 'us-core-test-kit branch/tag to check out'
         default: 'main'
         required: false
-      fhir_proxy_ref:
-        description: 'gen3-fhir-proxy branch/tag for execution scripts'
-        default: 'main'
-        required: false
       qa_fhir_host:
         description: 'qa-fhir hostname'
         default: 'qa-fhir.planx-pla.net'
@@ -33,7 +28,6 @@ on:
 
 env:
   US_CORE_REF: ${{ github.event.inputs.inferno_ref || 'main' }}
-  FHIR_PROXY_REF: ${{ github.event.inputs.fhir_proxy_ref || 'main' }}
   QA_FHIR_HOST: ${{ github.event.inputs.qa_fhir_host || 'qa-fhir.planx-pla.net' }}
 
 permissions:
@@ -47,12 +41,8 @@ jobs:
 
     steps:
       # ── Checkout ─────────────────────────────────────────────────────────
-      - name: Checkout gen3-fhir-proxy (for Inferno scripts)
+      - name: Checkout gen3-code-vigil
         uses: actions/checkout@v4
-        with:
-          repository: uc-cdis/gen3-fhir-proxy
-          ref: ${{ env.FHIR_PROXY_REF }}
-          path: gen3-fhir-proxy
 
       - name: Checkout us-core-test-kit
         uses: actions/checkout@v4
@@ -62,11 +52,9 @@ jobs:
           path: us-core-test-kit
 
       # ── Overlay gen3 infrastructure config ────────────────────────────────
-      # run_inferno.sh syncs the execution scripts and preset itself; the
-      # background-service config is only needed for this fresh checkout.
       - name: Overlay gen3 infrastructure config into us-core-test-kit
         run: |
-          SCRIPTS=gen3-fhir-proxy/dev_scripts/us-core-test-kit-scripts
+          SCRIPTS=inferno-uscore
           mkdir -p us-core-test-kit/data/redis us-core-test-kit/data/igs us-core-test-kit/data/logs
           cp "$SCRIPTS/docker-compose.background.yml" "$SCRIPTS/.env.production" us-core-test-kit/
           cp "$SCRIPTS/config/nginx.conf" "$SCRIPTS/config/nginx.background.conf" us-core-test-kit/config/
@@ -93,4 +81,4 @@ jobs:
           INFERNO_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_CLIENT_ID }}
           INFERNO_GRANULAR1_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID }}
           INFERNO_GRANULAR2_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID }}
-        run: bash gen3-fhir-proxy/dev_scripts/run_inferno.sh
+        run: bash inferno-uscore/run_inferno.sh

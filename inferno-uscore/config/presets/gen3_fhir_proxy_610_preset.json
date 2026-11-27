@@ -1,0 +1,56 @@
+{
+  "title": "Gen3 FHIR Proxy",
+  "id": "us_core_v610_vs_gen3_fhir_proxy",
+  "test_suite_id": "us_core_v610",
+  "inputs": [
+    {
+      "name": "url",
+      "type": "text",
+      "title": "FHIR Endpoint",
+      "description": "URL of the gen3-fhir-proxy FHIR endpoint (host.docker.internal resolves to Mac host from inside Docker)",
+      "value": "http://host.docker.internal:8081/fhir"
+    },
+    {
+      "name": "smart_auth_info",
+      "type": "auth_info",
+      "value": {
+        "auth_type": "public",
+        "use_discovery": "true",
+        "client_id": "PLACEHOLDER_CLIENT_ID"
+      }
+    },
+    {
+      "name": "patient_ids",
+      "type": "text",
+      "title": "Patient IDs",
+      "description": "Comma separated list of patient IDs that in sum contain all MUST SUPPORT elements",
+      "value": "85,355,907"
+    },
+    {
+      "name": "implantable_device_codes",
+      "type": "text",
+      "title": "Implantable Device Type Code",
+      "description": "Enter the code for an Implantable Device type, or multiple codes separated by commas.",
+      "optional": true,
+      "value": "72506001"
+    },
+    {
+      "name": "granular_scopes_1_auth_info",
+      "type": "auth_info",
+      "value": {
+        "auth_type": "public",
+        "use_discovery": "true",
+        "client_id": "PLACEHOLDER_GRANULAR1_CLIENT_ID"
+      }
+    },
+    {
+      "name": "granular_scopes_2_auth_info",
+      "type": "auth_info",
+      "value": {
+        "auth_type": "public",
+        "use_discovery": "true",
+        "client_id": "PLACEHOLDER_GRANULAR2_CLIENT_ID"
+      }
+    }
+  ]
+}

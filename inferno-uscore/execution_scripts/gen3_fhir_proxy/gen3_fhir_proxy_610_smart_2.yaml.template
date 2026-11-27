@@ -1,0 +1,188 @@
+# gen3_fhir_proxy_610_smart_2.yaml.template
+#
+# Inferno US Core v6.1.0 execution script targeting gen3-fhir-proxy + Fence.
+# This is a TEMPLATE: run through `envsubst` before passing to `inferno execute_script`.
+#
+# Required env vars (written by start_gen3.sh to ~/.gen3-fhir-proxy-clients.env):
+#   INFERNO_CLIENT_ID            — Fence OAuth client for the main SMART session
+#   INFERNO_GRANULAR1_CLIENT_ID  — Fence OAuth client for Granular Scopes group 1
+#   INFERNO_GRANULAR2_CLIENT_ID  — Fence OAuth client for Granular Scopes group 2
+#   INFERNO_FHIR_ENDPOINT        — FHIR base URL seen from inside Docker (default: http://host.docker.internal:8081/fhir)
+
+sessions:
+  - suite: us_core_v610
+    preset: Gen3 FHIR Proxy
+    suite_options:
+      smart_app_launch_version: smart_app_launch_2
+
+comparison_config:
+  # Path to the expected results file. Set by run_inferno.sh to a stable repo path so
+  # the baseline survives reboots. The comparison checks only result (pass/fail/skip) —
+  # not message content — so client IDs and URLs in messages do not cause drift.
+  expected_results_file: ${INFERNO_EXPECTED_RESULTS_FILE}
+  normalized_strings:
+    - replacement: <GEN3_FHIR_PROXY_URL>
+      patterns:
+        - http://host.docker.internal:8081/fhir  # local dev (Docker Desktop K8s)
+        - http://localhost:8081/fhir              # local dev (direct)
+        - https://qa-fhir.planx-pla.net/fhir     # qa-fhir deployed environment
+    - replacement: <INFERNO_HOST>
+      patterns:
+        - http://localhost:4567/inferno
+        - http://localhost:4567
+        - http://localhost
+    - replacement: code_challenge=<CODE_CHALLENGE>
+      pattern: /code_challenge=[A-Za-z0-9+\/=_-]{43}/
+    - replacement: <UUID>
+      pattern: /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+
+steps:
+  # ── Group 1.3: Standalone Launch ─────────────────────────────────────────
+  - state_description: Gen3 FHIR Proxy US Core 6.1.0 session created
+    status: created
+    start_run:
+      runnable: 1.3
+      inputs:
+        url: ${INFERNO_FHIR_ENDPOINT}
+        smart_auth_info:
+          auth_type: public
+          use_discovery: "true"
+          client_id: ${INFERNO_CLIENT_ID}
+    action_description: Run Group 1.3 Standalone Launch
+
+  - state_description: Wait at test 1.3.2.02 — OAuth server redirects client browser to app redirect URI
+    status: waiting
+    last_completed: 1.3.2.02
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_authorize.py '{wait_outputs.authorization_url}'
+    action_description: Authorize patient 85 via Fence MOCK_AUTH (standalone launch)
+
+  # ── Group 1.4: EHR Launch ────────────────────────────────────────────────
+  - state_description: Finished Group 1.3 Standalone Launch
+    status: done
+    last_completed: 1.3
+    start_run:
+      runnable: 1.4
+    action_description: Run Group 1.4 EHR Launch
+
+  - state_description: Wait at test 1.4.2.01 — EHR server redirects client browser to Inferno app launch URI
+    status: waiting
+    last_completed: 1.4.2.01
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_ehr_launch.py '{wait_outputs.launch_uri}' '{wait_outputs.target_iss}'
+    action_description: Simulate EHR launching Inferno for patient 85
+
+  - state_description: Wait at test 1.4.2.04 — OAuth server redirects client browser to app redirect URI
+    status: waiting
+    last_completed: 1.4.2.04
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_authorize.py '{wait_outputs.authorization_url}'
+    action_description: Authorize all requested scopes for EHR-launched session
+
+  # ── Group 2: US Core FHIR API ────────────────────────────────────────────
+  - state_description: Finished Group 1.4 EHR Launch
+    status: done
+    last_completed: 1.4
+    start_run:
+      runnable: 2
+    timeout: 3600
+    action_description: Run Group 2 US Core FHIR API
+
+  # ── Group 3.1.1.1: Granular Scopes 1 Standalone Launch ───────────────────
+  - state_description: Finished Group 2 US Core FHIR API
+    status: done
+    last_completed: 2
+    start_run:
+      runnable: 3.1.1.1
+      inputs:
+        granular_scopes_1_auth_info:
+          auth_type: public
+          use_discovery: "true"
+          client_id: ${INFERNO_GRANULAR1_CLIENT_ID}
+    action_description: Run Group 3.1.1.1 Granular Scopes 1 Standalone Launch
+
+  - state_description: Wait at test 3.1.1.1.2.02 — OAuth server redirects client browser to app redirect URI
+    status: waiting
+    last_completed: 3.1.1.1.2.02
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_authorize.py '{wait_outputs.authorization_url}'
+    action_description: Authorize granular scopes 1 for patient 85
+
+  # ── Group 3.1.1.3: Granular Scopes 1 EHR Launch ──────────────────────────
+  - state_description: Finished Group 3.1.1.1 Granular Scopes 1 Standalone Launch
+    status: done
+    last_completed: 3.1.1.1
+    start_run:
+      runnable: 3.1.1.3
+    action_description: Run Group 3.1.1.3 Granular Scopes 1 EHR Launch
+
+  - state_description: Wait at test 3.1.1.3.2.01 — EHR server redirects client browser to Inferno app launch URI
+    status: waiting
+    last_completed: 3.1.1.3.2.01
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_ehr_launch.py '{wait_outputs.launch_uri}' '{wait_outputs.target_iss}'
+    action_description: Simulate EHR launching Inferno for Granular Scopes 1
+
+  - state_description: Wait at test 3.1.1.3.2.04 — OAuth server redirects client browser to app redirect URI
+    status: waiting
+    last_completed: 3.1.1.3.2.04
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_authorize.py '{wait_outputs.authorization_url}'
+    action_description: Authorize granular scopes 1 for EHR-launched session
+
+  # ── Group 3.1.2: US Core FHIR API w/ Granular Scopes 1 ───────────────────
+  - state_description: Finished Group 3.1.1.3 Granular Scopes 1 EHR Launch
+    status: done
+    last_completed: 3.1.1.3
+    start_run:
+      runnable: 3.1.2
+    timeout: 600
+    action_description: Run Group 3.1.2 US Core FHIR API w/ Granular Scopes 1
+
+  # ── Group 3.2.1.1: Granular Scopes 2 Standalone Launch ───────────────────
+  - state_description: Finished Group 3.1.2 US Core FHIR API w/ Granular Scopes 1
+    status: done
+    last_completed: 3.1.2
+    start_run:
+      runnable: 3.2.1.1
+      inputs:
+        granular_scopes_2_auth_info:
+          auth_type: public
+          use_discovery: "true"
+          client_id: ${INFERNO_GRANULAR2_CLIENT_ID}
+    action_description: Run Group 3.2.1.1 Granular Scopes 2 Standalone Launch
+
+  - state_description: Wait at test 3.2.1.1.2.02 — OAuth server redirects client browser to app redirect URI
+    status: waiting
+    last_completed: 3.2.1.1.2.02
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_authorize.py '{wait_outputs.authorization_url}'
+    action_description: Authorize granular scopes 2 for patient 85
+
+  # ── Group 3.2.1.3: Granular Scopes 2 EHR Launch ──────────────────────────
+  - state_description: Finished Group 3.2.1.1 Granular Scopes 2 Standalone Launch
+    status: done
+    last_completed: 3.2.1.1
+    start_run:
+      runnable: 3.2.1.3
+    action_description: Run Group 3.2.1.3 Granular Scopes 2 EHR Launch
+
+  - state_description: Wait at test 3.2.1.3.2.01 — EHR server redirects client browser to Inferno app launch URI
+    status: waiting
+    last_completed: 3.2.1.3.2.01
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_ehr_launch.py '{wait_outputs.launch_uri}' '{wait_outputs.target_iss}'
+    action_description: Simulate EHR launching Inferno for Granular Scopes 2
+
+  - state_description: Wait at test 3.2.1.3.2.04 — OAuth server redirects client browser to app redirect URI
+    status: waiting
+    last_completed: 3.2.1.3.2.04
+    command: python3 execution_scripts/gen3_fhir_proxy/fence_authorize.py '{wait_outputs.authorization_url}'
+    action_description: Authorize granular scopes 2 for EHR-launched session
+
+  # ── Group 3.2.2: US Core FHIR API w/ Granular Scopes 2 ───────────────────
+  - state_description: Finished Group 3.2.1.3 Granular Scopes 2 EHR Launch
+    status: done
+    last_completed: 3.2.1.3
+    start_run:
+      runnable: 3.2.2
+    timeout: 600
+    action_description: Run Group 3.2.2 US Core FHIR API w/ Granular Scopes 2
+
+  - state_description: Finished Group 3.2.2 US Core FHIR API w/ Granular Scopes 2
+    status: done
+    last_completed: 3.2.2
+    command: "END_SCRIPT"
+    action_description: Script Completed
