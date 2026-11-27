@@ -1,0 +1,86 @@
+# inferno_uscore_nightly.yaml — Nightly Inferno US Core 6.1.0 integration tests.
+#
+# Runs the Inferno US Core v6.1.0 test suite against gen3-fhir-proxy on qa-fhir.
+# Inferno is managed as a pytest session-scoped fixture (conftest.py); the test
+# drives the suite via the Inferno REST API — no execute_script YAML or Ruby hook
+# scripts are used. Ruby is still required as the runtime for the Inferno server
+# itself (an upstream framework dependency, not Gen3 code).
+#
+# Requires three Inferno Fence clients registered in qa-fhir, with their client_ids
+# stored as repository secrets:
+#   QA_FHIR_INFERNO_CLIENT_ID
+#   QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID
+#   QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID
+# Environment setup is documented internally, not in this public repository.
+
+name: Inferno US Core Nightly
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # 00:00 CT / 06:00 UTC nightly
+  workflow_dispatch:
+    inputs:
+      inferno_ref:
+        description: 'us-core-test-kit branch/tag to check out'
+        default: 'main'
+        required: false
+      qa_fhir_host:
+        description: 'qa-fhir hostname'
+        default: 'qa-fhir.planx-pla.net'
+        required: false
+
+env:
+  US_CORE_REF: ${{ github.event.inputs.inferno_ref || 'main' }}
+  QA_FHIR_HOST: ${{ github.event.inputs.qa_fhir_host || 'qa-fhir.planx-pla.net' }}
+
+permissions:
+  contents: read
+
+jobs:
+  inferno_uscore:
+    name: Inferno US Core 6.1.0 (gen3-fhir-proxy @ qa-fhir)
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────
+      - name: Checkout gen3-code-vigil
+        uses: actions/checkout@v4
+
+      - name: Checkout us-core-test-kit
+        uses: actions/checkout@v4
+        with:
+          repository: inferno-framework/us-core-test-kit
+          ref: ${{ env.US_CORE_REF }}
+          path: us-core-test-kit
+
+      # ── Ruby / Bundler / foreman (Inferno server runtime) ─────────────────
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          working-directory: us-core-test-kit
+          bundler-cache: true
+
+      - name: Install foreman (required by `inferno start`)
+        run: gem install foreman
+
+      # ── Python (pytest + Inferno REST client) ─────────────────────────────
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install inferno-uscore test dependencies
+        run: |
+          pip install httpx pytest pytest-timeout
+
+      # ── Run tests ─────────────────────────────────────────────────────────
+      - name: Run Inferno US Core 6.1.0 tests
+        env:
+          US_CORE_TEST_KIT_DIR: ${{ github.workspace }}/us-core-test-kit
+          INFERNO_FHIR_ENDPOINT: https://${{ env.QA_FHIR_HOST }}/fhir
+          FHIR_CHECK_URL: https://${{ env.QA_FHIR_HOST }}/fhir/metadata
+          INFERNO_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_CLIENT_ID }}
+          INFERNO_GRANULAR1_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR1_CLIENT_ID }}
+          INFERNO_GRANULAR2_CLIENT_ID: ${{ secrets.QA_FHIR_INFERNO_GRANULAR2_CLIENT_ID }}
+        run: pytest inferno-uscore/tests/ -v --timeout=7200

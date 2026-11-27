@@ -1,0 +1,2822 @@
+[
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_discovery_stu2-well_known_endpoint",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_discovery_stu2-well_known_capabilities_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-standalone_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_app_redirect_stu2",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_discovery_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_code_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-standalone_token_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_exchange",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_response_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_decode_id_token",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_retrieve_configuration",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_required_configuration_fields",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_retrieve_jwks",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_token_header",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_token_payload",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_fhir_user_claim",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_openid_connect",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_refresh_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_standalone_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_discovery_stu2-well_known_endpoint",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_discovery_stu2-well_known_capabilities_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_app_launch",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_launch_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-ehr_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_app_redirect_stu2",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_discovery_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_code_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-ehr_token_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_exchange",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_response_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_decode_id_token",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_retrieve_configuration",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_required_configuration_fields",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_retrieve_jwks",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_token_header",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_token_payload",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_fhir_user_claim",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_openid_connect",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_refresh_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_smart_app_launch-us_core_smart_ehr_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement-standalone_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement-us_core_conformance_support",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement-us_core_fhir_version",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement-us_core_json_support",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement-us_core_profile_support",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement-us_core_instantiate",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_capability_statement",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_identifier_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_birthdate_family_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_family_gender_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_birthdate_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_gender_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_death_date_family_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient-us_core_v610_patient_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_patient",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_patient_clinical_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance-us_core_v610_allergy_intolerance_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_allergy_intolerance",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_patient_category_status_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan-us_core_v610_care_plan_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_plan",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_role_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_patient_role_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team-us_core_v610_care_team_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_care_team",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_recorded_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_asserted_date_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_category_clinical_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_onset_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_abatement_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_clinical_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_category_encounter_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis-us_core_v610_condition_encounter_diagnosis_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_encounter_diagnosis",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_recorded_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_asserted_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_category_clinical_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_onset_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_abatement_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_clinical_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_category_encounter_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns-us_core_v610_condition_problems_health_concerns_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_condition_problems_health_concerns",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage-us_core_v610_coverage_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage-us_core_v610_coverage_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage-us_core_v610_coverage_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage-us_core_v610_coverage_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage-us_core_v610_coverage_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage-us_core_v610_coverage_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_coverage",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_patient_type_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device-us_core_v610_device_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_device",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note-us_core_v610_diagnostic_report_note_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_note",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab-us_core_v610_diagnostic_report_lab_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_diagnostic_report_lab",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_patient_type_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_patient_type_period_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v610_document_reference_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference-us_core_v400_document_reference_custodian_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_document_reference",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_identifier_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_patient_type_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_class_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_date_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_patient_location_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_patient_discharge_disposition_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter-us_core_v610_encounter_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_encounter",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_patient_target_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_patient_description_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_patient_lifecycle_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal-us_core_v610_goal_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_goal",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_patient_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization-us_core_v610_immunization_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_immunization",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_patient_status_type_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense-us_core_v610_medication_dispense_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_dispense",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_patient_intent_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_patient_intent_encounter_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_patient_intent_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_patient_intent_authoredon_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request-us_core_v610_medication_request_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_medication_request",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab-us_core_v610_observation_lab_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_lab",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus-us_core_v610_observation_pregnancystatus_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancystatus",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent-us_core_v610_observation_pregnancyintent_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_pregnancyintent",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation-us_core_v610_observation_occupation_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_occupation",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate-us_core_v610_respiratory_rate_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_respiratory_rate",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation-us_core_v610_simple_observation_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_simple_observation",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate-us_core_v610_heart_rate_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_heart_rate",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature-us_core_v610_body_temperature_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_temperature",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height-us_core_v610_pediatric_weight_for_height_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_weight_for_height",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry-us_core_v610_pulse_oximetry_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pulse_oximetry",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus-us_core_v610_smokingstatus_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_smokingstatus",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation-us_core_v610_observation_sexual_orientation_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_sexual_orientation",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference-us_core_v610_head_circumference_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height-us_core_v610_body_height_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_height",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi-us_core_v610_bmi_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_bmi",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment-us_core_v610_observation_screening_assessment_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_screening_assessment",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure-us_core_v610_blood_pressure_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_blood_pressure",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result-us_core_v610_observation_clinical_result_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_observation_clinical_result",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age-us_core_v610_pediatric_bmi_for_age_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_pediatric_bmi_for_age",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_patient_category_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile-us_core_v610_head_circumference_percentile_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_head_circumference_percentile",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_patient_code_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_patient_category_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_patient_category_date_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight-us_core_v610_body_weight_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_body_weight",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_patient_code_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_patient_date_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure-us_core_v610_procedure_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_procedure",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_patient_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response__id_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_patient_questionnaire_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_patient_authored_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_patient_status_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_read_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_provenance_revinclude_search_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_validation_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_must_support_test",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response-us_core_v610_questionnaire_response_reference_resolution_test",
+    "result": "skip"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_questionnaire_response",
+    "result": "skip"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_patient_category_authored_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_patient_status_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_patient_category_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_patient_code_authored_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_patient_code_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request-us_core_v610_service_request_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_service_request",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_organization-us_core_v610_organization_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_organization-us_core_v610_organization_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_organization-us_core_v610_organization_address_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_organization-us_core_v610_organization_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_organization-us_core_v610_organization_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_organization",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner_identifier_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner-us_core_v610_practitioner_address_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role-us_core_v610_practitioner_role_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role-us_core_v610_practitioner_role_specialty_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role-us_core_v610_practitioner_role_practitioner_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role-us_core_v610_practitioner_role_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role-us_core_v610_practitioner_role_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role-us_core_v610_practitioner_role_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_practitioner_role",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_provenance-us_core_v610_provenance_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_provenance-us_core_v610_provenance_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_provenance-us_core_v610_provenance_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_provenance-us_core_v610_provenance_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_provenance",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_patient_name_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_provenance_revinclude_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person-us_core_v610_related_person_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_related_person",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen-us_core_v610_specimen_read_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen-us_core_v610_specimen_patient_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen-us_core_v610_specimen__id_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen-us_core_v610_specimen_validation_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen-us_core_v610_specimen_must_support_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen-us_core_v610_specimen_reference_resolution_test",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_specimen",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v400_clinical_notes_guidance-us_core_clinical_note_types",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v400_clinical_notes_guidance-us_core_clinical_note_attachments",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v400_clinical_notes_guidance",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_screening_assessment-us_core_screening_assessment_category",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_v610_screening_assessment",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_311_data_absent_reason-us_core_311_data_absent_reason_extension",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_fhir_api-us_core_311_data_absent_reason-us_core_311_data_absent_reason_code_system",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api-us_core_311_data_absent_reason",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_fhir_api",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_discovery_stu2-well_known_endpoint",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_discovery_stu2-well_known_capabilities_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-standalone_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_app_redirect_stu2",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_discovery_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_code_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-standalone_token_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_exchange",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_response_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-us_core_granted_granular_scopes",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_decode_id_token",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_retrieve_configuration",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_required_configuration_fields",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_retrieve_jwks",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_token_header",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_token_payload",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_fhir_user_claim",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_refresh_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_standalone_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_discovery_stu2-well_known_endpoint",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_discovery_stu2-well_known_capabilities_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_app_launch",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_launch_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-ehr_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_app_redirect_stu2",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_discovery_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_code_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-ehr_token_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_exchange",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_response_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-us_core_granted_granular_scopes",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_decode_id_token",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_retrieve_configuration",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_required_configuration_fields",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_retrieve_jwks",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_token_header",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_token_payload",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_fhir_user_claim",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_refresh_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-Group01-us_core_smart_ehr_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_category_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_recorded_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_asserted_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_category_clinical_status_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_onset_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_abatement_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_clinical_status_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_category_encounter_granular_scope_search_test",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_patient_code_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group-us_core_v610_Condition_granular_scope_read_test",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_condition_granular_scope_1_group",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group-us_core_v610_Observation_patient_category_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group-us_core_v610_Observation_patient_code_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group-us_core_v610_Observation_patient_category_status_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group-us_core_v610_Observation_patient_category_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group-us_core_v610_Observation_patient_code_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group-us_core_v610_Observation_granular_scope_read_test",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1-us_core_v610_observation_granular_scope_1_group",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group01-us_core_v610_smart_granular_scopes_1",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_discovery_stu2-well_known_endpoint",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_discovery_stu2-well_known_capabilities_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-standalone_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_app_redirect_stu2",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_discovery_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_code_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-standalone_token_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_exchange",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_response_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2-us_core_granted_granular_scopes",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_standalone_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_decode_id_token",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_retrieve_configuration",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_required_configuration_fields",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_retrieve_jwks",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_token_header",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_token_payload",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect-smart_openid_fhir_user_claim",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_openid_connect",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_refresh_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_standalone_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_discovery_stu2-well_known_endpoint",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_discovery_stu2-well_known_capabilities_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_app_launch",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_launch_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-ehr_auth_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_app_redirect_stu2",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_discovery_stu2",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_code_received",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-ehr_token_tls",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_exchange",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_response_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2-us_core_granted_granular_scopes",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_ehr_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_decode_id_token",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_retrieve_configuration",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_required_configuration_fields",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_retrieve_jwks",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_token_header",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_token_payload",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect-smart_openid_fhir_user_claim",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_openid_connect",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_refresh_body",
+    "result": "pass"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh-smart_token_response_headers",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2-smart_token_refresh",
+    "result": "pass"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-Group01-us_core_smart_ehr_launch_stu2",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_category_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_recorded_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_asserted_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_category_clinical_status_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_onset_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_abatement_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_clinical_status_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_category_encounter_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_patient_code_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group-us_core_v610_Condition_granular_scope_read_test",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_condition_granular_scope_2_group",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group-us_core_v610_Observation_patient_category_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group-us_core_v610_Observation_patient_code_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group-us_core_v610_Observation_patient_category_status_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group-us_core_v610_Observation_patient_category_date_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group-us_core_v610_Observation_patient_code_granular_scope_search_test",
+    "result": "fail"
+  },
+  {
+    "test_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group-us_core_v610_Observation_granular_scope_read_test",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2-us_core_v610_observation_granular_scope_2_group",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes",
+    "result": "fail"
+  },
+  {
+    "test_suite_id": "us_core_v610",
+    "result": "fail"
+  },
+  {
+    "test_group_id": "us_core_v610-us_core_v610_smart_granular_scopes-Group02-us_core_v610_smart_granular_scopes_2",
+    "result": "fail"
+  }
+]
